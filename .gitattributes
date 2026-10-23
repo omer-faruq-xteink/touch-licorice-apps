@@ -1,0 +1,4 @@
+# LF everywhere: the Sokoban level indexes hold byte offsets into the data files
+* text=auto eol=lf
+*.xtapp binary
+*.bin binary

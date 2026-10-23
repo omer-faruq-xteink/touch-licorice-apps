@@ -41,7 +41,7 @@ Digits you entered have a short underline; givens do not.
 
 ```bash
 python apps/sudoku/prepare_data.py PATH_TO_DOWNLOADED_BANK   # once, or when changing the banks
-python xtpack.py apps/sudoku                                 # -> sudoku/sudoku.xtapp
+python xtpack.py apps/sudoku                                 # -> apps/sudoku/sudoku.xtapp
 ```
 
 ## Verification status
