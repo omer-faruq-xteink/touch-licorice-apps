@@ -12,3 +12,6 @@ firmware-lua-text.txt
 __pycache__/
 *.pyc
 .venv/
+
+# local release staging (attach these files to the GitHub release)
+release/
