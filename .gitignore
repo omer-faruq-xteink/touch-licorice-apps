@@ -1,0 +1,14 @@
+# build outputs: attach dist/*.xtapp to a GitHub release instead of committing them
+dist/
+*.xtapp
+
+# firmware dumps and anything extracted from them are never committed
+*.bin
+licorice-app.bin
+x4pro-flash.bin
+firmware-lua-text.txt
+*.dis
+
+__pycache__/
+*.pyc
+.venv/

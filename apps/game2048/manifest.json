@@ -1,0 +1,12 @@
+{
+  "app_id": "twentyfortyeight",
+  "display_name": "2048",
+  "version": "1.0",
+  "author": "omer",
+  "description": "The sliding-tile puzzle. Swipe or use the side buttons to move; merge equal tiles to reach 2048. Score and best score are kept between sessions.",
+  "entry": "index.lua",
+  "permissions": [
+    "sys.battery",
+    "sys.status"
+  ]
+}

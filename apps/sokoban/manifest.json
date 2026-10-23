@@ -1,0 +1,12 @@
+{
+  "app_id": "sokoban",
+  "display_name": "Sokoban",
+  "version": "1.0",
+  "author": "omer",
+  "description": "Push every box onto a goal. Swipe, tap beside the player or use the side buttons to move; Undo takes moves back. Level packs ship as XSB text files inside the package; progress is kept between sessions.",
+  "entry": "index.lua",
+  "permissions": [
+    "sys.battery",
+    "sys.status"
+  ]
+}

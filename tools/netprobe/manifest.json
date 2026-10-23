@@ -1,0 +1,13 @@
+{
+  "app_id": "netprobe",
+  "display_name": "Net Probe",
+  "version": "1.0",
+  "author": "omer",
+  "description": "Dumps ctx.api, ctx.capabilities, ctx.system, ctx.sys and the require() searcher to find an HTTP / network API on XTOS Licorice.",
+  "entry": "index.lua",
+  "permissions": [
+    "sys.battery",
+    "sys.status",
+    "net.http"
+  ]
+}

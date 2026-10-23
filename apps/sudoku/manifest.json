@@ -1,0 +1,12 @@
+{
+  "app_id": "sudoku",
+  "display_name": "Sudoku",
+  "version": "1.0",
+  "author": "omer",
+  "description": "Classic 9x9 Sudoku. Tap a cell, then a digit. Puzzle banks ship as data files inside the package; a small built-in bank is the fallback. Progress is kept between sessions.",
+  "entry": "index.lua",
+  "permissions": [
+    "sys.battery",
+    "sys.status"
+  ]
+}
