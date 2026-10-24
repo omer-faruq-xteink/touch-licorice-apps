@@ -66,7 +66,7 @@ texts = lambda: [str(v.s) for v in draw().values()]
 responses['/api/list?kind=unread'] = {'title': 'Unread', 'page': 1, 'has_more': True,
                                       'items': [{'id': str(100 + i), 'title': f'Article {i}', 'feed': 'Feed', 'date': '2026-10-24 08:00', 'read': False, 'excerpt': 'x'} for i in range(12)]}
 responses['/api/article/103'] = {'id': '103', 'title': 'Article 3', 'feed': 'Feed', 'date': '2026-10-24 08:00',
-                                 'text': '# Heading here\n\nFirst paragraph with several words in it.\n\n> a quote\n\n• item one\n• item two\n\n' + ('word ' * 400)}
+                                 'text': '# Heading here\n\nFirst paragraph with several words in it.\n\n> a quote\n\n• item one\n• item two\n\n' + ('word ' * 1200)}
 responses['/api/feeds'] = {'items': [{'id': '10', 'name': 'Feed A', 'unread': 3}, {'id': '11', 'name': 'Feed B', 'unread': 0}]}
 responses['/api/list?kind=feed'] = {'title': 'Feed A', 'page': 1, 'has_more': False, 'items': [{'id': '555', 'title': 'Only one', 'feed': 'Feed A', 'date': '', 'read': True, 'excerpt': ''}]}
 
@@ -111,6 +111,17 @@ assert styles['a quote'] == ('medium', 24) and styles['• item one'] == ('mediu
 assert styles['Feed 2026-10-24 08:00'][0] == 'small', [k for k in styles if 'Feed' in k]
 tap(400, 400)                         # right side -> next page
 assert any(x.startswith('2/') for x in texts())
+# side buttons: one press may arrive as press + release, or as a quick repeat -> one page each
+key_ev = L.eval("function(k, ph, t) on_input(ctx, {type='key', key=k, phase=ph, time_ms=t}) end")
+page_of = lambda: [x for x in texts() if '/' in x and x[0].isdigit()][0].split('/')[0]
+key_ev('right', 'down', 1000); key_ev('right', 'up', 1040)
+assert page_of() == '3', page_of()
+key_ev('right', 'down', 2000); key_ev('right', 'down', 2080)
+assert page_of() == '4', page_of()
+key_ev('left', 'down', 3000); key_ev('left', 'up', 3030)
+assert page_of() == '3', page_of()
+key_ev('left', 'down', 3500)
+assert page_of() == '2', page_of()
 assert 'a103.txt' in g.store
 # Back to list keeps items; list is cached too
 tap(50, 20)

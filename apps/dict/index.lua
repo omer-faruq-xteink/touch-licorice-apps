@@ -25,6 +25,24 @@ local measure_cache = {}
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
 local function note(s) status = tostring(s or '') end
 local function refresh() pcall(function() ctx.invalidate() end) end
+
+-- A side button arrives as more than one key event on API 2.9 (press and release, or a repeat),
+-- which turned one press into two pages. Ignore release events and the same key again within
+-- KEY_GAP_MS, whatever the host calls its fields.
+local KEY_GAP_MS = 250
+local last_key, last_key_ms = nil, nil
+local function key_accepted(ev)
+  local ph = ev.phase or ev.action or ev.state
+  if ph == 'up' or ph == 'release' or ph == 'released' or ev.pressed == false or ev.down == false then return false end
+  local now = tonumber(ev.time_ms)
+  if not now then
+    local ok, m = pcall(function() return ctx.clock:millis() end)
+    now = ok and tonumber(m) or nil
+  end
+  if now and last_key == ev.key and last_key_ms and now - last_key_ms >= 0 and now - last_key_ms < KEY_GAP_MS then return false end
+  last_key, last_key_ms = ev.key, now
+  return true
+end
 local function lower(s) return (s:gsub('%u', string.lower)) end   -- ASCII fold; the shard order is ASCII case-insensitive
 
 ------------------------------------------------------------------ data sources
@@ -438,7 +456,7 @@ function on_input(c, ev)
       if screen == 'entry' and (g == 'swipe_left' or g == 'swipe_up') then page_entry(1)
       elseif screen == 'entry' and (g == 'swipe_right' or g == 'swipe_down') then page_entry(-1)
       elseif g == nil or g == 'tap' then tap(ev.x or 0, ev.y or 0) end
-    elseif ev.type == 'key' then
+    elseif ev.type == 'key' and key_accepted(ev) then
       local k = ev.key
       if screen == 'entry' then
         if k == 'back' then back_to_search()

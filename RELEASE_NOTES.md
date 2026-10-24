@@ -31,6 +31,8 @@ All packages are included so one release has everything. `SHA256SUMS.txt` has th
 - **RSS**: an `ERR … attempt to index a nil value` line could appear at the bottom while an article
   was loading (the previous article's page table was used for one frame) and then stayed on every
   screen. Fixed; in RSS, Notes and Dictionary an error message now disappears with the next tap.
+- **RSS, Dictionary**: a side button turned two pages at once (the host sends more than one key
+  event per press). Release events and a repeat of the same key within 250 ms are now ignored.
 
 # v0.2.0
 
