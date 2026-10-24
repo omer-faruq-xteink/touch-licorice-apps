@@ -1,477 +1,224 @@
--- Notes for XTOS Licorice mini apps (Lua API 0.8, 480 x 800 portrait, 1 bpp).
+-- Notes for XTOS Licorice, API 2.9. Freehand drawing and typed text on up to 8 pages, kept in
+-- ctx.storage; the chosen page becomes the lock screen (lockscreen.lua draws it with a clock).
 --
--- The host delivers touch as taps and swipes only, so there is no freehand drawing. A page holds
--- typed text (an on-screen keyboard) and shapes placed with two taps: a line (two ends), a box (two
--- corners) or a circle (centre, then a point on the rim). Pages live in ctx.state, which the host
--- saves on leave. "Lock" chooses the current page for the lock screen and tries the host's
--- lock-screen calls; "Info" lists what the host exposes for that, because on firmware 7.6.8 the
--- route was a dead end and on Licorice nobody has exercised it yet (see README).
---
--- Modes: view (toolbar: Type Draw Pages Lock Info), type (keyboard), draw (Line Box Circle Undo
--- Done), pages (list: New Delete Back), info (host lock API dump).
+-- Toolbar: Draw | Text (tap again to cycle S/M/L) | Undo | Page | Lock | Clear
+-- Pointer phases down/move/up give the strokes; each stroke is one g:polyline per 60-point chunk.
+-- Every ctx.* function is a method on this API: call them colon-style.
 
--- page model + rendering (also copied into lockscreen.lua; no require: the code-section module
--- searcher has not been exercised on this firmware build)
-local P = {}
+local W, H, TOP = 480, 800, 56
+local NPAGES, MAXPTS = 8, 60
+local MIN_STEP = 3
 
-P.CANVAS = { x = 15, y = 62, w = 450, h = 498 }     -- the page area in view / draw mode
-P.CHARS = 34                                        -- ~13 px per glyph in the ~24 px system font
-P.LINE = 26
+local G, ERR = nil, nil
+local page = 1
+local items = {}          -- current page: {k='s', pts={x1,y1,...}} | {k='t', x=,y=,f=,text=}
+local cur = nil           -- stroke being drawn
+local tool = 'draw'
+local fsize = 2           -- 1 small 2 medium 3 large
+local FNAMES = { 'small', 'medium', 'large' }
+local SIZE_TAG = { 'S', 'M', 'L' }
+local status = ''
 
--- Word-wraps text into lines of at most `width` characters; explicit newlines are kept.
-function P.wrap(text, width)
-  width = width or P.CHARS
-  local out = {}
-  for para in (tostring(text or '') .. '\n'):gmatch('([^\n]*)\n') do
-    local line = ''
-    for word in para:gmatch('%S+') do
-      if line == '' then
-        line = word
-      elseif #line + 1 + #word <= width then
-        line = line .. ' ' .. word
-      else
-        out[#out + 1] = line; line = word
-      end
-      while #line > width do out[#out + 1] = line:sub(1, width); line = line:sub(width + 1) end
-    end
-    out[#out + 1] = line
-  end
-  return out
-end
-
--- Draws the text of a page into the canvas; `last` shows the tail instead of the head (typing).
--- Returns the number of lines drawn.
-function P.draw_text(page, g, max_lines, last, caret)
-  local lines = P.wrap(page.text or '')
-  if caret then lines[#lines] = (lines[#lines] or '') .. '_' end
-  local first = 1
-  if last and #lines > max_lines then first = #lines - max_lines + 1 end
-  local y, n = P.CANVAS.y + 6, 0
-  for i = first, math.min(#lines, first + max_lines - 1) do
-    g:text(P.CANVAS.x + 4, y, lines[i])
-    y = y + P.LINE; n = n + 1
-  end
-  return n
-end
-
-function P.draw_shapes(page, g)
-  for _, s in ipairs(page.shapes or {}) do
-    if s.k == 'l' then g:line(s[1], s[2], s[3], s[4])
-    elseif s.k == 'r' then g:rect(s[1], s[2], s[3], s[4])
-    elseif s.k == 'c' then g:circle(s[1], s[2], s[3]) end
-  end
-end
-
--- A full page as the lock screen shows it: text, shapes, and the clock in the corner.
-function P.draw_lock(page, g, clock)
-  g:clear(0)
-  if clock then g:text(15, 14, clock) end
-  P.draw_text(page, g, 19, false, false)
-  P.draw_shapes(page, g)
-end
-
-local CV = P.CANVAS
-local BTN_Y, BTN_H, BTN_W, BTN_GAP, BTN_X = 580, 56, 86, 5, 15          -- 5 x 86 + 4 x 5 = 450
-local LIST_Y0, LIST_ROW, LIST_ROWS = 70, 40, 12
-local MAX_PAGES, MAX_TEXT, MAX_SHAPES = 12, 2000, 120
-
--- keyboard: rows of keys; a key is a string (types itself) or {label, units, action}
-local KEY_W, KEY_H, KEY_X0, KEY_Y0, KEY_GAP = 46, 48, 1, 500, 2           -- 10 units of 48 px
-local DIGITS = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' }
-local SYMBOLS = { '!', '?', ':', ';', "'", '"', '(', ')', '+', '/' }
-local ROWS = {
-  nil,                                                                          -- digits or symbols
-  { 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' },
-  { 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', { '<-', 1, 'bs' } },
-  { { 'Sh', 1, 'shift' }, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.' },
-  { { '?!', 1, 'sym' }, '-', { 'space', 5, 'space' }, { 'Ent', 1, 'enter' }, { 'Done', 2, 'done' } },
-}
-
-local S                      -- ctx.state: pages, cur, lock, shift, sym
-local mode = 'view'
-local tool = 'l'             -- draw tool: l / r / c
-local pending = nil          -- first tap of a shape {x, y}
-local page_list_page = 1
-local msg = nil
-local info_lines = nil
-local ERR = nil
-
------------------------------------------------------------------- state
-
-local function new_page() return { text = '', shapes = {} } end
-
-local function page() return S.pages[S.cur] end
-
-local function adopt_state(state)
-  S = state
-  if type(S.pages) ~= 'table' or #S.pages == 0 then S.pages = { new_page() } end
-  for i, p in ipairs(S.pages) do
-    if type(p) ~= 'table' then S.pages[i] = new_page() end
-    if type(S.pages[i].text) ~= 'string' then S.pages[i].text = '' end
-    if type(S.pages[i].shapes) ~= 'table' then S.pages[i].shapes = {} end
-  end
-  if math.type(S.cur) ~= 'integer' or S.cur < 1 or S.cur > #S.pages then S.cur = 1 end
-  if S.lock ~= nil and (math.type(S.lock) ~= 'integer' or S.lock < 1 or S.lock > #S.pages) then S.lock = nil end
-  S.shift = S.shift == true
-  S.sym = S.sym == true
-end
-
------------------------------------------------------------------- helpers
-
-local function text_w(s)
-  local ok, w = pcall(function() return g:measure_text(s) end)
-  if ok and type(w) == 'number' and w > 0 then return w end
-  return 13 * #s
-end
-local function ctext(cx, cy, s) g:text(cx - text_w(s) // 2, cy - 12, s) end
-local function rtext(right, y, s) g:text(right - text_w(s), y, s) end
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
-local function in_canvas(x, y) return x >= CV.x and x < CV.x + CV.w and y >= CV.y and y < CV.y + CV.h end
+local function note(s) status = tostring(s) end
 
-local function title_of(p, i)
-  local first = (p.text or ''):match('^[^\n]*')
-  first = first:gsub('^%s+', ''):gsub('%s+$', '')
-  if first == '' then return 'Page ' .. i .. (#(p.shapes or {}) > 0 and '  (drawing)' or '  (empty)') end
-  return short(first, 28)
-end
+------------------------------------------------------------------ storage
 
-local function full_refresh() pcall(function() ctx.display:full_refresh() end) end
+local function page_name(p) return 'page' .. p .. '.txt' end
 
------------------------------------------------------------------- keyboard
-
-local function key_rows()
-  local rows = {}
-  rows[1] = S.sym and SYMBOLS or DIGITS
-  for i = 2, 5 do rows[i] = ROWS[i] end
-  return rows
-end
-
--- Walks the keyboard; calls fn(key, x, y, w, h) for every key.
-local function each_key(fn)
-  for r, row in ipairs(key_rows()) do
-    local x = KEY_X0
-    local y = KEY_Y0 + (r - 1) * (KEY_H + 4)
-    for _, k in ipairs(row) do
-      local units = type(k) == 'table' and k[2] or 1
-      local w = units * (KEY_W + KEY_GAP) - KEY_GAP
-      fn(k, x, y, w, KEY_H)
-      x = x + w + KEY_GAP
-    end
-  end
-end
-
-local function key_label(k)
-  if type(k) == 'table' then return k[1] end
-  if S.shift and k:match('%l') then return k:upper() end
-  return k
-end
-
-local function type_key(k)
-  local p = page()
-  local act = type(k) == 'table' and k[3] or 'char'
-  if act == 'char' then
-    if #p.text < MAX_TEXT then p.text = p.text .. key_label(k) end
-    if S.shift then S.shift = false end
-  elseif act == 'bs' then p.text = p.text:sub(1, -2)
-  elseif act == 'space' then if #p.text < MAX_TEXT then p.text = p.text .. ' ' end
-  elseif act == 'enter' then if #p.text < MAX_TEXT then p.text = p.text .. '\n' end
-  elseif act == 'shift' then S.shift = not S.shift
-  elseif act == 'sym' then S.sym = not S.sym
-  elseif act == 'done' then mode = 'view'; full_refresh() end
-end
-
-local function tap_keyboard(x, y)
-  local hit = nil
-  each_key(function(k, kx, ky, w, h)
-    if x >= kx and x < kx + w and y >= ky and y < ky + h then hit = k end
-  end)
-  if hit then type_key(hit) end
-end
-
------------------------------------------------------------------- drawing shapes by taps
-
-local function add_shape(x, y)
-  local p = page()
-  if not pending then pending = { x, y }; msg = 'tap the second point'; return end
-  local a = pending; pending = nil
-  if #p.shapes >= MAX_SHAPES then msg = 'shape limit reached'; return end
-  if tool == 'l' then
-    p.shapes[#p.shapes + 1] = { k = 'l', a[1], a[2], x, y }
-  elseif tool == 'r' then
-    local x0, y0 = math.min(a[1], x), math.min(a[2], y)
-    local w, h = math.abs(x - a[1]), math.abs(y - a[2])
-    if w >= 3 and h >= 3 then p.shapes[#p.shapes + 1] = { k = 'r', x0, y0, w, h } end
-  else
-    local r = math.floor(math.sqrt((x - a[1]) ^ 2 + (y - a[2]) ^ 2) + 0.5)
-    if r >= 2 then p.shapes[#p.shapes + 1] = { k = 'c', a[1], a[2], r } end
-  end
-  msg = nil
-end
-
------------------------------------------------------------------- lock screen (probe + action)
-
-local function describe(t)
+local function serialize(list)
   local out = {}
-  if type(t) ~= 'table' then return { '  ' .. type(t) } end
-  local ks = {}
-  pcall(function() for k in pairs(t) do ks[#ks + 1] = tostring(k) end end)
-  table.sort(ks)
-  for _, k in ipairs(ks) do
-    local v = t[k]
-    local tv = type(v)
-    out[#out + 1] = '  ' .. short(k, 22) .. '  ' .. ((tv == 'function') and 'fn' or (tv:sub(1, 4) .. ' ' .. short(tostring(v), 10)))
+  for _, it in ipairs(list) do
+    if it.k == 's' then
+      local parts = {}
+      for i = 1, #it.pts - 1, 2 do parts[#parts + 1] = it.pts[i] .. ',' .. it.pts[i + 1] end
+      out[#out + 1] = 'S ' .. table.concat(parts, ' ')
+    elseif it.k == 't' then
+      local clean = it.text:gsub('[\r\n]', ' ')
+      out[#out + 1] = 'T ' .. it.x .. ' ' .. it.y .. ' ' .. it.f .. ' ' .. clean
+    end
   end
-  if #out == 0 then out[1] = '  (empty)' end
-  return out
+  return table.concat(out, '\n')
 end
 
-local function build_info()
-  info_lines = { 'ctx.lock:' }
-  for _, l in ipairs(describe(ctx.lock)) do info_lines[#info_lines + 1] = l end
-  info_lines[#info_lines + 1] = 'ctx.system:'
-  for _, l in ipairs(describe(ctx.system)) do info_lines[#info_lines + 1] = l end
-  info_lines[#info_lines + 1] = 'ctx.display:'
-  for _, l in ipairs(describe(ctx.display)) do info_lines[#info_lines + 1] = l end
-  info_lines[#info_lines + 1] = 'layers: ' .. (ctx.layers and 'yes' or 'no') .. '   lock page: ' .. tostring(S.lock)
-end
-
--- Tries the host's lock-screen call(s); the result goes to the message line.
-local function set_lock()
-  S.lock = S.cur
-  local results = {}
-  local f = ctx.system and ctx.system.set_as_lockscreen_app
-  if type(f) == 'function' then
-    local ok, a, b = pcall(f)
-    if not ok and tostring(a):find('self') then ok, a, b = pcall(f, ctx.system) end
-    results[#results + 1] = 'set_as_lockscreen_app: ' .. (ok and (tostring(a) .. (b and (', ' .. tostring(b)) or '')) or ('error ' .. short(tostring(a), 40)))
-  else
-    results[#results + 1] = 'no set_as_lockscreen_app'
+local function parse(s)
+  local list = {}
+  for line in (s .. '\n'):gmatch('([^\n]*)\n') do
+    local kind = line:sub(1, 1)
+    if kind == 'S' then
+      local pts = {}
+      for x, y in line:gmatch('(%-?%d+),(%-?%d+)') do pts[#pts + 1] = tonumber(x); pts[#pts + 1] = tonumber(y) end
+      if #pts >= 2 then list[#list + 1] = { k = 's', pts = pts } end
+    elseif kind == 'T' then
+      local x, y, f, text = line:match('^T (%-?%d+) (%-?%d+) (%d) (.*)$')
+      if x then list[#list + 1] = { k = 't', x = tonumber(x), y = tonumber(y), f = tonumber(f), text = text } end
+    end
   end
-  -- a wallpaper setter, if this host exposes one: render the page into a layer and offer it
-  local setter = (ctx.lock and ctx.lock.set_wallpaper) or (ctx.system and ctx.system.set_wallpaper)
-  if type(setter) == 'function' and ctx.layers then
-    local ok, res = pcall(function()
-      local L = ctx.layers:create(480, 800)
-      L:draw_with(function(gg) P.draw_lock(page(), gg, nil) end)
-      local r1, r2 = setter(L)
-      if r1 == nil then r1, r2 = setter(ctx.lock or ctx.system, L) end
-      return tostring(r1) .. (r2 and (' ' .. tostring(r2)) or '')
-    end)
-    results[#results + 1] = 'set_wallpaper: ' .. (ok and res or ('error ' .. short(tostring(res), 40)))
+  return list
+end
+
+local function save_page()
+  local ok, err = pcall(function() return ctx.storage:write(page_name(page), serialize(items)) end)
+  if not ok then note('save ! ' .. short(err, 30)) end
+end
+
+local function load_page(p)
+  page = p
+  items = {}
+  local ok, data = pcall(function() return ctx.storage:read(page_name(p)) end)
+  if ok and type(data) == 'string' then items = parse(data) end
+  pcall(function() ctx.state = ctx.state or {}; ctx.state.page = p end)
+end
+
+------------------------------------------------------------------ drawing
+
+local function draw_stroke(gg, pts)
+  local n = #pts
+  if n == 2 then gg:circle(pts[1], pts[2], 1); return end
+  -- g:polyline takes a flat {x1, y1, x2, y2, ...} list; chunk long strokes to stay under its
+  -- point limit, repeating the joint so the pieces connect
+  local i = 1
+  while i < n - 1 do
+    local j = math.min(n, i + MAXPTS * 2 - 1)
+    local chunk = {}
+    for k = i, j do chunk[#chunk + 1] = pts[k] end
+    gg:polyline(chunk)
+    i = j - 1
   end
-  msg = table.concat(results, ' | ')
-  info_lines = nil
 end
 
------------------------------------------------------------------- drawing the screen
-
-local function draw_toolbar(labels)
-  local n = #labels
-  local w = (450 - (n - 1) * BTN_GAP) // n
-  for k, label in ipairs(labels) do
-    local x = BTN_X + (k - 1) * (w + BTN_GAP)
-    g:rect(x, BTN_Y, w, BTN_H)
-    ctext(x + w // 2, BTN_Y + BTN_H // 2, label)
+local function draw_items(gg, list, fonts)
+  for _, it in ipairs(list) do
+    if it.k == 's' then draw_stroke(gg, it.pts)
+    elseif it.k == 't' then
+      local f = fonts and fonts[FNAMES[it.f] or 'medium']
+      if f then gg:text(it.x, it.y, it.text, { font = f }) else gg:text(it.x, it.y, it.text) end
+    end
   end
-  return w
 end
 
-local function toolbar_hit(x, y, n)
-  if y < BTN_Y or y >= BTN_Y + BTN_H then return nil end
-  local w = (450 - (n - 1) * BTN_GAP) // n
-  local k = (x - BTN_X) // (w + BTN_GAP)
-  if k < 0 or k >= n or x - BTN_X - k * (w + BTN_GAP) >= w then return nil end
-  return k + 1
-end
+local BTNS = { 'Draw', 'Text', 'Undo', 'Page', 'Lock', 'Clear' }
+local BW = 78
 
-local function draw_header(right)
-  g:text(15, 14, 'Notes  ' .. S.cur .. '/' .. #S.pages .. (S.lock == S.cur and '  *lock*' or ''))
-  if right then rtext(465, 14, right) end
-  g:line(15, 56, 465, 56)
-end
-
-local function draw_view()
-  draw_header(nil)
-  g:rect(CV.x, CV.y, CV.w, CV.h)
-  P.draw_text(page(), g, 19, false, false)
-  P.draw_shapes(page(), g)
-  draw_toolbar({ 'Type', 'Draw', 'Pages', 'Lock', 'Info' })
-  if msg then ctext(240, 668, short(msg, 36)) end
-  g:line(15, 752, 465, 752)
-  ctext(240, 776, 'Type to write, Draw to place shapes')
-end
-
-local function draw_type()
-  draw_header((S.shift and 'SHIFT ' or '') .. (S.sym and 'SYM' or ''))
-  P.draw_text(page(), g, 16, true, true)
-  g:line(15, KEY_Y0 - 6, 465, KEY_Y0 - 6)
-  each_key(function(k, x, y, w, h)
-    g:rect(x, y, w, h)
-    ctext(x + w // 2, y + h // 2, key_label(k))
-  end)
-end
-
-local function draw_draw()
-  draw_header(tool == 'l' and 'line' or (tool == 'r' and 'box' or 'circle'))
-  g:rect(CV.x, CV.y, CV.w, CV.h)
-  P.draw_text(page(), g, 19, false, false)
-  P.draw_shapes(page(), g)
-  if pending then
-    g:line(pending[1] - 6, pending[2], pending[1] + 6, pending[2]); g:line(pending[1], pending[2] - 6, pending[1], pending[2] + 6)
+local function draw_impl(gg)
+  gg:clear(0)
+  local F = ctx.fonts
+  local small = F and F.small
+  for i, name in ipairs(BTNS) do
+    local x = 4 + (i - 1) * (BW + 1)
+    gg:rect(x, 6, BW, 36)
+    local label = name
+    if name == 'Text' then label = 'Text ' .. SIZE_TAG[fsize] end
+    gg:text(x + 6, 13, label, { font = small })
+    if (name == 'Draw' and tool == 'draw') or (name == 'Text' and tool == 'text') then gg:line(x + 4, 38, x + BW - 4, 38) end
   end
-  draw_toolbar({ 'Line', 'Box', 'Circle', 'Undo', 'Done' })
-  ctext(240, 668, msg or 'tap two points on the page')
+  gg:text(6, 46, 'page ' .. page .. '/' .. NPAGES .. '  ' .. #items .. ' items  ' .. status, { font = small })
+  gg:line(0, TOP + 8, W, TOP + 8)
+  draw_items(gg, items, F)
+  if cur then draw_stroke(gg, cur.pts) end
+  if ERR then gg:text(6, H - 30, short('ERR ' .. ERR, 46), { font = small }) end
 end
 
-local function pages_count() return math.max(1, math.ceil(#S.pages / LIST_ROWS)) end
-
-local function draw_pages()
-  g:text(15, 14, 'Pages'); rtext(465, 14, 'page ' .. page_list_page .. '/' .. pages_count())
-  g:line(15, 56, 465, 56)
-  local first = (page_list_page - 1) * LIST_ROWS
-  for i = 1, LIST_ROWS do
-    local p = S.pages[first + i]
-    if not p then break end
-    local y = LIST_Y0 + (i - 1) * LIST_ROW
-    local mark = (first + i == S.cur) and '> ' or '  '
-    g:text(25, y + 8, mark .. title_of(p, first + i))
-    if first + i == S.lock then rtext(455, y + 8, 'lock') end
-    g:line(15, y + LIST_ROW - 1, 465, y + LIST_ROW - 1)
-  end
-  draw_toolbar({ 'New', 'Delete', 'Back' })
-  if msg then ctext(240, 668, short(msg, 36)) end
+function on_draw(c, gg)
+  G = gg or G
+  if not G then return end
+  local ok, e = pcall(draw_impl, G)
+  if not ok then ERR = tostring(e); pcall(function() G:text(6, H - 60, short('draw ERR ' .. ERR, 46)) end) end
 end
 
-local function draw_info()
-  if not info_lines then build_info() end
-  g:text(15, 14, 'Lock-screen API on this host'); g:line(15, 56, 465, 56)
-  local y = 66
-  for i = 1, math.min(#info_lines, 19) do g:text(15, y, short(info_lines[i], 36)); y = y + 26 end
-  draw_toolbar({ 'Back' })
-  if msg then ctext(240, 668, short(msg, 36)) end
-end
+local function refresh() pcall(function() ctx.invalidate() end) end
 
-local function draw_impl()
-  g:clear(0)
-  if mode == 'type' then draw_type()
-  elseif mode == 'draw' then draw_draw()
-  elseif mode == 'pages' then draw_pages()
-  elseif mode == 'info' then draw_info()
-  else draw_view() end
-end
+------------------------------------------------------------------ actions
 
------------------------------------------------------------------- input
-
-local function tap(x, y)
-  if mode == 'view' then
-    local k = toolbar_hit(x, y, 5)
-    if k == 1 then mode = 'type'; msg = nil
-    elseif k == 2 then mode = 'draw'; pending = nil; msg = nil
-    elseif k == 3 then mode = 'pages'; page_list_page = (S.cur - 1) // LIST_ROWS + 1; msg = nil
-    elseif k == 4 then set_lock()
-    elseif k == 5 then mode = 'info'; info_lines = nil end
-  elseif mode == 'type' then
-    if y >= KEY_Y0 - 4 then tap_keyboard(x, y) end
-  elseif mode == 'draw' then
-    local k = toolbar_hit(x, y, 5)
-    if k == 1 then tool = 'l'; pending = nil
-    elseif k == 2 then tool = 'r'; pending = nil
-    elseif k == 3 then tool = 'c'; pending = nil
-    elseif k == 4 then
-      local p = page()
-      if pending then pending = nil elseif #p.shapes > 0 then table.remove(p.shapes) end
-      msg = nil
-    elseif k == 5 then mode = 'view'; pending = nil; msg = nil; full_refresh()
-    elseif in_canvas(x, y) then add_shape(x, y) end
-  elseif mode == 'pages' then
-    local k = toolbar_hit(x, y, 3)
-    if k == 1 then
-      if #S.pages >= MAX_PAGES then msg = 'page limit reached'
-      else S.pages[#S.pages + 1] = new_page(); S.cur = #S.pages; mode = 'type'; msg = nil end
-    elseif k == 2 then
-      if #S.pages > 1 then
-        table.remove(S.pages, S.cur)
-        if S.lock then if S.lock == S.cur then S.lock = nil elseif S.lock > S.cur then S.lock = S.lock - 1 end end
-        if S.cur > #S.pages then S.cur = #S.pages end
-        msg = 'page deleted'
-      else
-        S.pages[1] = new_page(); msg = 'page cleared'
+local function add_text_at(x, y)
+  local ok, err = pcall(function()
+    ctx.input:text({ title = 'Text for page ' .. page, value = '' }, function(c, s)
+      if type(s) == 'string' and #s > 0 then
+        items[#items + 1] = { k = 't', x = x, y = y, f = fsize, text = s }
+        save_page()
       end
-    elseif k == 3 then mode = 'view'; msg = nil; full_refresh()
-    elseif y >= LIST_Y0 and y < LIST_Y0 + LIST_ROWS * LIST_ROW then
-      local i = (page_list_page - 1) * LIST_ROWS + (y - LIST_Y0) // LIST_ROW + 1
-      if S.pages[i] then S.cur = i; mode = 'view'; msg = nil; full_refresh() end
+      refresh()
+    end)
+  end)
+  if not ok then note('text ! ' .. short(err, 30)) end
+end
+
+local function do_lock()
+  local L = ctx.lockscreen
+  if not L then note('no ctx.lockscreen'); return end
+  local function finish(with_clock)
+    pcall(function() ctx.storage:write('lock.txt', page .. '\n' .. (with_clock and 'clock' or 'noclock')) end)
+    pcall(function() ctx.state = ctx.state or {}; ctx.state.lock_page = page; ctx.state.lock_clock = with_clock end)
+    local ok, a = pcall(function() return L:set_default() end)
+    note(ok and ('lock page ' .. page .. (with_clock and ' +clock' or '')) or ('lock ! ' .. short(a, 24)))
+    refresh()
+  end
+  local ok = pcall(function()
+    ctx.dialog:confirm({ title = 'Lock screen', text = 'Show page ' .. page .. ' when the device locks. Draw a clock on it too?' },
+      function(c, yes) finish(yes and true or false) end)
+  end)
+  if not ok then finish(true) end
+end
+
+local function do_clear()
+  local ok = pcall(function()
+    ctx.dialog:confirm({ title = 'Clear page ' .. page, text = 'Erase everything on this page?' }, function(c, yes)
+      if yes then items = {}; save_page() end
+      refresh()
+    end)
+  end)
+  if not ok then items = {}; save_page() end
+end
+
+local function button(i)
+  local name = BTNS[i]
+  if name == 'Draw' then tool = 'draw'
+  elseif name == 'Text' then
+    if tool == 'text' then fsize = fsize % 3 + 1 else tool = 'text' end
+  elseif name == 'Undo' then
+    if #items > 0 then table.remove(items); save_page() end
+  elseif name == 'Page' then
+    load_page(page % NPAGES + 1)
+  elseif name == 'Lock' then do_lock()
+  elseif name == 'Clear' then do_clear() end
+end
+
+function on_input(c, ev)
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' or ev.type ~= 'pointer' then return end
+    local x, y, ph = ev.x or 0, ev.y or 0, ev.phase
+    if ph == 'down' then
+      if y > TOP + 8 and tool == 'draw' then cur = { k = 's', pts = { x, y } } end
+    elseif ph == 'move' then
+      if cur then
+        local n = #cur.pts
+        local dx, dy = x - cur.pts[n - 1], y - cur.pts[n]
+        if dx * dx + dy * dy >= MIN_STEP * MIN_STEP then cur.pts[n + 1] = x; cur.pts[n + 2] = y end
+      end
+    elseif ph == 'up' then
+      if cur then
+        local n = #cur.pts
+        if x ~= cur.pts[n - 1] or y ~= cur.pts[n] then cur.pts[n + 1] = x; cur.pts[n + 2] = y end
+        items[#items + 1] = cur; cur = nil
+        save_page()
+      elseif y < 46 then
+        local i = math.floor((x - 4) / (BW + 1)) + 1
+        if i >= 1 and i <= #BTNS then button(i) end
+      elseif y > TOP + 8 and tool == 'text' then
+        add_text_at(x, y)
+      end
     end
-  elseif mode == 'info' then
-    if toolbar_hit(x, y, 1) then mode = 'view'; msg = nil end
-  end
-end
-
-local function input_impl(ev)
-  if type(ev) ~= 'table' then return false end
-  if ev.type == 'key' then
-    if ev.state ~= nil and ev.state ~= 'down' then return true end
-    if mode == 'view' or mode == 'draw' then
-      if ev.key == 'up' and S.cur > 1 then S.cur = S.cur - 1; pending = nil; full_refresh()
-      elseif ev.key == 'down' and S.cur < #S.pages then S.cur = S.cur + 1; pending = nil; full_refresh() end
-    elseif mode == 'pages' then
-      if ev.key == 'up' then page_list_page = math.max(1, page_list_page - 1)
-      elseif ev.key == 'down' then page_list_page = math.min(pages_count(), page_list_page + 1) end
-    end
-    pcall(ctx.invalidate)
-    return true
-  end
-  if ev.type == 'touch' then
-    if ev.gesture == 'tap' then tap(ev.x or 0, ev.y or 0)
-    elseif mode == 'view' and ev.gesture == 'swipe_left' and S.cur < #S.pages then S.cur = S.cur + 1; full_refresh()
-    elseif mode == 'view' and ev.gesture == 'swipe_right' and S.cur > 1 then S.cur = S.cur - 1; full_refresh() end
-    pcall(ctx.invalidate)
-    return true
-  end
-  return false
-end
-
-local function load_impl(c)
-  c = c or ctx
-  if type(c.state) ~= 'table' then c.state = {} end
-  adopt_state(c.state)
-end
-
------------------------------------------------------------------- error reporting (the host only says "App error, closed")
-
-local function show_error(where, err) ERR = where .. ': ' .. tostring(err) end
-
-local function draw_error()
-  g:clear(0)
-  g:text(15, 20, 'Notes: Lua error'); g:line(15, 52, 465, 52)
-  local y, s = 70, ERR
-  while #s > 0 and y < 740 do g:text(15, y, s:sub(1, 36)); s = s:sub(37); y = y + 26 end
-  g:text(15, 770, 'Home pad leaves the app')
+  end)
+  if not ok then ERR = tostring(e) end
+  refresh()
+  return true
 end
 
 function on_load(c)
-  local ok, err = pcall(load_impl, c)
-  if not ok then show_error('on_load', err) end
+  local p = 1
+  pcall(function() p = tonumber(ctx.state and ctx.state.page) or 1 end)
+  if p < 1 or p > NPAGES then p = 1 end
+  load_page(p)
 end
 
-function on_draw()
-  if ERR then draw_error(); return end
-  local ok, err = pcall(draw_impl)
-  if not ok then show_error('on_draw', err); pcall(draw_error) end
-end
-
-function on_input(_, ev)
-  if ERR then return true end
-  local ok, res = pcall(input_impl, ev)
-  if not ok then show_error('on_input', res); pcall(ctx.invalidate); return true end
-  return res
-end
-
-function on_leave() end     -- the host saves ctx.state itself
-
-if rawget(_G, '__TEST') then
-  __TEST.api = { state = function() return S end, mode = function() return mode end, page = page,
-                 wrap = P.wrap, each_key = each_key, set_mode = function(m) mode = m end,
-                 err = function() return ERR end, msg = function() return msg end,
-                 info = function() if not info_lines then build_info() end return info_lines end }
-end
+function on_leave() save_page() end

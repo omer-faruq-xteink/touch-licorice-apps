@@ -177,9 +177,37 @@ def build_container(manifest_obj, pubkey, code_files, data_files):
     return out, dek
 
 
+API2_PERMISSIONS = ('net', 'reader')
+
+
+def validate_manifest(obj, where):
+    """API 0.8 manifests go through the vendored validator. A manifest with "api": "2.0" selects the
+    host's API 2.9 (docs/firmware-notes.md): its permission vocabulary is just `net` and `reader`
+    (the 0.8 names make the installer reject the package), and it may carry a `lockscreen` block
+    ({enabled, entry, interval_sec}) whose entry is drawn when the device locks."""
+    if str(obj.get('api', '')) != '2.0':
+        return xtapp.validate_manifest_licorice(obj, where)
+    for key in ('app_id', 'display_name'):
+        if not isinstance(obj.get(key), str) or not obj[key].strip():
+            raise SystemExit(f'{where}: "{key}" must be a non-empty string')
+    if not re.fullmatch(r'[A-Za-z]+', obj['app_id']):
+        raise SystemExit(f'{where}: app_id must be ASCII letters only, got {obj["app_id"]!r}')
+    perms = obj.get('permissions', [])
+    if not isinstance(perms, list) or any(p not in API2_PERMISSIONS for p in perms):
+        raise SystemExit(f'{where}: with "api": "2.0" permissions must be a list drawn from {API2_PERMISSIONS}, got {perms!r}')
+    entry = obj.get('entry', 'index.lua')
+    if not isinstance(entry, str) or not 1 <= len(entry.encode()) <= 31:
+        raise SystemExit(f'{where}: "entry" must be 1..31 bytes, got {entry!r}')
+    lock = obj.get('lockscreen')
+    if lock is not None:
+        if not isinstance(lock, dict) or not isinstance(lock.get('entry', 'lockscreen.lua'), str):
+            raise SystemExit(f'{where}: "lockscreen" must be an object like {{"enabled": true, "entry": "lockscreen.lua", "interval_sec": 60}}')
+    return obj
+
+
 def pack(app_dir, out=None, image=None):
     mpath = os.path.join(app_dir, 'manifest.json')
-    man = xtapp.validate_manifest_licorice(xtapp.load_manifest(mpath), mpath)
+    man = validate_manifest(xtapp.load_manifest(mpath), mpath)
     entry = man.get('entry', 'index.lua')
     code_files = []
     for root, dirs, fns in os.walk(app_dir):
@@ -191,6 +219,9 @@ def pack(app_dir, out=None, image=None):
     code_files.sort(key=lambda t: (t[0] != entry, t[0]))
     if not code_files or code_files[0][0] != entry:
         raise SystemExit(f'{entry} not found in {app_dir}')
+    lock = man.get('lockscreen')
+    if isinstance(lock, dict) and lock.get('entry', 'lockscreen.lua') not in [c[0] for c in code_files]:
+        raise SystemExit(f'lockscreen entry {lock.get("entry")!r} not found in {app_dir}')
     data_files = collect_data_files(app_dir)
     out = out or os.path.join(app_dir, man['app_id'] + '.xtapp')
     pkg, _ = build_container(man, device_pubkey(image), code_files, data_files)

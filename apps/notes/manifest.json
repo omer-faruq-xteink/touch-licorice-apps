@@ -1,14 +1,11 @@
 {
   "app_id": "notes",
   "display_name": "Notes",
-  "version": "1.0",
-  "author": "omer",
-  "description": "Pages of typed text and tap-placed lines, boxes and circles. An on-screen keyboard types; Draw places shapes with two taps; pages are kept between sessions; one page can be offered as the lock screen.",
+  "version": "0.2.0",
+  "author": "omer-faruq",
+  "description": "Draw and type on pages; show one as the lock screen",
   "entry": "index.lua",
-  "permissions": [
-    "sys.battery",
-    "sys.status"
-  ],
-  "requires": ["lockscreen_timer"],
+  "api": "2.0",
+  "permissions": [],
   "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 60 }
 }

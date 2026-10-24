@@ -76,8 +76,8 @@ end
 local function row_list(items, indent)
   indent = indent or '  '
   local row = ''
-  for _, n in ipairs(items) do
-    n = tostring(n)
+  for _, item in ipairs(items) do
+    local n = tostring(item)
     if #row + #n + 1 > WIDE - #indent then add(indent .. row); row = n
     else row = (row == '' and n or row .. ' ' .. n) end
   end

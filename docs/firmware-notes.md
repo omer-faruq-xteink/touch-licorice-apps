@@ -236,10 +236,53 @@ read off the device with the v3 probe (`tools/netprobe/index3.lua`):
   cover current days summary`. `ctx.system`: `can_open`, `open`.
 - `ctx.capabilities`: `dialog frontlight image_decode image_transform pattern reader ui` true,
   `ttf` false.
-- Not present even with `requires: ["lockscreen_timer"]`: `ctx.lockscreen` (the wallpaper setters);
-  the manifest `lockscreen` block is the next thing to try.
+- `ctx.lockscreen` appears only when the manifest has a `lockscreen` block (see below).
 - `require('@public/ui')` still reports module not found.
 
-Call signatures (request, storage.write, input.text, image, dialog) are not yet probed. The
-statements elsewhere in this document that apps have no network and no file write describe the
-API 0.8 path only.
+The statements elsewhere in this document that apps have no network and no file write describe
+the API 0.8 path only.
+
+### API 2.9 signatures, as probed on the device (2026-10-24)
+
+Rounds 4–7 of the probe (`tools/probe`) called everything live and painted the host's own error
+messages; the Notes and RSS apps are built on the results.
+
+**Calling convention.** Every function on a `ctx.*` table is a *method*: call it colon-style
+(`ctx.storage:write(...)`). A dot call shifts the arguments and fails with
+`bad argument #2 to '?' (... expected, got no value)`. A few read-only calls (`storage:list()`,
+`storage:usage()`, `clock:now()`, `frontlight:get()`) tolerate a dot.
+
+| call | notes |
+|---|---|
+| `ctx.net:keep_wifi(seconds)` | keeps Wi-Fi up; number, not boolean |
+| `ctx.net:request({url, method, body, headers, timeout_ms}, fn)` | returns a job userdata with `cancel`; `fn(ctx, resp)` with `resp.body`, `resp.headers`, status; HTTP, HTTPS and POST verified; missing url → "bad extra argument (string expected)"; bad url → `nil, "invalid_argument"` |
+| `ctx.storage:write(name, data)` / `read` / `exists` / `size` / `remove(name)` / `list()` / `usage()` | plain file names only (no `/`, no spaces; an extension is optional), binary data fine, 40 KB fine; quota `{max_bytes = 134217728, max_files = 512}`; missing file → `nil, "not_found"`. `ctx.files` offers the same verbs (`files.path` is a string) |
+| `ctx.input:text({title, value}, fn)` | full-screen editor with the firmware keyboard (64-character counter); `fn(ctx, text)` on OK |
+| `ctx.input:edit({text, on_change, on_end})` | docked keyboard (436 px) while the app keeps drawing above; returns `{text, set_text, close}`; `on_change(ctx, text)` per key, `on_end(ctx, text, "enter")` on Done |
+| `ctx.dialog:confirm({title, text}, fn)` / `ctx.dialog:toast(s)` | system dialog; `fn(ctx, true/false)` |
+| `ctx.fonts.small / medium / large` | userdata with `measure(s)`, `ascent`, `line_height` (20 / 24 / 30), `name`; `fonts:size(n)` snaps to these three (`ttf` is false); use as `g:text(x, y, s, {font = f})` or `g:text_box(..., {font = f})` |
+| `g:polyline({x1, y1, x2, y2, …})` | one command per stroke chunk; there is a point limit, chunk at ~60 points |
+| `g:image(img, x, y, {w =, h =})` | the only working argument order (`g:image(x, y, img)` draws nothing) |
+| `ctx.qr:encode(text)` | QR image for `g:image` |
+| `ctx.image:decode(bytes, opts_table)` | not yet exercised with real image data |
+| `ctx.layers:create(w, h)` | layer userdata `{width, height, draw(fn), release}`; `layer:draw(fn)` draws into it (0.8's `draw_with`) |
+| `ctx.json:decode(s)` / `encode(v)`, `ctx.base64`, `ctx.hex`, `ctx.hash:sha1/sha256`, `ctx.url:encode/decode`, `ctx.random:uuid()` | as named |
+| `ctx.clock:now()` | `{hour, minute, second, epoch_sec, local_sec, date_order, hour12, …}`; `clock:millis()` |
+| `ctx.device:battery()` | `{percent, charging, voltage_mv, temperature_c}`; `device.firmware`, `device.model`, `device.id_for_app` |
+| `ctx.reader:summary()` / `books()` / `all_books()` / `current()` | reading statistics (streak, books, seconds) and the current book `{title, author, percent, read_sec, format, id}`; needs the `reader` permission |
+| `ctx.save_state()`, `ctx.defer_full_refresh(n)`, `ctx.perf:info()` | as named; `ctx.budget = {extend}` |
+
+**Pointer events**: `phase = down / move / up / hold`, `gesture = tap / long / swipe_*` on the
+`up` event. Movement really streams (≈40 moves for two strokes), so freehand drawing works.
+
+**Lock screen.** With a manifest `lockscreen` block (`{"enabled": true, "entry": "lockscreen.lua",
+"interval_sec": 60}`) the host exposes `ctx.lockscreen` = `set_default clear_default is_default
+set_wallpaper clear_wallpaper is_wallpaper`. `set_default()` pops the system dialog "Set as lock
+screen"; after OK the entry is drawn full-screen whenever the device locks and redrawn every
+`interval_sec` (verified: a clock on it keeps time). It needs Settings → Display → Off wallpaper on
+**Default**. `set_wallpaper(layer)` returns true and `is_wallpaper()` turns true, but the
+"Custom" off-wallpaper mode then shows only "Powered off" on this build, so that route is not
+usable yet.
+
+**Gotchas.** Lua 5.5 for-loop variables are const (`tools/lualint55.py`). `"•"` is three UTF-8
+bytes. Articles of 20 000 characters lay out fine within the 1 MB heap.

@@ -1,0 +1,10 @@
+{
+  "app_id": "rss",
+  "display_name": "RSS",
+  "version": "0.1.0",
+  "author": "omer-faruq",
+  "description": "Read your CommaFeed articles through a commafeed-opds Worker",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}

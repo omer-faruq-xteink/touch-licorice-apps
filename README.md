@@ -9,11 +9,17 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
-| **Notes** | typed notes (on-screen keyboard) plus tap-placed lines, boxes and circles; a page can be your lock screen |
-| **Net Probe** | a developer tool that paints the Lua host's API on screen |
+| **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
+| **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
+| **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
+
+Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
+size, no network). Notes and RSS declare `"api": "2.0"` and get **API 2.9**: finger movement,
+the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
+install the same way.
 
 ## Install
 
@@ -66,10 +72,19 @@ Microcosmos, Minicosmos. Any XSB / `.sok` pack you have can be added with one co
 
 ### Notes
 
-**Type** opens an on-screen keyboard. **Draw** places a line, box or circle with two taps (the host
-reports taps, not finger movement, so there is no freehand drawing). **Pages** manages up to twelve
-pages. **Lock** makes the current page the device's standby screen, shown with the clock.
+**Draw** with a finger; **Text** places typed text where you tap, using the firmware's own keyboard
+(tap **Text** again for small / medium / large). **Undo**, **Page** (eight pages), **Clear**.
+**Lock** makes the current page the device's lock screen — the firmware asks once — drawn with the
+time and battery level and refreshed every minute. Pages live in the app's storage.
 [More](apps/notes/README.md)
+
+### RSS
+
+Your [CommaFeed](https://www.commafeed.com) account on the reader, as text: **Unread**, **Starred**,
+**All**, by **Feed**. Articles open inside the app, laid out with the system fonts (headings, quotes,
+lists), optionally as full text extracted by the Worker; opening one marks it read. Lists and read
+articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
+Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
 
 ## Build from source
 
@@ -105,18 +120,30 @@ python -I apps/game2048/test_2048.py
 python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
 python -I apps/notes/test_notes.py
+python -I apps/rss/test_rss.py
 ```
+
+`build_all.py` also runs `tools/lualint55.py` over every Lua file: the device's Lua 5.5 rejects an
+assignment to a `for` loop variable at compile time (the package then only says "App error,
+closed"), which the Lua 5.4 tests cannot catch.
 
 ## Writing your own app
 
 An app is a folder with `manifest.json` and `index.lua`, optionally a `data/` folder. The host
 calls `on_load(ctx)`, `on_draw(ctx, g)`, `on_input(ctx, event)`, `on_leave()`; `g` draws (rect, line,
-circle, polygon, text, text_box …), `ctx.state` is a persisted table, `ctx.data` reads the package's
-data files. What the host exposes, what it does not (no network, no filesystem, no freehand touch),
-the frame budget of 1024 drawing commands and the 1 MB Lua heap are written up in
-[docs/firmware-notes.md](docs/firmware-notes.md); `apps/game2048/index.lua` is the smallest
-complete example. Lua is 5.5: do not assign to `for` loop variables, and wrap your callbacks in
-`pcall` the way the apps here do, so an error is shown on screen instead of "App error, closed".
+circle, polygon, polyline, text, text_box, image …), `ctx.state` is a persisted table, `ctx.data`
+reads the package's data files. Lua is 5.5: do not assign to `for` loop variables, and wrap your
+callbacks in `pcall` the way the apps here do, so an error is shown on screen instead of
+"App error, closed". `apps/game2048/index.lua` is the smallest complete example (API 0.8).
+
+For **API 2.9** put `"api": "2.0"` in the manifest with `permissions` drawn from `net` and
+`reader` (or none). Then `g` is only the argument of `on_draw`, every `ctx.*` function is a method
+(`ctx.storage:write(name, data)`, `ctx.net:request({url=…}, function(ctx, resp) … end)`,
+`ctx.input:text({title=…}, function(ctx, s) … end)`, `ctx.json:decode(s)`), pointer events carry
+`phase = down / move / up`, `ctx.fonts.small / medium / large` go into `g:text(x, y, s, {font = f})`,
+and a manifest `lockscreen` block plus `ctx.lockscreen:set_default()` make your `lockscreen.lua`
+the device's lock screen. `apps/notes` and `apps/rss` are the examples; the probed signatures,
+limits and gotchas are in [docs/firmware-notes.md](docs/firmware-notes.md).
 
 ## Caveats
 
@@ -126,6 +153,8 @@ complete example. Lua is 5.5: do not assign to `for` loop variables, and wrap yo
 - **Firmware-bound.** A package installs on any X4 Pro on the same Licorice generation. If Xteink
   rotates the key in an update, existing packages stop installing until rebuilt.
 - **e-ink.** The apps draw lightly and trigger a full refresh every few moves to limit ghosting.
+- **Network.** Only RSS uses it, only towards the Worker host you enter; nothing else leaves the
+  device. Notes needs no permission at all.
 - Other Xteink models (X4, X4 Classic, X3) are untested.
 
 ## Releases

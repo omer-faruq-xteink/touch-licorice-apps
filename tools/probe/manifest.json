@@ -1,0 +1,11 @@
+{
+  "app_id": "probe",
+  "display_name": "API Probe",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Developer tool: exercises the API 2.9 host (net, keyboard, lock screen, images, reader) and paints the results",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net", "reader"],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 60 }
+}
