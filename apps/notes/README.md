@@ -11,10 +11,12 @@ The toolbar: **Draw** · **Text S/M/L** · **Undo** · **Page** · **Lock** · *
 - **Text**: tap the page where the text should start; the firmware's own keyboard opens; **OK**
   places it. Tapping **Text** again cycles the size (small / medium / large).
 - **Undo** removes the last stroke or text. **Page** cycles through the eight pages. **Clear**
-  asks, then empties the page.
-- **Lock**: asks whether to draw a clock too, then the firmware asks **Set as lock screen**.
-  From then on the chosen page is drawn whenever the device locks or sleeps, refreshed once a
-  minute (`interval_sec` in the manifest). Settings → Display → Off wallpaper must stay on
+  asks (**Erase** / **Cancel**), then empties the page.
+- **Lock**: the app asks **With clock**, **No clock** or **Cancel**; the first time the firmware
+  then asks **Set as lock screen**. From then on the chosen page is drawn whenever the device
+  locks or sleeps. With the clock (and the battery level) it is redrawn once a minute
+  (`interval_sec` in the manifest); without it the app asks the host to stop the minute redraw.
+  Lock again on another page, or to switch the clock on or off, at any time. Settings → Display → Off wallpaper must stay on
   **Default** (the lock-screen app route; the "Custom" image slot is a different mechanism).
 
 Pages are files in the app's storage (`page1.txt` … `page8.txt`; strokes as `S x,y x,y …`, text

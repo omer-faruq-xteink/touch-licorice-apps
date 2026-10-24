@@ -35,8 +35,10 @@ ctx = {
   storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
   fonts = { small = M({ measure = function(s) return #s * 8 end }), medium = M({ measure = function(s) return #s * 10 end }), large = M({ measure = function(s) return #s * 14 end }) },
   input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
-  dialog = M({ confirm = function(opts, fn) pending[#pending + 1] = fn end }),
-  lockscreen = M({ set_default = function() set_default_calls = (set_default_calls or 0) + 1 end }),
+  dialog = M({ confirm = function(opts, fn) error('the firmware dialog is not used any more') end }),
+  lockscreen = M({ set_default = function() set_default_calls = (set_default_calls or 0) + 1; is_def = true end,
+                   is_default = function() return is_def == true end,
+                   set_interval = function(n) intervals = (intervals or '') .. n .. ' ' end }),
   clock = M({ now = function() return { hour = 9, minute = 5 } end }),
   device = M({ battery = function() return { percent = 77 } end }),
 }
@@ -73,22 +75,56 @@ for _ in range(7):
 assert g.ctx.state.page == 1
 g.on_load(g.ctx)
 assert g.store['page1.txt'].startswith('S ')
-# lock: confirm dialog -> lock.txt + set_default
-tap(4 + 4 * 79 + 5, 20)
-g.pending[2](g.ctx, True)
-assert g.store['lock.txt'] == '1\nclock' and g.set_default_calls == 1
-# clear: confirm -> empty page
-tap(4 + 5 * 79 + 5, 20)
-g.pending[3](g.ctx, True)
+def labels():
+    draw()
+    return {str(r): True for r in g.drawn.values()}
+LOCK, CLEAR = (4 + 4 * 79 + 5, 20), (4 + 5 * 79 + 5, 20)
+# in-app buttons: Lock has three lines of text, Clear one; buttons are 52 px with 10 px gaps
+lock_btn = lambda i: (240, 180 + 60 + 3 * 26 + 10 + i * 62 + 20)
+clear_btn = lambda i: (240, 180 + 60 + 1 * 26 + 10 + i * 62 + 20)
+# lock: the app asks; Cancel changes nothing
+tap(*LOCK)
+assert 'With clock' in labels() and 'No clock' in labels() and 'Cancel' in labels()
+tap(*lock_btn(2))
+assert 'lock.txt' not in g.store and (g.set_default_calls or 0) == 0 and 'With clock' not in labels()
+# With clock -> lock.txt + the firmware's own "Set as lock screen" (set_default)
+tap(*LOCK); tap(*lock_btn(0))
+assert g.store['lock.txt'] == '1\nclock' and g.set_default_calls == 1, (g.store['lock.txt'], g.set_default_calls)
+# already the lock screen: No clock only updates lock.txt, no second firmware dialog
+tap(*LOCK); tap(*lock_btn(1))
+assert g.store['lock.txt'] == '1\nnoclock' and g.set_default_calls == 1
+# Back key and a tap outside close the question too
+tap(*LOCK)
+on_key = L.eval("function(k) on_input(ctx, {type='key', key=k}) end")
+on_key('back')
+assert 'With clock' not in labels()
+tap(*LOCK); tap(240, 760)
+assert 'With clock' not in labels()
+# clear: Cancel keeps the page, Erase empties it
+tap(*CLEAR)
+assert 'Erase' in labels()
+tap(*clear_btn(1))
+assert g.store['page1.txt'].startswith('S ')
+tap(*CLEAR); tap(*clear_btn(0))
 assert g.store['page1.txt'] == ''
 draw()
 assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values())
 
 # lock screen entry draws the chosen page with a clock
 g.store['page1.txt'] = 'S 10,100 50,140 90,100\nT 20 200 3 good morning'
+g.store['lock.txt'] = '1\nclock'
 L.execute("on_draw, on_load = nil, nil")
 L.execute(f"dofile([[{os.path.join(HERE, 'lockscreen.lua').replace(os.sep, '/')}]])")
+g.on_load()
+assert g.intervals is None                       # with the clock the minute redraw stays
 draw()
 texts = list(g.drawn.values())
 assert 'good morning' in texts and '09:05' in texts and '77%' in texts, texts
+# without the clock: no time, no battery, and the periodic redraw is switched off where possible
+g.store['lock.txt'] = '1\nnoclock'
+g.on_load()
+assert g.intervals is not None and g.intervals.startswith('0'), g.intervals
+draw()
+texts = list(g.drawn.values())
+assert 'good morning' in texts and '09:05' not in texts and '77%' not in texts, texts
 print('notes29 tests passed')

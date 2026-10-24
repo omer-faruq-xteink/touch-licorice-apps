@@ -75,8 +75,8 @@ Microcosmos, Minicosmos. Any XSB / `.sok` pack you have can be added with one co
 
 **Draw** with a finger; **Text** places typed text where you tap, using the firmware's own keyboard
 (tap **Text** again for small / medium / large). **Undo**, **Page** (eight pages), **Clear**.
-**Lock** makes the current page the device's lock screen — the firmware asks once — drawn with the
-time and battery level and refreshed every minute. Pages live in the app's storage.
+**Lock** makes the current page the device's lock screen — the firmware asks once — with or
+without the time and battery level (with them it is redrawn every minute). Pages live in the app's storage.
 [More](apps/notes/README.md)
 
 ### RSS

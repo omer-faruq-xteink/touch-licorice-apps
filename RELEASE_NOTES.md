@@ -21,6 +21,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   text for the page on screen only, straight from the free images.weserv.nl resizer. If it cannot
   deliver a picture, the picture shows as `[image]`; the text is never held up. Icons and emoji
   are left out. Needs the updated Worker.
+- **Notes: lock screen with or without the clock.** **Lock** now asks in the app: *With clock*,
+  *No clock* or *Cancel* (the firmware dialog it used did not appear on every device). Without
+  the clock the lock screen shows only your page. **Clear** asks the same way before erasing.
 
 ## Update
 
@@ -31,8 +34,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `rss.xtapp` | **changed** |
-| `notes.xtapp`, `dict.xtapp` | unchanged since v0.3.1 |
+| `rss.xtapp`, `notes.xtapp` | **changed** |
+| `dict.xtapp` | unchanged since v0.3.1 |
 | `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | unchanged |
 | `probe.xtapp`, `netprobe.xtapp` | developer tools, unchanged |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

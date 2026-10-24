@@ -100,6 +100,36 @@ end
 local BTNS = { 'Draw', 'Text', 'Undo', 'Page', 'Lock', 'Clear' }
 local BW = 78
 
+-- An in-app question (the firmware's dialog:confirm is not reliable on this host): a box with a
+-- title, a few lines and buttons; { title, lines = {..}, buttons = { {label, fn}, .. } }.
+local modal = nil
+local MODAL_X, MODAL_Y, MODAL_W = 30, 180, W - 60
+local MODAL_BTN_H = 52
+
+local function modal_buttons()
+  local m = modal
+  local y = MODAL_Y + 60 + #m.lines * 26 + 10
+  local out = {}
+  for i, b in ipairs(m.buttons) do
+    out[i] = { x = MODAL_X + 20, y = y + (i - 1) * (MODAL_BTN_H + 10), w = MODAL_W - 40, h = MODAL_BTN_H, label = b[1], fn = b[2] }
+  end
+  return out, y + #m.buttons * (MODAL_BTN_H + 10) + 10 - MODAL_Y
+end
+
+local function draw_modal(gg, F)
+  local btns, h = modal_buttons()
+  gg:rect(MODAL_X, MODAL_Y, MODAL_W, h)
+  gg:rect(MODAL_X + 3, MODAL_Y + 3, MODAL_W - 6, h - 6)
+  gg:text(MODAL_X + 20, MODAL_Y + 18, modal.title, { font = F and F.large })
+  for i, line in ipairs(modal.lines) do
+    gg:text(MODAL_X + 20, MODAL_Y + 60 + (i - 1) * 26, line, { font = F and F.small })
+  end
+  for _, b in ipairs(btns) do
+    gg:rect(b.x, b.y, b.w, b.h)
+    gg:text(b.x + 16, b.y + 14, b.label, { font = F and F.medium })
+  end
+end
+
 local function draw_impl(gg)
   gg:clear(0)
   local F = ctx.fonts
@@ -114,6 +144,7 @@ local function draw_impl(gg)
   end
   gg:text(6, 46, 'page ' .. page .. '/' .. NPAGES .. '  ' .. #items .. ' items  ' .. status, { font = small })
   gg:line(0, TOP + 8, W, TOP + 8)
+  if modal then draw_modal(gg, F); return end
   draw_items(gg, items, F)
   if cur then draw_stroke(gg, cur.pts) end
   if ERR then gg:text(6, H - 30, short('ERR ' .. ERR, 46), { font = small }) end
@@ -147,27 +178,30 @@ local function do_lock()
   local L = ctx.lockscreen
   if not L then note('no ctx.lockscreen'); return end
   local function finish(with_clock)
+    modal = nil
     pcall(function() ctx.storage:write('lock.txt', page .. '\n' .. (with_clock and 'clock' or 'noclock')) end)
     pcall(function() ctx.state = ctx.state or {}; ctx.state.lock_page = page; ctx.state.lock_clock = with_clock end)
-    local ok, a = pcall(function() return L:set_default() end)
-    note(ok and ('lock page ' .. page .. (with_clock and ' +clock' or '')) or ('lock ! ' .. short(a, 24)))
+    -- the firmware asks "Set as lock screen" itself; once Notes is the lock screen, changing the
+    -- page or the clock only needs lock.txt, which the lock entry reads every time
+    local okd, is_default = pcall(function() return L:is_default() end)
+    local ok, a = true, nil
+    if not (okd and is_default == true) then ok, a = pcall(function() return L:set_default() end) end
+    note(ok and ('lock page ' .. page .. (with_clock and ' +clock' or ' no clock')) or ('lock ! ' .. short(a, 24)))
     refresh()
   end
-  local ok = pcall(function()
-    ctx.dialog:confirm({ title = 'Lock screen', text = 'Show page ' .. page .. ' when the device locks. Draw a clock on it too?' },
-      function(c, yes) finish(yes and true or false) end)
-  end)
-  if not ok then finish(true) end
+  modal = {
+    title = 'Lock screen',
+    lines = { 'Show page ' .. page .. ' when the device locks.', 'With the clock, the lock screen is', 'redrawn every minute.' },
+    buttons = { { 'With clock', function() finish(true) end }, { 'No clock', function() finish(false) end }, { 'Cancel', function() modal = nil end } },
+  }
 end
 
 local function do_clear()
-  local ok = pcall(function()
-    ctx.dialog:confirm({ title = 'Clear page ' .. page, text = 'Erase everything on this page?' }, function(c, yes)
-      if yes then items = {}; save_page() end
-      refresh()
-    end)
-  end)
-  if not ok then items = {}; save_page() end
+  modal = {
+    title = 'Clear page ' .. page,
+    lines = { 'Erase everything on this page?' },
+    buttons = { { 'Erase', function() modal = nil; items = {}; save_page() end }, { 'Cancel', function() modal = nil end } },
+  }
 end
 
 local function button(i)
@@ -186,8 +220,23 @@ end
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
   local ok, e = pcall(function()
-    if type(ev) ~= 'table' or ev.type ~= 'pointer' then return end
+    if type(ev) ~= 'table' then return end
+    if ev.type == 'key' then
+      if modal and ev.key == 'back' then modal = nil end
+      return
+    end
+    if ev.type ~= 'pointer' then return end
     local x, y, ph = ev.x or 0, ev.y or 0, ev.phase
+    if modal then
+      if ph == 'up' then
+        local btns, h = modal_buttons()
+        for _, b in ipairs(btns) do
+          if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then b.fn(); return end
+        end
+        if y < MODAL_Y or y > MODAL_Y + h then modal = nil end   -- a tap outside the box cancels
+      end
+      return
+    end
     if ph == 'down' then
       if y > TOP + 8 and tool == 'draw' then cur = { k = 's', pts = { x, y } } end
     elseif ph == 'move' then
