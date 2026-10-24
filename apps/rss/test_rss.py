@@ -85,7 +85,7 @@ g.pending = L.table()
 tap(100, 56 + 20 + 96 + 24 + 10)     # token field
 g.pending[1](g.ctx, 'secret')
 g.pending = L.table()
-assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0', g.store['config.txt']
+assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default', g.store['config.txt']
 tap(100, 20)                         # Back
 assert 'RSS' in texts()
 
@@ -264,6 +264,43 @@ assert not any('ERR' in x for x in t), t
 g.pending = L.table()
 tap(50, 20)
 
+# Text size: Settings cycles default -> large -> small; articles and previews follow it
+def fonts_of(word):
+    return {str(r.f) for r in draw().values() if word in str(r.s)}
+key('back')                                            # list -> menu
+tap(100, 100 + 4 * 70 + 10)                            # Settings
+SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
+assert any(x.startswith('default') for x in texts()), texts()
+tap(100, SIZE_ROW)
+assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large'), g.store['config.txt']
+tap(100, 20)                                           # back to the menu
+tap(100, 100 + 10); g.flush()                          # Unread
+tap(100, 56 + 26 + 3 * 58 + 5)                         # Article 3 again (cached): laid out with large text
+assert fonts_of('First paragraph') == {'large'} and fonts_of('Article 3') == {'large'}, (fonts_of('First paragraph'), fonts_of('Article 3'))
+assert fonts_of('2026-10-24') == {'medium'}            # feed / date line one step up
+tap(50, 20)                                            # back to the list
+long_ev(100, row_y(2), 'up', 'long')                   # the preview follows the setting too
+assert fonts_of('Summary sentence.') == {'large'}, fonts_of('Summary sentence.')
+tap_label('Close')
+key('back')
+tap(100, 100 + 4 * 70 + 10)
+tap(100, SIZE_ROW)                                     # large -> small
+assert g.store['config.txt'].endswith('size=small')
+tap(100, 20)
+tap(100, 100 + 10); g.flush()
+tap(100, 56 + 26 + 3 * 58 + 5)
+assert fonts_of('First paragraph') == {'small'} and fonts_of('Article 3') == {'medium'}, (fonts_of('First paragraph'), fonts_of('Article 3'))
+tap(50, 20)
+key('back')
+tap(100, 100 + 4 * 70 + 10)
+tap(100, SIZE_ROW)                                     # small -> default again
+assert g.store['config.txt'].endswith('size=default')
+tap(100, 20)
+tap(100, 100 + 10); g.flush()
+tap(100, 56 + 26 + 3 * 58 + 5)
+assert fonts_of('First paragraph') == {'medium'} and fonts_of('Article 3') == {'large'}
+tap(50, 20)
+
 # offline: network fails, cached list used
 responses.clear()
 tap(4 + 3 * 118 + 10, 20); g.flush()  # Reload -> 404 -> cache
@@ -289,7 +326,7 @@ tap(100, 56 + 20 + 2 * 96 + 24 + 10)  # auth field
 g.pending[1](g.ctx, 'me:pw')
 g.pending = L.table()
 tap(100, 56 + 20 + 3 * 96 + 24 + 10)  # full toggle
-assert g.store['config.txt'].endswith('auth=me:pw\nfull=1')
+assert g.store['config.txt'].endswith('auth=me:pw\nfull=1\nsize=default'), g.store['config.txt']
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 assert requests[-1].endswith('&full=1') and g.last_headers['Authorization'] == 'Basic B64(me:pw)', (requests[-1], dict(g.last_headers))

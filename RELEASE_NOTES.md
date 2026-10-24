@@ -13,6 +13,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   per account; lists, articles, the offline cache and mark-as-read stay in their account. With one
   account, or an older Worker, nothing changes. Needs the updated Worker (`git pull`,
   `npx wrangler deploy`); the OPDS catalog shows the same account folders.
+- **RSS: text size.** Settings → **Text size**: *small*, *default* (as before) or *large*, for
+  articles and previews; headings and the title follow it. The firmware has three fonts, so these
+  are the steps there are; with *large* the title gets a rule under it.
 
 ## Update
 

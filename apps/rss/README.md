@@ -13,7 +13,8 @@ optional full-text extraction.
    user and password (`OPDS_USER` / `OPDS_PASS`).
 2. Install `rss.xtapp`, open it; it starts on **Settings**. Fill **Host**, then **Token** (the part
    after `/k/`) or **user:password**, and switch **Full text** on if the Worker has a sanitizer
-   token. Each field opens the firmware's keyboard.
+   token. Each field opens the firmware's keyboard. **Text size** (small / default / large) sets
+   the type of articles and previews; tap it to change.
 3. **Back** → **Unread**.
 
 The device must be on Wi-Fi; the app asks the host to keep it on while in use.

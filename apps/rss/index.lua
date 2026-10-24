@@ -14,7 +14,16 @@ local G, ERR = nil, nil
 local screen = 'menu'
 local status = ''
 local loading = nil           -- text shown while a request is in flight
-local cfg = { host = '', token = '', auth = '', full = false }
+local cfg = { host = '', token = '', auth = '', full = false, size = 'default' }
+-- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
+-- sizes shift which of them the body, the headings and the feed / date line use.
+local SIZES = {
+  small = { title = 'medium', head = 'medium', body = 'small', meta = 'small' },
+  default = { title = 'large', head = 'large', body = 'medium', meta = 'small' },
+  large = { title = 'large', head = 'large', body = 'large', meta = 'medium', rule = true },
+}
+local SIZE_ORDER = { 'default', 'large', 'small' }
+local function st() return SIZES[cfg.size] or SIZES.default end
 -- CommaFeed accounts the Worker serves ({ {id, label} ... }, from /api). With more than one the
 -- menu starts with a folder per account and every request carries ?acct=<id>.
 local accounts = {}
@@ -70,14 +79,16 @@ local function load_cfg()
   local ok, s = pcall(function() return ctx.storage:read('config.txt') end)
   if ok and type(s) == 'string' then
     for k, v in s:gmatch('(%w+)=([^\n]*)') do
-      if k == 'full' then cfg.full = (v == '1') else cfg[k] = v end
+      if k == 'full' then cfg.full = (v == '1')
+      elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
+      else cfg[k] = v end
     end
   end
 end
 
 local function save_cfg()
   pcall(function()
-    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0'))
+    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size)
   end)
 end
 
@@ -176,19 +187,22 @@ local function layout_article(data)
   measure_cache = {}
   local out = {}
   local function gap(h) out[#out + 1] = { s = '', f = 'small', h = h, x = 0 } end
-  wrap_para(out, data.title or '', 'large', W - 24, 0)
+  local S = st()
+  wrap_para(out, data.title or '', S.title, W - 24, 0)
   local meta = ((data.feed or '') ~= '' and (data.feed .. '  ') or '') .. (data.date or '') .. ((data.source or 'feed') ~= 'feed' and ('  [' .. data.source .. ']') or '')
-  if meta ~= '' then wrap_para(out, meta, 'small', W - 24, 0) end
+  if meta ~= '' then wrap_para(out, meta, S.meta, W - 24, 0) end
+  -- when the title is no bigger than the text, a rule under it keeps it apart
+  if S.rule then gap(8); out[#out + 1] = { s = '', f = 'small', h = 6, x = 0, rule = true } end
   gap(14)
   local text = data.text or ''
   for raw_para in (text .. '\n\n'):gmatch('(.-)\n\n') do
     local para = raw_para:gsub('^\n+', ''):gsub('\n+$', '')  -- Lua 5.5: loop variables are const
     if para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
-        if line:sub(1, 2) == '# ' then wrap_para(out, line:sub(3), 'large', W - 24, 0)
-        elseif line:sub(1, 2) == '> ' then wrap_para(out, line:sub(3), 'medium', W - 48, 24)
-        elseif line:sub(1, 4) == '• ' then wrap_para(out, line, 'medium', W - 40, 16)  -- the bullet is 3 UTF-8 bytes
-        elseif line ~= '' then wrap_para(out, line, 'medium', W - 24, 0) end
+        if line:sub(1, 2) == '# ' then wrap_para(out, line:sub(3), S.head, W - 24, 0)
+        elseif line:sub(1, 2) == '> ' then wrap_para(out, line:sub(3), S.body, W - 48, 24)
+        elseif line:sub(1, 4) == '• ' then wrap_para(out, line, S.body, W - 40, 16)  -- the bullet is 3 UTF-8 bytes
+        elseif line ~= '' then wrap_para(out, line, S.body, W - 24, 0) end
       end
       gap(10)
     end
@@ -349,7 +363,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' } }
+local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' } }
 
 local function bar(gg, labels)
   local F = ctx.fonts
@@ -467,7 +481,8 @@ local function draw_article(gg)
   for i = first, last do
     local ln = art.lines[i]
     if not ln then break end
-    if ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
+    if ln.rule then gg:line(12, y + 2, W - 12, y + 2)
+    elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
   if #art.lines == 0 and not loading then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
@@ -482,10 +497,11 @@ local function draw_settings(gg)
     gg:text(16, y, s[2], { font = F and F.small })
     gg:rect(16, y + 24, W - 32, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
+    if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
     gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
   end
-  gg:text(16, TOP + 20 + 4 * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small })
+  gg:text(16, TOP + 20 + #SETTINGS * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small })
   draw_status(gg)
 end
 
@@ -512,6 +528,13 @@ local function edit_setting(i)
   local s = SETTINGS[i]
   if not s then return end
   if s[1] == 'full' then cfg.full = not cfg.full; save_cfg(); return end
+  if s[1] == 'size' then
+    local nxt = 1
+    for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
+    cfg.size = SIZE_ORDER[nxt]
+    save_cfg()
+    return
+  end
   local ok, err = pcall(function()
     ctx.input:text({ title = s[2], value = cfg[s[1]] }, function(c, v)
       if type(v) == 'string' then cfg[s[1]] = v:gsub('^%s+', ''):gsub('%s+$', ''); save_cfg() end
@@ -605,12 +628,13 @@ local function open_preview(item)
   local x, y, w = 16, TOP + 26, W - 32
   local inner = w - 32
   local lines = {}
-  wrap_para(lines, item.title or '', 'large', inner, 0)
+  local S = st()
+  wrap_para(lines, item.title or '', S.title, inner, 0)
   local meta = ((item.feed or '') ~= '' and (item.feed .. '  ') or '') .. (item.date or '') .. (item.read and '' or '  · unread')
-  if meta ~= '' then wrap_para(lines, meta, 'small', inner, 0) end
+  if meta ~= '' then wrap_para(lines, meta, S.meta, inner, 0) end
   lines[#lines + 1] = { s = '', f = 'small', h = 10, x = 0 }
   local ex = item.excerpt or ''
-  if ex ~= '' then wrap_para(lines, ex, 'medium', inner, 0) else wrap_para(lines, '(no summary in the feed)', 'small', inner, 0) end
+  if ex ~= '' then wrap_para(lines, ex, S.body, inner, 0) else wrap_para(lines, '(no summary in the feed)', 'small', inner, 0) end
   local btn_h, pad = 44, 16
   local max_content = (H - 60) - y - pad - pad - btn_h - pad
   local kept, used = {}, 0
