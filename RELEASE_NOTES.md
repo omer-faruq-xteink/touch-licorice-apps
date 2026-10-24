@@ -16,6 +16,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **RSS: text size.** Settings → **Text size**: *small*, *default* (as before) or *large*, for
   articles and previews; headings and the title follow it. The firmware has three fonts, so these
   are the steps there are; with *large* the title gets a rule under it.
+- **RSS: images (optional).** Settings → **Images in articles**, off by default. Pictures appear
+  where they are in the text, as greyscale JPEGs fitted to the screen width, loaded after the
+  text for the page on screen only. If the resizing service fails, a small original JPEG is used
+  or the picture shows as `[image]`; the text is never held up. Needs the updated Worker.
 
 ## Update
 

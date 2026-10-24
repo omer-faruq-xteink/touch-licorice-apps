@@ -15,6 +15,8 @@ requests = []
 
 def fake_request(url):
     requests.append(url)
+    if '/api/img?u=' in url:                                      # article images: raw bytes
+        return (200, b'\xff\xd8' + b'x' * 100) if 'u=AAA' in url else (404, '{"error":"image not available"}')
     if url.split('?')[0].endswith('/api'):                      # the Worker's root: account list
         return (200, json.dumps(responses['__root__'])) if '__root__' in responses else (404, '{"error":"not found"}')
     for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
@@ -29,7 +31,8 @@ L.globals().py_json_decode = lambda s: L.table_from(json.loads(s), recursive=Tru
 L.execute(r'''
 drawn, store = {}, {}
 local gmt = {}
-gmt.__index = function(_, k) return function(_, ...) if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
+images_drawn = 0
+gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1 end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -54,6 +57,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 300, release = function() released = (released or 0) + 1 end } }) end }),
   base64 = M({ encode = function(s) return 'B64(' .. s .. ')' end }),
 }
 function flush() local p = pending; pending = {}; for _, f in ipairs(p) do f() end end
@@ -85,7 +89,7 @@ g.pending = L.table()
 tap(100, 56 + 20 + 96 + 24 + 10)     # token field
 g.pending[1](g.ctx, 'secret')
 g.pending = L.table()
-assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default', g.store['config.txt']
+assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default\nimages=0', g.store['config.txt']
 tap(100, 20)                         # Back
 assert 'RSS' in texts()
 
@@ -272,7 +276,7 @@ tap(100, 100 + 4 * 70 + 10)                            # Settings
 SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
 assert any(x.startswith('default') for x in texts()), texts()
 tap(100, SIZE_ROW)
-assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large'), g.store['config.txt']
+assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large\nimages=0'), g.store['config.txt']
 tap(100, 20)                                           # back to the menu
 tap(100, 100 + 10); g.flush()                          # Unread
 tap(100, 56 + 26 + 3 * 58 + 5)                         # Article 3 again (cached): laid out with large text
@@ -285,7 +289,7 @@ tap_label('Close')
 key('back')
 tap(100, 100 + 4 * 70 + 10)
 tap(100, SIZE_ROW)                                     # large -> small
-assert g.store['config.txt'].endswith('size=small')
+assert g.store['config.txt'].endswith('size=small\nimages=0')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
@@ -294,12 +298,51 @@ tap(50, 20)
 key('back')
 tap(100, 100 + 4 * 70 + 10)
 tap(100, SIZE_ROW)                                     # small -> default again
-assert g.store['config.txt'].endswith('size=default')
+assert g.store['config.txt'].endswith('size=default\nimages=0')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
 assert fonts_of('First paragraph') == {'medium'} and fonts_of('Article 3') == {'large'}
 tap(50, 20)
+
+# Images: off by default; on, articles are asked with images=1 and their images load per page
+responses['/api/article/104'] = {'id': '104', 'title': 'Article 4', 'feed': 'Feed', 'date': '',
+    'text': 'Before\n\n[[img:1]]\n\nAfter\n\n[[img:2]]\n\nEnd', 'images': [
+        {'n': 1, 'w': 456, 'h': 300, 'u': 'AAA'}, {'n': 2, 'w': 200, 'h': 100, 'u': 'BBB'}]}
+IMAGES_ROW = 56 + 20 + 5 * 96 + 24 + 10
+key('back')
+tap(100, 100 + 4 * 70 + 10)                            # Settings
+assert 'off' in texts()
+tap(100, IMAGES_ROW)
+assert g.store['config.txt'].endswith('images=1'), g.store['config.txt']
+tap(100, 20)
+tap(100, 100 + 10); g.flush()                          # Unread
+n_req = len(requests)
+tap(100, 56 + 26 + 4 * 58 + 5)                         # Article 4
+assert requests[-1].endswith('/api/article/104?max=20000&mark=1&images=1'), requests[-1]
+g.flush()                                              # article text; the first image is requested
+assert requests[-1].endswith('/api/img?u=AAA'), requests[-1]
+t = texts()
+assert 'Before' in t and 'After' in t and 'image…' in t and g.images_drawn == 0, t
+g.flush()                                              # image 1 arrives, image 2 is requested
+assert g.decoded == 1 and requests[-1].endswith('/api/img?u=BBB'), requests[-1]
+g.flush()                                              # image 2 fails
+t = texts()
+assert g.images_drawn == 1 and '[image]' in t and 'image…' not in t, (g.images_drawn, t)
+assert 'a104i.txt' in g.store and 'a104.txt' not in g.store
+tap(50, 20)                                            # back to the list, open it again from the cache
+tap(100, 56 + 26 + 4 * 58 + 5)
+assert (g.released or 0) >= 1                          # the previous images were released
+g.flush()
+texts()                                                # draw the page: the image is on it again
+assert g.images_drawn >= 2, g.images_drawn
+tap(50, 20)
+key('back')
+tap(100, 100 + 4 * 70 + 10)
+tap(100, IMAGES_ROW)                                   # images off again
+assert g.store['config.txt'].endswith('images=0')
+tap(100, 20)
+tap(100, 100 + 10); g.flush()
 
 # offline: network fails, cached list used
 responses.clear()
@@ -326,7 +369,7 @@ tap(100, 56 + 20 + 2 * 96 + 24 + 10)  # auth field
 g.pending[1](g.ctx, 'me:pw')
 g.pending = L.table()
 tap(100, 56 + 20 + 3 * 96 + 24 + 10)  # full toggle
-assert g.store['config.txt'].endswith('auth=me:pw\nfull=1\nsize=default'), g.store['config.txt']
+assert g.store['config.txt'].endswith('auth=me:pw\nfull=1\nsize=default\nimages=0'), g.store['config.txt']
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 assert requests[-1].endswith('&full=1') and g.last_headers['Authorization'] == 'Basic B64(me:pw)', (requests[-1], dict(g.last_headers))

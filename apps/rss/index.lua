@@ -14,7 +14,7 @@ local G, ERR = nil, nil
 local screen = 'menu'
 local status = ''
 local loading = nil           -- text shown while a request is in flight
-local cfg = { host = '', token = '', auth = '', full = false, size = 'default' }
+local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -30,6 +30,7 @@ local accounts = {}
 local acct = nil              -- the chosen account's id while several exist
 local function multi() return #accounts > 1 end
 local read_accounts, load_accounts   -- defined in the accounts section
+local load_page_images, release_images, draw_image_line   -- defined in the images section
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
   return ''
@@ -80,6 +81,7 @@ local function load_cfg()
   if ok and type(s) == 'string' then
     for k, v in s:gmatch('(%w+)=([^\n]*)') do
       if k == 'full' then cfg.full = (v == '1')
+      elseif k == 'images' then cfg.images = (v == '1')
       elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
       else cfg[k] = v end
     end
@@ -88,7 +90,7 @@ end
 
 local function save_cfg()
   pcall(function()
-    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size)
+    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0'))
   end)
 end
 
@@ -102,17 +104,38 @@ end
 
 ------------------------------------------------------------------ network
 
-local function request(path, on_done)
+local function request_target(path, accept)
   local base = base_url()
-  if not base then note('set the host in Settings'); on_done(nil, 'no host'); return end
+  if not base then return nil end
   local url = base .. path
   if multi() and acct then url = url .. (url:find('?', 1, true) and '&' or '?') .. 'acct=' .. acct end
   if cfg.full then url = url .. (url:find('?', 1, true) and '&' or '?') .. 'full=1' end
-  local headers = { ['Accept'] = 'application/json' }
+  local headers = { ['Accept'] = accept or 'application/json' }
   if cfg.auth ~= '' then
     local ok, b64 = pcall(function() return ctx.base64:encode(cfg.auth) end)
     if ok and b64 then headers['Authorization'] = 'Basic ' .. b64 end
   end
+  return url, headers
+end
+
+-- the bytes of a binary resource (an article image); on_done(body) or on_done(nil, err)
+local function request_raw(path, on_done)
+  local url, headers = request_target(path, 'image/jpeg')
+  if not url then on_done(nil, 'no host'); return end
+  local ok, err = pcall(function()
+    return ctx.net:request({ url = url, method = 'GET', headers = headers, timeout_ms = 30000 }, function(c, resp)
+      local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
+      local body = type(resp) == 'table' and resp.body or nil
+      if type(body) ~= 'string' or (st and st >= 400) then on_done(nil, 'HTTP ' .. tostring(st)); return end
+      on_done(body)
+    end)
+  end)
+  if not ok then on_done(nil, short(err, 60)) end
+end
+
+local function request(path, on_done)
+  local url, headers = request_target(path)
+  if not url then note('set the host in Settings'); on_done(nil, 'no host'); return end
   pcall(function() ctx.net:keep_wifi(120) end)
   loading = 'loading ' .. short(path, 30)
   refresh()
@@ -195,9 +218,19 @@ local function layout_article(data)
   if S.rule then gap(8); out[#out + 1] = { s = '', f = 'small', h = 6, x = 0, rule = true } end
   gap(14)
   local text = data.text or ''
+  local info = {}
+  for _, im in ipairs(type(data.images) == 'table' and data.images or {}) do
+    if type(im) == 'table' and im.n then info[tonumber(im.n)] = im end
+  end
   for raw_para in (text .. '\n\n'):gmatch('(.-)\n\n') do
     local para = raw_para:gsub('^\n+', ''):gsub('\n+$', '')  -- Lua 5.5: loop variables are const
-    if para ~= '' then
+    local imgn = tonumber(para:match('^%[%[img:(%d+)%]%]$'))
+    if imgn then
+      local im = info[imgn]
+      if im and tonumber(im.w) and tonumber(im.h) then
+        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), u = tostring(im.u or '') }
+      end
+    elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
         if line:sub(1, 2) == '# ' then wrap_para(out, line:sub(3), S.head, W - 24, 0)
         elseif line:sub(1, 2) == '> ' then wrap_para(out, line:sub(3), S.body, W - 48, 24)
@@ -299,15 +332,18 @@ local function open_article(item)
   art.lines, art.starts, art.page, art.pages, art.cached = {}, { 1 }, 1, 1, false
   art.from_preview = nil
   screen = 'article'
-  local cached = cache_read(cpre() .. 'a' .. art.id .. '.txt')
+  release_images()
+  local cname = cpre() .. 'a' .. art.id .. (cfg.images and 'i' or '') .. '.txt'
+  local cached = cache_read(cname)
   if cached then
     local okj, data = pcall(function() return ctx.json:decode(cached) end)
-    if okj and type(data) == 'table' then layout_article(data); art.cached = true; note('cached'); return end
+    if okj and type(data) == 'table' then layout_article(data); art.cached = true; note('cached'); load_page_images(); return end
   end
-  request('/api/article/' .. art.id .. '?max=' .. TEXT_MAX .. '&mark=1', function(data, err, raw)
+  request('/api/article/' .. art.id .. '?max=' .. TEXT_MAX .. '&mark=1' .. (cfg.images and '&images=1' or ''), function(data, err, raw)
     if data then
       layout_article(data); note('')
-      if raw then cache_write(cpre() .. 'a' .. art.id .. '.txt', raw) end
+      load_page_images()
+      if raw then cache_write(cname, raw) end
       item.read = true
     else
       note(short(err, 44))
@@ -326,6 +362,86 @@ local function fetch_feeds()
       if raw2 and okj and type(d2) == 'table' then feeds.items = d2.items or {}; note('offline: ' .. short(err, 30)) else note(short(err, 44)) end
     end
   end)
+end
+
+------------------------------------------------------------------ images
+-- Article images arrive as JPEGs at most 456 px wide (the Worker resizes them), so they are
+-- drawn at their own size. Only the images of the page on screen are fetched and decoded, one
+-- at a time; leaving the page or the article releases them. A failed image shows "[image]".
+
+local img_mem = {}            -- n -> { img = decoded } | { failed = true }
+local img_bytes = {}          -- n -> JPEG bytes, so paging back does not download again
+local img_busy = false
+
+local function page_lines()
+  local first = art.starts and art.starts[art.page] or 1
+  local last = (art.starts and art.starts[art.page + 1]) and (art.starts[art.page + 1] - 1) or #art.lines
+  return first, last
+end
+
+release_images = function()
+  for _, d in pairs(img_mem) do
+    if d.img then pcall(function() d.img:release() end) end
+  end
+  img_mem, img_bytes, img_busy = {}, {}, false
+end
+
+local function decode(n, bytes)
+  if type(bytes) ~= 'string' or bytes:sub(1, 2) ~= '\255\216' then img_mem[n] = { failed = true }; return end
+  local ok, img = pcall(function() return ctx.image:decode(bytes) end)
+  if ok and img then img_mem[n] = { img = img } else img_mem[n] = { failed = true } end
+end
+
+load_page_images = function()
+  if screen ~= 'article' then return end
+  local first, last = page_lines()
+  local on_page = {}
+  for i = first, last do
+    local ln = art.lines[i]
+    if ln and ln.img then on_page[ln.img] = ln end
+  end
+  -- keep only this page's decoded images
+  for n, d in pairs(img_mem) do
+    if not on_page[n] then
+      if d.img then pcall(function() d.img:release() end) end
+      img_mem[n] = nil
+    end
+  end
+  if img_busy then return end
+  for i = first, last do
+    local ln = art.lines[i]
+    if ln and ln.img and not img_mem[ln.img] then
+      local n, id = ln.img, art.id
+      if img_bytes[n] then decode(n, img_bytes[n]); refresh(); return load_page_images() end
+      img_busy = true
+      request_raw('/api/img?u=' .. ln.u, function(body, err)
+        img_busy = false
+        if art.id ~= id then return end          -- another article by now
+        img_bytes[n] = body
+        decode(n, body)
+        refresh()
+        load_page_images()
+      end)
+      return
+    end
+  end
+end
+
+draw_image_line = function(gg, ln, y)
+  local F = ctx.fonts
+  local x = 12 + math.max(0, math.floor((W - 24 - ln.iw) / 2))
+  local d = img_mem[ln.img]
+  if d and d.img then
+    local ok = pcall(function() gg:image(d.img, x, y + 6) end)
+    if ok then return end
+    d.failed = true
+  end
+  if d and d.failed then
+    gg:text(12, y + 6, '[image]', { font = F and F.small })
+  else
+    gg:rect(x, y + 6, ln.iw, ln.ih)
+    gg:text(x + 10, y + 16, 'image…', { font = F and F.small })
+  end
 end
 
 ------------------------------------------------------------------ accounts
@@ -363,7 +479,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' } }
+local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' } }
 
 local function bar(gg, labels)
   local F = ctx.fonts
@@ -482,6 +598,7 @@ local function draw_article(gg)
     local ln = art.lines[i]
     if not ln then break end
     if ln.rule then gg:line(12, y + 2, W - 12, y + 2)
+    elseif ln.img then draw_image_line(gg, ln, y)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
@@ -497,6 +614,7 @@ local function draw_settings(gg)
     gg:text(16, y, s[2], { font = F and F.small })
     gg:rect(16, y + 24, W - 32, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
+    if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
     gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
@@ -528,6 +646,7 @@ local function edit_setting(i)
   local s = SETTINGS[i]
   if not s then return end
   if s[1] == 'full' then cfg.full = not cfg.full; save_cfg(); return end
+  if s[1] == 'images' then cfg.images = not cfg.images; save_cfg(); return end
   if s[1] == 'size' then
     local nxt = 1
     for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
@@ -557,7 +676,7 @@ end
 
 local function page_article(delta)
   local p = art.page + delta
-  if p >= 1 and p <= art.pages then art.page = p end
+  if p >= 1 and p <= art.pages then art.page = p; load_page_images() end
 end
 
 local function page_feeds(delta)

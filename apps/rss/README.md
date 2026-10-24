@@ -14,7 +14,8 @@ optional full-text extraction.
 2. Install `rss.xtapp`, open it; it starts on **Settings**. Fill **Host**, then **Token** (the part
    after `/k/`) or **user:password**, and switch **Full text** on if the Worker has a sanitizer
    token. Each field opens the firmware's keyboard. **Text size** (small / default / large) sets
-   the type of articles and previews; tap it to change.
+   the type of articles and previews; tap it to change. **Images in articles** (off by default)
+   shows article pictures where they are in the text.
 3. **Back** → **Unread**.
 
 The device must be on Wi-Fi; the app asks the host to keep it on while in use.
@@ -48,6 +49,15 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.
 - Everything fetched is cached in the app's storage (lists, feed list, article texts), so lists
   and already-opened articles work offline, marked "(offline)".
+
+## Images
+
+With **Images in articles** on, the Worker turns each picture into a greyscale JPEG at most 456 px
+wide (the reader decodes JPEG but runs out of memory on PNG) through the free images.weserv.nl
+resizer, and the app shows it at that size inside the text. Only the pictures of the page on screen
+are downloaded, one after the other, after the text; until then a frame marks their place. If the
+resizer is unavailable, a picture that already is a small JPEG is used as it is; any other picture
+shows as `[image]`, and the article reads normally. Needs the updated rss-opds Worker.
 
 ## Build
 
