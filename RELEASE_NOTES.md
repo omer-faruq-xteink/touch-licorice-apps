@@ -1,3 +1,28 @@
+# v0.3.0
+
+New app: **Dictionary** (`dict.xtapp`). Offline StarDict lookup on the **Xteink X4 Pro** (stock XTOS Licorice,
+build **26102301**): the firmware keyboard docked at the bottom, suggestions as you type, paged entries,
+several dictionaries side by side, recent lookups.
+
+## Install
+
+1. Install `dict.xtapp` like the other apps (SD card root → All Files → Install).
+2. In **USB mode** unzip `dict-wordnet-en.zip` (WordNet, English–English, Princeton license) into
+   `XTApps/dict/files/` on the SD card. Any other StarDict dictionary: run
+   `python apps/dict/stardict2shards.py <folder> out --prefix xx` and copy `out/*` there too.
+3. Leave USB mode, open **Dictionary**.
+
+**Do not uninstall the app** — the firmware deletes `XTApps/dict/files/` with it. Install updates over it.
+
+## Files
+
+| file | content |
+|---|---|
+| `dict.xtapp` | the app |
+| `dict-wordnet-en.zip` | WordNet converted (128 shards, 25 MB unpacked), with its license |
+
+The other apps are unchanged from v0.2.0. `SHA256SUMS.txt` has the checksums.
+
 # v0.2.0
 
 Mini apps for the **Xteink X4 Pro** on stock **XTOS Licorice** firmware. No flashing: copy, install, play.
@@ -11,12 +36,7 @@ Tested on build **26102301**. Unofficial, use at your own risk.
 - **Notes** rewritten (`notes.xtapp`): freehand drawing, the firmware's own keyboard, three text
   sizes, eight pages, and a real lock screen with clock and battery (the firmware asks once).
   Pages from the old Notes are not migrated.
-- **Dictionary** (`dict.xtapp`): offline StarDict lookup with the firmware keyboard and
-  suggestions as you type. Unzip `dict-wordnet-en.zip` (WordNet, English–English) into
-  `XTApps/dict/files/` on the SD card in USB mode; convert any other StarDict with
-  `apps/dict/stardict2shards.py`. Never uninstall it — that deletes the folder; install updates
-  over it.
-- All three use the firmware's **API 2.9** (manifest `"api": "2.0"`), newly mapped: network, JSON,
+- Both use the firmware's **API 2.9** (manifest `"api": "2.0"`), newly mapped: network, JSON,
   file storage, native keyboard, pointer movement, fonts, lock screen. Details in
   `docs/firmware-notes.md`; `probe.xtapp` is the tool that found them.
 
@@ -29,7 +49,6 @@ Tested on build **26102301**. Unofficial, use at your own risk.
 | `sokoban.xtapp` | **Sokoban** — 385 levels (Microban, Sasquatch, LOMA, Microcosmos, Minicosmos), undo |
 | `notes.xtapp` | **Notes** — draw and type, lock-screen page with clock |
 | `rss.xtapp` | **RSS** — CommaFeed via rss-opds, needs Wi-Fi |
-| `dict.xtapp` + `dict-wordnet-en.zip` | **Dictionary** — install the app, unzip WordNet into `XTApps/dict/files/` |
 | `probe.xtapp`, `netprobe.xtapp` | developer tools, not needed to play |
 
 `SHA256SUMS.txt` has the checksums.
