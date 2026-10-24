@@ -126,8 +126,7 @@ assert requests[-1].endswith('/api/article/102?max=20000&mark=1'), requests[-1]
 tap(50, 20)                                                                           # back to the list
 assert 'Article 0' in texts()
 
-# Next scrolls inside the loaded rows and loads the next page when only "Load more" is left;
-# after the last item comes a Load more row that appends the next page when tapped
+# Next scrolls inside the loaded rows and, past the last one, loads and appends the next page
 responses['/api/list?kind=unread&page=2'] = {'title': 'Unread', 'page': 2, 'has_more': True,
     'items': [{'id': str(112 + i), 'title': f'Article {12 + i}', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''} for i in range(10)]}
 responses['/api/list?kind=unread&page=3'] = {'title': 'Unread', 'page': 3, 'has_more': False,
@@ -136,13 +135,14 @@ responses['/api/list?kind=unread&page=3'] = {'title': 'Unread', 'page': 3, 'has_
               {'id': '123', 'title': 'Article 23', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''}]}
 NEXT, RELOAD = (4 + 2 * 118 + 10, 20), (4 + 3 * 118 + 10, 20)
 assert 'Unread  1-12 / 12+' in texts(), texts()
-tap(*NEXT); g.flush()                                 # only "Load more" would be left -> page 2 now
+tap(*NEXT); g.flush()                                 # past the last row -> page 2, new rows on screen
 assert requests[-1].endswith('kind=unread&page=2&n=12'), requests[-1]
 t = texts()
-assert 'Unread  13-22 / 22+' in t and 'Article 12' in t and 'Article 21' in t and 'Load more' in t, t
-long_ev(100, row_y(10), 'up', 'long')                 # long press on Load more: no preview
-assert 'Close' not in texts()
-tap(100, row_y(10)); g.flush()                        # tap Load more -> page 3 appended, duplicate dropped
+assert 'Unread  13-22 / 22+' in t and 'Article 12' in t and 'Article 21' in t and 'Load more' not in t, t
+n_req = len(requests)
+long_ev(100, row_y(10), 'up', 'long'); tap(100, row_y(10))   # empty row below the last item: nothing happens
+assert 'Close' not in texts() and len(requests) == n_req
+tap(*NEXT); g.flush()                                 # screen not full, more on the server -> page 3 appended
 assert requests[-1].endswith('kind=unread&page=3&n=12'), requests[-1]
 t = texts()
 assert 'Unread  13-24 / 24' in t and 'Article 22' in t and 'Article 23' in t and 'Load more' not in t, t

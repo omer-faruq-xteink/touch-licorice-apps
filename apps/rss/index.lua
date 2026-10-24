@@ -7,7 +7,7 @@
 
 local W, H, TOP = 480, 800, 56
 local LIST_N = 12
-local LIST_MAX_ITEMS = 240    -- list rows kept in memory across "Load more"
+local LIST_MAX_ITEMS = 240    -- list rows kept in memory as pages are appended
 local TEXT_MAX = 20000
 
 local G, ERR = nil, nil
@@ -194,16 +194,13 @@ end
 ------------------------------------------------------------------ loaders
 
 -- The list keeps every page fetched so far in list.items and shows LIST_N rows from list.top.
--- After the last item comes a "Load more" row while the Worker says there is more; tapping it
--- (or Next at the end) fetches the following page and appends it.
+-- Next (button, side key or swipe) on the last screen fetches the following page while the
+-- Worker says there is more, and appends it; the new rows start on the next screen.
 
 local function list_cache_name(page)
   return 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. page .. '.txt'
 end
 
--- rows on the list screen: the items, then the Load more row when there is more
-local function list_rows() return #list.items + (list.has_more and 1 or 0) end
-local function is_more_row(i) return list.has_more and i == #list.items + 1 end
 
 local function open_list(kind, id, title)
   list.kind, list.id, list.title, list.page = kind, id, title or kind, 0
@@ -367,16 +364,7 @@ local function draw_list(gg)
   if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
   if #list.items == 0 and not loading then gg:text(16, y + 20, 'nothing here', { font = F and F.medium }) end
-  for i = list.top, math.min(list_rows(), list.top + LIST_N - 1) do
-    if is_more_row(i) then
-      local label = loading and 'Loading…' or 'Load more'
-      local f = F and F.medium
-      local okm, tw = pcall(function() return f:measure(label) end)
-      tw = (okm and type(tw) == 'number') and tw or #label * 12
-      gg:rect(16, y - 4, W - 32, 50)
-      gg:text(math.floor((W - tw) / 2), y + 10, label, { font = f })
-      break
-    end
+  for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
     gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
     gg:text(16, y + 26, short((it.read and '' or '* ') .. (it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
@@ -463,8 +451,7 @@ local function edit_setting(i)
   if not ok then note('edit ! ' .. short(err, 30)) end
 end
 
--- Prev / Next scroll the rows already loaded. When the next screen would hold nothing but the
--- Load more row, or the Load more row is already on screen, Next loads the following page.
+-- Prev / Next scroll the rows already loaded; Next past the last loaded row loads the next page.
 local function page_list(delta)
   local top = list.top + delta * LIST_N
   if delta < 0 then list.top = math.max(1, top); return end
@@ -510,9 +497,7 @@ local function tap(x, y)
     end
     local r = math.floor((y - (TOP + 26)) / 58) + 1
     local i = list.top + r - 1
-    if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= list_rows() then
-      if is_more_row(i) then load_more() else open_article(list.items[i]) end
-    end
+    if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= #list.items then open_article(list.items[i]) end
   elseif screen == 'feeds' then
     if y < 46 then
       local b = bar_hit(x, 4)
@@ -538,7 +523,7 @@ local function row_item(y)
   local r = math.floor((y - (TOP + 26)) / 58) + 1
   local i = list.top + r - 1
   if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= #list.items then return list.items[i] end
-  return nil   -- includes the Load more row
+  return nil
 end
 
 -- full title, feed and date, and the feed's summary in a box over the list, with Open / Close.
