@@ -24,6 +24,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **Notes: lock screen with or without the clock.** **Lock** now asks in the app: *With clock*,
   *No clock* or *Cancel* (the firmware dialog it used did not appear on every device). Without
   the clock the lock screen shows only your page. **Clear** asks the same way before erasing.
+- **RSS: fewer "no feeds".** A list or the feed list that fails to load (Wi-Fi still waking up,
+  a slow CommaFeed) is tried once more by itself; if it still fails, the screen says why and
+  suggests Reload instead of showing an empty list. The Worker also retries CommaFeed once.
 
 ## Update
 

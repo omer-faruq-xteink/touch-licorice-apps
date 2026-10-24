@@ -14,6 +14,24 @@ local G, ERR = nil, nil
 local screen = 'menu'
 local status = ''
 local loading = nil           -- text shown while a request is in flight
+local inflight = 0            -- requests in flight; loading clears only when the last one ends
+local last_request_ms = nil
+local function settle()
+  inflight = math.max(0, inflight - 1)
+  if inflight == 0 then loading = nil end
+end
+local function now_ms()
+  local ok, t = pcall(function() return ctx.clock:millis() end)
+  return ok and tonumber(t) or nil
+end
+-- still waiting for an answer? A request the host never answers stops counting after a minute,
+-- so the app cannot stay on "loading" (and refuse to load more) for good.
+local function busy()
+  if inflight <= 0 then return false end
+  local t = now_ms()
+  if t and last_request_ms and t - last_request_ms > 60000 then inflight = 0; loading = nil; return false end
+  return true
+end
 local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
@@ -138,10 +156,12 @@ local function request(path, on_done)
   if not url then note('set the host in Settings'); on_done(nil, 'no host'); return end
   pcall(function() ctx.net:keep_wifi(120) end)
   loading = 'loading ' .. short(path, 30)
+  inflight = inflight + 1
+  last_request_ms = now_ms()
   refresh()
   local ok, err = pcall(function()
     return ctx.net:request({ url = url, method = 'GET', headers = headers, timeout_ms = 40000 }, function(c, resp)
-      loading = nil
+      settle()
       if type(resp) ~= 'table' then on_done(nil, 'no response'); refresh(); return end
       local st = tonumber(resp.status) or tonumber(resp.code)
       local body = resp.body
@@ -155,7 +175,7 @@ local function request(path, on_done)
       refresh()
     end)
   end)
-  if not ok then loading = nil; on_done(nil, short(err, 60)) end
+  if not ok then settle(); on_done(nil, short(err, 60)) end
 end
 
 local function cache_write(name, s) pcall(function() ctx.storage:write(name, s) end) end
@@ -293,11 +313,16 @@ local function apply_page(page, data, append)
 end
 
 -- after(ok) runs once the page is in list.items (from the network or the offline cache)
-local function fetch_page(page, append, after)
+local function fetch_page(page, append, after, retried)
   local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. LIST_N
   if list.id then path = path .. '&id=' .. list.id end
+  if not append then list.err = nil end
   request(path, function(data, err, raw)
     local ok = false
+    if not data and not retried then          -- a hiccup (Wi-Fi waking up, a slow server): once more
+      fetch_page(page, append, after, true)
+      return
+    end
     if data then
       apply_page(page, data, append)
       list.title = data.title or list.title
@@ -315,6 +340,7 @@ local function fetch_page(page, append, after)
         ok = true
       else
         note(short(err, 44))
+        if not append then list.err = err end
       end
     end
     if after then after(ok) end
@@ -323,7 +349,7 @@ end
 
 local function fetch_list() fetch_page(1, false) end            -- first page, or Reload
 local function load_more(after)
-  if list.has_more and not loading then fetch_page(list.page + 1, true, after); return true end
+  if list.has_more and not busy() then fetch_page(list.page + 1, true, after); return true end
   return false
 end
 
@@ -351,15 +377,17 @@ local function open_article(item)
   end)
 end
 
-local function fetch_feeds()
+local function fetch_feeds(retried)
   screen = 'feeds'
-  feeds.items, feeds.top = {}, 1
+  feeds.items, feeds.top, feeds.err = {}, 1, nil
   request('/api/feeds', function(data, err, raw)
+    if not data and not retried then fetch_feeds(true); return end   -- once more before giving up
     if data then feeds.items = data.items or {}; note(''); if raw then cache_write(cpre() .. 'feeds.txt', raw) end
     else
       local raw2 = cache_read(cpre() .. 'feeds.txt')
       local okj, d2 = pcall(function() return ctx.json:decode(raw2) end)
-      if raw2 and okj and type(d2) == 'table' then feeds.items = d2.items or {}; note('offline: ' .. short(err, 30)) else note(short(err, 44)) end
+      if raw2 and okj and type(d2) == 'table' then feeds.items = d2.items or {}; note('offline: ' .. short(err, 30))
+      else note(short(err, 44)); feeds.err = err end
     end
   end)
 end
@@ -501,9 +529,18 @@ local function bar_hit(x, n)
   return nil
 end
 
+-- an empty list: either really empty, or it could not be loaded (then say why and what to do)
+local function draw_empty(gg, y, err, empty_text)
+  local F = ctx.fonts
+  if not err then gg:text(16, y + 20, empty_text, { font = F and F.medium }); return end
+  gg:text(16, y + 20, 'Could not load this list.', { font = F and F.medium })
+  gg:text(16, y + 54, short(err, 46), { font = F and F.small })
+  gg:text(16, y + 80, 'Check Wi-Fi, then tap Reload.', { font = F and F.small })
+end
+
 local function draw_status(gg)
   local F = ctx.fonts
-  local s = loading or status
+  local s = (busy() and loading) or status
   if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
   if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
 end
@@ -563,7 +600,7 @@ local function draw_list(gg)
   gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
   if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
-  if #list.items == 0 and not loading then gg:text(16, y + 20, 'nothing here', { font = F and F.medium }) end
+  if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
     gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
@@ -584,7 +621,7 @@ local function draw_feeds(gg)
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
-  if #feeds.items == 0 and not loading then gg:text(16, y + 20, 'no feeds', { font = F and F.medium }) end
+  if #feeds.items == 0 and not busy() then draw_empty(gg, y, feeds.err, 'no feeds') end
   draw_status(gg)
 end
 
@@ -602,7 +639,7 @@ local function draw_article(gg)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  if #art.lines == 0 and not loading then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
+  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
   draw_status(gg)
 end
 

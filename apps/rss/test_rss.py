@@ -13,8 +13,15 @@ responses = {}
 requests = []
 
 
+fail_next = {}          # key -> how many times a matching request fails with HTTP 502 first
+
+
 def fake_request(url):
     requests.append(url)
+    for key in list(fail_next):
+        if key in url and fail_next[key] > 0:
+            fail_next[key] -= 1
+            return 502, 'Error: CommaFeed /category/get failed: HTTP 503'
     if url.startswith('https://images.weserv.nl/'):              # article images: raw JPEG bytes
         return (200, b'\xff\xd8' + b'x' * 100) if 'url=AAA' in url else (404, 'not found')
     if url.split('?')[0].endswith('/api'):                      # the Worker's root: account list
@@ -265,7 +272,7 @@ assert 'l_unread_0_1.txt' in g.store
 tap(100, 56 + 26 + 5 * 58 + 5)
 t = texts()
 assert not any('ERR' in x for x in t), t
-g.pending = L.table()
+g.flush()                                   # let that request finish (an answer the host always gives)
 tap(50, 20)
 
 # Text size: Settings cycles default -> large -> small; articles and previews follow it
@@ -346,18 +353,39 @@ assert g.store['config.txt'].endswith('images=0')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 
-# offline: network fails, cached list used
+# offline: network fails, tried once more, then the cached list is used
 responses.clear()
-tap(4 + 3 * 118 + 10, 20); g.flush()  # Reload -> 404 -> cache
+n_req = len(requests)
+tap(4 + 3 * 118 + 10, 20); g.flush()  # Reload -> 404
+assert len(requests) == n_req + 2 and requests[-1] == requests[-2], requests[-2:]   # the automatic retry
+t = texts()
+assert any(x.startswith('loading') for x in t), t                                  # still loading meanwhile
+g.flush()                             # retry -> 404 -> cache
 t = texts()
 assert 'Article 7' in t and any('offline' in x for x in t), t
 
-# feeds screen -> feed list
+# feeds: a failure is retried once; if that fails too and nothing is cached, the screen says why
+key('back')
+n_req = len(requests)
+tap(100, 100 + 3 * 70 + 10); g.flush(); g.flush()
+t = texts()
+assert len(requests) == n_req + 2 and 'no feeds' not in t and 'Could not load this list.' in t and any('HTTP 404' in x for x in t), t
+# a hiccup on the first try only: the retry fills the list, nothing about an error
 responses['/api/feeds'] = {'items': [{'id': '10', 'name': 'Feed A', 'unread': 3}]}
 responses['/api/list?kind=feed'] = {'title': 'Feed A', 'page': 1, 'has_more': False, 'items': [{'id': '555', 'title': 'Only one', 'feed': 'Feed A', 'date': '', 'read': True, 'excerpt': ''}]}
-key('back')
-tap(100, 100 + 3 * 70 + 10); g.flush()
-assert 'Feed A  (3)' in texts()
+fail_next['/api/feeds'] = 1
+tap(4 + 3 * 118 + 10, 20); g.flush(); g.flush()          # Reload on the feeds screen
+t = texts()
+assert 'Feed A  (3)' in t and 'Could not load this list.' not in t, t
+# two requests in flight: the first to finish must not end "loading" for the other
+tap(4 + 3 * 118 + 10, 20); tap(4 + 3 * 118 + 10, 20)   # Reload twice on the feeds screen
+assert len(g.pending) == 2
+g.pending[1]()                                            # only the first one answers
+L.execute("table.remove(pending, 1)")
+assert any(x.startswith('loading') for x in texts()), texts()
+g.flush()
+t = texts()
+assert 'Feed A  (3)' in t and not any(x.startswith('loading') for x in t), t
 tap(100, 56 + 26 + 5); g.flush()
 assert 'kind=feed&page=1&n=12&id=10' in requests[-1], requests[-1]
 assert 'Only one' in texts()
