@@ -399,7 +399,7 @@ function on_draw(c, gg)
   G = gg or G
   if not G then return end
   local ok, e = pcall(draw_impl, G)
-  if not ok then ERR = tostring(e); pcall(function() G:text(6, H - 90, short('draw ERR ' .. ERR, 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 90, short('draw ERR ' .. tostring(e), 46)) end) end   -- this frame only
 end
 
 ------------------------------------------------------------------ input
@@ -429,6 +429,7 @@ local function tap(x, y)
 end
 
 function on_input(c, ev)
+  ERR = nil   -- a new interaction clears the last error; a new one sets it again
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then

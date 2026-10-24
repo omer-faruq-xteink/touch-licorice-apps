@@ -123,7 +123,7 @@ function on_draw(c, gg)
   G = gg or G
   if not G then return end
   local ok, e = pcall(draw_impl, G)
-  if not ok then ERR = tostring(e); pcall(function() G:text(6, H - 60, short('draw ERR ' .. ERR, 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 60, short('draw ERR ' .. tostring(e), 46)) end) end   -- this frame only
 end
 
 local function refresh() pcall(function() ctx.invalidate() end) end
@@ -184,6 +184,7 @@ local function button(i)
 end
 
 function on_input(c, ev)
+  ERR = nil   -- a new interaction clears the last error; a new one sets it again
   local ok, e = pcall(function()
     if type(ev) ~= 'table' or ev.type ~= 'pointer' then return end
     local x, y, ph = ev.x or 0, ev.y or 0, ev.phase

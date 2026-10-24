@@ -116,6 +116,13 @@ assert 'a103.txt' in g.store
 tap(50, 20)
 assert 'Article 5' in texts()
 assert 'l_unread_0_1.txt' in g.store
+# regression: open another article while its request is still in flight -> the frame must not
+# index the previous article's page table (was "attempt to index a nil value" at the bottom)
+tap(100, 56 + 26 + 5 * 58 + 5)
+t = texts()
+assert not any('ERR' in x for x in t), t
+g.pending = L.table()
+tap(50, 20)
 
 # offline: network fails, cached list used
 responses.clear()

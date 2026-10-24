@@ -207,7 +207,7 @@ end
 
 local function open_article(item)
   art.id, art.title, art.feed, art.date = tostring(item.id), item.title or '', item.feed or '', item.date or ''
-  art.lines, art.page, art.pages, art.cached = {}, 1, 1, false
+  art.lines, art.starts, art.page, art.pages, art.cached = {}, { 1 }, 1, 1, false
   screen = 'article'
   local cached = cache_read('a' .. art.id .. '.txt')
   if cached then
@@ -320,6 +320,7 @@ local function draw_article(gg)
   local y = TOP + 4
   for i = first, last do
     local ln = art.lines[i]
+    if not ln then break end
     if ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
@@ -355,7 +356,8 @@ function on_draw(c, gg)
   G = gg or G
   if not G then return end
   local ok, e = pcall(draw_impl, G)
-  if not ok then ERR = tostring(e); pcall(function() G:text(6, H - 70, short('draw ERR ' .. ERR, 46)) end) end
+  -- a drawing error is painted for this frame only; the next good frame no longer shows it
+  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), 46)) end) end
 end
 
 ------------------------------------------------------------------ input
@@ -435,6 +437,7 @@ local function tap(x, y)
 end
 
 function on_input(c, ev)
+  ERR = nil   -- a new interaction clears the last error; a new one sets it again
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then

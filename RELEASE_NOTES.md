@@ -21,10 +21,16 @@ several dictionaries side by side, recent lookups.
 | `dict.xtapp` | **Dictionary** (new) |
 | `dict-wordnet-en.zip` | WordNet converted (128 shards, 25 MB unpacked), with its license |
 | `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | the games, same builds as v0.2.0 |
-| `notes.xtapp`, `rss.xtapp` | Notes and RSS, same builds as v0.2.0 |
+| `notes.xtapp`, `rss.xtapp` | Notes and RSS, with the fix below |
 | `probe.xtapp`, `netprobe.xtapp` | developer tools, not needed to play |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
+## Fixed
+
+- **RSS**: an `ERR … attempt to index a nil value` line could appear at the bottom while an article
+  was loading (the previous article's page table was used for one frame) and then stayed on every
+  screen. Fixed; in RSS, Notes and Dictionary an error message now disappears with the next tap.
 
 # v0.2.0
 
