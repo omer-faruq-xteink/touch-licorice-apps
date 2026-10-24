@@ -18,6 +18,14 @@ optional full-text extraction.
 
 The device must be on Wi-Fi; the app asks the host to keep it on while in use.
 
+## Several CommaFeed accounts
+
+If your Worker serves more than one CommaFeed account (`COMMAFEED_API_KEY_2` etc., see the
+rss-opds README), the menu starts with one folder per account, named by the Worker's labels.
+Each folder holds the usual Unread / Starred / All / Feeds; lists, articles, the offline cache and
+mark-as-read stay in that account. **Accounts** (or Back) returns to the folders. With one account,
+or with an older Worker, the app looks exactly as before. Nothing to set in the app.
+
 ## Using it
 
 - Menu: **Unread**, **Starred**, **All**, **Feeds** (one subscription at a time), **Settings**.

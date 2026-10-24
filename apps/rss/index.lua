@@ -15,6 +15,18 @@ local screen = 'menu'
 local status = ''
 local loading = nil           -- text shown while a request is in flight
 local cfg = { host = '', token = '', auth = '', full = false }
+-- CommaFeed accounts the Worker serves ({ {id, label} ... }, from /api). With more than one the
+-- menu starts with a folder per account and every request carries ?acct=<id>.
+local accounts = {}
+local acct = nil              -- the chosen account's id while several exist
+local function multi() return #accounts > 1 end
+local read_accounts, load_accounts   -- defined in the accounts section
+local function acct_label()
+  for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
+  return ''
+end
+-- cache files of accounts other than the first get their own prefix, so nothing mixes
+local function cpre() return (multi() and acct and acct ~= '1') and ('x' .. acct .. '_') or '' end
 
 -- list screen
 local list = { kind = 'unread', id = nil, title = '', page = 1, items = {}, has_more = false, cached = false }
@@ -83,6 +95,7 @@ local function request(path, on_done)
   local base = base_url()
   if not base then note('set the host in Settings'); on_done(nil, 'no host'); return end
   local url = base .. path
+  if multi() and acct then url = url .. (url:find('?', 1, true) and '&' or '?') .. 'acct=' .. acct end
   if cfg.full then url = url .. (url:find('?', 1, true) and '&' or '?') .. 'full=1' end
   local headers = { ['Accept'] = 'application/json' }
   if cfg.auth ~= '' then
@@ -200,7 +213,7 @@ end
 -- Worker says there is more, and appends it; the new rows start on the next screen.
 
 local function list_cache_name(page)
-  return 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. page .. '.txt'
+  return cpre() .. 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. page .. '.txt'
 end
 
 
@@ -272,7 +285,7 @@ local function open_article(item)
   art.lines, art.starts, art.page, art.pages, art.cached = {}, { 1 }, 1, 1, false
   art.from_preview = nil
   screen = 'article'
-  local cached = cache_read('a' .. art.id .. '.txt')
+  local cached = cache_read(cpre() .. 'a' .. art.id .. '.txt')
   if cached then
     local okj, data = pcall(function() return ctx.json:decode(cached) end)
     if okj and type(data) == 'table' then layout_article(data); art.cached = true; note('cached'); return end
@@ -280,7 +293,7 @@ local function open_article(item)
   request('/api/article/' .. art.id .. '?max=' .. TEXT_MAX .. '&mark=1', function(data, err, raw)
     if data then
       layout_article(data); note('')
-      if raw then cache_write('a' .. art.id .. '.txt', raw) end
+      if raw then cache_write(cpre() .. 'a' .. art.id .. '.txt', raw) end
       item.read = true
     else
       note(short(err, 44))
@@ -292,13 +305,45 @@ local function fetch_feeds()
   screen = 'feeds'
   feeds.items, feeds.top = {}, 1
   request('/api/feeds', function(data, err, raw)
-    if data then feeds.items = data.items or {}; note(''); if raw then cache_write('feeds.txt', raw) end
+    if data then feeds.items = data.items or {}; note(''); if raw then cache_write(cpre() .. 'feeds.txt', raw) end
     else
-      local raw2 = cache_read('feeds.txt')
+      local raw2 = cache_read(cpre() .. 'feeds.txt')
       local okj, d2 = pcall(function() return ctx.json:decode(raw2) end)
       if raw2 and okj and type(d2) == 'table' then feeds.items = d2.items or {}; note('offline: ' .. short(err, 30)) else note(short(err, 44)) end
     end
   end)
+end
+
+------------------------------------------------------------------ accounts
+
+read_accounts = function(raw)
+  if type(raw) ~= 'string' then return end
+  local okj, data = pcall(function() return ctx.json:decode(raw) end)
+  if not okj or type(data) ~= 'table' then return end
+  local found = {}
+  for _, a in ipairs(type(data.accounts) == 'table' and data.accounts or {}) do
+    if type(a) == 'table' and a.id ~= nil then
+      found[#found + 1] = { id = tostring(a.id), label = tostring(a.label or ('Account ' .. tostring(a.id))) }
+    end
+  end
+  accounts = found
+  local known = false
+  for _, a in ipairs(accounts) do if a.id == acct then known = true end end
+  if not known then acct = nil end
+end
+
+-- ask the Worker which accounts it serves; an older Worker answers without a list (one account)
+load_accounts = function()
+  if cfg.host == '' then return end
+  local keep = acct
+  acct = nil                                   -- the account list itself is not per account
+  request('/api', function(data, err, raw)
+    if data and raw then
+      read_accounts(raw)
+      cache_write('accounts.txt', raw)
+    end
+  end)
+  acct = keep
 end
 
 ------------------------------------------------------------------ drawing
@@ -333,11 +378,23 @@ local function draw_status(gg)
   if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
 end
 
+-- the menu's rows: account folders, the chosen account's menu, or the single-account menu
+local function menu_items()
+  if not multi() then return MENU end
+  if not acct then
+    local items = {}
+    for _, a in ipairs(accounts) do items[#items + 1] = { a.label, 'acct', a.id } end
+    items[#items + 1] = { 'Settings', 'settings' }
+    return items
+  end
+  return { MENU[1], MENU[2], MENU[3], MENU[4], { 'Accounts', 'accounts' } }
+end
+
 local function draw_menu(gg)
   local F = ctx.fonts
-  gg:text(16, 20, 'RSS', { font = F and F.large })
+  gg:text(16, 20, (multi() and acct) and ('RSS · ' .. acct_label()) or 'RSS', { font = F and F.large })
   gg:text(16, 54, (cfg.host ~= '' and cfg.host or 'no host set: open Settings'), { font = F and F.small })
-  for i, m in ipairs(MENU) do
+  for i, m in ipairs(menu_items()) do
     local y = 100 + (i - 1) * 70
     gg:rect(16, y, W - 32, 58)
     gg:text(36, y + 16, m[1], { font = F and F.medium })
@@ -372,7 +429,8 @@ local function draw_list(gg)
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
-  gg:text(8, TOP + 2, short(list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  local who = (multi() and acct) and (acct_label() .. ' · ') or ''
+  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
   if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
   if #list.items == 0 and not loading then gg:text(16, y + 20, 'nothing here', { font = F and F.medium }) end
@@ -486,17 +544,19 @@ end
 
 local function tap(x, y)
   if screen == 'menu' then
-    for i, m in ipairs(MENU) do
+    for i, m in ipairs(menu_items()) do
       local y0 = 100 + (i - 1) * 70
       if x >= 16 and x < W - 16 and y >= y0 and y < y0 + 58 then
-        if m[2] == 'settings' then screen = 'settings'
+        if m[2] == 'acct' then acct = m[3]
+        elseif m[2] == 'accounts' then acct = nil
+        elseif m[2] == 'settings' then screen = 'settings'
         elseif m[2] == 'feeds' then fetch_feeds()
         else open_list(m[2], nil, m[1]); fetch_list() end
         return
       end
     end
   elseif screen == 'settings' then
-    if y < 46 then screen = 'menu'; return end
+    if y < 46 then screen = 'menu'; load_accounts(); return end
     for i = 1, #SETTINGS do
       local y0 = TOP + 20 + (i - 1) * 96 + 24
       if y >= y0 and y < y0 + 48 then edit_setting(i); return end
@@ -675,7 +735,10 @@ function on_input(c, ev)
         return
       end
       if k == 'back' then
-        if screen == 'article' then article_back() elseif screen ~= 'menu' then screen = 'menu' end
+        if screen == 'article' then article_back()
+        elseif screen == 'settings' then screen = 'menu'; load_accounts()
+        elseif screen ~= 'menu' then screen = 'menu'
+        elseif multi() and acct then acct = nil end
       elseif k == 'right' or k == 'down' then
         if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
       elseif k == 'left' or k == 'up' then
@@ -690,7 +753,8 @@ end
 
 function on_load(c)
   load_cfg()
-  if cfg.host == '' then screen = 'settings' end
+  read_accounts(cache_read('accounts.txt'))
+  if cfg.host == '' then screen = 'settings' else load_accounts() end
   pcall(function() ctx.net:keep_wifi(180) end)
 end
 

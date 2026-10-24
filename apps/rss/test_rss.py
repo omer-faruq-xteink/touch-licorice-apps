@@ -15,6 +15,8 @@ requests = []
 
 def fake_request(url):
     requests.append(url)
+    if url.split('?')[0].endswith('/api'):                      # the Worker's root: account list
+        return (200, json.dumps(responses['__root__'])) if '__root__' in responses else (404, '{"error":"not found"}')
     for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
         if key in url:
             return 200, json.dumps(body)
@@ -291,5 +293,57 @@ assert g.store['config.txt'].endswith('auth=me:pw\nfull=1')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 assert requests[-1].endswith('&full=1') and g.last_headers['Authorization'] == 'Basic B64(me:pw)', (requests[-1], dict(g.last_headers))
+assert not any('ERR' in x for x in texts())
+
+# ---- two CommaFeed accounts: folders in the menu, ?acct= on requests, separate caches
+responses.clear()
+responses['__root__'] = {'title': 'CommaFeed', 'accounts': [{'id': '1', 'label': 'Work'}, {'id': '2', 'label': 'Personal'}]}
+responses['kind=unread&page=1&n=12&acct=2'] = {'title': 'Unread', 'page': 1, 'has_more': False,
+    'items': [{'id': '900', 'title': 'Personal story', 'feed': 'Blog', 'date': '', 'read': False, 'excerpt': 'p'}]}
+responses['kind=unread&page=1&n=12&acct=1'] = {'title': 'Unread', 'page': 1, 'has_more': False,
+    'items': [{'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '', 'read': False, 'excerpt': 'w'}]}
+responses['/api/article/900'] = {'id': '900', 'title': 'Personal story', 'feed': 'Blog', 'date': '', 'text': 'hello'}
+L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+g = L.globals()
+g.pending = L.table()
+g.on_load(g.ctx)
+assert requests[-1].split('?')[0].endswith('/api') and 'acct=' not in requests[-1], requests[-1]
+g.flush()
+t = texts()
+assert 'Work' in t and 'Personal' in t and 'Settings' in t and 'Unread' not in t, t
+assert 'accounts.txt' in g.store
+tap(100, 100 + 1 * 70 + 10)                            # Personal
+t = texts()
+assert 'RSS · Personal' in t and 'Unread' in t and 'Accounts' in t, t
+tap(100, 100 + 10); g.flush()                          # Unread of Personal
+assert 'acct=2' in requests[-1], requests[-1]
+t = texts()
+assert 'Personal story' in t and any(x.startswith('Personal · Unread') for x in t), t
+assert 'x2_l_unread_0_1.txt' in g.store
+tap(100, 56 + 26 + 5); g.flush()                       # its article: cached under the account
+assert '/api/article/900' in requests[-1] and 'acct=2' in requests[-1], requests[-1]
+assert 'x2_a900.txt' in g.store
+key('back'); key('back')                               # article -> list -> account menu
+assert 'RSS · Personal' in texts()
+key('back')                                            # account menu -> account folders
+t = texts()
+assert 'Work' in t and 'Personal' in t and 'Unread' not in t, t
+tap(100, 100 + 10)                                     # Work
+g.store['l_unread_0_1.txt'] = None
+tap(100, 100 + 10); g.flush()
+assert 'acct=1' in requests[-1] and 'Work story' in texts(), (requests[-1], texts())
+assert 'Work story' in str(g.store['l_unread_0_1.txt'])   # the first account keeps the old cache names
+key('back')
+tap(100, 100 + 4 * 70 + 10)                            # Accounts row goes up as well
+assert 'Personal' in texts() and 'Unread' not in texts(), texts()
+# offline start: the cached account list still gives the folders
+L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+g = L.globals()
+responses.clear()
+g.pending = L.table()
+g.on_load(g.ctx)
+g.flush()
+t = texts()
+assert 'Work' in t and 'Personal' in t, t
 assert not any('ERR' in x for x in texts())
 print('rss29 tests passed')

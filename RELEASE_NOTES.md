@@ -7,6 +7,12 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **RSS**: Back from an article opened with the preview's **Open** returns to that preview (now
   shown as read), so you can keep stepping through the summaries with Prev / Next. An article
   opened straight from the list still returns to the list.
+- **RSS: several CommaFeed accounts.** If your rss-opds Worker serves more than one account (for
+  example a personal and a work one, set with `COMMAFEED_API_KEY_2` and optional names
+  `COMMAFEED_LABEL` / `COMMAFEED_LABEL_2`, see the rss-opds README), the menu starts with one folder
+  per account; lists, articles, the offline cache and mark-as-read stay in their account. With one
+  account, or an older Worker, nothing changes. Needs the updated Worker (`git pull`,
+  `npx wrangler deploy`); the OPDS catalog shows the same account folders.
 
 ## Update
 
