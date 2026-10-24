@@ -1,3 +1,41 @@
+# v0.4.0
+
+**RSS** gets a preview and an endless list, on the **Xteink X4 Pro** (stock XTOS Licorice, build **26102301**).
+
+## New in RSS
+
+- **Long-press an article** for a preview: the whole title, feed and date, and the feed's summary.
+  **Prev / Next** in the box — or the side buttons, or a swipe — move to the previous / next
+  article's preview; at the end of what is loaded, Next fetches the next page and shows its first
+  article. **Open** reads it; **Close**, a tap outside the box or Back returns to the list on the
+  screen of the article you were looking at. A preview fetches nothing else and marks nothing read.
+- **The list keeps going**: Next, a side button or a swipe past the last article loads the next
+  twelve and appends them, so the list simply continues; Prev scrolls back without reloading.
+  The header shows where you are (`13-24 / 24+`, `+` = more on the server). Reload starts over.
+
+## Worker
+
+The summary in the preview comes from your [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
+Worker. Update and redeploy it (`git pull`, `npx wrangler deploy`) to get summaries of up to 400
+characters; an older Worker still works, with 120-character summaries.
+
+## Update
+
+Install the new `rss.xtapp` **over** the installed RSS app (SD card root → All Files → Install).
+Do not uninstall first: that deletes its settings and cache.
+
+## Files
+
+| file | content |
+|---|---|
+| `rss.xtapp` | **changed** |
+| `notes.xtapp`, `dict.xtapp` | unchanged since v0.3.1 |
+| `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | unchanged |
+| `probe.xtapp`, `netprobe.xtapp` | developer tools, unchanged |
+| `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.3.1
 
 Bug fixes for **RSS** and **Dictionary** on the **Xteink X4 Pro** (stock XTOS Licorice, build **26102301**).
