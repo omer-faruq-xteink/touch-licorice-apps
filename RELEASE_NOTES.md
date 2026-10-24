@@ -37,6 +37,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   nothing saved yet or after Settings. Needs the updated rss-opds Worker; with an older one
   the app asks after the first list. No screen redraws while a request waits, which had made
   every request several seconds slower.
+- **RSS: load times on screen.** After each load the status line says how long the answer took
+  and how much of it the Worker spent (`took 2.1 s, server 0.6 s`).
 
 ## Update
 

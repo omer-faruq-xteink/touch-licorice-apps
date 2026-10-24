@@ -13,6 +13,7 @@ local TEXT_MAX = 20000
 local G, ERR = nil, nil
 local screen = 'menu'
 local status = ''
+local timing = nil            -- how long the last answer took (shown when the status line is free)
 local loading = nil           -- text shown while a request is in flight
 local function now_ms()
   local ok, t = pcall(function() return ctx.clock:millis() end)
@@ -29,9 +30,12 @@ local net_pump
 local function net_finish(job, resp, err)
   if job.done then return end                 -- a late answer after a timeout is ignored
   job.done = true
+  local t = now_ms()
+  if t and job.since then job.took = t - job.since end
+  if t and job.queued then job.waited = (job.since or t) - job.queued end
   if net_active == job then net_active = nil end
   if not net_active and #net_queue == 0 then loading = nil end
-  job.on_result(resp, err)
+  job.on_result(resp, err, job)
   net_pump()
   pcall(function() ctx.invalidate() end)
 end
@@ -77,7 +81,7 @@ end
 
 local function net_submit(opts, label, timeout, on_result)
   opts.timeout_ms = timeout
-  net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
+  net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result, queued = now_ms() }
   net_pump()
 end
 local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
@@ -209,7 +213,7 @@ local function request(path, on_done)
   pcall(function() ctx.net:keep_wifi(120) end)
   -- articles may wait for the Worker's full-text services; lists answer quickly
   local timeout = path:find('/api/article/', 1, true) and 60000 or 30000
-  net_submit({ url = url, method = 'GET', headers = headers }, 'loading ' .. short(path, 30), timeout, function(resp, err)
+  net_submit({ url = url, method = 'GET', headers = headers }, 'loading ' .. short(path, 30), timeout, function(resp, err, job)
     if err then on_done(nil, err); return end
     if type(resp) ~= 'table' then on_done(nil, 'no response'); return end
     local st = tonumber(resp.status) or tonumber(resp.code)
@@ -220,6 +224,13 @@ local function request(path, on_done)
     local okj, data = pcall(function() return ctx.json:decode(body) end)
     if not okj or type(data) ~= 'table' then on_done(nil, 'bad json: ' .. short(body, 40)); return end
     if data.error then on_done(nil, tostring(data.error)); return end
+    -- the device's wait for this answer, the Worker's share (server_ms) and any time in the queue
+    if job and job.took then
+      local s = string.format('took %.1f s', job.took / 1000)
+      if tonumber(data.server_ms) then s = s .. string.format(', server %.1f s', tonumber(data.server_ms) / 1000) end
+      if job.waited and job.waited > 300 then s = s .. string.format(', queued %.1f s', job.waited / 1000) end
+      timing = s
+    end
     note_accounts(data, body, path)
     on_done(data, nil, body)
   end)
@@ -611,6 +622,7 @@ end
 local function draw_status(gg)
   local F = ctx.fonts
   local s = (busy() and loading) or status
+  if s == '' and timing then s = timing end
   if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
   if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
 end

@@ -503,6 +503,7 @@ tap(100, 100 + 10); tap(100, 100 + 10); g.flush()                # Work -> Unrea
 assert len(requests) == n_req + 1 and 'kind=unread' in requests[-1], requests[n_req:]
 assert 'Work story' in texts()
 key('back'); key('back')
+assert any(x.startswith('took ') for x in texts()), texts()        # the last answer's timing
 t = texts()
 assert 'Club' in t and 'Personal' in t, t
 assert 'Club' in str(g.store['accounts.txt'])
