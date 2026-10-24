@@ -484,8 +484,8 @@ t = texts()
 assert 'Work' in t and 'Personal' in t, t
 assert not any('ERR' in x for x in texts())
 
-# restart with a saved account list: no /api before the first list; that list's answer carries
-# the accounts (a third one was added meanwhile) and refreshes the folders and the saved copy
+# restart: /api is asked at once (it also wakes Wi-Fi); a list opened meanwhile queues behind it;
+# a third account added meanwhile shows up in the folders and the saved copy
 three = [{'id': '1', 'label': 'Work'}, {'id': '2', 'label': 'Personal'}, {'id': '3', 'label': 'Club'}]
 responses['__root__'] = {'title': 'CommaFeed', 'accounts': three}
 responses['kind=unread&page=1&n=12&acct=1'] = {'title': 'Unread', 'page': 1, 'has_more': False, 'accounts': three,
@@ -498,9 +498,10 @@ def restart():
     return gl
 n_req = len(requests)
 g = restart()
-assert len(requests) == n_req, requests[n_req:]                 # nothing asked at start
-tap(100, 100 + 10); tap(100, 100 + 10); g.flush()                # Work -> Unread
-assert len(requests) == n_req + 1 and 'kind=unread' in requests[-1], requests[n_req:]
+assert len(requests) == n_req + 1 and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
+assert 'connecting Wi-Fi...' in texts(), texts()
+tap(100, 100 + 10); tap(100, 100 + 10); g.flush()                # Work -> Unread, after /api
+assert len(requests) == n_req + 2 and 'kind=unread' in requests[-1], requests[n_req:]
 assert 'Work story' in texts()
 key('back'); key('back')
 assert any(x.startswith('took ') for x in texts()), texts()        # the last answer's timing
@@ -508,13 +509,13 @@ t = texts()
 assert 'Club' in t and 'Personal' in t, t
 assert 'Club' in str(g.store['accounts.txt'])
 L.execute("fake_ms = fake_ms + 5000"); texts()
-assert len(requests) == n_req + 1, requests[n_req:]             # already fresh: no /api later either
-# an older Worker sends lists without accounts: the app asks /api once, after the list
+assert len(requests) == n_req + 2, requests[n_req:]             # no further /api
+# an older Worker sends lists without accounts: the /api asked at start is enough, no second one
 del responses['kind=unread&page=1&n=12&acct=1']['accounts']
 n_req = len(requests)
 g = restart()
 tap(100, 100 + 10); tap(100, 100 + 10); g.flush()
-assert len(requests) == n_req + 2 and 'kind=unread' in requests[-2] and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
+assert len(requests) == n_req + 2 and requests[-2].split('?')[0].endswith('/api') and 'kind=unread' in requests[-1], requests[n_req:]
 assert 'Work story' in texts()
 # Wi-Fi: keep_wifi takes milliseconds; kept for minutes while in use, released when left
 kept = [g.kept[i] for i in range(1, len(g.kept) + 1)]

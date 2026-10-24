@@ -113,10 +113,11 @@ local accounts = {}
 local acct = nil              -- the chosen account's id while several exist
 local function multi() return #accounts > 1 end
 local read_accounts, load_accounts, note_accounts   -- defined in the accounts section
--- The account list is refreshed once per app start: the Worker sends it with every list and feed
--- answer, so the first one after start brings it. Asking /api separately before the first list
--- made that list wait for two round trips; /api is asked only with nothing saved yet, after
--- Settings, or for an older Worker. No timer: timeouts are checked on draw and input.
+-- The account list is asked (/api, a tiny answer) as soon as the app starts: that request also
+-- brings Wi-Fi up (~7 s with Wi-Fi off in the settings), which the first list needs anyway, so a
+-- list opened meanwhile waits only for the rest. Lists and feed answers carry the account list
+-- too and keep it current; an older Worker without that is asked /api once more after Settings.
+-- No timer: timeouts are checked on draw and input.
 local accounts_fresh = false
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local function acct_label()
@@ -219,13 +220,13 @@ local function fetch_image(url, on_done)
   end)
 end
 
-local function request(path, on_done)
+local function request(path, on_done, label)
   local url, headers = request_target(path)
   if not url then note('set the host in Settings'); on_done(nil, 'no host'); return end
   keep_wifi()
   -- articles may wait for the Worker's full-text services; lists answer quickly
   local timeout = path:find('/api/article/', 1, true) and 60000 or 30000
-  net_submit({ url = url, method = 'GET', headers = headers }, 'loading ' .. short(path, 30), timeout, function(resp, err, job)
+  net_submit({ url = url, method = 'GET', headers = headers }, label or ('loading ' .. short(path, 30)), timeout, function(resp, err, job)
     if err then on_done(nil, err); return end
     if type(resp) ~= 'table' then on_done(nil, 'no response'); return end
     local st = tonumber(resp.status) or tonumber(resp.code)
@@ -562,12 +563,12 @@ read_accounts = function(raw)
 end
 
 -- ask the Worker which accounts it serves; an older Worker answers without a list (one account)
-load_accounts = function()
+load_accounts = function(label)
   if cfg.host == '' then return end
   accounts_fresh = true                        -- asked; note_accounts stores the answer
   local keep = acct
   acct = nil                                   -- the account list itself is not per account
-  request('/api', function(data, err, raw) end)
+  request('/api', function(data, err, raw) end, label)
   acct = keep
 end
 
@@ -1028,10 +1029,10 @@ end
 
 function on_load(c)
   load_cfg()
-  local saved = cache_read('accounts.txt')
-  read_accounts(saved)
-  -- with a saved list the first answer refreshes it (see note_accounts); without one, ask now
-  if cfg.host == '' then screen = 'settings' elseif not saved then load_accounts() end
+  read_accounts(cache_read('accounts.txt'))   -- the saved list draws the folders at once
+  keep_wifi(true)
+  -- ask the account list right away: it also brings Wi-Fi up for whatever is opened next
+  if cfg.host == '' then screen = 'settings' else load_accounts('connecting Wi-Fi...') end
   keep_wifi(true)
 end
 

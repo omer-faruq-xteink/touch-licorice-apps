@@ -47,8 +47,8 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
 - Tap an article: it is fetched as text (and marked read in CommaFeed), laid out with the three
   system fonts — title large, feed and date small, headings large, quotes and list items indented —
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.
-- The account list is refreshed once per app start, from the first answer (the Worker sends it
-  with every list); it is asked separately only with nothing saved yet or after Settings.
+- At start the app asks the account list at once; that small request also brings Wi-Fi up for
+  the first list. Lists and feed answers carry the account list too and keep it current.
 - After each load the status line shows how long the answer took and the Worker's share of it
   (`took 2.1 s, server 0.6 s`), to tell a slow server from a slow connection.
 - Wi-Fi is kept up while the app is used (5 minutes from the last tap) and let go when you leave,
