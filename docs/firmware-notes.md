@@ -210,3 +210,36 @@ disassembler: capstone 6's Xtensa decoder stops on this code, so `xdis.py` wraps
 | Install failed | HMAC/key mismatch: wrong firmware image or a build that moved the key |
 | Cannot run yet | code section did not decrypt (IV/key) |
 | App error, closed | a Lua error in `index.lua` |
+
+## API 2.9 is reachable (2026-10-24)
+
+A package with `"api": "2.0"` installs and runs if its `permissions` use the API-2 vocabulary:
+only `net` and `reader` (the 0.8 names `sys.battery`, `sys.status`, `net.http` make the installer
+reject it). The host then reports `ctx.api = {major = 2, minor = 9}` and a much larger surface,
+read off the device with the v3 probe (`tools/netprobe/index3.lua`):
+
+- **`g` is not a global**: it arrives only as the second argument of `on_draw(ctx, g)`, a userdata
+  whose metatable holds `arc circle clear image line pattern_rect fill_pattern rect round_rect text
+  text_box size measure measure_text polygon polyline`. `g:text(x, y, s)` and `g:clear(0)` work as
+  in 0.8. `ctx` is still a global and is also passed.
+- **Events** are pointer events: `type = "pointer"`, `phase = "up"` (and the other phases),
+  `gesture = "tap"`, `x, y, down_x, down_y, time_ms`. `ctx.input.pointer = true`; the key table lists
+  `back down left ok right up`. Finger movement is therefore available: freehand drawing is possible.
+- **ctx members**: `after api base64 budget capabilities clock defer_full_refresh device dialog
+  files fonts frontlight gc hash hex i18n image input invalidate json layers log net package perf qr
+  quit random reader save_state screen set_tick state storage system ui url zlib`.
+- `ctx.net` (with the `net` permission): `keep_wifi`, `request`, `websocket`.
+- `ctx.storage`: `exists list read remove size usage write` — apps can write files.
+- `ctx.json`: `decode`, `encode`, `null`. `ctx.input`: `text`, `edit` (native keyboard; `keyboard_h`
+  436). `ctx.fonts`: `small`, `medium`, `large` font handles plus `size`. `ctx.ui.create`: the
+  native immediate-mode UI. `ctx.reader` (with the `reader` permission): `all_books book_days books
+  cover current days summary`. `ctx.system`: `can_open`, `open`.
+- `ctx.capabilities`: `dialog frontlight image_decode image_transform pattern reader ui` true,
+  `ttf` false.
+- Not present even with `requires: ["lockscreen_timer"]`: `ctx.lockscreen` (the wallpaper setters);
+  the manifest `lockscreen` block is the next thing to try.
+- `require('@public/ui')` still reports module not found.
+
+Call signatures (request, storage.write, input.text, image, dialog) are not yet probed. The
+statements elsewhere in this document that apps have no network and no file write describe the
+API 0.8 path only.
