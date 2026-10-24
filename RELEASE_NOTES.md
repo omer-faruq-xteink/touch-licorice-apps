@@ -1,3 +1,34 @@
+# v0.3.1
+
+Bug fixes for **RSS** and **Dictionary** on the **Xteink X4 Pro** (stock XTOS Licorice, build **26102301**).
+
+## Fixed
+
+- **Side buttons turned two pages at once** in RSS and Dictionary. The firmware sends more than one
+  key event for a single press; release events and a repeat of the same button within 250 ms are now
+  ignored, so one press turns one page.
+- **RSS: an `ERR … attempt to index a nil value` line** could appear at the bottom while an article
+  was loading and then stayed on every screen. The loading frame no longer reads the previous
+  article's pages, and in RSS, Notes and Dictionary an error message now disappears with the next tap.
+
+## Update
+
+Install the new `rss.xtapp`, `dict.xtapp` and `notes.xtapp` **over** the installed apps (SD card root
+→ All Files → Install). Do not uninstall first: that deletes the app's folder (RSS settings and cache,
+Notes pages, Dictionary files). Settings, pages and dictionaries are kept when you install over them.
+
+## Files
+
+| file | content |
+|---|---|
+| `rss.xtapp`, `dict.xtapp` | **changed**: both fixes |
+| `notes.xtapp` | **changed**: error message clears with the next tap |
+| `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | unchanged |
+| `probe.xtapp`, `netprobe.xtapp` | developer tools, unchanged |
+| `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.3.0
 
 New app: **Dictionary** (`dict.xtapp`). Offline StarDict lookup on the **Xteink X4 Pro** (stock XTOS Licorice,
@@ -21,18 +52,10 @@ several dictionaries side by side, recent lookups.
 | `dict.xtapp` | **Dictionary** (new) |
 | `dict-wordnet-en.zip` | WordNet converted (128 shards, 25 MB unpacked), with its license |
 | `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | the games, same builds as v0.2.0 |
-| `notes.xtapp`, `rss.xtapp` | Notes and RSS, with the fix below |
+| `notes.xtapp`, `rss.xtapp` | Notes and RSS, same builds as v0.2.0 |
 | `probe.xtapp`, `netprobe.xtapp` | developer tools, not needed to play |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
-
-## Fixed
-
-- **RSS**: an `ERR … attempt to index a nil value` line could appear at the bottom while an article
-  was loading (the previous article's page table was used for one frame) and then stayed on every
-  screen. Fixed; in RSS, Notes and Dictionary an error message now disappears with the next tap.
-- **RSS, Dictionary**: a side button turned two pages at once (the host sends more than one key
-  event per press). Release events and a repeat of the same key within 250 ms are now ignored.
 
 # v0.2.0
 
