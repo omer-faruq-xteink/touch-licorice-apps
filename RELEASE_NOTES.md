@@ -31,6 +31,11 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   time, so a list opened while the app was still asking for the account list (or loading a
   picture) never arrived. Requests now go one after the other; one with no answer is cancelled
   after 30 s (60 s for an article), and Reload gives up a stuck one at once.
+- **RSS: the first list after start no longer waits for the account list.** The Worker now sends
+  the account list with every list and feed answer, so the first answer after each app start
+  refreshes it (an account added since shows up). The app asks for it separately only with
+  nothing saved yet, after Settings, or when nothing is opened a few seconds after start.
+  Needs the updated rss-opds Worker; with an older one the app asks after the first list.
 
 ## Update
 

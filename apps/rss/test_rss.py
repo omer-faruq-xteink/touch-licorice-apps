@@ -482,4 +482,44 @@ g.flush()
 t = texts()
 assert 'Work' in t and 'Personal' in t, t
 assert not any('ERR' in x for x in texts())
+
+# restart with a saved account list: no /api before the first list; that list's answer carries
+# the accounts (a third one was added meanwhile) and refreshes the folders and the saved copy
+three = [{'id': '1', 'label': 'Work'}, {'id': '2', 'label': 'Personal'}, {'id': '3', 'label': 'Club'}]
+responses['__root__'] = {'title': 'CommaFeed', 'accounts': three}
+responses['kind=unread&page=1&n=12&acct=1'] = {'title': 'Unread', 'page': 1, 'has_more': False, 'accounts': three,
+    'items': [{'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '', 'read': False, 'excerpt': 'w'}]}
+def restart():
+    L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+    gl = L.globals()
+    gl.pending = L.table()
+    gl.on_load(gl.ctx)
+    return gl
+n_req = len(requests)
+g = restart()
+assert len(requests) == n_req, requests[n_req:]                 # nothing asked at start
+tap(100, 100 + 10); tap(100, 100 + 10); g.flush()                # Work -> Unread
+assert len(requests) == n_req + 1 and 'kind=unread' in requests[-1], requests[n_req:]
+assert 'Work story' in texts()
+key('back'); key('back')
+t = texts()
+assert 'Club' in t and 'Personal' in t, t
+assert 'Club' in str(g.store['accounts.txt'])
+L.execute("on_tick(ctx)"); L.execute("fake_ms = fake_ms + 5000"); L.execute("on_tick(ctx)")
+assert len(requests) == n_req + 1, requests[n_req:]             # already fresh: no /api later either
+# restart and open nothing: after a few seconds the app asks /api by itself
+n_req = len(requests)
+g = restart()
+L.execute("on_tick(ctx)")
+assert len(requests) == n_req
+L.execute("fake_ms = fake_ms + 4000"); L.execute("on_tick(ctx)")
+assert len(requests) == n_req + 1 and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
+g.flush()
+# an older Worker sends lists without accounts: the app asks /api once, after the list
+del responses['kind=unread&page=1&n=12&acct=1']['accounts']
+n_req = len(requests)
+g = restart()
+tap(100, 100 + 10); tap(100, 100 + 10); g.flush()
+assert len(requests) == n_req + 2 and 'kind=unread' in requests[-2] and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
+assert 'Work story' in texts()
 print('rss29 tests passed')

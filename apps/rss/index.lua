@@ -95,7 +95,13 @@ local function st() return SIZES[cfg.size] or SIZES.default end
 local accounts = {}
 local acct = nil              -- the chosen account's id while several exist
 local function multi() return #accounts > 1 end
-local read_accounts, load_accounts   -- defined in the accounts section
+local read_accounts, load_accounts, note_accounts   -- defined in the accounts section
+-- The account list is refreshed once per app start: the Worker sends it with every list and feed
+-- answer, so the first one after start brings it. Asking /api separately before the first list
+-- made that list wait for two round trips; /api is asked only with nothing saved yet, after
+-- Settings, when the user has opened nothing a few seconds after start, or for an older Worker.
+local accounts_fresh = false
+local started_ms = nil
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
@@ -214,6 +220,7 @@ local function request(path, on_done)
     local okj, data = pcall(function() return ctx.json:decode(body) end)
     if not okj or type(data) ~= 'table' then on_done(nil, 'bad json: ' .. short(body, 40)); return end
     if data.error then on_done(nil, tostring(data.error)); return end
+    note_accounts(data, body, path)
     on_done(data, nil, body)
   end)
   refresh()
@@ -534,15 +541,37 @@ end
 -- ask the Worker which accounts it serves; an older Worker answers without a list (one account)
 load_accounts = function()
   if cfg.host == '' then return end
+  accounts_fresh = true                        -- asked; note_accounts stores the answer
   local keep = acct
   acct = nil                                   -- the account list itself is not per account
-  request('/api', function(data, err, raw)
-    if data and raw then
+  request('/api', function(data, err, raw) end)
+  acct = keep
+end
+
+local function accounts_sig(list)
+  local t = {}
+  for _, a in ipairs(type(list) == 'table' and list or {}) do
+    if type(a) == 'table' then t[#t + 1] = tostring(a.id) .. '=' .. tostring(a.label) end
+  end
+  return table.concat(t, '|')
+end
+
+-- every Worker answer passes here: one that carries the account list keeps it current (saved
+-- only when it changed); the first one without it (an older Worker) makes the app ask /api once
+note_accounts = function(data, raw, path)
+  if type(data.accounts) == 'table' then
+    accounts_fresh = true
+    if accounts_sig(data.accounts) ~= accounts_sig(accounts) then
       read_accounts(raw)
       cache_write('accounts.txt', raw)
     end
-  end)
-  acct = keep
+  elseif path ~= '/api' and not accounts_fresh then
+    load_accounts()
+  elseif path == '/api' then
+    accounts_fresh = true
+    read_accounts(raw)
+    cache_write('accounts.txt', raw)
+  end
 end
 
 ------------------------------------------------------------------ drawing
@@ -974,13 +1003,21 @@ end
 
 function on_tick(c)
   if net_active then busy(); pcall(function() ctx.invalidate() end) end
+  -- nothing opened a few seconds after start: refresh the account list now
+  if not accounts_fresh and cfg.host ~= '' and not busy() then
+    local t = now_ms()
+    if t and started_ms and t - started_ms > 3000 then load_accounts(); refresh() end
+  end
 end
 
 function on_load(c)
   pcall(function() ctx:set_tick(1000) end)
   load_cfg()
-  read_accounts(cache_read('accounts.txt'))
-  if cfg.host == '' then screen = 'settings' else load_accounts() end
+  started_ms = now_ms()
+  local saved = cache_read('accounts.txt')
+  read_accounts(saved)
+  -- with a saved list the first answer refreshes it (see note_accounts); without one, ask now
+  if cfg.host == '' then screen = 'settings' elseif not saved then load_accounts() end
   pcall(function() ctx.net:keep_wifi(180) end)
 end
 
