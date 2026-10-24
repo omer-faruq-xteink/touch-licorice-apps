@@ -15,7 +15,7 @@ requests = []
 
 def fake_request(url):
     requests.append(url)
-    for key, body in responses.items():
+    for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
         if key in url:
             return 200, json.dumps(body)
     return 404, '{"error":"not found"}'
@@ -126,11 +126,35 @@ assert requests[-1].endswith('/api/article/102?max=20000&mark=1'), requests[-1]
 tap(50, 20)                                                                           # back to the list
 assert 'Article 0' in texts()
 
-# Next page then Prev
-tap(4 + 2 * 118 + 10, 20); g.flush()
-assert 'page=2' in requests[-1]
-key('left'); g.flush()
-assert 'page=1' in requests[-1]
+# Next scrolls inside the loaded rows and loads the next page when only "Load more" is left;
+# after the last item comes a Load more row that appends the next page when tapped
+responses['/api/list?kind=unread&page=2'] = {'title': 'Unread', 'page': 2, 'has_more': True,
+    'items': [{'id': str(112 + i), 'title': f'Article {12 + i}', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''} for i in range(10)]}
+responses['/api/list?kind=unread&page=3'] = {'title': 'Unread', 'page': 3, 'has_more': False,
+    'items': [{'id': '121', 'title': 'Article 21', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''},      # duplicate of page 2
+              {'id': '122', 'title': 'Article 22', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''},
+              {'id': '123', 'title': 'Article 23', 'feed': 'Feed', 'date': '', 'read': False, 'excerpt': ''}]}
+NEXT, RELOAD = (4 + 2 * 118 + 10, 20), (4 + 3 * 118 + 10, 20)
+assert 'Unread  1-12 / 12+' in texts(), texts()
+tap(*NEXT); g.flush()                                 # only "Load more" would be left -> page 2 now
+assert requests[-1].endswith('kind=unread&page=2&n=12'), requests[-1]
+t = texts()
+assert 'Unread  13-22 / 22+' in t and 'Article 12' in t and 'Article 21' in t and 'Load more' in t, t
+long_ev(100, row_y(10), 'up', 'long')                 # long press on Load more: no preview
+assert 'Close' not in texts()
+tap(100, row_y(10)); g.flush()                        # tap Load more -> page 3 appended, duplicate dropped
+assert requests[-1].endswith('kind=unread&page=3&n=12'), requests[-1]
+t = texts()
+assert 'Unread  13-24 / 24' in t and 'Article 22' in t and 'Article 23' in t and 'Load more' not in t, t
+assert t.count('Article 21') == 1, t
+n_req = len(requests)
+key('left')                                           # back to the first rows, nothing fetched
+t = texts()
+assert 'Article 0' in t and 'Unread  1-12 / 24' in t and len(requests) == n_req, t
+tap(*NEXT); tap(*NEXT); tap(*NEXT)                    # at the end without more: Next stays put
+assert 'Unread  13-24 / 24' in texts() and len(requests) == n_req, texts()
+tap(*RELOAD); g.flush()                               # Reload starts over at page 1
+assert requests[-1].endswith('kind=unread&page=1&n=12') and 'Unread  1-12 / 12+' in texts(), texts()
 
 # open article 3 -> text wrapped and paged, mark=1 sent
 tap(100, 56 + 26 + 3 * 58 + 5)

@@ -21,8 +21,11 @@ The device must be on Wi-Fi; the app asks the host to keep it on while in use.
 ## Using it
 
 - Menu: **Unread**, **Starred**, **All**, **Feeds** (one subscription at a time), **Settings**.
-- Lists show twelve articles per page: title, feed and date; `*` marks unread. **Prev / Next**,
-  the side buttons or a swipe turn the page; **Reload** fetches again.
+- Lists show twelve articles per screen: title, feed and date; `*` marks unread; the header shows
+  which rows are on screen and how many are loaded (`13-24 / 24+`, `+` = more on the server).
+  **Prev / Next**, the side buttons or a swipe scroll through what is loaded. After the last
+  article comes a **Load more** row: tapping it — or Next when nothing else is left — fetches the
+  next twelve and appends them. **Reload** starts over at the newest. Up to 240 rows are kept.
 - **Long-press** an article for a preview: the whole title, feed and date, and the feed's summary
   (up to 400 characters, from the Worker's list). **Open** reads it, **Close**, a tap outside the
   box or the Back key returns to the list. Nothing is fetched and nothing is marked read.

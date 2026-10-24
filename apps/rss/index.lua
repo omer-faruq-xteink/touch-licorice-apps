@@ -7,6 +7,7 @@
 
 local W, H, TOP = 480, 800, 56
 local LIST_N = 12
+local LIST_MAX_ITEMS = 240    -- list rows kept in memory across "Load more"
 local TEXT_MAX = 20000
 
 local G, ERR = nil, nil
@@ -192,39 +193,73 @@ end
 
 ------------------------------------------------------------------ loaders
 
-local function list_cache_name()
-  return 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. list.page .. '.txt'
+-- The list keeps every page fetched so far in list.items and shows LIST_N rows from list.top.
+-- After the last item comes a "Load more" row while the Worker says there is more; tapping it
+-- (or Next at the end) fetches the following page and appends it.
+
+local function list_cache_name(page)
+  return 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. page .. '.txt'
 end
 
+-- rows on the list screen: the items, then the Load more row when there is more
+local function list_rows() return #list.items + (list.has_more and 1 or 0) end
+local function is_more_row(i) return list.has_more and i == #list.items + 1 end
+
 local function open_list(kind, id, title)
-  list.kind, list.id, list.title, list.page = kind, id, title or kind, 1
-  list.items, list.has_more, list.cached = {}, false, false
+  list.kind, list.id, list.title, list.page = kind, id, title or kind, 0
+  list.items, list.has_more, list.cached, list.top = {}, false, false, 1
   preview = nil
   screen = 'list'
 end
 
-local function fetch_list()
-  local path = '/api/list?kind=' .. list.kind .. '&page=' .. list.page .. '&n=' .. LIST_N
+local function apply_page(page, data, append)
+  local items = data.items or {}
+  if append then
+    local seen = {}
+    for _, it in ipairs(list.items) do seen[tostring(it.id)] = true end
+    for _, it in ipairs(items) do
+      if not seen[tostring(it.id)] then list.items[#list.items + 1] = it end
+    end
+  else
+    list.items, list.top = items, 1
+  end
+  -- keep the heap in check on very long sessions: drop the oldest rows, keep the view in place
+  local extra = #list.items - LIST_MAX_ITEMS
+  if extra > 0 then
+    for _ = 1, extra do table.remove(list.items, 1) end
+    list.top = math.max(1, list.top - extra)
+  end
+  list.page = page
+  list.has_more = data.has_more and true or false
+end
+
+local function fetch_page(page, append)
+  local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. LIST_N
   if list.id then path = path .. '&id=' .. list.id end
   request(path, function(data, err, raw)
     if data then
-      list.items = data.items or {}
-      list.has_more = data.has_more and true or false
+      apply_page(page, data, append)
       list.title = data.title or list.title
       list.cached = false
       note('')
-      if raw then cache_write(list_cache_name(), raw) end
+      if raw then cache_write(list_cache_name(page), raw) end
     else
-      local raw = cache_read(list_cache_name())
+      local raw = cache_read(list_cache_name(page))
       local okj, data2 = pcall(function() return ctx.json:decode(raw) end)
       if raw and okj and type(data2) == 'table' then
-        list.items = data2.items or {}; list.has_more = data2.has_more and true or false; list.cached = true
+        apply_page(page, data2, append)
+        list.cached = true
         note('offline: ' .. short(err, 30))
       else
         note(short(err, 44))
       end
     end
   end)
+end
+
+local function fetch_list() fetch_page(1, false) end            -- first page, or Reload
+local function load_more()
+  if list.has_more and not loading then fetch_page(list.page + 1, true) end
 end
 
 local function open_article(item)
@@ -326,12 +361,23 @@ end
 local function draw_list(gg)
   local F = ctx.fonts
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
-  gg:text(8, TOP + 2, short(list.title .. '  p' .. list.page .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  local last = math.min(#list.items, list.top + LIST_N - 1)
+  local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
+  gg:text(8, TOP + 2, short(list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
   if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
   if #list.items == 0 and not loading then gg:text(16, y + 20, 'nothing here', { font = F and F.medium }) end
-  for i, it in ipairs(list.items) do
-    if i > LIST_N then break end
+  for i = list.top, math.min(list_rows(), list.top + LIST_N - 1) do
+    if is_more_row(i) then
+      local label = loading and 'Loading…' or 'Load more'
+      local f = F and F.medium
+      local okm, tw = pcall(function() return f:measure(label) end)
+      tw = (okm and type(tw) == 'number') and tw or #label * 12
+      gg:rect(16, y - 4, W - 32, 50)
+      gg:text(math.floor((W - tw) / 2), y + 10, label, { font = f })
+      break
+    end
+    local it = list.items[i]
     gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
     gg:text(16, y + 26, short((it.read and '' or '* ') .. (it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
@@ -417,11 +463,16 @@ local function edit_setting(i)
   if not ok then note('edit ! ' .. short(err, 30)) end
 end
 
+-- Prev / Next scroll the rows already loaded. When the next screen would hold nothing but the
+-- Load more row, or the Load more row is already on screen, Next loads the following page.
 local function page_list(delta)
-  if delta > 0 and not list.has_more then return end
-  if delta < 0 and list.page <= 1 then return end
-  list.page = list.page + delta
-  fetch_list()
+  local top = list.top + delta * LIST_N
+  if delta < 0 then list.top = math.max(1, top); return end
+  if top <= #list.items then list.top = top
+  elseif list.has_more then
+    if top == #list.items + 1 then list.top = top end
+    load_more()
+  end
 end
 
 local function page_article(delta)
@@ -457,8 +508,11 @@ local function tap(x, y)
       if b == 1 then screen = 'menu' elseif b == 2 then page_list(-1) elseif b == 3 then page_list(1) elseif b == 4 then fetch_list() end
       return
     end
-    local i = math.floor((y - (TOP + 26)) / 58) + 1
-    if i >= 1 and i <= math.min(#list.items, LIST_N) and y >= TOP + 26 then open_article(list.items[i]) end
+    local r = math.floor((y - (TOP + 26)) / 58) + 1
+    local i = list.top + r - 1
+    if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= list_rows() then
+      if is_more_row(i) then load_more() else open_article(list.items[i]) end
+    end
   elseif screen == 'feeds' then
     if y < 46 then
       local b = bar_hit(x, 4)
@@ -481,9 +535,10 @@ end
 ------------------------------------------------------------------ long-press preview
 
 local function row_item(y)
-  local i = math.floor((y - (TOP + 26)) / 58) + 1
-  if y >= TOP + 26 and i >= 1 and i <= math.min(#list.items, LIST_N) then return list.items[i] end
-  return nil
+  local r = math.floor((y - (TOP + 26)) / 58) + 1
+  local i = list.top + r - 1
+  if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= #list.items then return list.items[i] end
+  return nil   -- includes the Load more row
 end
 
 -- full title, feed and date, and the feed's summary in a box over the list, with Open / Close.
