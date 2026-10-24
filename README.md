@@ -11,6 +11,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
+| **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
@@ -86,6 +87,14 @@ lists), optionally as full text extracted by the Worker; opening one marks it re
 articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
 Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
 
+### Dictionary
+
+Type with the firmware keyboard, pick a suggestion, read the entry; several dictionaries side by
+side. Dictionaries are StarDict files converted once on a computer into text shards and copied
+over USB into `XTApps/dict/files/` on the SD card — the release ships **WordNet** (English–English)
+converted; for anything else run `apps/dict/stardict2shards.py`. Never uninstall the app (the
+folder goes with it); install updates over it. [More](apps/dict/README.md)
+
 ## Build from source
 
 Requirements: Python 3.10+ and one package.
@@ -121,6 +130,7 @@ python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
+python -I apps/dict/test_dict.py
 ```
 
 `build_all.py` also runs `tools/lualint55.py` over every Lua file: the device's Lua 5.5 rejects an

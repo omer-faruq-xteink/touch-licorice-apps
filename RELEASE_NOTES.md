@@ -11,7 +11,12 @@ Tested on build **26102301**. Unofficial, use at your own risk.
 - **Notes** rewritten (`notes.xtapp`): freehand drawing, the firmware's own keyboard, three text
   sizes, eight pages, and a real lock screen with clock and battery (the firmware asks once).
   Pages from the old Notes are not migrated.
-- Both use the firmware's **API 2.9** (manifest `"api": "2.0"`), newly mapped: network, JSON,
+- **Dictionary** (`dict.xtapp`): offline StarDict lookup with the firmware keyboard and
+  suggestions as you type. Unzip `dict-wordnet-en.zip` (WordNet, English–English) into
+  `XTApps/dict/files/` on the SD card in USB mode; convert any other StarDict with
+  `apps/dict/stardict2shards.py`. Never uninstall it — that deletes the folder; install updates
+  over it.
+- All three use the firmware's **API 2.9** (manifest `"api": "2.0"`), newly mapped: network, JSON,
   file storage, native keyboard, pointer movement, fonts, lock screen. Details in
   `docs/firmware-notes.md`; `probe.xtapp` is the tool that found them.
 
@@ -24,6 +29,7 @@ Tested on build **26102301**. Unofficial, use at your own risk.
 | `sokoban.xtapp` | **Sokoban** — 385 levels (Microban, Sasquatch, LOMA, Microcosmos, Minicosmos), undo |
 | `notes.xtapp` | **Notes** — draw and type, lock-screen page with clock |
 | `rss.xtapp` | **RSS** — CommaFeed via rss-opds, needs Wi-Fi |
+| `dict.xtapp` + `dict-wordnet-en.zip` | **Dictionary** — install the app, unzip WordNet into `XTApps/dict/files/` |
 | `probe.xtapp`, `netprobe.xtapp` | developer tools, not needed to play |
 
 `SHA256SUMS.txt` has the checksums.

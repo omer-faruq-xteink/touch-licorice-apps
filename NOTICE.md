@@ -26,6 +26,14 @@ The packs are included as published; where the source file carried the author's 
 inside the file. Do not add copyrighted commercial level sets (for example the original Thinking
 Rabbit levels) to a redistributed build.
 
+## WordNet — release asset `dict-wordnet-en.zip`
+
+The English–English dictionary shipped with releases is Princeton University's **WordNet**, taken
+from the StarDict conversion `dictd_www.dict.org_wn` (Hu Zheng, 2005) and re-cut into the text
+shards the Dictionary app reads. WordNet is free to use and redistribute under its own license,
+whose text is included in the zip as `LICENSE-WORDNET.txt` and requires this notice:
+"WordNet ® Princeton University". The data is not in the git repository, only in releases.
+
 ## Not included
 
 Nothing from Xteink's firmware is in this repository. The packer embeds only the *public* half of
