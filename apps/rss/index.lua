@@ -20,6 +20,19 @@ local function now_ms()
   return ok and tonumber(t) or nil
 end
 
+-- Wi-Fi: ctx.net:keep_wifi(n) takes MILLISECONDS (probe round 11: keep_wifi(300) let Wi-Fi drop
+-- within 10 s, keep_wifi(300000) kept it up). The app once passed 120 meaning seconds, so with
+-- Wi-Fi off in the settings every request paid ~7 s for Wi-Fi to come up again. Now: kept up for
+-- 5 minutes from the last tap or request while the app is open, released when it is left.
+local WIFI_KEEP_MS = 5 * 60 * 1000
+local wifi_kept_at = nil
+local function keep_wifi(force)
+  local t = now_ms()
+  if not force and t and wifi_kept_at and t - wifi_kept_at < 30000 then return end
+  wifi_kept_at = t
+  pcall(function() ctx.net:keep_wifi(WIFI_KEEP_MS) end)
+end
+
 -- Network queue. The host appears to carry one request at a time: a second one started while
 -- another is in flight never got an answer (the feeds list stayed on "loading"). So requests
 -- run one after the other, images included. A request with no answer within its timeout is
@@ -103,8 +116,7 @@ local read_accounts, load_accounts, note_accounts   -- defined in the accounts s
 -- The account list is refreshed once per app start: the Worker sends it with every list and feed
 -- answer, so the first one after start brings it. Asking /api separately before the first list
 -- made that list wait for two round trips; /api is asked only with nothing saved yet, after
--- Settings, or for an older Worker. No timer: a 1 s tick that redrew the e-ink screen while a
--- request waited made every request several seconds slower; timeouts are checked on draw/input.
+-- Settings, or for an older Worker. No timer: timeouts are checked on draw and input.
 local accounts_fresh = false
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local function acct_label()
@@ -210,7 +222,7 @@ end
 local function request(path, on_done)
   local url, headers = request_target(path)
   if not url then note('set the host in Settings'); on_done(nil, 'no host'); return end
-  pcall(function() ctx.net:keep_wifi(120) end)
+  keep_wifi()
   -- articles may wait for the Worker's full-text services; lists answer quickly
   local timeout = path:find('/api/article/', 1, true) and 60000 or 30000
   net_submit({ url = url, method = 'GET', headers = headers }, 'loading ' .. short(path, 30), timeout, function(resp, err, job)
@@ -959,6 +971,7 @@ end
 
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
+  keep_wifi()   -- still in use: Wi-Fi stays up (at most one call per 30 s)
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
@@ -1019,7 +1032,10 @@ function on_load(c)
   read_accounts(saved)
   -- with a saved list the first answer refreshes it (see note_accounts); without one, ask now
   if cfg.host == '' then screen = 'settings' elseif not saved then load_accounts() end
-  pcall(function() ctx.net:keep_wifi(180) end)
+  keep_wifi(true)
 end
 
-function on_leave() end
+function on_leave()
+  -- release: a very short keep lets Wi-Fi go down soon after the app is left
+  pcall(function() ctx.net:keep_wifi(1) end)
+end

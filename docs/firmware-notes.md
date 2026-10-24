@@ -254,7 +254,7 @@ messages; the Notes and RSS apps are built on the results.
 
 | call | notes |
 |---|---|
-| `ctx.net:keep_wifi(seconds)` | keeps Wi-Fi up; number, not boolean |
+| `ctx.net:keep_wifi(ms)` | keeps Wi-Fi up for **milliseconds** (a number; `true` is "bad argument"); see probe rounds 10–11 below |
 | `ctx.net:request({url, method, body, headers, timeout_ms}, fn)` | returns a job userdata with `cancel`; `fn(ctx, resp)` with `resp.body`, `resp.headers`, status; HTTP, HTTPS and POST verified; missing url → "bad extra argument (string expected)"; bad url → `nil, "invalid_argument"` |
 | `ctx.storage:write(name, data)` / `read` / `exists` / `size` / `remove(name)` / `list()` / `usage()` | plain file names only (no `/`, no spaces; an extension is optional), binary data fine, 40 KB fine; quota `{max_bytes = 134217728, max_files = 512}`; missing file → `nil, "not_found"`. `ctx.files` offers the same verbs (`files.path` is a string) |
 | `ctx.input:text({title, value}, fn)` | full-screen editor with the firmware keyboard (64-character counter); `fn(ctx, text)` on OK |
@@ -309,4 +309,21 @@ bytes. Articles of 20 000 characters lay out fine within the 1 MB heap.
   456×342 and larger) — feed the device JPEG only. `g:image(img, x, y)` draws it.
 - The free resizer images.weserv.nl answers the device but refuses Cloudflare Workers
   (HTTP 403, "error code: 1106"); the RSS app therefore fetches resized JPEGs itself.
+
+## Probe rounds 10–11: Wi-Fi and request timing (2026-10-25)
+
+Run with Wi-Fi **off** in the device settings, against the rss-opds Worker (`/k/x/api`, a tiny
+401 answer that the Worker serves in well under a second; its own timing said 0.3–0.4 s for a
+real list).
+
+- The first request after Wi-Fi was down took **7–8 s**: Wi-Fi coming up. Back-to-back HTTPS
+  requests then took **~1.4 s** each (a fresh TLS handshake every time, no connection reuse);
+  plain HTTP took 0.16 s.
+- **`keep_wifi(n)` counts milliseconds.** After `keep_wifi(300)` Wi-Fi was down again after an idle
+  gap of 10, 30 and 60 s (the next request took ~7 s). After `keep_wifi(300000)` it was still up
+  after 30 and 60 s (~1.4 s). Without any `keep_wifi` call it stayed up for at least 60 s.
+- So an app that passes a number meaning seconds (`keep_wifi(120)`) makes Wi-Fi drop right after
+  each request. Keep it up with minutes in ms while the app is used; a tiny value (`keep_wifi(1)`)
+  lets it go when the app is left.
+- With Wi-Fi on in the settings none of this applies: Wi-Fi is already up.
 

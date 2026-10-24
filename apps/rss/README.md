@@ -51,6 +51,8 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   with every list); it is asked separately only with nothing saved yet or after Settings.
 - After each load the status line shows how long the answer took and the Worker's share of it
   (`took 2.1 s, server 0.6 s`), to tell a slow server from a slow connection.
+- Wi-Fi is kept up while the app is used (5 minutes from the last tap) and let go when you leave,
+  so pages load in about a second and a half even with Wi-Fi off in the device settings.
 - Network requests run one at a time (the device does not carry two at once). One with no
   answer is cancelled after 30 s, 60 s for an article; Reload gives up a stuck one at once.
 - A list that fails to load is tried once more; if it still fails, the screen says why (and

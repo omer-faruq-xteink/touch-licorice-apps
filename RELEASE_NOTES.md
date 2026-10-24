@@ -35,10 +35,13 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   the account list with every list and feed answer, so the first answer after each app start
   refreshes it (an account added since shows up). The app asks for it separately only with
   nothing saved yet or after Settings. Needs the updated rss-opds Worker; with an older one
-  the app asks after the first list. No screen redraws while a request waits, which had made
-  every request several seconds slower.
+  the app asks after the first list.
 - **RSS: load times on screen.** After each load the status line says how long the answer took
   and how much of it the Worker spent (`took 2.1 s, server 0.6 s`).
+- **RSS: no more 7–8 s per page with Wi-Fi off in the settings.** The app asked the device to keep
+  Wi-Fi up with a number in seconds, but the device counts milliseconds, so Wi-Fi went down right
+  after every request and the next one waited for it to come back. RSS now keeps Wi-Fi up while
+  it is used (5 minutes from the last tap) and lets it go when you leave the app.
 
 ## Update
 

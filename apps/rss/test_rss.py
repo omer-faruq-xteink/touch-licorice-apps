@@ -57,7 +57,7 @@ ctx = {
   storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
   input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
-  net = M({ keep_wifi = function() end, request = function(opts, fn)
+  net = M({ keep_wifi = function(ms) kept = kept or {}; kept[#kept + 1] = ms end, request = function(opts, fn)
     assert(type(opts.url) == 'string' and type(fn) == 'function')
     last_headers = opts.headers
     local st, body = py_request(opts.url)
@@ -516,4 +516,9 @@ g = restart()
 tap(100, 100 + 10); tap(100, 100 + 10); g.flush()
 assert len(requests) == n_req + 2 and 'kind=unread' in requests[-2] and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
 assert 'Work story' in texts()
+# Wi-Fi: keep_wifi takes milliseconds; kept for minutes while in use, released when left
+kept = [g.kept[i] for i in range(1, len(g.kept) + 1)]
+assert kept and all(k >= 60000 for k in kept), kept
+L.execute("on_leave()")
+assert g.kept[len(g.kept)] < 1000, g.kept[len(g.kept)]
 print('rss29 tests passed')
