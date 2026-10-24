@@ -21,6 +21,7 @@ local list = { kind = 'unread', id = nil, title = '', page = 1, items = {}, has_
 -- long-press preview over the list: { item, lines, box = {x, y, w, h}, open = {..}, close = {..} }
 local preview = nil
 local suppress_up = false     -- the release that ends a long press must not also act as a tap
+local preview_can             -- defined with the preview navigation; draw_preview needs it
 -- feeds screen
 local feeds = { items = {}, top = 1 }
 -- article screen
@@ -230,16 +231,19 @@ local function apply_page(page, data, append)
   list.has_more = data.has_more and true or false
 end
 
-local function fetch_page(page, append)
+-- after(ok) runs once the page is in list.items (from the network or the offline cache)
+local function fetch_page(page, append, after)
   local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. LIST_N
   if list.id then path = path .. '&id=' .. list.id end
   request(path, function(data, err, raw)
+    local ok = false
     if data then
       apply_page(page, data, append)
       list.title = data.title or list.title
       list.cached = false
       note('')
       if raw then cache_write(list_cache_name(page), raw) end
+      ok = true
     else
       local raw = cache_read(list_cache_name(page))
       local okj, data2 = pcall(function() return ctx.json:decode(raw) end)
@@ -247,16 +251,19 @@ local function fetch_page(page, append)
         apply_page(page, data2, append)
         list.cached = true
         note('offline: ' .. short(err, 30))
+        ok = true
       else
         note(short(err, 44))
       end
     end
+    if after then after(ok) end
   end)
 end
 
 local function fetch_list() fetch_page(1, false) end            -- first page, or Reload
-local function load_more()
-  if list.has_more and not loading then fetch_page(list.page + 1, true) end
+local function load_more(after)
+  if list.has_more and not loading then fetch_page(list.page + 1, true, after); return true end
+  return false
 end
 
 local function open_article(item)
@@ -346,12 +353,15 @@ local function draw_preview(gg)
     if ln.s ~= '' then gg:text(b.x + 16 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  for _, btn in ipairs({ preview.open, preview.close }) do
+  for _, btn in ipairs({ preview.prev, preview.open, preview.close, preview.next }) do
+    local shown = (btn ~= preview.prev or preview_can(-1)) and (btn ~= preview.next or preview_can(1))
+    if shown then
     gg:rect(btn.x, btn.y, btn.w, btn.h)
     local f = F and F.medium
     local okm, tw = pcall(function() return f:measure(btn.label) end)
     tw = (okm and type(tw) == 'number') and tw or #btn.label * 12
     gg:text(btn.x + math.floor((btn.w - tw) / 2), btn.y + 10, btn.label, { font = f })
+    end
   end
 end
 
@@ -552,24 +562,64 @@ local function open_preview(item)
     used = used + ln.h
   end
   local h = pad + used + pad + btn_h + pad
-  local bw = math.floor((w - 3 * pad) / 2)
+  local bw = math.floor((w - 5 * pad) / 4)
   local by = y + h - pad - btn_h
+  local function btn(n, label) return { x = x + pad + (n - 1) * (bw + pad), y = by, w = bw, h = btn_h, label = label } end
   preview = {
     item = item, lines = kept, box = { x = x, y = y, w = w, h = h },
-    open = { x = x + pad, y = by, w = bw, h = btn_h, label = 'Open' },
-    close = { x = x + 2 * pad + bw, y = by, w = bw, h = btn_h, label = 'Close' },
+    prev = btn(1, 'Prev'), open = btn(2, 'Open'), close = btn(3, 'Close'), next = btn(4, 'Next'),
   }
 end
 
 local function inside(r, x, y) return x >= r.x and x < r.x + r.w and y >= r.y and y < r.y + r.h end
 
+local function index_of(item)
+  for i, it in ipairs(list.items) do if it == item then return i end end
+  return nil
+end
+local function window_of(i) return math.floor((i - 1) / LIST_N) * LIST_N + 1 end
+
+-- closing leaves the list on the screen of the article last previewed
+local function close_preview()
+  local i = preview and index_of(preview.item)
+  if i then list.top = window_of(i) end
+  preview = nil
+end
+
+preview_can = function(delta)
+  local i = preview and index_of(preview.item)
+  if not i then return false end
+  if delta < 0 then return i > 1 end
+  return i < #list.items or list.has_more
+end
+
+-- Prev / Next walk the list; Next past the last loaded article loads the next page and shows
+-- its first article. If the preview is closed meanwhile, the list moves to that page instead.
+local function preview_step(delta)
+  local i = preview and index_of(preview.item)
+  if not i then return end
+  local target = list.items[i + delta]
+  if target then open_preview(target); return end
+  if delta < 0 then return end
+  local anchor = preview.item
+  load_more(function(ok)
+    local a = index_of(anchor)
+    local nxt = ok and a and list.items[a + 1]
+    if not nxt or screen ~= 'list' then return end
+    if preview and preview.item == anchor then open_preview(nxt)
+    elseif not preview then list.top = window_of(a + 1) end
+  end)
+end
+
 local function preview_tap(x, y)
-  if inside(preview.open, x, y) then
+  if inside(preview.prev, x, y) then preview_step(-1)
+  elseif inside(preview.next, x, y) then preview_step(1)
+  elseif inside(preview.open, x, y) then
     local it = preview.item
-    preview = nil
+    close_preview()
     open_article(it)
   elseif inside(preview.close, x, y) or not inside(preview.box, x, y) then
-    preview = nil
+    close_preview()
   end
 end
 
@@ -589,7 +639,13 @@ function on_input(c, ev)
       end
       if ev.phase ~= 'up' then return end
       if suppress_up then suppress_up = false; return end
-      if preview then preview_tap(ev.x or 0, ev.y or 0); return end
+      if preview then
+        local pg = ev.gesture
+        if pg == 'swipe_left' or pg == 'swipe_up' then preview_step(1)
+        elseif pg == 'swipe_right' or pg == 'swipe_down' then preview_step(-1)
+        else preview_tap(ev.x or 0, ev.y or 0) end
+        return
+      end
       local g = ev.gesture
       if g == 'swipe_left' or g == 'swipe_up' then
         if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
@@ -601,7 +657,9 @@ function on_input(c, ev)
     elseif ev.type == 'key' and key_accepted(ev) then
       local k = ev.key
       if preview then
-        if k == 'back' then preview = nil end
+        if k == 'back' then close_preview()
+        elseif k == 'right' or k == 'down' then preview_step(1)
+        elseif k == 'left' or k == 'up' then preview_step(-1) end
         return
       end
       if k == 'back' then

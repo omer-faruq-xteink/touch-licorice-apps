@@ -27,8 +27,12 @@ The device must be on Wi-Fi; the app asks the host to keep it on while in use.
   loaded article fetches the next twelve and appends them, so the list simply continues.
   **Reload** starts over at the newest. Up to 240 rows are kept.
 - **Long-press** an article for a preview: the whole title, feed and date, and the feed's summary
-  (up to 400 characters, from the Worker's list). **Open** reads it, **Close**, a tap outside the
-  box or the Back key returns to the list. Nothing is fetched and nothing is marked read.
+  (up to 400 characters, from the Worker's list). **Prev / Next** in the box, the side buttons or
+  a swipe move to the previous / next article's preview; Next on the last loaded article loads the
+  next page and shows its first article. **Open** reads it; **Close**, a tap outside the box or
+  the Back key returns to the list, on the screen of the article you were looking at (also when
+  you close while the next page is still loading). Previews fetch nothing else and mark nothing
+  read.
 - Tap an article: it is fetched as text (and marked read in CommaFeed), laid out with the three
   system fonts — title large, feed and date small, headings large, quotes and list items indented —
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.

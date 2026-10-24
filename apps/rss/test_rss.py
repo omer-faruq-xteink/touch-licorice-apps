@@ -156,6 +156,59 @@ assert 'Unread  13-24 / 24' in texts() and len(requests) == n_req, texts()
 tap(*RELOAD); g.flush()                               # Reload starts over at page 1
 assert requests[-1].endswith('kind=unread&page=1&n=12') and 'Unread  1-12 / 12+' in texts(), texts()
 
+# preview Prev / Next: buttons, side buttons and swipes walk the list
+kev = L.eval("function(k, t) on_input(ctx, {type='key', key=k, phase='down', time_ms=t}) end")
+header = lambda: [x for x in texts() if x.startswith('Unread')][0]
+long_ev(100, row_y(2), 'up', 'long')
+tap_label('Next')
+assert 'Article 3' in texts() and 'Close' in texts(), texts()
+kev('right', 10000)
+assert 'Article 4' in texts()
+kev('left', 11000)
+assert 'Article 3' in texts()
+long_ev(240, 300, 'up', 'swipe_left')
+assert 'Article 4' in texts() and 'Close' in texts()
+tap_label('Close')
+assert 'Article 0' in texts() and header() == 'Unread  1-12 / 12+'
+long_ev(100, row_y(0), 'up', 'long')                  # first article: no Prev button, Prev does nothing
+t = texts()
+assert t.count('Prev') == 1 and t.count('Next') == 2, t   # top bar has Prev / Next; the box only Next
+kev('left', 12000)
+assert 'Article 0' in texts() and 'Close' in texts()
+key('back')
+assert 'Close' not in texts()
+
+# Next on the last loaded article loads the next page and shows its first article
+n_req = len(requests)
+long_ev(100, row_y(11), 'up', 'long')
+assert texts().count('Next') == 2 and texts().count('Prev') == 2      # more on the server: Next offered
+tap_label('Next')
+assert len(requests) == n_req + 1 and requests[-1].endswith('kind=unread&page=2&n=12'), requests[-1]
+assert 'Article 11' in texts()                        # still the same article until the page arrives
+g.flush()
+assert 'Article 12' in texts() and 'Close' in texts(), texts()
+tap_label('Close')                                    # the list follows to that page
+assert header() == 'Unread  13-22 / 22+', header()
+
+# closing while that page is still loading: the list ends up on the new page anyway
+tap(*RELOAD); g.flush()
+assert header() == 'Unread  1-12 / 12+'
+long_ev(100, row_y(11), 'up', 'long')
+tap_label('Next')
+tap_label('Close')
+assert header() == 'Unread  1-12 / 12+'
+g.flush()
+assert header() == 'Unread  13-22 / 22+' and 'Close' not in texts(), texts()
+
+# Open from a preview, then Back: the list is on that article's screen
+long_ev(100, row_y(0), 'up', 'long')                  # first row of this screen = Article 12
+assert 'Article 12' in texts()
+tap_label('Open'); g.flush()
+tap(50, 20)
+assert header() == 'Unread  13-22 / 22+', header()
+tap(*RELOAD); g.flush()
+assert header() == 'Unread  1-12 / 12+'
+
 # open article 3 -> text wrapped and paged, mark=1 sent
 tap(100, 56 + 26 + 3 * 58 + 5)
 g.flush()
