@@ -1,3 +1,30 @@
+# v0.5.0
+
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **26102301**).
+
+## Changed
+
+- **RSS**: Back from an article opened with the preview's **Open** returns to that preview (now
+  shown as read), so you can keep stepping through the summaries with Prev / Next. An article
+  opened straight from the list still returns to the list.
+
+## Update
+
+Install the changed packages **over** the installed apps (SD card root → All Files → Install).
+Do not uninstall first: that deletes the app's folder (settings, pages, dictionaries).
+
+## Files
+
+| file | content |
+|---|---|
+| `rss.xtapp` | **changed** |
+| `notes.xtapp`, `dict.xtapp` | unchanged since v0.3.1 |
+| `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | unchanged |
+| `probe.xtapp`, `netprobe.xtapp` | developer tools, unchanged |
+| `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.4.0
 
 **RSS** gets a preview and an endless list, on the **Xteink X4 Pro** (stock XTOS Licorice, build **26102301**).
