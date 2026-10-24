@@ -29,7 +29,8 @@ The device must be on Wi-Fi; the app asks the host to keep it on while in use.
 - **Long-press** an article for a preview: the whole title, feed and date, and the feed's summary
   (up to 400 characters, from the Worker's list). **Prev / Next** in the box, the side buttons or
   a swipe move to the previous / next article's preview; Next on the last loaded article loads the
-  next page and shows its first article. **Open** reads it; **Close**, a tap outside the box or
+  next page and shows its first article. **Open** reads it, and Back from that article returns to
+  the preview (an article opened straight from the list returns to the list); **Close**, a tap outside the box or
   the Back key returns to the list, on the screen of the article you were looking at (also when
   you close while the next page is still loading). Previews fetch nothing else and mark nothing
   read.

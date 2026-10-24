@@ -22,6 +22,7 @@ local list = { kind = 'unread', id = nil, title = '', page = 1, items = {}, has_
 local preview = nil
 local suppress_up = false     -- the release that ends a long press must not also act as a tap
 local preview_can             -- defined with the preview navigation; draw_preview needs it
+local article_back            -- Back from an article: to its preview if it was opened there
 -- feeds screen
 local feeds = { items = {}, top = 1 }
 -- article screen
@@ -269,6 +270,7 @@ end
 local function open_article(item)
   art.id, art.title, art.feed, art.date = tostring(item.id), item.title or '', item.feed or '', item.date or ''
   art.lines, art.starts, art.page, art.pages, art.cached = {}, { 1 }, 1, 1, false
+  art.from_preview = nil
   screen = 'article'
   local cached = cache_read('a' .. art.id .. '.txt')
   if cached then
@@ -520,7 +522,7 @@ local function tap(x, y)
   elseif screen == 'article' then
     if y < 46 then
       local b = bar_hit(x, 4)
-      if b == 1 then screen = 'list' elseif b == 2 then page_article(-1) elseif b == 3 then page_article(1) end
+      if b == 1 then article_back() elseif b == 2 then page_article(-1) elseif b == 3 then page_article(1) end
       return
     end
     if x < W / 3 then page_article(-1) else page_article(1) end
@@ -611,6 +613,15 @@ local function preview_step(delta)
   end)
 end
 
+-- an article opened from the preview goes back to that preview (now marked read); one opened
+-- straight from the list goes back to the list
+article_back = function()
+  screen = 'list'
+  local it = art.from_preview
+  art.from_preview = nil
+  if it and index_of(it) then open_preview(it) end
+end
+
 local function preview_tap(x, y)
   if inside(preview.prev, x, y) then preview_step(-1)
   elseif inside(preview.next, x, y) then preview_step(1)
@@ -618,6 +629,7 @@ local function preview_tap(x, y)
     local it = preview.item
     close_preview()
     open_article(it)
+    art.from_preview = it
   elseif inside(preview.close, x, y) or not inside(preview.box, x, y) then
     close_preview()
   end
@@ -663,7 +675,7 @@ function on_input(c, ev)
         return
       end
       if k == 'back' then
-        if screen == 'article' then screen = 'list' elseif screen ~= 'menu' then screen = 'menu' end
+        if screen == 'article' then article_back() elseif screen ~= 'menu' then screen = 'menu' end
       elseif k == 'right' or k == 'down' then
         if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
       elseif k == 'left' or k == 'up' then

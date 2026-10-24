@@ -123,8 +123,19 @@ assert 'Article 0' in texts()
 long_ev(100, row_y(2), 'up', 'long')
 tap_label('Open'); g.flush()
 assert requests[-1].endswith('/api/article/102?max=20000&mark=1'), requests[-1]
-tap(50, 20)                                                                           # back to the list
-assert 'Article 0' in texts()
+tap(50, 20)                                                                           # Back: to the same preview
+t = texts()
+assert 'Close' in t and 'more words' in t and 'Article 0' not in t, t
+key('back')                                                                           # Back again: the list
+assert 'Article 0' in texts() and 'Close' not in texts()
+long_ev(100, row_y(2), 'up', 'long')
+tap_label('Open'); g.flush()
+key('back')                                                                           # the Back key does the same
+assert 'Close' in texts() and 'more words' in texts()
+key('back')
+tap(100, row_y(2)); g.flush()                                                         # opened straight from the list:
+tap(50, 20)                                                                           # Back goes to the list
+assert 'Article 0' in texts() and 'Close' not in texts(), texts()
 
 # Next scrolls inside the loaded rows and, past the last one, loads and appends the next page
 responses['/api/list?kind=unread&page=2'] = {'title': 'Unread', 'page': 2, 'has_more': True,
@@ -200,11 +211,13 @@ assert header() == 'Unread  1-12 / 12+'
 g.flush()
 assert header() == 'Unread  13-22 / 22+' and 'Close' not in texts(), texts()
 
-# Open from a preview, then Back: the list is on that article's screen
+# Open from a preview, Back to the preview, Close: the list is on that article's screen
 long_ev(100, row_y(0), 'up', 'long')                  # first row of this screen = Article 12
 assert 'Article 12' in texts()
 tap_label('Open'); g.flush()
 tap(50, 20)
+assert 'Article 12' in texts() and 'Close' in texts(), texts()
+tap_label('Close')
 assert header() == 'Unread  13-22 / 22+', header()
 tap(*RELOAD); g.flush()
 assert header() == 'Unread  1-12 / 12+'
