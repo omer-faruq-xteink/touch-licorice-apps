@@ -286,3 +286,27 @@ usable yet.
 
 **Gotchas.** Lua 5.5 for-loop variables are const (`tools/lualint55.py`). `"•"` is three UTF-8
 bytes. Articles of 20 000 characters lay out fine within the 1 MB heap.
+
+### Files, keys and images (probes 8 and 9, 2026-10-24)
+
+- **Sandbox.** `ctx.files.path` is `/AppFiles/<app_id>`; any path outside it (`/sdcard/...`,
+  `..`) gives `nil, "invalid_argument"`, so the reader's own `dictionaries/` folder cannot be read.
+  The sandbox is the SD-card folder `XTApps/<app_id>/files/`: files copied there over USB are
+  visible to `ctx.storage`, and **uninstalling the app deletes the folder** (installing over it
+  keeps it). The Dictionary app relies on this.
+- **Whole files only.** `storage:read(name, offset, len)` returns the whole file; there is no
+  `open` / `read_range`. Large data has to be cut into files the app reads whole (the Dictionary
+  uses ~200 KB shards). `ctx.zlib:decompress(s)` exists; `collectgarbage` does not (use `ctx.gc`).
+  `ctx.package` = `open_text exists read size image cache_stats` (the package's data section);
+  the installer refused a 34 MB package.
+- **Ticks.** `ctx.set_tick(ms)` did nothing when called with a dot; call it as `ctx:set_tick(ms)`.
+- **Side buttons** arrive as more than one `type = "key"` event per press (press and release or a
+  repeat): ignore release phases and the same key again within ~250 ms.
+- **Network bodies are binary-safe** (a PNG with zero bytes in its header arrives whole).
+- **`ctx.image:decode(bytes)`** decodes **JPEG** (baseline and progressive, grey and colour) to
+  an image of its own size (`width`, `height`, `release`); option tables are ignored, so there is
+  no scaling on decode. **Decoding a PNG closed the app** in all three tries (78–224 KB files,
+  456×342 and larger) — feed the device JPEG only. `g:image(img, x, y)` draws it.
+- The free resizer images.weserv.nl answers the device but refuses Cloudflare Workers
+  (HTTP 403, "error code: 1106"); the RSS app therefore fetches resized JPEGs itself.
+
