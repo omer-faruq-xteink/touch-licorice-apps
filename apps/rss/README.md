@@ -52,12 +52,14 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
 
 ## Images
 
-With **Images in articles** on, the Worker turns each picture into a greyscale JPEG at most 456 px
-wide (the reader decodes JPEG but runs out of memory on PNG) through the free images.weserv.nl
-resizer, and the app shows it at that size inside the text. Only the pictures of the page on screen
-are downloaded, one after the other, after the text; until then a frame marks their place. If the
-resizer is unavailable, a picture that already is a small JPEG is used as it is; any other picture
-shows as `[image]`, and the article reads normally. Needs the updated rss-opds Worker.
+With **Images in articles** on, pictures appear where they are in the text, as greyscale JPEGs at
+most 456 px wide (the reader decodes JPEG but runs out of memory on PNG). The app fetches each
+one from the free images.weserv.nl resizer itself; the Worker only reads the first bytes of each
+original to know the size in advance, so the page layout never shifts. When the size cannot be
+read, the picture is fitted into a 456×342 box. Only the pictures of the page on screen are
+downloaded, one after the other, after the text; until then a frame marks their place. If the
+resizer cannot deliver a picture, it shows as `[image]` and the article reads normally. Icons and
+emoji are left out. Needs the updated rss-opds Worker.
 
 ## Build
 

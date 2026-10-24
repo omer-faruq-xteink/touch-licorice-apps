@@ -118,10 +118,10 @@ local function request_target(path, accept)
   return url, headers
 end
 
--- the bytes of a binary resource (an article image); on_done(body) or on_done(nil, err)
-local function request_raw(path, on_done)
-  local url, headers = request_target(path, 'image/jpeg')
-  if not url then on_done(nil, 'no host'); return end
+-- the bytes of an article image, straight from the resizer URL the Worker gave (another host:
+-- no Worker credentials go with it); on_done(body) or on_done(nil, err)
+local function fetch_image(url, on_done)
+  local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink RSS mini app)' }
   local ok, err = pcall(function()
     return ctx.net:request({ url = url, method = 'GET', headers = headers, timeout_ms = 30000 }, function(c, resp)
       local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
@@ -228,7 +228,7 @@ local function layout_article(data)
     if imgn then
       local im = info[imgn]
       if im and tonumber(im.w) and tonumber(im.h) then
-        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), u = tostring(im.u or '') }
+        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), src = tostring(im.src or '') }
       end
     elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
@@ -365,8 +365,8 @@ local function fetch_feeds()
 end
 
 ------------------------------------------------------------------ images
--- Article images arrive as JPEGs at most 456 px wide (the Worker resizes them), so they are
--- drawn at their own size. Only the images of the page on screen are fetched and decoded, one
+-- Article images come from the resizer URL the Worker gives (src), as greyscale JPEGs of the
+-- size it announced, at most 456 px wide, so they are drawn at their own size. Only the images of the page on screen are fetched and decoded, one
 -- at a time; leaving the page or the article releases them. A failed image shows "[image]".
 
 local img_mem = {}            -- n -> { img = decoded } | { failed = true }
@@ -414,7 +414,7 @@ load_page_images = function()
       local n, id = ln.img, art.id
       if img_bytes[n] then decode(n, img_bytes[n]); refresh(); return load_page_images() end
       img_busy = true
-      request_raw('/api/img?u=' .. ln.u, function(body, err)
+      fetch_image(ln.src, function(body, err)
         img_busy = false
         if art.id ~= id then return end          -- another article by now
         img_bytes[n] = body

@@ -15,8 +15,8 @@ requests = []
 
 def fake_request(url):
     requests.append(url)
-    if '/api/img?u=' in url:                                      # article images: raw bytes
-        return (200, b'\xff\xd8' + b'x' * 100) if 'u=AAA' in url else (404, '{"error":"image not available"}')
+    if url.startswith('https://images.weserv.nl/'):              # article images: raw JPEG bytes
+        return (200, b'\xff\xd8' + b'x' * 100) if 'url=AAA' in url else (404, 'not found')
     if url.split('?')[0].endswith('/api'):                      # the Worker's root: account list
         return (200, json.dumps(responses['__root__'])) if '__root__' in responses else (404, '{"error":"not found"}')
     for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
@@ -308,7 +308,8 @@ tap(50, 20)
 # Images: off by default; on, articles are asked with images=1 and their images load per page
 responses['/api/article/104'] = {'id': '104', 'title': 'Article 4', 'feed': 'Feed', 'date': '',
     'text': 'Before\n\n[[img:1]]\n\nAfter\n\n[[img:2]]\n\nEnd', 'images': [
-        {'n': 1, 'w': 456, 'h': 300, 'u': 'AAA'}, {'n': 2, 'w': 200, 'h': 100, 'u': 'BBB'}]}
+        {'n': 1, 'w': 456, 'h': 300, 'src': 'https://images.weserv.nl/?url=AAA&w=456&h=300'},
+        {'n': 2, 'w': 200, 'h': 100, 'src': 'https://images.weserv.nl/?url=BBB&w=200&h=100'}]}
 IMAGES_ROW = 56 + 20 + 5 * 96 + 24 + 10
 key('back')
 tap(100, 100 + 4 * 70 + 10)                            # Settings
@@ -321,11 +322,12 @@ n_req = len(requests)
 tap(100, 56 + 26 + 4 * 58 + 5)                         # Article 4
 assert requests[-1].endswith('/api/article/104?max=20000&mark=1&images=1'), requests[-1]
 g.flush()                                              # article text; the first image is requested
-assert requests[-1].endswith('/api/img?u=AAA'), requests[-1]
+assert requests[-1] == 'https://images.weserv.nl/?url=AAA&w=456&h=300', requests[-1]
+assert 'Authorization' not in dict(g.last_headers), dict(g.last_headers)   # no Worker credentials to the resizer
 t = texts()
 assert 'Before' in t and 'After' in t and 'image…' in t and g.images_drawn == 0, t
 g.flush()                                              # image 1 arrives, image 2 is requested
-assert g.decoded == 1 and requests[-1].endswith('/api/img?u=BBB'), requests[-1]
+assert g.decoded == 1 and requests[-1] == 'https://images.weserv.nl/?url=BBB&w=200&h=100', requests[-1]
 g.flush()                                              # image 2 fails
 t = texts()
 assert g.images_drawn == 1 and '[image]' in t and 'image…' not in t, (g.images_drawn, t)

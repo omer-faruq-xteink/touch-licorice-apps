@@ -18,8 +18,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   are the steps there are; with *large* the title gets a rule under it.
 - **RSS: images (optional).** Settings → **Images in articles**, off by default. Pictures appear
   where they are in the text, as greyscale JPEGs fitted to the screen width, loaded after the
-  text for the page on screen only. If the resizing service fails, a small original JPEG is used
-  or the picture shows as `[image]`; the text is never held up. Needs the updated Worker.
+  text for the page on screen only, straight from the free images.weserv.nl resizer. If it cannot
+  deliver a picture, the picture shows as `[image]`; the text is never held up. Icons and emoji
+  are left out. Needs the updated Worker.
 
 ## Update
 
