@@ -49,8 +49,6 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.
 - At start the app asks the account list at once; that small request also brings Wi-Fi up for
   the first list. Lists and feed answers carry the account list too and keep it current.
-- After each load the status line shows how long the answer took and the Worker's share of it
-  (`took 2.1 s, server 0.6 s`), to tell a slow server from a slow connection.
 - Wi-Fi is kept up while the app is used (5 minutes from the last tap) and let go when you leave,
   so pages load in about a second and a half even with Wi-Fi off in the device settings.
 - Network requests run one at a time (the device does not carry two at once). One with no

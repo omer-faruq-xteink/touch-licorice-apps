@@ -35,8 +35,6 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   list (so an account added since shows up); that small request also brings Wi-Fi up, which the
   first list needs anyway, so a list opened meanwhile only waits for the rest. The Worker also
   sends the account list with every list and feed answer, which keeps it current.
-- **RSS: load times on screen.** After each load the status line says how long the answer took
-  and how much of it the Worker spent (`took 2.1 s, server 0.6 s`).
 - **RSS: no more 7–8 s per page with Wi-Fi off in the settings.** The app asked the device to keep
   Wi-Fi up with a number in seconds, but the device counts milliseconds, so Wi-Fi went down right
   after every request and the next one waited for it to come back. RSS now keeps Wi-Fi up while
