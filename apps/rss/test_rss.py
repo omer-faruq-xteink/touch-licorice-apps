@@ -27,7 +27,7 @@ L.globals().py_json_decode = lambda s: L.table_from(json.loads(s), recursive=Tru
 L.execute(r'''
 drawn, store = {}, {}
 local gmt = {}
-gmt.__index = function(_, k) return function(_, ...) if k == 'text' then local x, _, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
+gmt.__index = function(_, k) return function(_, ...) if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -65,6 +65,10 @@ texts = lambda: [str(v.s) for v in draw().values()]
 
 responses['/api/list?kind=unread'] = {'title': 'Unread', 'page': 1, 'has_more': True,
                                       'items': [{'id': str(100 + i), 'title': f'Article {i}', 'feed': 'Feed', 'date': '2026-10-24 08:00', 'read': False, 'excerpt': 'x'} for i in range(12)]}
+_items = responses['/api/list?kind=unread']['items']
+_items[2]['title'] = 'A very long article title that does not fit on one line of the list at all, with more words'
+_items[2]['excerpt'] = 'Summary sentence. ' * 30
+_items[4]['excerpt'] = 'Endless summary text. ' * 120
 responses['/api/article/103'] = {'id': '103', 'title': 'Article 3', 'feed': 'Feed', 'date': '2026-10-24 08:00',
                                  'text': '# Heading here\n\nFirst paragraph with several words in it.\n\n> a quote\n\n• item one\n• item two\n\n' + ('word ' * 1200)}
 responses['/api/feeds'] = {'items': [{'id': '10', 'name': 'Feed A', 'unread': 3}, {'id': '11', 'name': 'Feed B', 'unread': 0}]}
@@ -89,6 +93,39 @@ g.flush()
 assert requests[-1] == 'https://rss.example.workers.dev/k/secret/api/list?kind=unread&page=1&n=12', requests[-1]
 t = texts()
 assert 'Article 0' in t and 'Article 11' in t, t
+
+# long press -> preview with the full title and the summary; never opens the article itself
+long_ev = L.eval("function(x, y, ph, g) on_input(ctx, {type='pointer', phase=ph, gesture=g, x=x, y=y}) end")
+row_y = lambda i: 56 + 26 + i * 58 + 5
+def recs():
+    return {str(r.s): (int(r.x), int(r.y)) for r in draw().values()}
+def tap_label(label):
+    x, y = recs()[label]
+    tap(x + 5, y + 5)
+n_req = len(requests)
+long_ev(100, row_y(2), 'hold', None); long_ev(100, row_y(2), 'up', 'long')     # hold, then release
+r = recs()
+assert len(requests) == n_req, 'a long press must not fetch the article'
+assert 'Open' in r and 'Close' in r and 'Article 0' not in r, list(r)
+assert 'more words' in r and any(s.startswith('Summary sentence.') for s in r), list(r)
+assert r['Open'][1] < 740, r['Open']                                                  # room left below the box
+tap_label('Close')
+assert 'Article 0' in texts() and 'Open' not in texts()
+long_ev(100, row_y(2), 'up', 'long')                                                  # release-only variant
+assert 'Close' in texts()
+tap(240, 790)                                                                         # outside the box closes
+assert 'Article 0' in texts()
+long_ev(100, row_y(4), 'up', 'long')                                                  # very long summary: cut with "…"
+t = texts()
+assert any(s.endswith(' …') for s in t) and recs()['Open'][1] < 740, t
+key('back')
+assert 'Article 0' in texts()
+long_ev(100, row_y(2), 'up', 'long')
+tap_label('Open'); g.flush()
+assert requests[-1].endswith('/api/article/102?max=20000&mark=1'), requests[-1]
+tap(50, 20)                                                                           # back to the list
+assert 'Article 0' in texts()
+
 # Next page then Prev
 tap(4 + 2 * 118 + 10, 20); g.flush()
 assert 'page=2' in requests[-1]

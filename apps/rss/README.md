@@ -23,6 +23,9 @@ The device must be on Wi-Fi; the app asks the host to keep it on while in use.
 - Menu: **Unread**, **Starred**, **All**, **Feeds** (one subscription at a time), **Settings**.
 - Lists show twelve articles per page: title, feed and date; `*` marks unread. **Prev / Next**,
   the side buttons or a swipe turn the page; **Reload** fetches again.
+- **Long-press** an article for a preview: the whole title, feed and date, and the feed's summary
+  (up to 400 characters, from the Worker's list). **Open** reads it, **Close**, a tap outside the
+  box or the Back key returns to the list. Nothing is fetched and nothing is marked read.
 - Tap an article: it is fetched as text (and marked read in CommaFeed), laid out with the three
   system fonts — title large, feed and date small, headings large, quotes and list items indented —
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.

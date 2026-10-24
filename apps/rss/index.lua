@@ -17,6 +17,9 @@ local cfg = { host = '', token = '', auth = '', full = false }
 
 -- list screen
 local list = { kind = 'unread', id = nil, title = '', page = 1, items = {}, has_more = false, cached = false }
+-- long-press preview over the list: { item, lines, box = {x, y, w, h}, open = {..}, close = {..} }
+local preview = nil
+local suppress_up = false     -- the release that ends a long press must not also act as a tap
 -- feeds screen
 local feeds = { items = {}, top = 1 }
 -- article screen
@@ -196,6 +199,7 @@ end
 local function open_list(kind, id, title)
   list.kind, list.id, list.title, list.page = kind, id, title or kind, 1
   list.items, list.has_more, list.cached = {}, false, false
+  preview = nil
   screen = 'list'
 end
 
@@ -300,10 +304,30 @@ local function draw_menu(gg)
   draw_status(gg)
 end
 
+local function draw_preview(gg)
+  local F = ctx.fonts
+  local b = preview.box
+  gg:rect(b.x, b.y, b.w, b.h)
+  gg:rect(b.x + 3, b.y + 3, b.w - 6, b.h - 6)
+  local y = b.y + 16
+  for _, ln in ipairs(preview.lines) do
+    if ln.s ~= '' then gg:text(b.x + 16 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
+    y = y + ln.h
+  end
+  for _, btn in ipairs({ preview.open, preview.close }) do
+    gg:rect(btn.x, btn.y, btn.w, btn.h)
+    local f = F and F.medium
+    local okm, tw = pcall(function() return f:measure(btn.label) end)
+    tw = (okm and type(tw) == 'number') and tw or #btn.label * 12
+    gg:text(btn.x + math.floor((btn.w - tw) / 2), btn.y + 10, btn.label, { font = f })
+  end
+end
+
 local function draw_list(gg)
   local F = ctx.fonts
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
   gg:text(8, TOP + 2, short(list.title .. '  p' .. list.page .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
   if #list.items == 0 and not loading then gg:text(16, y + 20, 'nothing here', { font = F and F.medium }) end
   for i, it in ipairs(list.items) do
@@ -454,12 +478,78 @@ local function tap(x, y)
   end
 end
 
+------------------------------------------------------------------ long-press preview
+
+local function row_item(y)
+  local i = math.floor((y - (TOP + 26)) / 58) + 1
+  if y >= TOP + 26 and i >= 1 and i <= math.min(#list.items, LIST_N) then return list.items[i] end
+  return nil
+end
+
+-- full title, feed and date, and the feed's summary in a box over the list, with Open / Close.
+-- The box never reaches the bottom of the screen, so there is always room to tap outside it.
+local function open_preview(item)
+  measure_cache = {}
+  local x, y, w = 16, TOP + 26, W - 32
+  local inner = w - 32
+  local lines = {}
+  wrap_para(lines, item.title or '', 'large', inner, 0)
+  local meta = ((item.feed or '') ~= '' and (item.feed .. '  ') or '') .. (item.date or '') .. (item.read and '' or '  · unread')
+  if meta ~= '' then wrap_para(lines, meta, 'small', inner, 0) end
+  lines[#lines + 1] = { s = '', f = 'small', h = 10, x = 0 }
+  local ex = item.excerpt or ''
+  if ex ~= '' then wrap_para(lines, ex, 'medium', inner, 0) else wrap_para(lines, '(no summary in the feed)', 'small', inner, 0) end
+  local btn_h, pad = 44, 16
+  local max_content = (H - 60) - y - pad - pad - btn_h - pad
+  local kept, used = {}, 0
+  for _, ln in ipairs(lines) do
+    if used + ln.h > max_content then
+      local last = kept[#kept]
+      if last and last.s ~= '' then last.s = last.s .. ' …' end
+      break
+    end
+    kept[#kept + 1] = ln
+    used = used + ln.h
+  end
+  local h = pad + used + pad + btn_h + pad
+  local bw = math.floor((w - 3 * pad) / 2)
+  local by = y + h - pad - btn_h
+  preview = {
+    item = item, lines = kept, box = { x = x, y = y, w = w, h = h },
+    open = { x = x + pad, y = by, w = bw, h = btn_h, label = 'Open' },
+    close = { x = x + 2 * pad + bw, y = by, w = bw, h = btn_h, label = 'Close' },
+  }
+end
+
+local function inside(r, x, y) return x >= r.x and x < r.x + r.w and y >= r.y and y < r.y + r.h end
+
+local function preview_tap(x, y)
+  if inside(preview.open, x, y) then
+    local it = preview.item
+    preview = nil
+    open_article(it)
+  elseif inside(preview.close, x, y) or not inside(preview.box, x, y) then
+    preview = nil
+  end
+end
+
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
+      -- a long press (the host reports a "hold" phase and / or a "long" gesture) opens the preview
+      if ev.gesture == 'long' or ev.phase == 'hold' then
+        if screen == 'list' and not preview then
+          local it = row_item(ev.y or 0)
+          if it then open_preview(it) end
+        end
+        suppress_up = (ev.phase ~= 'up')
+        return
+      end
       if ev.phase ~= 'up' then return end
+      if suppress_up then suppress_up = false; return end
+      if preview then preview_tap(ev.x or 0, ev.y or 0); return end
       local g = ev.gesture
       if g == 'swipe_left' or g == 'swipe_up' then
         if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
@@ -470,6 +560,10 @@ function on_input(c, ev)
       end
     elseif ev.type == 'key' and key_accepted(ev) then
       local k = ev.key
+      if preview then
+        if k == 'back' then preview = nil end
+        return
+      end
       if k == 'back' then
         if screen == 'article' then screen = 'list' elseif screen ~= 'menu' then screen = 'menu' end
       elseif k == 'right' or k == 'down' then
