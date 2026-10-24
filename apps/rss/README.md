@@ -47,6 +47,8 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
 - Tap an article: it is fetched as text (and marked read in CommaFeed), laid out with the three
   system fonts — title large, feed and date small, headings large, quotes and list items indented —
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.
+- Network requests run one at a time (the device does not carry two at once). One with no
+  answer is cancelled after 30 s, 60 s for an article; Reload gives up a stuck one at once.
 - A list that fails to load is tried once more; if it still fails, the screen says why (and
   Reload tries again) rather than showing an empty list.
 - Everything fetched is cached in the app's storage (lists, feed list, article texts), so lists

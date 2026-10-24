@@ -61,18 +61,22 @@ ctx = {
     last_headers = opts.headers
     local st, body = py_request(opts.url)
     pending[#pending + 1] = function() fn(ctx, { status = st, body = body, headers = {} }) end
-    return M({ cancel = function() end })
+    return M({ cancel = function() cancelled = (cancelled or 0) + 1 end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 300, release = function() released = (released or 0) + 1 end } }) end }),
   base64 = M({ encode = function(s) return 'B64(' .. s .. ')' end }),
 }
-function flush() local p = pending; pending = {}; for _, f in ipairs(p) do f() end end
+-- answers arrive one at a time; an answer may start the next queued request, so keep going
+function step() local p = pending; pending = {}; for _, f in ipairs(p) do f() end end
+function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end
+fake_ms = 1000
+ctx.clock = M({ millis = function() return fake_ms end })
 ''')
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
 g = L.globals()
 tap = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
-key = L.eval("function(k) on_input(ctx, {type='key', key=k}) end")
+key = L.eval("function(k) fake_ms = fake_ms + 300; on_input(ctx, {type='key', key=k}) end")
 draw = L.eval("function() drawn = {}; on_draw(ctx, gg); return drawn end")
 texts = lambda: [str(v.s) for v in draw().values()]
 
@@ -140,7 +144,7 @@ tap(50, 20)                                                                     
 t = texts()
 assert 'Close' in t and 'more words' in t and 'Article 0' not in t, t
 key('back')                                                                           # Back again: the list
-assert 'Article 0' in texts() and 'Close' not in texts()
+assert 'Article 0' in texts() and 'Close' not in texts(), (texts(), requests[-3:])
 long_ev(100, row_y(2), 'up', 'long')
 tap_label('Open'); g.flush()
 key('back')                                                                           # the Back key does the same
@@ -328,14 +332,14 @@ tap(100, 100 + 10); g.flush()                          # Unread
 n_req = len(requests)
 tap(100, 56 + 26 + 4 * 58 + 5)                         # Article 4
 assert requests[-1].endswith('/api/article/104?max=20000&mark=1&images=1'), requests[-1]
-g.flush()                                              # article text; the first image is requested
+g.step()                                               # article text; the first image is requested
 assert requests[-1] == 'https://images.weserv.nl/?url=AAA&w=456&h=300', requests[-1]
 assert 'Authorization' not in dict(g.last_headers), dict(g.last_headers)   # no Worker credentials to the resizer
 t = texts()
 assert 'Before' in t and 'After' in t and 'image…' in t and g.images_drawn == 0, t
-g.flush()                                              # image 1 arrives, image 2 is requested
+g.step()                                               # image 1 arrives, image 2 is requested
 assert g.decoded == 1 and requests[-1] == 'https://images.weserv.nl/?url=BBB&w=200&h=100', requests[-1]
-g.flush()                                              # image 2 fails
+g.step()                                               # image 2 fails
 t = texts()
 assert g.images_drawn == 1 and '[image]' in t and 'image…' not in t, (g.images_drawn, t)
 assert 'a104i.txt' in g.store and 'a104.txt' not in g.store
@@ -356,7 +360,7 @@ tap(100, 100 + 10); g.flush()
 # offline: network fails, tried once more, then the cached list is used
 responses.clear()
 n_req = len(requests)
-tap(4 + 3 * 118 + 10, 20); g.flush()  # Reload -> 404
+tap(4 + 3 * 118 + 10, 20); g.step()   # Reload -> 404
 assert len(requests) == n_req + 2 and requests[-1] == requests[-2], requests[-2:]   # the automatic retry
 t = texts()
 assert any(x.startswith('loading') for x in t), t                                  # still loading meanwhile
@@ -377,12 +381,34 @@ fail_next['/api/feeds'] = 1
 tap(4 + 3 * 118 + 10, 20); g.flush(); g.flush()          # Reload on the feeds screen
 t = texts()
 assert 'Feed A  (3)' in t and 'Could not load this list.' not in t, t
-# two requests in flight: the first to finish must not end "loading" for the other
+# one request at a time: a second one waits in the queue until the first is answered
+n_req = len(requests)
 tap(4 + 3 * 118 + 10, 20); tap(4 + 3 * 118 + 10, 20)   # Reload twice on the feeds screen
-assert len(g.pending) == 2
-g.pending[1]()                                            # only the first one answers
-L.execute("table.remove(pending, 1)")
+assert len(g.pending) == 1 and len(requests) == n_req + 1, (len(g.pending), requests[n_req:])
+g.step()                                                  # the first answers, the second starts
+assert len(requests) == n_req + 2 and any(x.startswith('loading') for x in texts()), texts()
+g.flush()
+t = texts()
+assert 'Feed A  (3)' in t and not any(x.startswith('loading') for x in t), t
+# the host never answers: Reload after a few seconds gives that request up and asks again
+n_req = len(requests)
+tap(4 + 3 * 118 + 10, 20)
+g.pending = L.table()                                     # the answer is lost
 assert any(x.startswith('loading') for x in texts()), texts()
+L.execute("fake_ms = fake_ms + 5000")
+tap(4 + 3 * 118 + 10, 20)                                 # Reload
+assert len(requests) >= n_req + 2, requests[n_req:]
+g.flush()
+t = texts()
+assert 'Feed A  (3)' in t and not any(x.startswith('loading') for x in t), t
+# ... and without Reload, the timeout cancels it; the automatic retry then fills the list
+cancels = L.eval("function() return cancelled or 0 end")
+c0 = cancels()
+tap(4 + 3 * 118 + 10, 20)
+g.pending = L.table()
+L.execute("fake_ms = fake_ms + 31000")
+L.execute("on_tick(ctx)")                                 # the timeout fires
+assert cancels() == c0 + 1, cancels()
 g.flush()
 t = texts()
 assert 'Feed A  (3)' in t and not any(x.startswith('loading') for x in t), t

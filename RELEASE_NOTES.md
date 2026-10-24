@@ -27,6 +27,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **RSS: fewer "no feeds".** A list or the feed list that fails to load (Wi-Fi still waking up,
   a slow CommaFeed) is tried once more by itself; if it still fails, the screen says why and
   suggests Reload instead of showing an empty list. The Worker also retries CommaFeed once.
+- **RSS: no more lists stuck on "loading".** The device answered only one network request at a
+  time, so a list opened while the app was still asking for the account list (or loading a
+  picture) never arrived. Requests now go one after the other; one with no answer is cancelled
+  after 30 s (60 s for an article), and Reload gives up a stuck one at once.
 
 ## Update
 

@@ -14,23 +14,71 @@ local G, ERR = nil, nil
 local screen = 'menu'
 local status = ''
 local loading = nil           -- text shown while a request is in flight
-local inflight = 0            -- requests in flight; loading clears only when the last one ends
-local last_request_ms = nil
-local function settle()
-  inflight = math.max(0, inflight - 1)
-  if inflight == 0 then loading = nil end
-end
 local function now_ms()
   local ok, t = pcall(function() return ctx.clock:millis() end)
   return ok and tonumber(t) or nil
 end
--- still waiting for an answer? A request the host never answers stops counting after a minute,
--- so the app cannot stay on "loading" (and refuse to load more) for good.
+
+-- Network queue. The host appears to carry one request at a time: a second one started while
+-- another is in flight never got an answer (the feeds list stayed on "loading"). So requests
+-- run one after the other, images included. A request with no answer within its timeout is
+-- cancelled and reported as failed, and the next one starts.
+local net_queue, net_active = {}, nil
+local net_pump
+
+local function net_finish(job, resp, err)
+  if job.done then return end                 -- a late answer after a timeout is ignored
+  job.done = true
+  if net_active == job then net_active = nil end
+  if not net_active and #net_queue == 0 then loading = nil end
+  job.on_result(resp, err)
+  net_pump()
+  pcall(function() ctx.invalidate() end)
+end
+
+net_pump = function()
+  if net_active or #net_queue == 0 then return end
+  local job = table.remove(net_queue, 1)
+  net_active = job
+  job.since = now_ms()
+  loading = job.label
+  local ok, err = pcall(function()
+    job.handle = ctx.net:request(job.opts, function(c, resp) net_finish(job, resp, nil) end)
+  end)
+  if not ok then net_finish(job, nil, short(err, 60)) end
+end
+
+-- drop the request in flight: cancel it in the host and report it as failed
+local function net_abandon(reason)
+  local job = net_active
+  if not job then return end
+  if job.handle then pcall(function() job.handle:cancel() end) end
+  net_finish(job, nil, reason)
+end
+
+-- still waiting for an answer? Also enforces the timeouts (checked on every draw and tick).
 local function busy()
-  if inflight <= 0 then return false end
+  if net_active then
+    local t = now_ms()
+    if t and net_active.since and t - net_active.since > net_active.timeout then
+      net_abandon('no answer within ' .. math.floor(net_active.timeout / 1000) .. ' s')
+    end
+  end
+  return net_active ~= nil or #net_queue > 0
+end
+
+-- Reload: a request that has been waiting a while is given up at once instead of after its timeout
+local function net_unstick()
   local t = now_ms()
-  if t and last_request_ms and t - last_request_ms > 60000 then inflight = 0; loading = nil; return false end
-  return true
+  if net_active and (not t or not net_active.since or t - net_active.since > 3000) then
+    net_abandon('given up (Reload)')
+  end
+end
+
+local function net_submit(opts, label, timeout, on_result)
+  opts.timeout_ms = timeout
+  net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
+  net_pump()
 end
 local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
@@ -140,42 +188,35 @@ end
 -- no Worker credentials go with it); on_done(body) or on_done(nil, err)
 local function fetch_image(url, on_done)
   local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink RSS mini app)' }
-  local ok, err = pcall(function()
-    return ctx.net:request({ url = url, method = 'GET', headers = headers, timeout_ms = 30000 }, function(c, resp)
-      local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
-      local body = type(resp) == 'table' and resp.body or nil
-      if type(body) ~= 'string' or (st and st >= 400) then on_done(nil, 'HTTP ' .. tostring(st)); return end
-      on_done(body)
-    end)
+  net_submit({ url = url, method = 'GET', headers = headers }, loading or 'loading image', 30000, function(resp, err)
+    if err then on_done(nil, err); return end
+    local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
+    local body = type(resp) == 'table' and resp.body or nil
+    if type(body) ~= 'string' or (st and st >= 400) then on_done(nil, 'HTTP ' .. tostring(st)); return end
+    on_done(body)
   end)
-  if not ok then on_done(nil, short(err, 60)) end
 end
 
 local function request(path, on_done)
   local url, headers = request_target(path)
   if not url then note('set the host in Settings'); on_done(nil, 'no host'); return end
   pcall(function() ctx.net:keep_wifi(120) end)
-  loading = 'loading ' .. short(path, 30)
-  inflight = inflight + 1
-  last_request_ms = now_ms()
-  refresh()
-  local ok, err = pcall(function()
-    return ctx.net:request({ url = url, method = 'GET', headers = headers, timeout_ms = 40000 }, function(c, resp)
-      settle()
-      if type(resp) ~= 'table' then on_done(nil, 'no response'); refresh(); return end
-      local st = tonumber(resp.status) or tonumber(resp.code)
-      local body = resp.body
-      if resp.error and not body then on_done(nil, tostring(resp.error)); refresh(); return end
-      if st and st >= 400 then on_done(nil, 'HTTP ' .. st .. ' ' .. short(body or '', 40)); refresh(); return end
-      if type(body) ~= 'string' then on_done(nil, 'empty body'); refresh(); return end
-      local okj, data = pcall(function() return ctx.json:decode(body) end)
-      if not okj or type(data) ~= 'table' then on_done(nil, 'bad json: ' .. short(body, 40)); refresh(); return end
-      if data.error then on_done(nil, tostring(data.error)); refresh(); return end
-      on_done(data, nil, body)
-      refresh()
-    end)
+  -- articles may wait for the Worker's full-text services; lists answer quickly
+  local timeout = path:find('/api/article/', 1, true) and 60000 or 30000
+  net_submit({ url = url, method = 'GET', headers = headers }, 'loading ' .. short(path, 30), timeout, function(resp, err)
+    if err then on_done(nil, err); return end
+    if type(resp) ~= 'table' then on_done(nil, 'no response'); return end
+    local st = tonumber(resp.status) or tonumber(resp.code)
+    local body = resp.body
+    if resp.error and not body then on_done(nil, tostring(resp.error)); return end
+    if st and st >= 400 then on_done(nil, 'HTTP ' .. st .. ' ' .. short(body or '', 40)); return end
+    if type(body) ~= 'string' then on_done(nil, 'empty body'); return end
+    local okj, data = pcall(function() return ctx.json:decode(body) end)
+    if not okj or type(data) ~= 'table' then on_done(nil, 'bad json: ' .. short(body, 40)); return end
+    if data.error then on_done(nil, tostring(data.error)); return end
+    on_done(data, nil, body)
   end)
-  if not ok then settle(); on_done(nil, short(err, 60)) end
+  refresh()
 end
 
 local function cache_write(name, s) pcall(function() ctx.storage:write(name, s) end) end
@@ -743,7 +784,7 @@ local function tap(x, y)
   elseif screen == 'list' then
     if y < 46 then
       local b = bar_hit(x, 4)
-      if b == 1 then screen = 'menu' elseif b == 2 then page_list(-1) elseif b == 3 then page_list(1) elseif b == 4 then fetch_list() end
+      if b == 1 then screen = 'menu' elseif b == 2 then page_list(-1) elseif b == 3 then page_list(1) elseif b == 4 then net_unstick(); fetch_list() end
       return
     end
     local r = math.floor((y - (TOP + 26)) / 58) + 1
@@ -752,7 +793,7 @@ local function tap(x, y)
   elseif screen == 'feeds' then
     if y < 46 then
       local b = bar_hit(x, 4)
-      if b == 1 then screen = 'menu' elseif b == 2 then page_feeds(-1) elseif b == 3 then page_feeds(1) elseif b == 4 then fetch_feeds() end
+      if b == 1 then screen = 'menu' elseif b == 2 then page_feeds(-1) elseif b == 3 then page_feeds(1) elseif b == 4 then net_unstick(); fetch_feeds() end
       return
     end
     local i = math.floor((y - (TOP + 26)) / 58) + feeds.top
@@ -931,7 +972,12 @@ function on_input(c, ev)
   return true
 end
 
+function on_tick(c)
+  if net_active then busy(); pcall(function() ctx.invalidate() end) end
+end
+
 function on_load(c)
+  pcall(function() ctx:set_tick(1000) end)
   load_cfg()
   read_accounts(cache_read('accounts.txt'))
   if cfg.host == '' then screen = 'settings' else load_accounts() end
