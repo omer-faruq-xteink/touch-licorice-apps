@@ -52,6 +52,7 @@ end
 pending = {}
 local function font(name, lh) local f = M({ measure = function(s) return #s * 10 end }); f.name = name; f.line_height = lh; return f end
 ctx = {
+  set_tick = function() error('no timer: redraws slow the network down') end,
   invalidate = function() end, state = {},
   storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
@@ -407,7 +408,7 @@ c0 = cancels()
 tap(4 + 3 * 118 + 10, 20)
 g.pending = L.table()
 L.execute("fake_ms = fake_ms + 31000")
-L.execute("on_tick(ctx)")                                 # the timeout fires
+texts()                                                   # the next draw notices the timeout
 assert cancels() == c0 + 1, cancels()
 g.flush()
 t = texts()
@@ -505,16 +506,8 @@ key('back'); key('back')
 t = texts()
 assert 'Club' in t and 'Personal' in t, t
 assert 'Club' in str(g.store['accounts.txt'])
-L.execute("on_tick(ctx)"); L.execute("fake_ms = fake_ms + 5000"); L.execute("on_tick(ctx)")
+L.execute("fake_ms = fake_ms + 5000"); texts()
 assert len(requests) == n_req + 1, requests[n_req:]             # already fresh: no /api later either
-# restart and open nothing: after a few seconds the app asks /api by itself
-n_req = len(requests)
-g = restart()
-L.execute("on_tick(ctx)")
-assert len(requests) == n_req
-L.execute("fake_ms = fake_ms + 4000"); L.execute("on_tick(ctx)")
-assert len(requests) == n_req + 1 and requests[-1].split('?')[0].endswith('/api'), requests[n_req:]
-g.flush()
 # an older Worker sends lists without accounts: the app asks /api once, after the list
 del responses['kind=unread&page=1&n=12&acct=1']['accounts']
 n_req = len(requests)

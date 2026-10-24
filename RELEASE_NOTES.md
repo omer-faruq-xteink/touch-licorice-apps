@@ -34,8 +34,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **RSS: the first list after start no longer waits for the account list.** The Worker now sends
   the account list with every list and feed answer, so the first answer after each app start
   refreshes it (an account added since shows up). The app asks for it separately only with
-  nothing saved yet, after Settings, or when nothing is opened a few seconds after start.
-  Needs the updated rss-opds Worker; with an older one the app asks after the first list.
+  nothing saved yet or after Settings. Needs the updated rss-opds Worker; with an older one
+  the app asks after the first list. No screen redraws while a request waits, which had made
+  every request several seconds slower.
 
 ## Update
 

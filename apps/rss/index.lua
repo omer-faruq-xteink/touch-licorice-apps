@@ -56,7 +56,7 @@ local function net_abandon(reason)
   net_finish(job, nil, reason)
 end
 
--- still waiting for an answer? Also enforces the timeouts (checked on every draw and tick).
+-- still waiting for an answer? Also enforces the timeouts (checked on every draw and input).
 local function busy()
   if net_active then
     local t = now_ms()
@@ -99,9 +99,9 @@ local read_accounts, load_accounts, note_accounts   -- defined in the accounts s
 -- The account list is refreshed once per app start: the Worker sends it with every list and feed
 -- answer, so the first one after start brings it. Asking /api separately before the first list
 -- made that list wait for two round trips; /api is asked only with nothing saved yet, after
--- Settings, when the user has opened nothing a few seconds after start, or for an older Worker.
+-- Settings, or for an older Worker. No timer: a 1 s tick that redrew the e-ink screen while a
+-- request waited made every request several seconds slower; timeouts are checked on draw/input.
 local accounts_fresh = false
-local started_ms = nil
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
@@ -1001,19 +1001,8 @@ function on_input(c, ev)
   return true
 end
 
-function on_tick(c)
-  if net_active then busy(); pcall(function() ctx.invalidate() end) end
-  -- nothing opened a few seconds after start: refresh the account list now
-  if not accounts_fresh and cfg.host ~= '' and not busy() then
-    local t = now_ms()
-    if t and started_ms and t - started_ms > 3000 then load_accounts(); refresh() end
-  end
-end
-
 function on_load(c)
-  pcall(function() ctx:set_tick(1000) end)
   load_cfg()
-  started_ms = now_ms()
   local saved = cache_read('accounts.txt')
   read_accounts(saved)
   -- with a saved list the first answer refreshes it (see note_accounts); without one, ask now
