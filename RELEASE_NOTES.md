@@ -18,10 +18,13 @@ several dictionaries side by side, recent lookups.
 
 | file | content |
 |---|---|
-| `dict.xtapp` | the app |
+| `dict.xtapp` | **Dictionary** (new) |
 | `dict-wordnet-en.zip` | WordNet converted (128 shards, 25 MB unpacked), with its license |
+| `game2048.xtapp`, `sudoku.xtapp`, `sokoban.xtapp` | the games, same builds as v0.2.0 |
+| `notes.xtapp`, `rss.xtapp` | Notes and RSS, same builds as v0.2.0 |
+| `probe.xtapp`, `netprobe.xtapp` | developer tools, not needed to play |
 
-The other apps are unchanged from v0.2.0. `SHA256SUMS.txt` has the checksums.
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 
 # v0.2.0
 
