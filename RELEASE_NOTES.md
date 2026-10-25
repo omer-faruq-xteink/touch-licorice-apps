@@ -10,6 +10,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   send your progress back (so KOReader and the website continue there too); **Archive** and
   **Star** from the preview or the article's end, which also shows the link as a QR code. The token
   can be typed in Settings or written to `XTApps/instapaper/files/config.txt` over USB.
+  **Images in articles** (Settings, off by default) shows the pictures as in RSS.
 - **Docs**: the hidden drawer row is called **Ink App** (it was described as "Mini Apps"); install
   steps now name it right.
 

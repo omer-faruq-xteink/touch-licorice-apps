@@ -26,6 +26,12 @@ ARTICLE = ('<div><h2>A heading</h2><p>It&rsquo;s &ldquo;quoted&rdquo; &amp; fine
            '<script>var hidden = 1;</script><style>p{}</style><!-- a comment -->'
            '<ul><li>first item</li><li>second item</li></ul><blockquote>A quote here.</blockquote>'
            '<p></p><h3></h3>' + LONG + '</div>')
+PICS = ('<p>Before the pictures.</p>'
+        '<img src="https://cdn.example.com/a.jpg" width="1200" height="800" alt="big">'
+        '<img src="data:image/gif;base64,R0lG" data-src="//cdn.example.com/lazy.png">'
+        '<img src="/icons/star.png" width="16" height="16">'
+        '<img src="https://t.example.com/p.gif" width="1" height="1">'
+        '<p>Between.</p><figure><img src="img/rel.jpg"></figure><p>After.</p>')
 pages = {
     'section=home&limit=12&offset=0': {'bookmarks': [bm(i, progress={'percentage': 0.4 if i == 1 else 0}) for i in range(12)], 'total': 20},
     'section=home&limit=12&offset=12': {'bookmarks': [bm(i) for i in range(12, 20)], 'total': 20},
@@ -37,12 +43,16 @@ def fake_request(method, url, body, auth):
     calls.append((method, url, body, auth))
     if not state['token_ok']:
         return 401, json.dumps({'error': {'code': 401, 'message': 'Invalid token'}})
+    if url.startswith('https://images.weserv.nl/'):
+        return (404, 'no') if 'lazy.png' in url else (200, b'\xff\xd8' + b'x' * 50)
     path = url.split('/api/2', 1)[1]
     if path == '/folders':
         return 200, json.dumps({'folders': [{'id': 77, 'title': 'Tech'}]})
     if path.startswith('/bookmarks?'):
         q = path.split('?', 1)[1]
         return (200, json.dumps(pages[q])) if q in pages else (404, '{"error":{"message":"no page"}}')
+    if path.endswith('/1006/parse'):
+        return 200, json.dumps({'content': {'body': PICS}, 'metadata': {}})
     if path.endswith('/1005/parse'):                    # longer than the app keeps
         return 200, json.dumps({'content': {'body': '<p>' + 'çağ öğün ' * 6000 + '</p>'}, 'metadata': {}})
     if path.endswith('/parse'):
@@ -58,7 +68,8 @@ L.globals().py_json_decode = lambda s: L.table_from(json.loads(s), recursive=Tru
 L.execute(r'''
 drawn, store = {}, {}
 local gmt = {}
-gmt.__index = function(_, k) return function(_, ...) if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y } end end end
+images_drawn = 0
+gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1 end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y } end end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -84,6 +95,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 304, release = function() end } }) end }),
 }
 function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end
 ''')
@@ -111,7 +123,7 @@ assert 'Access token (instapaper.com/developers)' in t and 'on the SD card over 
 tap(100, TOP + 20 + 24 + 10)
 g.inputs[1](g.ctx, '  tok123456789  ')
 g.inputs = L.table()
-assert g.store['config.txt'] == 'token=tok123456789\nsize=default', g.store['config.txt']
+assert g.store['config.txt'] == 'token=tok123456789\nsize=default\nimages=0', g.store['config.txt']
 assert 'tok1...6789' in texts()
 tap(*BAR(0))                                             # Back: menu; the folder list is asked
 assert calls[-1][:2] == ('GET', 'https://www.instapaper.com/api/2/folders') and calls[-1][3] == 'Bearer tok123456789', calls[-1]
@@ -251,4 +263,37 @@ body_lines = [x for x in texts() if x not in BAR_LABELS and not re.fullmatch(r'[
 last = [x for x in body_lines if 'ğ' in x or '…' in x][-1]
 assert last.endswith('…') and 'ğ' in last, last
 last.encode('utf-8')
+# pictures: off by default (no markers, no resizer requests); on, they load for the page on screen
+state['token_ok'] = True
+n = len(calls)
+key('back'); tap(100, row_y(6)); g.flush()
+assert not any('weserv' in c[1] for c in calls[n:]), calls[n:]
+assert 'Before the pictures.' in texts() and not any('[[img' in x for x in texts()), texts()
+key('back'); key('back')
+tap(*MENU(4))                                            # Settings -> Images in articles
+tap(100, TOP + 20 + 2 * 96 + 24 + 10)
+assert g.store['config.txt'].endswith('images=1'), g.store['config.txt']
+tap(*BAR(0)); g.flush()
+tap(*MENU(0)); g.flush()
+n = len(calls)
+tap(100, row_y(6)); g.flush()
+seen_image_text = False
+for _ in range(page_ind()[1]):                         # pictures load page by page
+    seen_image_text = seen_image_text or '[image]' in texts()
+    key('right'); g.flush()
+pics = [c[1] for c in calls[n:] if 'weserv' in c[1]]
+assert len(pics) == 3, pics                               # big, lazy, relative; no icon, no pixel
+assert pics[0] == ('https://images.weserv.nl/?url=https%3A%2F%2Fcdn.example.com%2Fa.jpg&w=456&h=304'
+                   '&fit=contain&cbg=white&output=jpg&q=70&filt=greyscale'), pics[0]
+assert 'url=https%3A%2F%2Fcdn.example.com%2Flazy.png&w=456&h=342' in pics[1], pics[1]
+assert 'url=https%3A%2F%2Fwww.site0.com%2Fpost%2Fimg%2Frel.jpg' in pics[2], pics[2]
+assert not any('star.png' in c[1] or 'p.gif' in c[1] for c in calls[n:])
+assert seen_image_text, 'the lazy picture failed: [image] in its place'
+assert g.images_drawn >= 1
+# opened again: from the cache with its pictures
+n = len(calls)
+key('back'); tap(100, row_y(6)); g.flush()
+for _ in range(4): key('left'); g.flush()
+assert not any('/parse' in c[1] for c in calls[n:]) and any('weserv' in c[1] for c in calls[n:]), calls[n:]
+assert 'Before the pictures.' in texts()
 print('instapaper29 tests passed')

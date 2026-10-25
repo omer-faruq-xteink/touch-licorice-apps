@@ -34,8 +34,11 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
 - The last page shows the article's link as a **QR code** (to open it on a phone), then
   **Archive** (archives it and returns to the list) and **Star**.
 - **Text size** in Settings: small / default / large, as in RSS.
+- **Images in articles** in Settings (off by default): pictures appear where they are in the text,
+  as greyscale JPEGs fitted to the screen width, from the free images.weserv.nl resizer, loaded
+  for the page on screen only. Icons and tracking pixels are left out; a picture that cannot be
+  loaded shows as `[image]`, the text never waits for it.
 - Opened articles and lists are saved on the card and open again without a connection.
-- Pictures are not shown yet.
 
 ## Files
 

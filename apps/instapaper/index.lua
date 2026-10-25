@@ -178,7 +178,7 @@ local function load_cfg()
 end
 
 local function save_cfg()
-  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token .. '\nsize=' .. cfg.size) end)
+  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0')) end)
 end
 
 local function base_url()
@@ -210,7 +210,7 @@ end
 -- the bytes of an article image, straight from the resizer URL the Worker gave (another host:
 -- no Worker credentials go with it); on_done(body) or on_done(nil, err)
 local function fetch_image(url, on_done)
-  local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink RSS mini app)' }
+  local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink Instapaper mini app)' }
   net_submit({ url = url, method = 'GET', headers = headers }, loading or 'loading image', 30000, function(resp, err)
     if err then on_done(nil, err); return end
     local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
@@ -336,8 +336,8 @@ local function layout_article(data)
   gap(14)
   local text = data.text or ''
   local info = {}
-  for _, im in ipairs(type(data.images) == 'table' and data.images or {}) do
-    if type(im) == 'table' and im.n then info[tonumber(im.n)] = im end
+  for k, im in ipairs(type(data.images) == 'table' and data.images or {}) do
+    if type(im) == 'table' then info[tonumber(im.n) or k] = im end
   end
   for raw_para in (text .. '\n\n'):gmatch('(.-)\n\n') do
     local para = raw_para:gsub('^\n+', ''):gsub('\n+$', '')  -- Lua 5.5: loop variables are const
@@ -499,7 +499,62 @@ local function decode_entities(t)
   end))
 end
 
-local function html_to_text(html, max)
+-- Pictures: the article's <img> become "[[img:N]]" paragraphs and entries {w, h, src} in imgs,
+-- src being a greyscale JPEG from the free images.weserv.nl resizer (the device fetches it; RSS
+-- does the same). With width and height in the HTML the picture keeps that shape, fitted to the
+-- screen (at most IMG_W x IMG_H, never enlarged); without them it fits a 456 x 342 box. Icons
+-- and tracking pixels (both sides at most TINY_IMG) are left out.
+local IMG_W, IMG_H, TINY_IMG, MAX_IMAGES = 456, 640, 80, 12
+
+local function attr(tag, name)
+  local v = tag:match('[%s]' .. name .. '%s*=%s*"([^"]*)"') or tag:match('[%s]' .. name .. "%s*=%s*'([^']*)'")
+    or tag:match('[%s]' .. name .. '%s*=%s*([^%s>"\']+)')
+  return v and decode_entities(v) or nil
+end
+
+local function absolute(src, base)
+  src = (src or ''):gsub('^%s+', ''):gsub('%s+$', '')
+  if src == '' or src:match('^data:') then return nil end
+  if src:match('^https?://') then return src end
+  if src:sub(1, 2) == '//' then return 'https:' .. src end
+  local origin = tostring(base or ''):match('^(https?://[^/]+)')
+  if not origin then return nil end
+  if src:sub(1, 1) == '/' then return origin .. src end
+  local dir = tostring(base):match('^(https?://.*/)') or (origin .. '/')
+  return dir .. src
+end
+
+local function url_encode(t)
+  return (t:gsub('[^%w%-%._~]', function(c) return string.format('%%%02X', c:byte()) end))
+end
+
+local function picture(tag, base)
+  -- lazy-loading pages keep the real address in data-src and a placeholder in src
+  local src = attr(tag, 'data%-src') or attr(tag, 'data%-original') or attr(tag, 'data%-lazy%-src')
+  local plain = attr(tag, 'src')
+  if not src and plain and not plain:match('^data:') then src = plain end
+  if not src then
+    local set = attr(tag, 'srcset') or attr(tag, 'data%-srcset')
+    src = set and set:match('^%s*([^%s,]+)')
+  end
+  src = absolute(src, base)
+  if not src then return nil end
+  local w = tonumber((attr(tag, 'width') or ''):match('^%s*(%d+)%s*$'))
+  local h = tonumber((attr(tag, 'height') or ''):match('^%s*(%d+)%s*$'))
+  if (w and w <= 2) or (h and h <= 2) then return nil end                -- tracking pixels
+  if w and h and w <= TINY_IMG and h <= TINY_IMG then return nil end     -- icons, emoji
+  if w and h then
+    if w > IMG_W then h = math.floor(h * IMG_W / w + 0.5); w = IMG_W end
+    if h > IMG_H then w = math.floor(w * IMG_H / h + 0.5); h = IMG_H end
+    w, h = math.max(w, 16), math.max(h, 16)
+  else
+    w, h = IMG_W, 342
+  end
+  return { w = w, h = h, src = 'https://images.weserv.nl/?url=' .. url_encode(src) .. '&w=' .. w .. '&h=' .. h
+    .. '&fit=contain&cbg=white&output=jpg&q=70&filt=greyscale' }
+end
+
+local function html_to_text(html, max, imgs, base)
   local src = tostring(html or ''):gsub('<!%-%-.-%-%->', ' ')
   local out, i, n, skip = {}, 1, #src, nil
   while i <= n do
@@ -524,6 +579,9 @@ local function html_to_text(html, max)
       elseif close == '' and name == 'hr' then out[#out + 1] = '\n\n* * *\n\n'
       elseif close == '' and name == 'li' then out[#out + 1] = '\n\226\128\162 '
       elseif close == '' and (name == 'p' or name == 'div') then out[#out + 1] = '\n\n'
+      elseif close == '' and name == 'img' and imgs and #imgs < MAX_IMAGES then
+        local pic = picture(' ' .. tag:sub(4), base)
+        if pic then imgs[#imgs + 1] = pic; out[#out + 1] = '\n\n[[img:' .. #imgs .. ']]\n\n' end
       elseif close == '/' and BLOCK_END[name] then out[#out + 1] = '\n\n' end
     end
     i = b + 1
@@ -552,25 +610,41 @@ local function to_article(d, item)
   local author = type(meta.author) == 'table' and str(meta.author.name) or nil
   local url = (item and item.url) or str(meta.url) or ''
   local host = (item and item.host) or host_of(url)
+  local imgs = cfg.images and {} or nil
   return {
     title = (item and item.title) or str(meta.title) or '',
     feed = host .. (author and ('  ' .. author) or ''),
     date = (item and item.day) or '',
     url = url,
-    text = html_to_text(content.body or '', TEXT_MAX),
+    text = html_to_text(content.body or '', TEXT_MAX, imgs, url),
+    images = imgs,
   }
 end
 
 -- the converted article as a small text file: header lines, then the text
 local function art_encode(a)
-  local function one(v) return (tostring(v or ''):gsub('\n', ' ')) end
-  return 'IPA1\n' .. one(a.title) .. '\n' .. one(a.feed) .. '\n' .. one(a.date) .. '\n' .. one(a.url) .. '\n' .. (a.text or '')
+  local function one(v) return (tostring(v or ''):gsub('[\n\t]', ' ')) end
+  local pics = {}
+  for _, im in ipairs(a.images or {}) do pics[#pics + 1] = im.w .. ' ' .. im.h .. ' ' .. one(im.src) end
+  return 'IPA2\n' .. one(a.title) .. '\n' .. one(a.feed) .. '\n' .. one(a.date) .. '\n' .. one(a.url) .. '\n'
+    .. table.concat(pics, '\t') .. '\n' .. (a.text or '')
 end
 local function art_decode(raw)
-  if type(raw) ~= 'string' or raw:sub(1, 5) ~= 'IPA1\n' then return nil end
-  local title, feed, date, url, text = raw:match('^IPA1\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
+  if type(raw) ~= 'string' then return nil end
+  if raw:sub(1, 5) == 'IPA1\n' then
+    local title, feed, date, url, text = raw:match('^IPA1\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
+    if title then return { title = title, feed = feed, date = date, url = url, text = text } end
+    return nil
+  end
+  if raw:sub(1, 5) ~= 'IPA2\n' then return nil end
+  local title, feed, date, url, pics, text = raw:match('^IPA2\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
   if not title then return nil end
-  return { title = title, feed = feed, date = date, url = url, text = text }
+  local images = {}
+  for entry in pics:gmatch('[^\t]+') do
+    local w, h, src = entry:match('^(%d+) (%d+) (.+)$')
+    if w then images[#images + 1] = { w = tonumber(w), h = tonumber(h), src = src } end
+  end
+  return { title = title, feed = feed, date = date, url = url, text = text, images = images }
 end
 
 ------------------------------------------------------------------ loaders
@@ -679,9 +753,9 @@ local function open_article(item)
   art.item, art.start_page = item, nil
   screen = 'article'
   release_images()
-  local cname = 'a' .. art.id .. '.txt'
+  local cname = 'a' .. art.id .. (cfg.images and 'i' or '') .. '.txt'
   local cached = art_decode(cache_read(cname))
-  if cached then layout_article(cached); resume_page(); art.cached = true; note('cached'); return end
+  if cached then layout_article(cached); resume_page(); art.cached = true; note('cached'); load_page_images(); return end
   local id = art.id
   request('/bookmarks/' .. id .. '/parse', function(data, err)
     if art.id ~= id then return end               -- another article by now
@@ -689,6 +763,7 @@ local function open_article(item)
       local a = to_article(data, item)
       layout_article(a); resume_page(); note('')
       cache_write(cname, art_encode(a))
+      load_page_images()
     else
       note(short(err, 44))
     end
@@ -905,7 +980,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'Archive', 'archive' }, { 'Folders', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'token', 'Access token (instapaper.com/developers)' }, { 'size', 'Text size (articles and previews)' } }
+local SETTINGS = { { 'token', 'Access token (instapaper.com/developers)' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' } }
 
 local function bar(gg, labels)
   local F = ctx.fonts
