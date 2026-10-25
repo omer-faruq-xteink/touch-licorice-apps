@@ -43,6 +43,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   link as a QR code (the firmware's own encoder), so it opens on a phone, with the address
   wrapped under it (up to three lines). If no QR can be made, only the address is shown; the
   article reads as before.
+- **Notes: an eraser.** A new **Erase** tool cuts strokes where your finger passes (the rest of
+  each stroke stays) and removes text it touches, so any earlier item can be removed, not only
+  the last one. **Undo** brings back what the last erase took.
 
 ## Update
 

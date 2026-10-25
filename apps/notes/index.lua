@@ -1,13 +1,16 @@
 -- Notes for XTOS Licorice, API 2.9. Freehand drawing and typed text on up to 8 pages, kept in
 -- ctx.storage; the chosen page becomes the lock screen (lockscreen.lua draws it with a clock).
 --
--- Toolbar: Draw | Text (tap again to cycle S/M/L) | Undo | Page | Lock | Clear
+-- Toolbar: Draw | Erase | Text (tap again to cycle S/M/L) | Undo | Page | Lock | Clear
+-- Erase cuts strokes where the finger passes (the rest stays) and removes text it touches;
+-- Undo after an erase brings back what it took.
 -- Pointer phases down/move/up give the strokes; each stroke is one g:polyline per 60-point chunk.
 -- Every ctx.* function is a method on this API: call them colon-style.
 
 local W, H, TOP = 480, 800, 56
 local NPAGES, MAXPTS = 8, 60
 local MIN_STEP = 3
+local ERASE_R = 14        -- eraser radius in px
 
 local G, ERR = nil, nil
 local page = 1
@@ -18,6 +21,9 @@ local fsize = 2           -- 1 small 2 medium 3 large
 local FNAMES = { 'small', 'medium', 'large' }
 local SIZE_TAG = { 'S', 'M', 'L' }
 local status = ''
+local erase_snap = nil    -- the items before the erase gesture in progress changed anything
+local erase_undo = {}     -- { {before = list, after = list, n = count} }, newest last
+local eraser_at = nil     -- {x, y} while erasing, to show the eraser
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
 local function note(s) status = tostring(s) end
@@ -65,6 +71,7 @@ end
 local function load_page(p)
   page = p
   items = {}
+  erase_undo, erase_snap = {}, nil
   local ok, data = pcall(function() return ctx.storage:read(page_name(p)) end)
   if ok and type(data) == 'string' then items = parse(data) end
   pcall(function() ctx.state = ctx.state or {}; ctx.state.page = p end)
@@ -97,8 +104,8 @@ local function draw_items(gg, list, fonts)
   end
 end
 
-local BTNS = { 'Draw', 'Text', 'Undo', 'Page', 'Lock', 'Clear' }
-local BW = 78
+local BTNS = { 'Draw', 'Erase', 'Text', 'Undo', 'Page', 'Lock', 'Clear' }
+local BW = 66
 
 -- An in-app question (the firmware's dialog:confirm is not reliable on this host): a box with a
 -- title, a few lines and buttons; { title, lines = {..}, buttons = { {label, fn}, .. } }.
@@ -140,13 +147,14 @@ local function draw_impl(gg)
     local label = name
     if name == 'Text' then label = 'Text ' .. SIZE_TAG[fsize] end
     gg:text(x + 6, 13, label, { font = small })
-    if (name == 'Draw' and tool == 'draw') or (name == 'Text' and tool == 'text') then gg:line(x + 4, 38, x + BW - 4, 38) end
+    if (name == 'Draw' and tool == 'draw') or (name == 'Erase' and tool == 'erase') or (name == 'Text' and tool == 'text') then gg:line(x + 4, 38, x + BW - 4, 38) end
   end
   gg:text(6, 46, 'page ' .. page .. '/' .. NPAGES .. '  ' .. #items .. ' items  ' .. status, { font = small })
   gg:line(0, TOP + 8, W, TOP + 8)
   if modal then draw_modal(gg, F); return end
   draw_items(gg, items, F)
   if cur then draw_stroke(gg, cur.pts) end
+  if eraser_at then pcall(function() gg:circle(eraser_at[1], eraser_at[2], ERASE_R) end) end
   if ERR then gg:text(6, H - 30, short('ERR ' .. ERR, 46), { font = small }) end
 end
 
@@ -172,6 +180,78 @@ local function add_text_at(x, y)
     end)
   end)
   if not ok then note('text ! ' .. short(err, 30)) end
+end
+
+-- eraser: strokes are cut where they pass within ERASE_R of (x, y), points and segments alike;
+-- pieces of a single point are dropped. Text touched inside its box is removed whole.
+local function text_box(it)
+  local f = ctx.fonts and ctx.fonts[FNAMES[it.f] or 'medium']
+  local ok, w = pcall(function() return f:measure(it.text) end)
+  w = (ok and type(w) == 'number') and w or (#it.text * 12)
+  local okh, h = pcall(function() return f.line_height end)
+  h = (okh and tonumber(h)) or 24
+  return it.x, it.y, w, h
+end
+
+local function near_segment(px, py, x1, y1, x2, y2, r2)
+  local dx, dy = x2 - x1, y2 - y1
+  local len2 = dx * dx + dy * dy
+  local t = len2 > 0 and ((px - x1) * dx + (py - y1) * dy) / len2 or 0
+  t = math.max(0, math.min(1, t))
+  local qx, qy = x1 + t * dx - px, y1 + t * dy - py
+  return qx * qx + qy * qy <= r2
+end
+
+local function erase_at(x, y)
+  local r2 = ERASE_R * ERASE_R
+  local out, changed = {}, false
+  for _, it in ipairs(items) do
+    if it.k == 't' then
+      local bx, by, bw, bh = text_box(it)
+      if x >= bx - 4 and x <= bx + bw + 4 and y >= by - 4 and y <= by + bh + 4 then changed = true
+      else out[#out + 1] = it end
+    elseif it.k == 's' then
+      local pts = it.pts
+      local function gone(i) local dx, dy = pts[i] - x, pts[i + 1] - y; return dx * dx + dy * dy <= r2 end
+      local piece, pieces, hit = {}, {}, false
+      for i = 1, #pts - 1, 2 do
+        if gone(i) then
+          hit = true
+          if #piece >= 4 then pieces[#pieces + 1] = piece end
+          piece = {}
+        else
+          local n = #piece
+          if n >= 2 and near_segment(x, y, piece[n - 1], piece[n], pts[i], pts[i + 1], r2) then
+            hit = true                                  -- the eraser crossed between two points
+            if n >= 4 then pieces[#pieces + 1] = piece end
+            piece = {}
+          end
+          piece[#piece + 1] = pts[i]; piece[#piece + 1] = pts[i + 1]
+        end
+      end
+      if not hit then out[#out + 1] = it
+      else
+        changed = true
+        if #piece >= 4 then pieces[#pieces + 1] = piece end
+        for _, pc in ipairs(pieces) do out[#out + 1] = { k = 's', pts = pc } end
+      end
+    else
+      out[#out + 1] = it
+    end
+  end
+  if changed then
+    if not erase_snap then erase_snap = items end
+    items = out
+  end
+end
+
+local function erase_done()
+  eraser_at = nil
+  if not erase_snap then return end
+  erase_undo[#erase_undo + 1] = { before = erase_snap, after = items, n = #items }
+  if #erase_undo > 10 then table.remove(erase_undo, 1) end
+  erase_snap = nil
+  save_page()
 end
 
 local function do_lock()
@@ -200,17 +280,22 @@ local function do_clear()
   modal = {
     title = 'Clear page ' .. page,
     lines = { 'Erase everything on this page?' },
-    buttons = { { 'Erase', function() modal = nil; items = {}; save_page() end }, { 'Cancel', function() modal = nil end } },
+    buttons = { { 'Erase', function() modal = nil; items = {}; erase_undo = {}; save_page() end }, { 'Cancel', function() modal = nil end } },
   }
 end
 
 local function button(i)
   local name = BTNS[i]
   if name == 'Draw' then tool = 'draw'
+  elseif name == 'Erase' then tool = 'erase'
   elseif name == 'Text' then
     if tool == 'text' then fsize = fsize % 3 + 1 else tool = 'text' end
   elseif name == 'Undo' then
-    if #items > 0 then table.remove(items); save_page() end
+    -- the last erase is undone once everything drawn after it has been undone
+    local top = erase_undo[#erase_undo]
+    if top and top.after == items and #items == top.n then
+      items = top.before; table.remove(erase_undo); save_page()
+    elseif #items > 0 then table.remove(items); save_page() end
   elseif name == 'Page' then
     load_page(page % NPAGES + 1)
   elseif name == 'Lock' then do_lock()
@@ -234,6 +319,18 @@ function on_input(c, ev)
           if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then b.fn(); return end
         end
         if y < MODAL_Y or y > MODAL_Y + h then modal = nil end   -- a tap outside the box cancels
+      end
+      return
+    end
+    if tool == 'erase' and (eraser_at or (ph == 'down' and y > TOP + 8)) then
+      if ph == 'up' then erase_done(); return end
+      if y > TOP + 8 then
+        -- follow the finger's path: fast swipes move more than the eraser's width per event
+        local px, py = x, y
+        if eraser_at then px, py = eraser_at[1], eraser_at[2] end
+        local steps = math.max(1, math.ceil(math.sqrt((x - px) ^ 2 + (y - py) ^ 2) / (ERASE_R / 2)))
+        for k = 1, steps do erase_at(math.floor(px + (x - px) * k / steps), math.floor(py + (y - py) * k / steps)) end
+        eraser_at = { x, y }
       end
       return
     end
