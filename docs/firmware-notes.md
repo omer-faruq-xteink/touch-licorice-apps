@@ -73,7 +73,7 @@ output and produces `netprobe/netprobe.xtapp`. The device-key address was revers
 1. USB mode on the reader, copy `netprobe.xtapp` to the SD card root.
 2. All Files → tap `netprobe.xtapp` → *Install this package?* → OK. Expect the toast **Installed**.
 3. Unlock the hidden menu: Settings → About → tap **Model** ten times, each tap under 2 s apart.
-4. Open the side drawer (≡) → **Mini Apps** → **Net Probe**.
+4. Open the side drawer (≡) → **Ink App** → **Net Probe**.
 5. Tap anywhere to page; photograph every page. The Home pad → *Leave app* exits.
 
 ## Findings so far (2026-10-23, device build XTOS Licorice 26102301)

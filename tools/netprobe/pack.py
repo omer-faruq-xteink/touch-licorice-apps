@@ -105,7 +105,7 @@ def main():
     for w in rep['warnings']:
         print('  note:', w)
     print('copy netprobe.xtapp to the SD card root (USB mode), then on the device: All Files -> tap it -> Install.')
-    print('Unlock the menu: Settings -> About -> tap "Model" 10 times fast. Then drawer -> Mini Apps -> Net Probe.')
+    print('Unlock the menu: Settings -> About -> tap "Model" 10 times fast. Then drawer -> Ink App -> Net Probe.')
 
 
 if __name__ == '__main__':

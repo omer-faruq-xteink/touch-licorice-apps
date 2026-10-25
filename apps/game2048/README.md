@@ -24,7 +24,7 @@ python xtpack.py apps/game2048
 ```
 
 writes `dist/game2048.xtapp` (the app id must be letters only, so it is not `2048`).
-Copy it to the SD card root, install from All Files, then open it from the drawer's Mini Apps
+Copy it to the SD card root, install from All Files, then open it from the drawer's Ink App
 (unlocked once with ten taps on Settings → About → Model).
 
 ## Test

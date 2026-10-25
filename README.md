@@ -33,8 +33,8 @@ files from the [latest release](../../releases).
    toast **Installed** appears. Repeat for each file.
 3. Unlock the hidden menu, once: **Settings → About → tap "Model" ten times**, each tap less than
    two seconds after the previous one. Nothing is shown, but the side drawer (≡) now has a
-   **Mini Apps** row between Cloud and USB mode.
-4. **≡ → Mini Apps** lists the installed apps. Tap one to start it. The **Home pad** (the touch pad
+   **Ink App** row between Cloud and USB mode.
+4. **≡ → Ink App** lists the installed apps. Tap one to start it. The **Home pad** (the touch pad
    under the screen) asks "Leave app" to return.
 
 Apps keep their state (your Sudoku grid, your Sokoban position, your notes) between runs; leaving
@@ -46,7 +46,7 @@ an app saves it.
   Check the release notes for the Licorice build it was made with. See "Caveats".
 - **Cannot run yet** / **App error, closed**: a problem inside the app; please open an issue with
   your firmware build (Settings → About) and what you did.
-- No **Mini Apps** row: repeat the ten taps a little faster, right after the status-bar clock
+- No **Ink App** row: repeat the ten taps a little faster, right after the status-bar clock
   changes minute.
 
 ## The apps

@@ -4,7 +4,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 
 ## Changed
 
-- Nothing yet.
+- **Docs**: the hidden drawer row is called **Ink App** (it was described as "Mini Apps"); install
+  steps now name it right.
 
 ## Update
 
@@ -219,8 +220,8 @@ Tested on build **26102301**. Unofficial, use at your own risk.
 
 1. USB mode → copy the `.xtapp` files to the **SD card root**.
 2. **All Files** → tap a file → **Install**.
-3. Once: **Settings → About → tap "Model" 10 times** quickly. **Mini Apps** appears in the drawer (≡).
-4. **≡ → Mini Apps** → tap an app. The Home pad leaves it. State is saved on leave.
+3. Once: **Settings → About → tap "Model" 10 times** quickly. **Ink App** appears in the drawer (≡).
+4. **≡ → Ink App** → tap an app. The Home pad leaves it. State is saved on leave.
 
 ## Limits
 

@@ -241,7 +241,7 @@ def main():
     ap.add_argument('--image', help='derive the device key from this Licorice app image instead of the embedded one')
     a = ap.parse_args()
     pack(a.app_dir, a.out, a.image)
-    print("copy to the SD card root, install from All Files, open from the drawer's Mini Apps")
+    print("copy to the SD card root, install from All Files, open from the drawer's Ink App")
 
 
 if __name__ == '__main__':
