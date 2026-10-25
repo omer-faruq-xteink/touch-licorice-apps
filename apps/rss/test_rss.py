@@ -545,4 +545,24 @@ g.store['a800.txt'] = None
 tap(100, 56 + 26 + 5); g.flush()
 t = texts()
 assert 'No link.' in t and 'Source:' not in t, t
+# a long address wraps into lines that fit (stub font: 10 px per byte, 456 px -> 45 bytes), at a / or .
+tap(50, 20)
+slug = 'techspheredynamics.com/2026/10/23/evaluate-business-central-mcp-answers'
+responses['/api/article/800'] = {'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '', 'text': 'Long link.', 'url': 'https://' + slug}
+g.store['a800.txt'] = None
+tap(100, 56 + 26 + 5); g.flush()
+t = texts()
+i = t.index('Source:')
+addr_lines = [x for x in t[i + 1:] if x and x[0].isalnum()][:3]
+assert ''.join(addr_lines) == slug and len(addr_lines) == 2 and all(len(x) <= 45 for x in addr_lines), addr_lines
+assert addr_lines[0][-1] in '/.-', addr_lines
+# a very long one stops after three lines with "~"
+tap(50, 20)
+responses['/api/article/800']['url'] = 'https://' + slug + '/' + 'x' * 200
+g.store['a800.txt'] = None
+tap(100, 56 + 26 + 5); g.flush()
+t = texts()
+i = t.index('Source:')
+addr_lines = [x for x in t[i + 1:] if x and x[0].isalnum()][:4]
+assert len(addr_lines) == 3 and addr_lines[2].endswith('~') and all(len(x) <= 45 for x in addr_lines), addr_lines
 print('rss29 tests passed')

@@ -262,6 +262,30 @@ end
 
 -- wrap one paragraph into lines no wider than width using the font's measure;
 -- each line is appended to out as { s = text, f = fname, h = line height, x = indent }
+-- an address (no spaces) cut into lines that fit width in the small font, preferably after
+-- / . - ? & =; at most max_lines, the last one ending in "~" when the address is longer
+local function wrap_address(s, width, max_lines)
+  local font = ctx.fonts and ctx.fonts.small
+  local function wd(t)
+    local ok, m = pcall(function() return font:measure(t) end)
+    return (ok and type(m) == 'number') and m or (#t * 11)
+  end
+  local lines = {}
+  while #s > 0 and #lines < max_lines do
+    if wd(s) <= width then lines[#lines + 1] = s; return lines end
+    local n = 1
+    while n < #s and wd(s:sub(1, n + 1)) <= width do n = n + 1 end
+    if #lines == max_lines - 1 then lines[#lines + 1] = s:sub(1, math.max(1, n - 1)) .. '~'; return lines end
+    local cut = n
+    for i = n, math.max(1, n - 12), -1 do
+      if s:sub(i, i):match('[/%.%-%?&=]') then cut = i; break end
+    end
+    lines[#lines + 1] = s:sub(1, cut)
+    s = s:sub(cut + 1)
+  end
+  return lines
+end
+
 local function wrap_para(out, para, fname, width, indent)
   local F = ctx.fonts
   local font = F and F[fname]
@@ -327,9 +351,10 @@ local function layout_article(data)
   -- when no QR can be made)
   local url = type(data.url) == 'string' and data.url or ''
   if url:match('^https?://') then
+    local addr = wrap_address(url:gsub('^https?://', ''):gsub('^www%.', ''), W - 24, 3)
     gap(6)
     out[#out + 1] = { s = '', f = 'small', h = 6, x = 0, rule = true }
-    out[#out + 1] = { s = '', f = 'small', h = 30 + QR_PX + 34, x = 0, source = url }
+    out[#out + 1] = { s = '', f = 'small', h = 30 + QR_PX + 12 + #addr * 22, x = 0, source = url, addr = addr }
   end
   -- paginate by height
   art.lines = out
@@ -511,8 +536,8 @@ draw_source_line = function(gg, ln, y)
     drawn = ok
     if not ok then source_qr.failed = true end
   end
-  local addr = ln.source:gsub('^https?://', ''):gsub('^www%.', '')
-  gg:text(12, drawn and (y + 30 + QR_PX + 8) or (y + 30), short(addr, 46), { font = F and F.small })
+  local ay = drawn and (y + 30 + QR_PX + 8) or (y + 30)
+  for _, a in ipairs(ln.addr or {}) do gg:text(12, ay, a, { font = F and F.small }); ay = ay + 22 end
 end
 
 local function decode(n, bytes)

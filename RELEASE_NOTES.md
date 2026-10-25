@@ -40,8 +40,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
   after every request and the next one waited for it to come back. RSS now keeps Wi-Fi up while
   it is used (5 minutes from the last tap) and lets it go when you leave the app.
 - **RSS: the source as a QR code.** Every article ends with a rule, "Source:" and the article's
-  link as a QR code (the firmware's own encoder), so it opens on a phone. If no QR can be made,
-  only the address is shown; the article reads as before.
+  link as a QR code (the firmware's own encoder), so it opens on a phone, with the address
+  wrapped under it (up to three lines). If no QR can be made, only the address is shown; the
+  article reads as before.
 
 ## Update
 
