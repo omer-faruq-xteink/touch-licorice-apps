@@ -66,6 +66,7 @@ ctx = {
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 300, release = function() released = (released or 0) + 1 end } }) end }),
+  qr = M({ encode = function(t) if qr_fail then error('qr too long') end; qr_made = t; return setmetatable({}, { __index = { width = 33, height = 33, release = function() qr_released = (qr_released or 0) + 1 end } }) end }),
   base64 = M({ encode = function(s) return 'B64(' .. s .. ')' end }),
 }
 -- answers arrive one at a time; an answer may start the next queued request, so keep going
@@ -521,4 +522,27 @@ kept = [g.kept[i] for i in range(1, len(g.kept) + 1)]
 assert kept and all(k >= 60000 for k in kept), kept
 L.execute("on_leave()")
 assert g.kept[len(g.kept)] < 1000, g.kept[len(g.kept)]
+# the article's link as a QR code at the end, under a rule; if the QR fails, just the address
+responses['/api/article/800'] = {'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '',
+    'url': 'https://www.example.com/a/b', 'text': 'Short text.'}
+n_img = g.images_drawn
+tap(100, 56 + 26 + 5); g.flush()
+t = texts()
+assert 'Short text.' in t and 'Source:' in t and 'example.com/a/b' in t, t
+assert g.qr_made == 'https://www.example.com/a/b' and g.images_drawn > n_img, (g.qr_made, g.images_drawn)
+tap(50, 20)
+g.qr_fail = True
+n_img = g.images_drawn
+tap(100, 56 + 26 + 5); g.flush()                        # opening an article releases the last QR
+assert (g.qr_released or 0) >= 1
+t = texts()
+assert 'Short text.' in t and 'Source:' in t and 'example.com/a/b' in t and not any('ERR' in x for x in t), t
+assert g.images_drawn == n_img
+g.qr_fail = False
+tap(50, 20)
+responses['/api/article/800'] = {'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '', 'text': 'No link.'}
+g.store['a800.txt'] = None
+tap(100, 56 + 26 + 5); g.flush()
+t = texts()
+assert 'No link.' in t and 'Source:' not in t, t
 print('rss29 tests passed')

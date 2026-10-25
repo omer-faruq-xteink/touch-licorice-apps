@@ -263,7 +263,7 @@ messages; the Notes and RSS apps are built on the results.
 | `ctx.fonts.small / medium / large` | userdata with `measure(s)`, `ascent`, `line_height` (20 / 24 / 30), `name`; `fonts:size(n)` snaps to these three (`ttf` is false); use as `g:text(x, y, s, {font = f})` or `g:text_box(..., {font = f})` |
 | `g:polyline({x1, y1, x2, y2, …})` | one command per stroke chunk; there is a point limit, chunk at ~60 points |
 | `g:image(img, x, y, {w =, h =})` | the only working argument order (`g:image(x, y, img)` draws nothing) |
-| `ctx.qr:encode(text)` | QR image for `g:image` |
+| `ctx.qr:encode(text)` | QR image for `g:image`, one pixel per module (33×33 for a short URL); draw it scaled with `{w =, h =}` by a whole factor |
 | `ctx.image:decode(bytes, opts_table)` | not yet exercised with real image data |
 | `ctx.layers:create(w, h)` | layer userdata `{width, height, draw(fn), release}`; `layer:draw(fn)` draws into it (0.8's `draw_with`) |
 | `ctx.json:decode(s)` / `encode(v)`, `ctx.base64`, `ctx.hex`, `ctx.hash:sha1/sha256`, `ctx.url:encode/decode`, `ctx.random:uuid()` | as named |

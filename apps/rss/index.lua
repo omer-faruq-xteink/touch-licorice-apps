@@ -6,6 +6,7 @@
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
 local W, H, TOP = 480, 800, 56
+local QR_PX = 200             -- the source QR code at the end of an article, at most this wide
 local LIST_N = 12
 local LIST_MAX_ITEMS = 240    -- list rows kept in memory as pages are appended
 local TEXT_MAX = 20000
@@ -116,6 +117,7 @@ local read_accounts, load_accounts, note_accounts   -- defined in the accounts s
 -- No timer: timeouts are checked on draw and input.
 local accounts_fresh = false
 local load_page_images, release_images, draw_image_line   -- defined in the images section
+local draw_source_line                                    -- the source QR block, images section
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
   return ''
@@ -321,6 +323,14 @@ local function layout_article(data)
       gap(10)
     end
   end
+  -- the article's link as a QR code under a rule (drawn by draw_source_line; just the address
+  -- when no QR can be made)
+  local url = type(data.url) == 'string' and data.url or ''
+  if url:match('^https?://') then
+    gap(6)
+    out[#out + 1] = { s = '', f = 'small', h = 6, x = 0, rule = true }
+    out[#out + 1] = { s = '', f = 'small', h = 30 + QR_PX + 34, x = 0, source = url }
+  end
   -- paginate by height
   art.lines = out
   art.starts = { 1 }
@@ -468,11 +478,41 @@ local function page_lines()
   return first, last
 end
 
+local source_qr = nil         -- { url, img } | { url, failed = true } for the open article
+
 release_images = function()
   for _, d in pairs(img_mem) do
     if d.img then pcall(function() d.img:release() end) end
   end
   img_mem, img_bytes, img_busy = {}, {}, false
+  if source_qr and source_qr.img then pcall(function() source_qr.img:release() end) end
+  source_qr = nil
+end
+
+-- "Source:" with the article's link as a QR code (the firmware's own encoder, scaled up by whole
+-- steps so the modules stay sharp). Anything going wrong leaves just the address as text: the
+-- article itself never depends on it.
+draw_source_line = function(gg, ln, y)
+  local F = ctx.fonts
+  gg:text(12, y + 4, 'Source:', { font = F and F.small })
+  if not source_qr or source_qr.url ~= ln.source then
+    if source_qr and source_qr.img then pcall(function() source_qr.img:release() end) end
+    local ok, img = pcall(function() return ctx.qr:encode(ln.source) end)
+    source_qr = (ok and img) and { url = ln.source, img = img } or { url = ln.source, failed = true }
+  end
+  local drawn = false
+  if source_qr.img then
+    local ok = pcall(function()
+      local w = tonumber(source_qr.img.width) or 0
+      local size = QR_PX
+      if w > 0 then size = w * math.max(1, math.floor(QR_PX / w)) end
+      gg:image(source_qr.img, math.floor((W - size) / 2), y + 30, { w = size, h = size })
+    end)
+    drawn = ok
+    if not ok then source_qr.failed = true end
+  end
+  local addr = ln.source:gsub('^https?://', ''):gsub('^www%.', '')
+  gg:text(12, drawn and (y + 30 + QR_PX + 8) or (y + 30), short(addr, 46), { font = F and F.small })
 end
 
 local function decode(n, bytes)
@@ -719,6 +759,7 @@ local function draw_article(gg)
     if not ln then break end
     if ln.rule then gg:line(12, y + 2, W - 12, y + 2)
     elseif ln.img then draw_image_line(gg, ln, y)
+    elseif ln.source then pcall(draw_source_line, gg, ln, y)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
