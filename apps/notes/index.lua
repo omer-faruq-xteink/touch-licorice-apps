@@ -1,7 +1,8 @@
 -- Notes for XTOS Licorice, API 2.9. Freehand drawing and typed text on up to 8 pages, kept in
 -- ctx.storage; the chosen page becomes the lock screen (lockscreen.lua draws it with a clock).
 --
--- Toolbar: Draw | Erase | Text (tap again to cycle S/M/L) | Undo | Page | Lock | Clear
+-- Toolbar: Tool (shows the current one; opens Draw / Erase / Text S / Text M / Text L) | Undo |
+-- Page | Lock | Clear
 -- Erase cuts strokes where the finger passes (the rest stays) and removes text it touches;
 -- Undo after an erase brings back what it took.
 -- Pointer phases down/move/up give the strokes; each stroke is one g:polyline per 60-point chunk.
@@ -104,8 +105,18 @@ local function draw_items(gg, list, fonts)
   end
 end
 
-local BTNS = { 'Draw', 'Erase', 'Text', 'Undo', 'Page', 'Lock', 'Clear' }
-local BW = 66
+local BTNS = { 'Tool', 'Undo', 'Page', 'Lock', 'Clear' }
+local BW = 93
+
+-- the Tool button opens this list under the toolbar: { label, tool, text size }
+local TOOLS = { { 'Draw', 'draw' }, { 'Erase', 'erase' }, { 'Text S', 'text', 1 }, { 'Text M', 'text', 2 }, { 'Text L', 'text', 3 } }
+local tool_menu = false
+local MENU_X, MENU_Y, MENU_W, MENU_ROW = 4, TOP + 16, 220, 60
+local function tool_label()
+  if tool == 'erase' then return 'Erase' elseif tool == 'text' then return 'Text ' .. SIZE_TAG[fsize] end
+  return 'Draw'
+end
+local function tool_is(t) return t[2] == tool and (t[2] ~= 'text' or t[3] == fsize) end
 
 -- An in-app question (the firmware's dialog:confirm is not reliable on this host): a box with a
 -- title, a few lines and buttons; { title, lines = {..}, buttons = { {label, fn}, .. } }.
@@ -137,6 +148,16 @@ local function draw_modal(gg, F)
   end
 end
 
+local function draw_tool_menu(gg, F)
+  gg:rect(MENU_X, MENU_Y, MENU_W, #TOOLS * MENU_ROW + 8)
+  for i, t in ipairs(TOOLS) do
+    local y = MENU_Y + 4 + (i - 1) * MENU_ROW
+    gg:rect(MENU_X + 4, y, MENU_W - 8, MENU_ROW - 6)
+    if tool_is(t) then gg:rect(MENU_X + 7, y + 3, MENU_W - 14, MENU_ROW - 12) end   -- the current one
+    gg:text(MENU_X + 20, y + 14, t[1], { font = F and F.medium })
+  end
+end
+
 local function draw_impl(gg)
   gg:clear(0)
   local F = ctx.fonts
@@ -144,14 +165,18 @@ local function draw_impl(gg)
   for i, name in ipairs(BTNS) do
     local x = 4 + (i - 1) * (BW + 1)
     gg:rect(x, 6, BW, 36)
-    local label = name
-    if name == 'Text' then label = 'Text ' .. SIZE_TAG[fsize] end
-    gg:text(x + 6, 13, label, { font = small })
-    if (name == 'Draw' and tool == 'draw') or (name == 'Erase' and tool == 'erase') or (name == 'Text' and tool == 'text') then gg:line(x + 4, 38, x + BW - 4, 38) end
+    if name == 'Tool' then
+      gg:text(x + 6, 13, tool_label(), { font = small })
+      -- a small down arrow: this button opens a list
+      pcall(function() gg:polyline({ x + BW - 18, 20, x + BW - 12, 27, x + BW - 6, 20 }) end)
+    else
+      gg:text(x + 6, 13, name, { font = small })
+    end
   end
   gg:text(6, 46, 'page ' .. page .. '/' .. NPAGES .. '  ' .. #items .. ' items  ' .. status, { font = small })
   gg:line(0, TOP + 8, W, TOP + 8)
   if modal then draw_modal(gg, F); return end
+  if tool_menu then draw_tool_menu(gg, F); return end
   draw_items(gg, items, F)
   if cur then draw_stroke(gg, cur.pts) end
   if eraser_at then pcall(function() gg:circle(eraser_at[1], eraser_at[2], ERASE_R) end) end
@@ -286,10 +311,7 @@ end
 
 local function button(i)
   local name = BTNS[i]
-  if name == 'Draw' then tool = 'draw'
-  elseif name == 'Erase' then tool = 'erase'
-  elseif name == 'Text' then
-    if tool == 'text' then fsize = fsize % 3 + 1 else tool = 'text' end
+  if name == 'Tool' then tool_menu = not tool_menu
   elseif name == 'Undo' then
     -- the last erase is undone once everything drawn after it has been undone
     local top = erase_undo[#erase_undo]
@@ -308,6 +330,7 @@ function on_input(c, ev)
     if type(ev) ~= 'table' then return end
     if ev.type == 'key' then
       if modal and ev.key == 'back' then modal = nil end
+      if tool_menu and ev.key == 'back' then tool_menu = false end
       return
     end
     if ev.type ~= 'pointer' then return end
@@ -319,6 +342,23 @@ function on_input(c, ev)
           if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then b.fn(); return end
         end
         if y < MODAL_Y or y > MODAL_Y + h then modal = nil end   -- a tap outside the box cancels
+      end
+      return
+    end
+    if tool_menu then
+      if ph == 'up' then
+        local i = math.floor((y - MENU_Y - 4) / MENU_ROW) + 1
+        if y < 46 then
+          local b = math.floor((x - 4) / (BW + 1)) + 1
+          if b ~= 1 then tool_menu = false end           -- another toolbar button: just close
+          if b >= 1 and b <= #BTNS then button(b) end
+        elseif x >= MENU_X and x < MENU_X + MENU_W and i >= 1 and i <= #TOOLS and y >= MENU_Y then
+          local t = TOOLS[i]
+          tool = t[2]; if t[3] then fsize = t[3] end
+          tool_menu = false
+        else
+          tool_menu = false                              -- a tap elsewhere closes the list
+        end
       end
       return
     end

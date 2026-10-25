@@ -49,7 +49,12 @@ ev = L.eval("function(ph, x, y) on_input(ctx, {type='pointer', phase=ph, x=x, y=
 tap = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
 draw = L.eval("function() drawn = {}; cmds = 0; on_draw(ctx, gg); return cmds end")
 
-B = lambda i: (4 + i * 67 + 5, 20)     # toolbar: Draw Erase Text Undo Page Lock Clear
+B = lambda i: (4 + i * 94 + 5, 20)     # toolbar: Tool Undo Page Lock Clear
+TOOL_ROWS = ['Draw', 'Erase', 'Text S', 'Text M', 'Text L']
+def pick(name):                          # Tool opens the list; a row picks the tool and closes it
+    tap(*B(0))
+    i = TOOL_ROWS.index(name)
+    tap(100, 56 + 16 + 4 + i * 60 + 25)
 g.on_load(g.ctx)
 # a stroke with 200 points -> saved, drawn with few commands
 ev('down', 100, 300)
@@ -60,26 +65,26 @@ assert 'page1.txt' in g.store and g.store['page1.txt'].startswith('S '), g.store
 n = draw()
 assert n < 40, f'too many draw commands for one stroke: {n}'
 # text tool: tap Text, tap canvas, answer the editor
-tap(*B(2))
+pick('Text M')
 tap(200, 500)
 assert len(g.pending) == 1
 g.pending[1](g.ctx, 'hello world')
 assert 'T 200 500 2 hello world' in g.store['page1.txt'], g.store['page1.txt']
 # undo removes the text
-tap(*B(3))
+tap(*B(1))
 assert 'hello' not in g.store['page1.txt']
 # page cycles and comes back with the stroke intact
-tap(*B(4))
+tap(*B(2))
 assert g.ctx.state.page == 2
 for _ in range(7):
-    tap(*B(4))
+    tap(*B(2))
 assert g.ctx.state.page == 1
 g.on_load(g.ctx)
 assert g.store['page1.txt'].startswith('S ')
 def labels():
     draw()
     return {str(r): True for r in g.drawn.values()}
-LOCK, CLEAR = B(5), B(6)
+LOCK, CLEAR = B(3), B(4)
 # in-app buttons: Lock has three lines of text, Clear one; buttons are 52 px with 10 px gaps
 lock_btn = lambda i: (240, 180 + 60 + 3 * 26 + 10 + i * 62 + 20)
 clear_btn = lambda i: (240, 180 + 60 + 1 * 26 + 10 + i * 62 + 20)
@@ -114,16 +119,16 @@ assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values()
 # eraser: a horizontal line from x=100 to 300 at y=400, cut in the middle by a vertical swipe
 def strokes():
     return [ln for ln in g.store['page1.txt'].split(chr(10)) if ln.startswith('S ')]
-tap(*B(0))
+pick('Draw')
 ev('down', 100, 400)
 for x in range(103, 301, 3): ev('move', x, 400)
 ev('up', 300, 400)
 tap(150, 600)                                            # a dot elsewhere
 g.pending = L.table()
-tap(*B(2)); tap(100, 700); g.pending[1](g.ctx, 'note'); g.pending = L.table()   # a text item
-tap(*B(0))
+pick('Text M'); tap(100, 700); g.pending[1](g.ctx, 'note'); g.pending = L.table()   # a text item
+pick('Draw')
 assert len(strokes()) == 2 and 'T 100 700' in g.store['page1.txt'], g.store['page1.txt']
-tap(*B(1))                                               # Erase
+pick('Erase')                                               # Erase
 ev('down', 200, 380); ev('move', 200, 400); ev('move', 200, 420); ev('up', 200, 420)
 st = strokes()
 assert len(st) == 3, st                                   # line in two pieces + the dot
@@ -133,28 +138,39 @@ assert max(x for x, _ in left) < 200 - 10 and min(x for x, _ in right) > 200 + 1
 assert left[0] == (100, 400) and right[-1] == (300, 400)
 # a fast swipe that crosses between two far-apart points still cuts
 g.store['page1.txt'] = 'S 10,500 400,500'
-g.on_load(g.ctx); tap(*B(1))
+g.on_load(g.ctx); pick('Erase')
 ev('down', 200, 480); ev('move', 200, 520); ev('up', 200, 520)
 assert strokes() == [], g.store['page1.txt']               # both halves are single points: gone
 # text touched is removed whole; Undo brings the last erase back, then removes items as before
 g.store['page1.txt'] = 'S 10,300 50,300 90,300' + chr(10) + 'T 100 700 2 note'
-g.on_load(g.ctx); tap(*B(1))
+g.on_load(g.ctx); pick('Erase')
 tap(110, 710)
 assert 'note' not in g.store['page1.txt'] and len(strokes()) == 1, g.store['page1.txt']
-tap(*B(3))                                               # Undo the erase
+tap(*B(1))                                               # Undo the erase
 assert 'T 100 700 2 note' in g.store['page1.txt'] and len(strokes()) == 1
-tap(*B(3))                                               # then plain undo
+tap(*B(1))                                               # then plain undo
 assert 'note' not in g.store['page1.txt']
 # drawn after an erase: Undo first removes the new stroke, then restores the erase
 g.store['page1.txt'] = 'S 10,300 50,300 90,300'
-g.on_load(g.ctx); tap(*B(1))
+g.on_load(g.ctx); pick('Erase')
 tap(50, 300)
 assert strokes() == [], g.store['page1.txt']
-tap(*B(0)); ev('down', 10, 600); ev('move', 60, 600); ev('up', 90, 600)
-tap(*B(3))
+pick('Draw'); ev('down', 10, 600); ev('move', 60, 600); ev('up', 90, 600)
+tap(*B(1))
 assert strokes() == []
-tap(*B(3))
+tap(*B(1))
 assert strokes() == ['S 10,300 50,300 90,300'], strokes()
+# the Tool button shows the current tool and opens the list; a tap elsewhere closes it unchanged
+pick('Erase')
+assert 'Erase' in labels() and 'Text L' not in labels()
+tap(*B(0))
+assert all(x in labels() for x in TOOL_ROWS)
+tap(400, 700)                                            # outside the list
+assert 'Text L' not in labels() and 'Erase' in labels()
+pick('Text L'); tap(50, 650); g.pending[1](g.ctx, 'big'); g.pending = L.table()
+assert 'T 50 650 3 big' in g.store['page1.txt'] and 'Text L' in labels(), g.store['page1.txt']
+tap(*B(0)); tap(*B(0))                                    # Tool again closes the list
+assert 'Text S' not in labels()
 draw()
 assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values())
 
