@@ -1,0 +1,10 @@
+{
+  "app_id": "instapaper",
+  "display_name": "Instapaper",
+  "version": "0.1.0",
+  "author": "omer-faruq",
+  "description": "Read your Instapaper articles; archive, star, progress kept in sync",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}

@@ -4,6 +4,12 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 
 ## Changed
 
+- **New: Instapaper.** Your Instapaper articles on the reader, straight from Instapaper with a
+  personal access token (no Worker): **Unread**, **Starred**, **Archive** and your folders, with
+  the RSS app's list, long-press preview and article screens. Articles open where you left off and
+  send your progress back (so KOReader and the website continue there too); **Archive** and
+  **Star** from the preview or the article's end, which also shows the link as a QR code. The token
+  can be typed in Settings or written to `XTApps/instapaper/files/config.txt` over USB.
 - **Docs**: the hidden drawer row is called **Ink App** (it was described as "Mini Apps"); install
   steps now name it right.
 
@@ -16,7 +22,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages | unchanged since v0.5.0 |
+| `instapaper.xtapp` | **new** |
+| all other `.xtapp` packages | unchanged since v0.5.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

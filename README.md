@@ -11,6 +11,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
+| **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
@@ -18,7 +19,7 @@ Everything here is unofficial and was reverse-engineered from the firmware. It w
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
 
 Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
-size, no network). Notes and RSS declare `"api": "2.0"` and get **API 2.9**: finger movement,
+size, no network). Notes, RSS, Instapaper and Dictionary declare `"api": "2.0"` and get **API 2.9**: finger movement,
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 
@@ -87,6 +88,14 @@ lists), optionally as full text extracted by the Worker; opening one marks it re
 articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
 Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
 
+### Instapaper
+
+Your [Instapaper](https://www.instapaper.com) account on the reader: **Unread**, **Starred**,
+**Archive** and your folders, with the same list, preview and article screens as RSS. Articles open
+where you left off (the progress Instapaper keeps, also from KOReader or the website) and send it
+back when you leave; **Archive** and **Star** from the preview or the article's end. No Worker: the
+app talks to Instapaper directly with a personal access token. [More](apps/instapaper/README.md)
+
 ### Dictionary
 
 Type with the firmware keyboard, pick a suggestion, read the entry; several dictionaries side by
@@ -130,6 +139,7 @@ python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
+python -I apps/instapaper/test_instapaper.py
 python -I apps/dict/test_dict.py
 ```
 
@@ -163,8 +173,9 @@ limits and gotchas are in [docs/firmware-notes.md](docs/firmware-notes.md).
 - **Firmware-bound.** A package installs on any X4 Pro on the same Licorice generation. If Xteink
   rotates the key in an update, existing packages stop installing until rebuilt.
 - **e-ink.** The apps draw lightly and trigger a full refresh every few moves to limit ghosting.
-- **Network.** Only RSS uses it, only towards the Worker host you enter; nothing else leaves the
-  device. Notes needs no permission at all.
+- **Network.** Only RSS and Instapaper use it: RSS towards the Worker host you enter, Instapaper
+  towards www.instapaper.com with your token; nothing else leaves the device. Notes needs no
+  permission at all.
 - Other Xteink models (X4, X4 Classic, X3) are untested.
 
 ## Releases
