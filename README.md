@@ -9,6 +9,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
+| **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
@@ -19,7 +20,7 @@ Everything here is unofficial and was reverse-engineered from the firmware. It w
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
 
 Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
-size, no network). Notes, RSS, Instapaper and Dictionary declare `"api": "2.0"` and get **API 2.9**: finger movement,
+size, no network). Notes, RSS, Instapaper, Dictionary and Merchant declare `"api": "2.0"` and get **API 2.9**: finger movement,
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 
@@ -88,6 +89,12 @@ lists), optionally as full text extracted by the Worker; opening one marks it re
 articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
 Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
 
+### Merchant
+
+Buy low, sell high across six trading posts in 30 days, with a moneylender, a bank, raiders and
+offers on the road, ported from the KOReader plugin merchant.koplugin with its rules, four themes
+and seven languages unchanged. Saved after every move; best score per theme. [More](apps/merchant/README.md)
+
 ### Instapaper
 
 Your [Instapaper](https://www.instapaper.com) account on the reader: **Unread**, **Starred**,
@@ -140,6 +147,7 @@ python -I apps/sokoban/test_sokoban.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py
+python -I apps/merchant/test_merchant.py
 python -I apps/dict/test_dict.py
 ```
 

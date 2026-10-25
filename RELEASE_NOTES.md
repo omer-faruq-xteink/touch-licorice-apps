@@ -4,6 +4,11 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 
 ## Changed
 
+- **New: Merchant.** The KOReader trading game on the reader: buy low and sell high across six
+  trading posts in 30 days, with a moneylender, a bank, raiders and offers on the road; four
+  settings (Silk Road caravan, star trader, clipper captain, antique dealer) and seven languages
+  (Settings). Tap a good to trade; amounts by steps, Max or typed. Saved after every move, best
+  score per theme. AGPL-3.0 like the plugin it comes from.
 - **New: Instapaper.** Your Instapaper articles on the reader, straight from Instapaper with a
   personal access token (no Worker): **Unread**, **Starred**, **Archive** and your folders, with
   the RSS app's list, long-press preview and article screens. Articles open where you left off and
@@ -23,7 +28,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `instapaper.xtapp` | **new** |
+| `instapaper.xtapp`, `merchant.xtapp` | **new** |
 | all other `.xtapp` packages | unchanged since v0.5.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 

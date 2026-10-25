@@ -2,7 +2,8 @@
 
   python xtpack.py APP_DIR [-o OUT] [--image LICORICE_APP_IMAGE]
 
-APP_DIR holds manifest.json and index.lua; every *.lua under it (except under data/) goes into the
+APP_DIR holds manifest.json and index.lua; every *.lua under it (except under data/ and src/, the
+sources an app's bundle.py turns into index.lua) goes into the
 code section. If APP_DIR/data/ exists, its *.txt / *.tsv / *.csv files go into the package's DATA
 section, readable on the device through ctx.data (open_text / read_text / size / exists); a
 generated banks.tsv lists them ("name<TAB>line count<TAB>stride<TAB>label"). A RECORD file (nearly
@@ -211,7 +212,7 @@ def pack(app_dir, out=None, image=None):
     entry = man.get('entry', 'index.lua')
     code_files = []
     for root, dirs, fns in os.walk(app_dir):
-        dirs[:] = [d for d in dirs if d != 'data' and not d.startswith('.') and d != '__pycache__']
+        dirs[:] = [d for d in dirs if d not in ('data', 'src', '__pycache__') and not d.startswith('.')]
         for fn in sorted(fns):
             if fn.endswith('.lua'):
                 rel = os.path.relpath(os.path.join(root, fn), app_dir).replace(os.sep, '/')

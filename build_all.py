@@ -17,6 +17,10 @@ a = ap.parse_args()
 dist = os.path.join(HERE, 'dist')
 os.makedirs(dist, exist_ok=True)
 apps = [os.path.join(HERE, 'apps', d) for d in sorted(os.listdir(os.path.join(HERE, 'apps')))]
+# an app built from several sources (apps/merchant) bundles them into its index.lua first
+for app in apps:
+    if os.path.isfile(os.path.join(app, 'bundle.py')):
+        subprocess.run([sys.executable, '-I', os.path.join(app, 'bundle.py')], check=True)
 apps += [os.path.join(HERE, 'tools', 'netprobe'), os.path.join(HERE, 'tools', 'probe')]
 lua_files = []
 for app in apps:

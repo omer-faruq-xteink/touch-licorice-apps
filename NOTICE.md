@@ -9,6 +9,13 @@ KFloyd.com. Full text in `tools/vendor/LICENSE-x4pro-emu`. The reverse engineeri
 package format, the device key wrap and the Lua host API documented there made all of this
 possible.
 
+## Merchant — `apps/merchant/`
+
+The game rules, themes and translations (`apps/merchant/src/merchant_*.lua`) come from
+[merchant.koplugin](https://github.com/omer-faruq/merchant.koplugin) v2.0.1 by the same author and
+are, like the whole Merchant app, licensed under the **GNU AGPL v3** (`apps/merchant/LICENSE`),
+not MIT.
+
 ## Sudoku puzzles — `apps/sudoku/data/`
 
 From the [sudoku-exchange puzzle bank](https://github.com/grantm/sudoku-exchange-puzzle-bank) by
