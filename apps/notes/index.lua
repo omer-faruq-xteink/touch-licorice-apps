@@ -19,6 +19,7 @@ local items = {}          -- current page: {k='s', pts={x1,y1,...}} | {k='t', x=
 local cur = nil           -- stroke being drawn
 local tool = 'draw'
 local fsize = 2           -- 1 small 2 medium 3 large
+local pen = 1             -- 1 thin 2 medium 3 thick
 local FNAMES = { 'small', 'medium', 'large' }
 local SIZE_TAG = { 'S', 'M', 'L' }
 local status = ''
@@ -39,7 +40,7 @@ local function serialize(list)
     if it.k == 's' then
       local parts = {}
       for i = 1, #it.pts - 1, 2 do parts[#parts + 1] = it.pts[i] .. ',' .. it.pts[i + 1] end
-      out[#out + 1] = 'S ' .. table.concat(parts, ' ')
+      out[#out + 1] = 'S' .. ((it.w or 1) > 1 and tostring(it.w) or '') .. ' ' .. table.concat(parts, ' ')
     elseif it.k == 't' then
       local clean = it.text:gsub('[\r\n]', ' ')
       out[#out + 1] = 'T ' .. it.x .. ' ' .. it.y .. ' ' .. it.f .. ' ' .. clean
@@ -55,7 +56,9 @@ local function parse(s)
     if kind == 'S' then
       local pts = {}
       for x, y in line:gmatch('(%-?%d+),(%-?%d+)') do pts[#pts + 1] = tonumber(x); pts[#pts + 1] = tonumber(y) end
-      if #pts >= 2 then list[#list + 1] = { k = 's', pts = pts } end
+      -- "S2 ..." / "S3 ...": pen 2 or 3; plain "S ..." (older pages too) is the thin pen
+      local w = tonumber(line:match('^S(%d) ')) or 1
+      if #pts >= 2 then list[#list + 1] = { k = 's', pts = pts, w = math.max(1, math.min(3, w)) } end
     elseif kind == 'T' then
       local x, y, f, text = line:match('^T (%-?%d+) (%-?%d+) (%d) (.*)$')
       if x then list[#list + 1] = { k = 't', x = tonumber(x), y = tonumber(y), f = tonumber(f), text = text } end
@@ -80,24 +83,35 @@ end
 
 ------------------------------------------------------------------ drawing
 
-local function draw_stroke(gg, pts)
+-- pens: thin (1 px), medium (~3 px), thick (~5 px), drawn as the same line shifted by these offsets
+local PEN_OFFSETS = {
+  { { 0, 0 } },
+  { { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } },
+  { { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 },
+    { 2, 0 }, { -2, 0 }, { 0, 2 }, { 0, -2 } },
+}
+
+local function draw_stroke(gg, pts, w)
   local n = #pts
-  if n == 2 then gg:circle(pts[1], pts[2], 1); return end
+  w = w or 1
+  if n == 2 then gg:circle(pts[1], pts[2], w == 1 and 1 or w); return end
   -- g:polyline takes a flat {x1, y1, x2, y2, ...} list; chunk long strokes to stay under its
   -- point limit, repeating the joint so the pieces connect
   local i = 1
   while i < n - 1 do
     local j = math.min(n, i + MAXPTS * 2 - 1)
-    local chunk = {}
-    for k = i, j do chunk[#chunk + 1] = pts[k] end
-    gg:polyline(chunk)
+    for _, o in ipairs(PEN_OFFSETS[w] or PEN_OFFSETS[1]) do
+      local chunk = {}
+      for k = i, j, 2 do chunk[#chunk + 1] = pts[k] + o[1]; chunk[#chunk + 1] = pts[k + 1] + o[2] end
+      gg:polyline(chunk)
+    end
     i = j - 1
   end
 end
 
 local function draw_items(gg, list, fonts)
   for _, it in ipairs(list) do
-    if it.k == 's' then draw_stroke(gg, it.pts)
+    if it.k == 's' then draw_stroke(gg, it.pts, it.w)
     elseif it.k == 't' then
       local f = fonts and fonts[FNAMES[it.f] or 'medium']
       if f then gg:text(it.x, it.y, it.text, { font = f }) else gg:text(it.x, it.y, it.text) end
@@ -109,14 +123,19 @@ local BTNS = { 'Tool', 'Undo', 'Page', 'Lock', 'Clear' }
 local BW = 93
 
 -- the Tool button opens this list under the toolbar: { label, tool, text size }
-local TOOLS = { { 'Draw', 'draw' }, { 'Erase', 'erase' }, { 'Text S', 'text', 1 }, { 'Text M', 'text', 2 }, { 'Text L', 'text', 3 } }
+local TOOLS = { { 'Draw S', 'draw', 1 }, { 'Draw M', 'draw', 2 }, { 'Draw L', 'draw', 3 }, { 'Erase', 'erase' },
+                { 'Text S', 'text', 1 }, { 'Text M', 'text', 2 }, { 'Text L', 'text', 3 } }
 local tool_menu = false
 local MENU_X, MENU_Y, MENU_W, MENU_ROW = 4, TOP + 16, 220, 60
 local function tool_label()
   if tool == 'erase' then return 'Erase' elseif tool == 'text' then return 'Text ' .. SIZE_TAG[fsize] end
-  return 'Draw'
+  return 'Draw ' .. SIZE_TAG[pen]
 end
-local function tool_is(t) return t[2] == tool and (t[2] ~= 'text' or t[3] == fsize) end
+local function tool_is(t)
+  if t[2] ~= tool then return false end
+  if tool == 'text' then return t[3] == fsize elseif tool == 'draw' then return t[3] == pen end
+  return true
+end
 
 -- An in-app question (the firmware's dialog:confirm is not reliable on this host): a box with a
 -- title, a few lines and buttons; { title, lines = {..}, buttons = { {label, fn}, .. } }.
@@ -178,7 +197,7 @@ local function draw_impl(gg)
   if modal then draw_modal(gg, F); return end
   if tool_menu then draw_tool_menu(gg, F); return end
   draw_items(gg, items, F)
-  if cur then draw_stroke(gg, cur.pts) end
+  if cur then draw_stroke(gg, cur.pts, cur.w) end
   if eraser_at then pcall(function() gg:circle(eraser_at[1], eraser_at[2], ERASE_R) end) end
   if ERR then gg:text(6, H - 30, short('ERR ' .. ERR, 46), { font = small }) end
 end
@@ -237,6 +256,7 @@ local function erase_at(x, y)
       else out[#out + 1] = it end
     elseif it.k == 's' then
       local pts = it.pts
+      local r2 = (ERASE_R + (it.w or 1) - 1) ^ 2
       local function gone(i) local dx, dy = pts[i] - x, pts[i + 1] - y; return dx * dx + dy * dy <= r2 end
       local piece, pieces, hit = {}, {}, false
       for i = 1, #pts - 1, 2 do
@@ -258,7 +278,7 @@ local function erase_at(x, y)
       else
         changed = true
         if #piece >= 4 then pieces[#pieces + 1] = piece end
-        for _, pc in ipairs(pieces) do out[#out + 1] = { k = 's', pts = pc } end
+        for _, pc in ipairs(pieces) do out[#out + 1] = { k = 's', pts = pc, w = it.w } end
       end
     else
       out[#out + 1] = it
@@ -354,7 +374,8 @@ function on_input(c, ev)
           if b >= 1 and b <= #BTNS then button(b) end
         elseif x >= MENU_X and x < MENU_X + MENU_W and i >= 1 and i <= #TOOLS and y >= MENU_Y then
           local t = TOOLS[i]
-          tool = t[2]; if t[3] then fsize = t[3] end
+          tool = t[2]
+          if t[2] == 'text' then fsize = t[3] elseif t[2] == 'draw' then pen = t[3] end
           tool_menu = false
         else
           tool_menu = false                              -- a tap elsewhere closes the list
@@ -375,7 +396,7 @@ function on_input(c, ev)
       return
     end
     if ph == 'down' then
-      if y > TOP + 8 and tool == 'draw' then cur = { k = 's', pts = { x, y } } end
+      if y > TOP + 8 and tool == 'draw' then cur = { k = 's', pts = { x, y }, w = pen } end
     elseif ph == 'move' then
       if cur then
         local n = #cur.pts

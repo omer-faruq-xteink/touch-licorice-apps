@@ -50,7 +50,7 @@ tap = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y
 draw = L.eval("function() drawn = {}; cmds = 0; on_draw(ctx, gg); return cmds end")
 
 B = lambda i: (4 + i * 94 + 5, 20)     # toolbar: Tool Undo Page Lock Clear
-TOOL_ROWS = ['Draw', 'Erase', 'Text S', 'Text M', 'Text L']
+TOOL_ROWS = ['Draw S', 'Draw M', 'Draw L', 'Erase', 'Text S', 'Text M', 'Text L']
 def pick(name):                          # Tool opens the list; a row picks the tool and closes it
     tap(*B(0))
     i = TOOL_ROWS.index(name)
@@ -118,15 +118,15 @@ assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values()
 
 # eraser: a horizontal line from x=100 to 300 at y=400, cut in the middle by a vertical swipe
 def strokes():
-    return [ln for ln in g.store['page1.txt'].split(chr(10)) if ln.startswith('S ')]
-pick('Draw')
+    return [ln for ln in g.store['page1.txt'].split(chr(10)) if ln.startswith('S')]
+pick('Draw S')
 ev('down', 100, 400)
 for x in range(103, 301, 3): ev('move', x, 400)
 ev('up', 300, 400)
 tap(150, 600)                                            # a dot elsewhere
 g.pending = L.table()
 pick('Text M'); tap(100, 700); g.pending[1](g.ctx, 'note'); g.pending = L.table()   # a text item
-pick('Draw')
+pick('Draw S')
 assert len(strokes()) == 2 and 'T 100 700' in g.store['page1.txt'], g.store['page1.txt']
 pick('Erase')                                               # Erase
 ev('down', 200, 380); ev('move', 200, 400); ev('move', 200, 420); ev('up', 200, 420)
@@ -155,7 +155,7 @@ g.store['page1.txt'] = 'S 10,300 50,300 90,300'
 g.on_load(g.ctx); pick('Erase')
 tap(50, 300)
 assert strokes() == [], g.store['page1.txt']
-pick('Draw'); ev('down', 10, 600); ev('move', 60, 600); ev('up', 90, 600)
+pick('Draw S'); ev('down', 10, 600); ev('move', 60, 600); ev('up', 90, 600)
 tap(*B(1))
 assert strokes() == []
 tap(*B(1))
@@ -171,6 +171,22 @@ pick('Text L'); tap(50, 650); g.pending[1](g.ctx, 'big'); g.pending = L.table()
 assert 'T 50 650 3 big' in g.store['page1.txt'] and 'Text L' in labels(), g.store['page1.txt']
 tap(*B(0)); tap(*B(0))                                    # Tool again closes the list
 assert 'Text S' not in labels()
+# pens: Draw L is saved as "S3", drawn as 13 shifted lines; plain "S" lines stay thin
+g.store['page1.txt'] = 'S 10,300 50,300 90,300'
+g.on_load(g.ctx)
+pick('Draw L')
+assert 'Draw L' in labels()
+ev('down', 100, 500)
+for x in range(104, 200, 4): ev('move', x, 500)
+ev('up', 200, 500)
+st = strokes()
+assert st[0] == 'S 10,300 50,300 90,300' and st[1].startswith('S3 '), st
+assert draw() >= 1 + 13, g.cmds
+pick('Draw M'); ev('down', 100, 600); ev('move', 150, 600); ev('up', 200, 600)
+assert strokes()[2].startswith('S2 '), strokes()
+# the eraser keeps the pen of what is left
+pick('Erase'); ev('down', 150, 480); ev('move', 150, 520); ev('up', 150, 520)
+assert sum(1 for x in strokes() if x.startswith('S3 ')) == 2, strokes()
 draw()
 assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values())
 
@@ -191,4 +207,8 @@ assert g.intervals is not None and g.intervals.startswith('0'), g.intervals
 draw()
 texts = list(g.drawn.values())
 assert 'good morning' in texts and '09:05' not in texts and '77%' not in texts, texts
+# thick strokes on the lock screen too
+n_thin = draw()
+g.store['page1.txt'] = 'S3 10,100 50,140 90,100' + chr(10) + 'T 20 200 3 good morning'
+assert draw() == n_thin + 12, (n_thin, g.cmds)
 print('notes29 tests passed')

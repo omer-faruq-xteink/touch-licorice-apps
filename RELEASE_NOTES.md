@@ -46,7 +46,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **261023
 - **Notes: an eraser.** A new **Erase** tool cuts strokes where your finger passes (the rest of
   each stroke stays) and removes text it touches, so any earlier item can be removed, not only
   the last one. **Undo** brings back what the last erase took. The drawing tools moved under one
-  **Tool** button (Draw, Erase, Text S / M / L), so the toolbar has five roomy buttons.
+  **Tool** button (Draw S / M / L, Erase, Text S / M / L), so the toolbar has five roomy buttons;
+  **Draw** now has three pen widths, shown on the lock screen too.
 
 ## Update
 

@@ -6,9 +6,10 @@ the lock screen together with the clock and battery level.
 ## Using it
 
 The toolbar: **Tool** · **Undo** · **Page** · **Lock** · **Clear**. **Tool** shows the current tool
-and opens a list to pick another: **Draw**, **Erase**, **Text S**, **Text M**, **Text L**.
+and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / L**.
 
-- **Draw**: draw with a finger. Strokes are thin lines (e-ink ghosting stays low).
+- **Draw S / M / L**: draw with a finger with a thin, medium or thick pen (thin keeps e-ink
+  ghosting lowest). The lock screen shows the same widths.
 - **Erase**: rub over the page with a finger. Strokes are cut where the eraser (a circle that
   follows the finger) passes and the rest stays; a text it touches is removed whole.
 - **Text S / M / L**: tap the page where the text should start; the firmware's own keyboard opens;
