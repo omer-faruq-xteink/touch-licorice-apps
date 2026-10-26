@@ -1,0 +1,10 @@
+{
+  "app_id": "chess",
+  "display_name": "Chess puzzles",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "2400 chess puzzles from the Lichess database: mate in 1, mate in 2 and four levels by rating. Hint, show the move, progress kept.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

@@ -1,0 +1,400 @@
+801|8/8/4p2p/1Q6/P1q5/K1Pk3P/1P6/2n5 b - - 30 55|c4b5 a4b5 e6e5 b5b6 e5e4 b6b7|advancedPawn
+801|2r2rk1/ppq2ppp/4p3/2n1P3/1b2QPP1/P1N4P/1P1B4/2KR3R w - - 1 19|e4b4 c5d3 c1b1 d3b4|fork
+801|3r1b1r/kP2p1pp/4pn2/1b6/3P4/2N5/PP3PPP/R1B3K1 b - - 1 15|d8d4 c3b5 a7b7 b5d4|fork hangingPiece
+803|8/3q2kp/3p2p1/2p5/1p2QPP1/1PnP1N1P/2P2K2/8 w - - 5 33|e4e3 c3d1 f2e2 d1e3|fork
+804|r2q1rk1/4bppp/b3n3/p2QPN2/Pp6/8/NP3PPP/R1B1R1K1 b - - 0 21|d8d5 f5e7 g8h8 e7d5|fork hangingPiece
+805|3q1knr/2p2pp1/p1B1b2p/8/4PP2/2PP4/P1P3PP/1Q2K2R b K - 0 15|d8d6 b1b8 f8e7 b8e8|
+808|8/2kp4/1Rb3pp/2p5/2K2P1P/6P1/8/8 w - - 1 40|c4c5 d7d6 c5b4 c7b6|deflection
+809|8/pp3pp1/7r/3k4/4p3/4N1K1/PP2B2P/8 b - - 3 41|d5d6 e3f5 d6e5 f5h6|fork
+809|2kr3r/ppp2pp1/4p1qp/2Np2bN/3P4/1PP1PP2/P2nK1Q1/R6R w - - 0 22|e2d2 g5e3 d2e3 g6g2|discoveredAttack
+809|8/3R1p2/4k1p1/1n6/2K3p1/6P1/7P/8 w - - 8 58|d7b7 b5d6 c4d4 d6b7|fork
+810|6k1/2r2pp1/B1N4p/1PP5/8/6P1/5PKP/1r6 b - - 2 34|c7c6 b5c6 b1c1 c6c7|advancedPawn hangingPiece
+810|r3k2r/ppp2Bp1/2np4/2b1p2p/4P1nB/2NP1N1q/PPP2P2/R2Q1RK1 b kq - 0 12|e8f7 f3g5 f7e8 g5h3|fork
+811|8/pp2k1p1/2pbn2p/7B/8/2P5/PP2KP2/7R w - - 2 34|h1g1 e6f4 e2f3 f4h5|fork
+811|r3r3/pp4pp/3p4/5k2/8/2P5/PP1PnPPP/R1B1R2K w - - 2 20|d2d4 e2g3 h2g3 e8e1|discoveredAttack kingsideAttack
+811|3r2k1/5pp1/8/p1p4N/PpB4P/3n2P1/6K1/2R5 w - - 0 38|c1d1 d3f4 h5f4 d8d1|discoveredAttack
+811|6k1/p7/b5p1/5p2/3p1R1P/P4B2/3rp3/4K3 b - - 3 44|d2a2 f3d5 g8g7 d5a2|fork
+814|8/pp6/8/3Rb3/5kP1/1Pp2P2/P4K2/8 w - - 1 38|d5c5 e5d4 f2e1 d4c5|fork
+816|5bk1/p2b4/1p2p1Bp/3pQ3/3r4/8/1P2P3/6K1 w - - 0 43|e5d4 f8c5 d4c5 b6c5|pin
+817|8/p1R4p/1p1nPkp1/8/3pKPP1/8/P6P/8 w - - 1 42|e4d4 d6b5 d4e4 b5c7|fork
+818|r4rk1/ppbn1ppp/2p5/2P5/1P1P3q/P2BPPN1/5K1P/R2Q3R b - - 2 19|c7g3 h2g3 h4h1 d1h1|
+820|8/1p3k2/2b5/p1PpPN1p/3K4/P5P1/8/8 b - - 0 36|f7e6 f5g7 e6f7 g7h5|
+820|8/5r2/2k5/1R1p2P1/4nP2/P3P3/4K3/8 w - - 1 42|b5b1 e4c3 e2d3 c3b1|fork
+820|1r4k1/3q1p1p/1r2pPp1/2p5/4P3/1BQP3P/8/2KR3R w - - 3 33|c1c2 b6b3 c3b3 b8b3|
+822|6k1/R4pp1/4pq1p/5n2/3PpP2/2P3QP/6P1/6K1 w - - 0 35|g3e3 f5e3 a7a8 g8h7|hangingPiece
+823|1k4r1/pp6/8/1P2r2p/P1R4K/2R3P1/8/8 b - - 4 38|e5g5 c4c8 g8c8 c3c8 b8c8 h4g5|rookEndgame
+824|1b6/p4k2/2p2pnp/1pP5/1P1P1PP1/5K2/P2B4/8 b - - 2 37|f7e6 f4f5 e6f7 f5g6|fork
+826|8/1kpq4/1p1p1pn1/pP3Nr1/P3P1PQ/2P5/5PK1/R3R3 w - - 2 27|h4h3 g6f4 g2g3 f4h3|fork
+827|8/3k4/8/3P4/1K3p1p/1P1n1B2/8/8 w - - 2 53|b4c4 d3e5 c4d4 e5f3|fork
+828|3b4/p4pk1/1p1N2p1/1P5p/8/7P/P4PP1/6K1 b - - 0 32|d8c7 d6e8 g7h6 e8c7|fork
+828|3r1rk1/pp3ppp/2n5/3Pq3/1P2B3/P6P/4QPP1/2R3K1 b - - 2 22|c6d4 e4h7 g8h7 e2e5|discoveredAttack kingsideAttack
+830|3r1r2/1p2k3/2p2pQ1/p4P2/4nq2/8/PPPR4/2K1R3 w - - 3 35|e1e4 f4e4 g6h7 f8f7|hangingPiece
+832|8/r3k1pp/2bNp3/P1P2p2/4p3/4P1PP/8/R5K1 b - - 2 44|g7g5 d6c8 e7d8 c8a7|fork
+833|5rk1/1p2n3/1bp2q1p/2p1p1p1/1P4N1/3P2P1/3BP2P/Q3R2K b - - 0 27|f6f5 g4h6 g8h7 h6f5|fork
+833|r1b1k2r/p1B2pp1/1np1p2p/8/1bPq4/2NB4/PP3PPP/R2QK2R b KQkq - 0 12|e8g8 d3h7 g8h7 d1d4|discoveredAttack
+836|8/ppp5/3p2k1/3P3n/1PP2K2/8/P7/7R w - - 1 35|f4e4 h5g3 e4f3 g3h1|fork
+836|2kr3r/1ppbq1p1/N1n1p2p/3pPp2/3P4/2PB4/PP2QPPP/R4RK1 b - - 0 16|b7a6 d3a6 c8b8 e2b5 b8a7 b5b7|mateIn3 queensideAttack
+837|8/2k5/P4np1/8/1K4P1/P3B3/8/8 w - - 1 73|g4g5 f6d5 b4b5 d5e3 a6a7 c7b7 a7a8q b7a8|fork
+838|8/5p1B/5p2/8/2k2K1P/2pp4/6b1/2B5 w - - 0 42|h4h5 d3d2 c1d2 c3d2|advancedPawn bishopEndgame
+838|r1b2rk1/pp1qbpp1/3p3p/2pP4/4PP2/2N1Q1PP/PPP5/2KR1B1R w - - 1 18|f4f5 e7g5 e3g5 h6g5|pin
+839|6k1/5ppp/1r1p4/4p3/2QnP1Pq/P6P/1P6/1K3R2 b - - 1 29|h4d8 c4f7 g8h8 f7f8 d8f8 f1f8|backRankMate mateIn3
+840|8/4q1kp/8/p4p2/1pQ1n3/4PBP1/5PK1/8 w - - 2 44|f3e4 e7e4 c4e4 f5e4|
+840|1r3rk1/1p1q1pbp/p2ppPp1/2pNn3/2P1P1P1/3PB3/PP2Q2P/R5RK b - - 0 18|g7h8 d5e7 d7e7 f6e7|advancedPawn kingsideAttack
+842|r1b2rk1/pp1p1ppp/3q4/2pNn3/2PbPB2/8/P1K1B1PP/1R1Q1R2 b - - 3 16|d6g6 d5e7 g8h8 e7g6|fork
+846|rnbqk2r/2p2p2/1pP1p2p/pP1p4/3Pn1p1/P1b1PNB1/3N1PPP/2RQKB1R w Kkq - 0 14|f3e5 c3d2 d1d2 e4d2|fork
+846|2r4r/1p1knpp1/p3p2p/2bpP3/P7/2N2N2/3B1PPP/R4RK1 w - - 2 18|d2e3 c5e3 f2e3 c8c3|discoveredAttack
+847|Q5B1/7p/2r3pk/5p2/8/4bnP1/2K5/8 w - - 0 50|a8c6 f3d4 c2d3 d4c6|fork
+847|8/2N2pkp/p5p1/1p6/n2r4/6PP/8/R5K1 b - - 1 39|d4d6 c7e8 g7f8 e8d6|fork
+847|r2q1rk1/pp1b1ppp/2n2n2/1BbN4/8/5N2/PPP2PPP/R1BQR1K1 b - - 0 11|c5f2 g1f2 f6d5 d1d5|hangingPiece
+848|r4rk1/p5pp/1q2p3/2b5/4p3/P6P/1P2QPP1/R1B2RK1 b - - 0 18|c5f2 f1f2 f8f2 e2f2 b6f2 g1f2|
+849|8/p1p4p/1p5N/2b5/2kpR3/P7/1PK2r2/4R3 w - - 3 36|e1e2 f2e2 e4e2 d4d3 c2d1 d3e2|advancedPawn attraction fork
+850|rn1q1r2/ppp1bkpp/3pb3/4P3/4Q3/5N2/PPP2PPP/RNB1K2R w KQ - 1 9|f3g5 e7g5 c1g5 d8g5|
+851|r4rk1/p1p2ppp/1pNq1n2/3P4/1Q6/8/PPP2PPP/R4RK1 b - - 2 18|d6d5 c6e7 g8h8 e7d5|fork
+852|8/R4p2/5kpp/3pn3/5N2/2P1K1P1/7P/1r6 b - - 2 33|b1b6 f4d5 f6e6 d5b6|fork
+853|4k3/5N2/3PP1p1/5p2/4n1r1/8/8/5K2 b - - 2 59|f5f4 d6d7 e8e7 d7d8q|advancedPawn promotion
+854|8/6K1/pp6/1knQ4/1P6/8/P3p3/2R5 w - - 0 51|d5d4 c5e6 g7f7 e6d4|fork
+856|8/1p4b1/p5P1/2P4K/PP6/2Pk4/8/8 b - - 0 45|d3c3 b4b5 a6b5 a4b5|bishopEndgame
+856|r3k2r/ppp1bppp/5n2/1N2p3/8/8/PPP2PPP/R1BR2K1 b kq - 3 13|c7c6 b5c7 e8f8 c7a8|fork
+858|8/KP6/8/P6p/5k2/7P/8/1q6 b - - 2 59|b1b5 b7b8q b5b8 a7b8|advancedPawn promotion queenEndgame
+858|8/6pk/5p2/7p/4p3/4N1qP/r5P1/3RR1K1 b - - 1 40|h7h6 e3f5 h6g6 f5g3|fork
+859|5rk1/5p2/6p1/2p1Q3/3pP2R/p2P4/2q3P1/6K1 b - - 1 28|c2d1 g1h2 d1h5 h4h5|
+860|3r2k1/1p3pp1/p3p2p/4q3/1P6/PQn1P3/5PPP/1BR3K1 w - - 0 24|g2g3 c3e2 g1f1 e2c1|fork
+861|r1b1kb1r/p1pp1ppp/1pn2nq1/4p1N1/2B1P3/3P1Q2/PPP2PPP/RNB2RK1 b kq - 1 7|f8c5 c4f7 g6f7 g5f7|attackingF2F7 fork
+862|4rrkb/2pb3p/p1p1qpnP/2Pp1N1N/3Pp1Q1/6B1/PP3PP1/R3R1K1 w - - 2 29|g3c7 e6f5 g4f5 d7f5|
+863|3r1rk1/5ppp/pn4q1/1p1N4/3Q4/P3PB1b/1PP2PP1/R4RK1 b - - 0 20|d8d5 f3d5 b6d5 d4d5|
+863|6r1/4q1bk/p2pb2p/1p6/8/2P1B1Q1/PP4PP/R3R1K1 w - - 1 26|e3d4 g7d4 c3d4 g8g3|discoveredAttack
+864|2kr3r/pp1bbppp/2n1p3/1qpnP1N1/3pNP2/3P4/PPPB2PP/R2Q1RK1 b - - 6 13|e7g5 e4d6 c8b8 d6b5|fork
+865|3r4/8/p5pp/1p1k4/8/2R2P1P/P5K1/8 b - - 0 42|b5b4 c3d3 d5c4 d3d8|rookEndgame skewer
+867|r3k2r/1b2bp2/2qppp2/4n3/3N4/5P2/PPPQ3P/1K1R1B1R b kq - 1 18|c6a4 f1b5 a4b5 d4b5|fork
+867|4r3/1pB5/2p4n/1p1p1k2/5P1p/7P/PP4R1/6K1 b - - 2 36|f5e4 g2e2 e4f3 e2e8|skewer
+867|r3k2r/pp3ppp/2n2b2/qB2pP2/3pN3/8/PPPQ1PPP/R3K2R b KQkq - 3 13|a5b5 e4d6 e8e7 d6b5|fork
+870|2r1r1nk/1b2qp1p/2pp2pN/pp3PQ1/3NP3/3P3P/PP4P1/2R1R1K1 b - - 0 22|e7g5 h6f7 h8g7 f7g5|fork
+871|2krr3/ppp2ppp/6q1/3P4/2Pn4/PP3QB1/5PPP/R4RK1 w - - 7 19|f3f4 d4e2 g1h1 e2f4|fork
+871|4r1k1/8/p1b1p1p1/1p1pPr1p/8/1PP1RB2/P5PP/R5K1 b - - 0 28|d5d4 f3c6 d4e3 c6e8|hangingPiece
+873|5r1k/4Npp1/p6p/1p1p4/8/3QR2P/1qP2PPK/8 w - - 8 35|e3f3 b2e5 g2g3 e5e7|fork
+874|4r1k1/2q2p1p/p5p1/1p1R3r/4p3/1B3QP1/PPP2P2/1R3K2 w - - 0 27|f3e3 h5h1 f1g2 h1b1|skewer
+875|7k/5pp1/7p/B7/4pP2/4n3/1Qp3PP/5K2 w - - 0 40|f1f2 e3d1 f2e1 d1b2|fork
+876|8/pp6/4nk2/7R/7P/8/r2K1P2/6R1 w - - 5 46|d2e1 a2a1 e1e2 a1g1|skewer
+876|2kr1b1r/ppp3pp/6b1/3n1pN1/3nP3/6q1/PPPBBPPP/R1Q2RK1 w - - 0 14|f2g3 d4e2 g1h1 e2c1|fork hangingPiece
+877|3rr1k1/1pq2ppp/p2b4/2p5/3B4/2P4P/PP1Q1PP1/R3R1K1 w - - 0 20|d4e3 d6h2 g1h1 d8d2|discoveredAttack
+879|r2r2k1/pp3p1p/3p2p1/3R4/3RP3/1Pn3PP/P1P2PB1/6K1 w - - 5 23|d5d6 c3e2 g1f1 e2d4 d6d8 a8d8|fork
+881|8/8/8/4ppk1/3n4/1pK3P1/8/4Q3 w - - 4 63|c3b4 d4c2 b4b3 c2e1|fork
+881|1r2r2k/1pp1bpp1/p1n2nqp/2P1p3/1P5P/P2PP1P1/1BQN2B1/R4RK1 w - - 1 20|g1h2 f6g4 h2g1 g4e3|
+882|6k1/5pp1/p4n1p/1p2p3/8/4B2P/P2R1PPK/2r5 b - - 3 27|f6e4 d2d8 g8h7 e3c1|discoveredAttack
+882|rnb1k2r/pp2n1pp/2p1p3/4qp2/4B3/2PQB3/P1P2PPP/2KR2NR b kq - 1 11|e5e4 d3d8 e8f7 d8h8|skewer
+883|1k1r1b1r/ppp2ppp/8/q3nQ2/8/2N4P/PPP2PP1/R1B2RK1 w - - 2 13|c1f4 e5f3 g2f3 a5f5|discoveredAttack
+883|8/8/3KN1p1/5qP1/2k5/8/8/8 b - - 6 62|c4b5 e6d4 b5b4 d4f5|fork
+887|3rr1k1/pbp2ppp/1p1q4/3P4/8/1PQ2N2/P2R1PPP/3R2K1 b - - 0 23|b7d5 d2d5 d6d5 d1d5|
+887|r3k2r/3n1ppp/p1N1p3/3q4/Q1p5/4R3/PP3PPP/R5K1 b kq - 0 17|e8g8 c6e7 g8h8 e7d5|fork
+887|5r2/R1R2pk1/p5p1/6P1/1PK4P/8/8/7r w - - 1 44|a7a6 h1c1 c4b3 c1c7|rookEndgame skewer
+888|3r1rk1/ppn2p1p/2p1p1p1/2P1P1q1/4P1P1/P1BB4/6QP/1R3RK1 w - - 3 23|d3c4 g5e3 g1h1 e3c3|fork
+891|8/8/8/8/6kp/4K3/5P2/8 w - - 0 74|f2f3 g4g3 f3f4 h4h3 f4f5 h3h2|advancedPawn defensiveMove pawnEndgame
+892|1Q1bk2r/2r3p1/1N1p1p2/7p/4P3/5P2/PP1q1BPP/R5K1 w k - 5 27|b6d5 c7c1 a1c1 d2c1 f2e1 c1e1|kingsideAttack mateIn3
+896|rnbqk2r/ppp2pp1/3p1n2/2b1p3/2P1P3/3P1QPP/PP2N3/RNB1KB1R b KQkq - 0 8|c8g4 h3g4 h8h1 f3h1|
+896|8/8/k7/P4K1p/R6P/6r1/8/8 w - - 3 61|f5f4 g3g4 f4f5 g4a4|rookEndgame skewer
+897|b2r1rk1/5ppp/pq1p1n2/5N2/1pP3P1/1P1Q3P/P1P3P1/R3R2K b - - 1 24|b6c6 f5e7 g8h8 e7c6|fork
+897|6r1/3r4/p1kP4/1p1N1R1p/2p3nP/P7/1PP5/4RK2 b - - 2 35|d7d6 d5e7 c6d7 e7g8|fork
+897|r1bq1rk1/pp1nppbp/5np1/1Bp1N3/3P4/2N5/PPP2PPP/R1BQ1RK1 w - - 1 9|d4c5 d7e5 d1d8 f8d8|hangingPiece
+899|2k4r/Np3pb1/1np1p3/6p1/P6q/3r1B1P/1P3PP1/R1Q2RK1 b - - 0 18|c8b8 a7c6 b7c6 c1c6|queensideAttack
+899|r6r/pQ6/1p1pk3/5p2/5P2/8/PRP1n1PP/5R1K w - - 1 25|f1e1 h8h2 h1h2 a8h8 b7h7 h8h7|anastasiaMate attraction mateIn3 sacrifice
+899|3r1rk1/p1pQ4/1p2Rbq1/5p2/8/3P2N1/PP4PP/5RK1 w - - 1 27|d7c7 f6d4 g1h1 g6e6|discoveredAttack
+900|4R3/8/5k2/3bp3/8/8/6p1/6K1 b - - 9 52|d5f3 e8f8 f6e6 f8f3|skewer
+901|r1bq1k1r/pp3p1p/6p1/1B1pb3/8/2N1P1P1/PP3PP1/R2QK2R w KQ - 2 14|d1d5 e5c3 b2c3 d8d5|intermezzo
+902|3r2bk/R6p/6p1/6b1/P7/7P/5PP1/2R3K1 w - - 1 40|c1c7 d8d1 g1h2 g5f4 g2g3 f4c7|fork
+902|r5k1/1b1nqpp1/4p2p/1p1p4/3P4/2NBP2P/1PQ2PP1/4K2R w K - 0 19|d3b5 a8a1 e1d2 a1h1|skewer
+903|r4rk1/pppq2p1/3p3p/3Pp2P/6nR/2NQ4/PPP2PP1/2KR4 w - - 3 18|f2f3 g4f2 d3d2 f2d1|fork
+903|8/8/5kp1/r2p4/PN6/7P/4K1P1/8 b - - 0 46|f6e5 b4c6 e5e4 c6a5|fork
+905|r3k1nr/pppq1ppp/3p4/3Pn3/Qb2P1b1/2NB1N2/PP3PPP/R1B1K2R w KQkq - 7 10|a4b4 e5d3 e1d2 d3b4|fork hangingPiece
+907|3r2k1/2p2pp1/7p/3Bp3/Pq2P3/1Pr4P/3Q1PP1/5RK1 b - - 9 37|c7c6 d5f7 g8f7 d2d8|discoveredAttack
+907|r4rk1/1b3p1p/p3p1p1/1pR1N1q1/3P1n2/4Q1P1/PP3P2/2R2BK1 b - - 0 22|f4h3 f1h3 g5e3 f2e3|hangingPiece
+909|5rk1/1R4Bp/1b6/1p3p2/1P3P2/3rnN2/P4RPP/6K1 w - - 0 34|g7f8 d3d1 f3e1 d1e1 f2f1 e1f1|mateIn3
+910|8/1p4k1/2p1p2b/p3Prp1/3P2Q1/P1P1B3/1Pq3P1/4R1K1 w - - 12 35|e3c1 c2f2 g1h2 f2e1|fork
+910|1k6/2p3pp/Q4bq1/Pp6/1P6/2P1P3/2KR4/8 w - - 1 42|c2b2 f6c3 b2c3 g6a6|discoveredAttack
+912|r7/5pk1/p3p2p/3n3P/4Q1P1/3P2R1/5q1K/4R3 w - - 0 45|h2h3 d5f4 e4f4 f2f4|
+916|r2qr1k1/1p3ppp/p7/b1pPn3/P3P1b1/2N2N2/1PQ1B1PP/R4RK1 b - - 4 18|d8f6 f3e5 f6e5 e2g4|capturingDefender discoveredAttack
+917|8/7p/5rp1/R4k2/4p3/7P/5PP1/5K2 b - - 4 48|f5f4 g2g3 f4f3 a5a3 e4e3 a3e3|mateIn3 rookEndgame
+917|5rk1/p4ppp/5qb1/2p5/2npP1P1/5PN1/PP1Q2KP/R4R2 w - - 6 23|d2c2 c4e3 g2g1 e3c2|fork
+918|4krr1/ppp1qp1p/8/3Rp3/4Pn2/N1P5/PP3QPP/5R1K w - - 5 21|d5d1 g8g2 f2g2 f4g2|
+919|8/pk1r1bR1/1p6/8/2P2N2/1P6/1K6/8 b - - 21 60|f7e6 f4e6 d7g7 e6g7|hangingPiece
+919|4rrk1/5p1n/1p3q2/pN4bQ/P2p4/1B1P3P/1PP2PP1/4R1K1 w - - 1 22|e1e8 f8e8 h5f7 f6f7 b3f7 g8f7|
+919|r1bqkb1r/pp3ppp/2np4/2ppP3/3P4/4BN2/PPP2PPP/R2QKB1R w KQkq - 2 8|f1b5 d8a5 c2c3 a5b5|fork
+920|8/4P3/1pNn1k2/3P2pB/1P6/3n4/5P2/5K2 w - - 2 44|f1e2 d3f4 e2f3 f4h5|fork
+921|r7/5pk1/5q1n/1QPp4/pP1PpNp1/P3P1P1/5KP1/8 b - - 0 35|h6f5 f4h5 g7g6 h5f6|fork
+921|8/r6p/3pk3/2p1p1p1/p5P1/2P3K1/1P6/7R b - - 3 49|d6d5 h1h6 e6d7 h6h7 d7c6 h7a7|interference rookEndgame skewer
+924|r4r1k/pp3p2/1np4q/6N1/1n1P1Q2/8/PP3PPP/R4RK1 b - - 3 23|f7f6 g5f7 f8f7 f4h6|discoveredAttack kingsideAttack
+924|r4r1k/2p3p1/1pp4p/5R2/1P1R4/P2Bq3/1BQ3PP/6K1 w - - 1 31|g1h1 e3e1 d3f1 e1f1 f5f1 f8f1|backRankMate mateIn3 xRayAttack
+925|8/1p6/p1p1k3/5p2/P1PPpB1p/bP2K1PP/8/8 w - - 1 38|g3g4 a3c1 e3e2 c1f4|bishopEndgame deflection skewer
+927|r1b4r/ppp3kp/6p1/2bB4/3n4/8/PPP2PPP/RNB2RK1 w - - 1 12|c1f4 d4e2 g1h1 e2f4|fork
+927|8/p2r1p2/1p4pk/1P1p1q1p/P2R1P1P/6P1/3Q1K2/8 b - - 7 39|f5e6 f4f5 h6g7 f5e6|discoveredAttack discoveredCheck
+929|2r1k1r1/6p1/4p1P1/p1q1Pp1P/Q2p1P2/2p5/8/RR5K b - - 3 35|c5c6 a4c6 c8c6 b1b8 e8d7 b8g8|exposedKing skewer
+929|r6r/p2kn3/b3pp2/3p4/7p/1N5P/P4PPB/1RR3K1 b - - 2 27|e6e5 b3c5 d7d6 c5a6|fork
+930|rnb2rk1/1p2bppp/p4n2/3qp3/1P6/2PBB3/P3NPPP/RN1Q1RK1 b - - 1 11|f6g4 d3h7 g8h7 d1d5|discoveredAttack kingsideAttack
+933|4k2r/3n3p/p3q1p1/2ppPp2/8/P4Q2/2P1B1P1/2KR4 b k - 3 27|d5d4 f3a8 e8e7 a8h8|skewer
+933|3r1k2/7R/p7/5p2/8/KPBb4/P4PPP/1r6 b - - 2 36|d8c8 h7h8 f8f7 h8c8|skewer
+934|8/8/8/2p5/p1p1k1P1/P1P4K/8/8 b - - 0 56|e4f4 h3h4 f4e3 g4g5 e3d2 g5g6 d2c3 g6g7|advancedPawn pawnEndgame quietMove
+934|r2q1rk1/ppp2ppp/3p2b1/2bBp3/3nP1P1/P2P1N1P/1PP2P2/R1BQ1RK1 w - - 1 12|c1g5 d4f3 d1f3 d8g5|kingsideAttack
+934|r2q1rk1/ppp3p1/7p/3p1n1Q/8/5Nb1/PPP3PP/RNB2R1K w - - 4 17|h2g3 f5g3 h1g1 g3h5|fork
+936|5rk1/p1Q3pp/4p3/8/3P4/2P5/PP1q1PPP/R5K1 w - - 1 23|c7a7 d2f2 g1h1 f2f1 a1f1 f8f1|backRankMate mateIn3 sacrifice
+936|8/8/8/1kP2p2/1P3Pp1/5nP1/6Kp/8 b - - 4 48|b5c4 c5c6 h2h1r g2h1|knightEndgame
+938|2r2b2/R6p/5kp1/8/B3PP2/2n5/PBp3PP/6K1 w - - 3 35|a4c2 f8c5 g1f1 c5a7|fork
+939|2kr1b1r/ppp2ppp/8/3q4/8/3P2P1/PPP1RQ1P/R1B3K1 w - - 0 16|f2a7 f8c5 a7c5 d5c5|fork
+941|r1b2rk1/ppp2ppp/3q1n2/2b5/3p4/1P1PP1PP/PBP1P1B1/RN1Q1RK1 w - - 1 13|e3d4 c5d4 b2d4 d6d4|kingsideAttack
+941|r4b1r/1p1knppp/p3p3/3pP3/1q6/1N6/PP1BQPPP/R4RK1 b - - 5 14|b4e4 b3c5 d7e8 c5e4|fork
+942|6k1/ppp2pqp/2p3p1/8/5Q2/5P2/PPPr2rP/3R1R1K b - - 1 24|d2d1 f1d1 g2e2 d1d8 g7f8 d8f8|
+943|r2qkb1r/1p3ppp/p2p1n2/2nPp3/1Q2P3/2N2N2/PP3PPP/R1B1K2R w KQkq - 2 12|c3a4 c5d3 e1e2 d3b4|fork
+946|2k5/2p2p2/1bp1b3/P3q2p/P3Pnp1/2P2Q1P/3N1PP1/R4RK1 w - - 0 25|f3g3 f4e2 g1h2 e2g3|fork
+946|8/8/k1Kp4/3Pp1p1/1b1pPp1p/3P1P1P/5BP1/8 w - - 42 54|f2d4 e5d4 e4e5 d6e5|bishopEndgame hangingPiece
+948|8/3k3p/1K2R1pP/2r2p2/P4P2/8/8/8 b - - 0 52|d7e6 b6c5 g6g5 f4g5|hangingPiece
+948|5R2/8/8/8/6rk/5K2/8/8 b - - 24 73|g4g1 f8h8 h4g5 h8g8 g5f6 g8g1|rookEndgame skewer
+949|r1b1kb1r/pp1ppppp/2n2n2/1q6/2N2B2/2PQ1P2/PP2P1PP/R3KBNR b KQkq - 2 9|d7d5 c4d6 e7d6 d3b5|discoveredAttack
+949|8/p3R3/1p6/8/1P1p2r1/3P1k1p/7K/8 b - - 4 51|g4g3 e7f7 f3e2 h2g3|deflection rookEndgame
+950|5rk1/p5p1/b1P1p2p/4P3/P2B2Q1/8/1Pq2PPP/R5K1 w - - 5 26|d4c3 c2f2 g1h1 f2f1 a1f1 f8f1|backRankMate mateIn3 sacrifice
+950|8/2Q4p/2P3pk/n4p2/4pP2/r7/2P3PP/2K5 w - - 0 35|c7d6 a3a1 c1b2 a5c4 b2a1 c4d6|fork
+950|r2k3r/4qp2/p3pNp1/1p1pn2p/7Q/2P3P1/PP1N1P1P/R3K2R w KQ - 0 22|h4f4 e5d3 e1e2 d3f4|fork
+953|r3r1k1/1pp2pp1/p1pb1n1p/5b2/3P4/2P1BN1P/PP1N1PP1/R3RK2 w - - 0 17|d2c4 f5d3 f1g1 d3c4|fork
+953|4r3/p4p1k/1p5P/2bP2p1/3pP3/P4P1R/4K3/7R w - - 1 37|h1g1 d4d3 e2d3 c5g1|discoveredAttack
+954|r2q1rk1/pppnppbp/3p1np1/8/4P1b1/2NP4/PPPBBPPP/R2QNRK1 b - - 9 8|e7e5 e2g4 f6g4 d1g4|
+954|r2qkb1r/pp2ppp1/2n1b2p/3p4/3P3B/4P3/PP3PPP/R2QKBNR w KQkq - 2 9|f1b5 d8a5 d1d2 a5b5|fork
+956|1kq5/p1b5/2p5/2P1pKp1/1P6/2Q1P3/8/3R4 w - - 1 44|f5e4 c8g4 e4d3 g4d1|fork
+956|5k2/p1q5/2p5/2N3pp/1p1R1P2/1P5P/P1R1r1PK/8 b - - 0 33|e2c2 c5e6 f8g8 e6c7|fork
+959|8/5p2/6p1/1p1N1k2/1PbK4/2P3P1/8/8 b - - 0 48|c4f1 d5e3 f5e6 e3f1|fork
+960|1r1r2k1/p2q1pbp/8/4p1Q1/3pNp2/8/PPP2PPP/1R1R2K1 b - - 1 20|h7h6 e4f6 g8h8 f6d7 h6g5 d7b8|
+961|r3kb1r/ppp2p2/2np2p1/1B2p1q1/4PnN1/3P2B1/PPPN1PPP/R1Q2RK1 w kq - 1 15|g4e3 f4e2 g1h1 e2c1|fork
+961|2kr4/ppp2ppp/2n5/4p3/4q3/4BN2/PPP1QPPP/2K5 b - - 2 16|c8b8 e3a7 b8a7 e2e4|discoveredAttack queensideAttack
+962|rnbqkb1r/pp1ppppp/8/3QP3/2B1n3/2p5/PP3PPP/RNB1K1NR b KQkq - 2 6|e7e6 d5e4 c3b2 c1b2|hangingPiece
+963|6k1/p2nQp1p/1pq3p1/2n5/7P/BP6/P4PK1/R7 w - - 1 25|g2f1 c6h1 f1e2 h1a1|skewer
+964|5rk1/3Nr1pp/4Pp1q/1p1p4/pPn5/5Q1P/6R1/5R1K b - - 3 41|f8e8 d7f6 h6f6 f3f6|pin
+964|8/p7/1p6/2pk2pP/4Rn2/2P5/6P1/7K w - - 1 55|h5h6 d5e4 h6h7 f4g6|defensiveMove hangingPiece
+965|r4rk1/1p1R1pp1/p1p4p/7q/1PB1P1n1/P4Q2/2P2PP1/5RK1 w - - 2 23|c4f7 f8f7 f3f7 h5f7 d7f7 g8f7|
+966|r1b1kb1r/pp1nqppp/2p1n3/4P3/2B5/2P2N2/PP3PPP/RNBQ1RK1 w kq - 1 11|c1g5 e6g5 f3g5 e7g5|
+967|r2qr1k1/p1p2pp1/1p1b3p/n7/Q2P4/2P3P1/PB1N1PKP/1R2R3 b - - 2 17|d8g5 e1e8 a8e8 a4e8|kingsideAttack
+971|r2qr1k1/ppb4p/6p1/nPp1p3/2Pp1B2/P2Q1N1P/3N3K/R4R2 w - - 0 24|f3e5 c7e5 f4e5 e8e5|
+972|r3k1nr/pp3ppp/2q1b3/8/1b6/2N5/PP1B1PPP/2RQKB1R b Kkq - 3 12|a8d8 f1b5 c6b5 c3b5|pin
+974|8/4k3/7R/P3p3/1K2P3/P4rpp/8/8 w - - 0 50|h6h3 g3g2 h3f3 g2g1q|advancedPawn promotion rookEndgame
+974|8/5r2/8/2nK2k1/5pP1/5R2/8/2B5 w - - 1 45|d5c5 f7c7 c5d4 c7c1|skewer
+976|8/7p/1p4p1/p1nkp3/8/P3K2P/2PB2P1/8 b - - 1 44|c5e4 c2c4 d5c4 e3e4|deflection
+976|r5k1/p2b1pp1/7p/8/1Pqb4/8/P4PPP/RN1QR1K1 w - - 0 21|e1e4 d4f2 g1f2 c4e4|discoveredAttack
+976|6k1/p1r1rQpp/p1pN4/3n4/3q4/7P/PP2RPP1/4R1K1 b - - 0 24|e7f7 e2e8 f7f8 e8f8 g8f8 e1e8|attraction mateIn3
+977|7k/p5p1/1p2N1rp/8/5q2/7P/6P1/3RR2K b - - 1 36|f4g3 d1d8 h8h7 e6f8|
+977|6k1/3r2p1/R6p/3pP3/3p4/5PP1/5K2/8 b - - 0 37|g8f7 e5e6 f7e7 e6d7|advancedPawn fork rookEndgame
+978|8/ppk3p1/2p1Bp2/6p1/8/2Pn2N1/PP4K1/8 w - - 3 31|b2b3 d3f4 g2f2 f4e6|fork
+980|r5k1/2p2ppp/8/4P3/qPpP2PP/2P2Q2/1p1K4/rR3R2 b - - 7 31|a1b1 f3f7 g8h8 f7f8 a8f8 f1f8|backRankMate mateIn3 sacrifice
+981|5r2/1p3kbQ/2p1b1qp/4p1p1/8/N1P3P1/PP6/5RK1 b - - 1 32|e6f5 f1f5 g6f5 h7f5|xRayAttack
+981|1r4k1/1P3pp1/b7/p3q1np/8/P5P1/4P1BP/R1Q1R2K w - - 2 29|c1c8 b8c8 b7c8r a6c8|xRayAttack
+981|r2q3r/p3kppp/3bb3/1B6/8/4N3/PP1Q1PPP/R4RK1 w - - 2 19|f1e1 d6h2 g1h2 d8d2|discoveredAttack kingsideAttack
+983|r1b2rk1/1p3p1p/1qn1p1pb/p2PP3/P2P4/1BN2N2/1P4PP/R2Q1RK1 b - - 0 19|c6e5 f3e5 h6e3 g1h1|hangingPiece
+984|4k3/7R/1pp3r1/8/P3r2p/1B3K2/1PP5/8 b - - 2 50|e4b4 b3f7 e8e7 f7g6|discoveredAttack discoveredCheck fork
+987|r4rk1/pp3pp1/1qpbbn1p/3pN3/3P4/1PNB4/P1P2PPP/R2QR1K1 b - - 0 13|b6d4 d3h7 f6h7 d1d4|discoveredAttack
+989|r4rk1/p3ppbp/Pp1q1np1/3PpbB1/2B5/2N5/1PPQ1PPP/3RR1K1 w - - 4 18|f2f3 d6c5 g1h1 c5c4|fork
+989|1N6/4k1p1/P2Npp1p/r3P3/8/6Pn/4K3/8 b - - 4 46|f6e5 b8c6 e7d6 c6a5|fork
+989|3r1rk1/1p3pp1/2p4p/p2pR1n1/3P1Q2/P6q/1P2N1P1/2R3K1 w - - 0 27|e5g5 h6g5 g2h3 g5f4|
+991|2r1r1k1/pp1n1qp1/2p1pnQp/3p1B2/3P4/7P/PPP2PPB/4RRK1 w - - 9 21|f5e6 e8e6 g6f7 g8f7 e1e6 f7e6|
+991|r2q1rk1/p3bpp1/1np1pn1p/1p3b1N/3Pp3/P1N5/1PP2PPP/R1BQRBK1 b - - 3 13|f5g4 h5f6 e7f6 d1g4|kingsideAttack
+992|8/6p1/6p1/1p1k1pP1/1Pp2P2/7P/P2K4/8 w - - 1 42|d2c3 d5e4 a2a4 b5a4|pawnEndgame
+995|3r2k1/p3bppp/1p1Pp3/1Q6/1P3P2/8/2q3PP/3RR1K1 b - - 0 24|d8d6 b5e8 e7f8 d1d6|fork pin
+996|6r1/5k2/1q1p1npQ/3Pr3/8/7P/P5P1/R4R1K w - - 0 28|f1f6 f7f6 a1f1 e5f5|hangingPiece
+996|8/1pp2Bp1/p3R2p/6q1/P3Qnk1/2P3P1/1P1r1P2/5K2 w - - 10 39|e6g6 d2d1 e4e1 d1e1|
+997|2r4k/6b1/2Q4p/p1P2q2/8/3R2P1/P1KB4/8 w - - 3 38|c6d5 c8c5 d5c5 f5c5|fork xRayAttack
+998|2Bn4/kpR3Bp/p7/8/PP6/2P2KP1/1r6/4b3 w - - 3 35|g7f6 b2f2 f3e3 f2f6|skewer
+998|R7/3r2pk/1Bn1N2p/1p6/1n3P2/p6P/6PK/8 b - - 1 39|a3a2 e6f8 h7g8 f8d7|discoveredAttack discoveredCheck fork
+999|2r2rk1/p1q1ppBp/5np1/3P4/1pP5/1P3n2/P2QBPPP/R3K2R w KQ - 0 18|e2f3 c7e5 e1d1 e5a1|fork
+1000|3R2k1/p1p1p1bp/1p4p1/4P3/5r2/1P6/PBP3P1/2K5 b - - 0 23|g8f7 e5e6 f7e6 b2g7|deflection discoveredAttack
+1001|r2q1r1k/pp2b1pp/2p1Q3/4P3/5p2/3R2B1/PP3PPP/3R2K1 b - - 0 22|f4g3 d3d8 g3f2 g1f1|
+1002|4r1k1/ppq3pp/2p1rb2/2Pn4/3PN1QP/1PB3P1/P7/3RR1K1 b - - 4 26|d5c3 e4f6 e6f6 e1e8|discoveredAttack kingsideAttack pin
+1003|r1b2rk1/ppp2pp1/2n3qp/2QNP2n/3N4/8/P4PPP/R1B1R1K1 b - - 2 17|c6d4 d5e7 g8h7 e7g6|fork
+1005|r4r2/6bk/pqP3pp/1pp1p3/4Pp2/1QN2P2/PP4PP/2R2RK1 w - - 1 23|a2a4 c5c4 g1h1 c4b3|discoveredAttack discoveredCheck
+1005|r1bqkb1r/1p1n1ppp/p3p3/4N3/3p1P2/2N5/PPP3PP/R1BQ1RK1 w kq - 0 11|d1d4 f8c5 d4c5 d7c5|pin
+1006|8/3n1P2/2pb2k1/3p2P1/3P4/p2KP2r/P4R1p/7R b - - 0 40|d7f8 f2f6 g6g5 f6d6|fork
+1006|6k1/1p2qpp1/pN1N1bn1/P1pQp3/4P1Pp/1PP2P1P/6K1/8 w - - 6 42|d6f5 g6f4 g2f2 f4d5 f5e7 d5e7|fork
+1007|8/8/8/5pKP/6p1/5kP1/8/8 b - - 0 58|f3g3 h5h6 g3f2 h6h7 g4g3 h7h8q|advancedPawn pawnEndgame promotion
+1009|2r2rk1/p1q1bpp1/Q4nb1/4n3/2N1p2p/1BP4P/PP3PP1/R1B1RNK1 w - - 0 19|c1f4 e5f3 g2f3 c7f4|discoveredAttack kingsideAttack
+1010|8/1p6/4p3/4p3/pP2k1p1/P3p1K1/2P1N2p/8 w - - 0 51|g3h2 e4f3 e2g1 f3f2|defensiveMove knightEndgame
+1011|1Q6/p7/3kp3/4qp2/P7/1P6/KB2r2P/8 b - - 10 43|d6e7 b8e5 e2e5 b2e5|
+1012|r3k2r/1pqbbppp/p2p1n2/2p1p3/2P1N3/PP1QPP2/1B1PN1PP/R4RK1 b kq - 1 13|d7f5 e4f6 e7f6 d3f5|discoveredAttack
+1013|3q1rk1/pQ1nbppp/4p3/4p3/8/2P1B3/P1P2PPP/2KR3R w - - 1 16|b7d7 e7a3 c1d2 d8d7|interference intermezzo
+1014|8/8/8/8/p2R3p/P7/1PK2kr1/8 w - - 0 44|d4h4 f2g3 c2c3 g3h4|discoveredAttack discoveredCheck rookEndgame
+1014|2rq1rk1/p3bppp/1p1pb3/3Pp3/1n6/2N1BN1P/PPPQ1PP1/3R1RK1 b - - 0 14|e6d5 c3d5 b4d5 d2d5|
+1017|b2R4/5kp1/p1p2p2/2b5/5B2/7r/PP6/3R1K2 b - - 3 34|h3h1 f1e2 h1d1 e2d1|
+1018|3r4/1Bp5/6p1/p1p1P1k1/2P5/1P3pPR/P1K2Pn1/8 w - - 1 33|b7f3 g2e1 c2b1 e1f3|fork
+1018|2rq1rk1/1bn2ppp/p2p1b2/1p2n3/1P2PNQ1/1B1PB2P/2P3PN/1R3RK1 w - - 5 19|g4g3 f6h4 g3h4 d8h4|trappedPiece
+1018|1r6/6p1/2p2p1p/k4P2/p2PP1P1/R2K3P/8/8 b - - 7 38|b8b3 a3b3 a4b3 d3c3|rookEndgame
+1020|1R6/8/8/2k3p1/1p4r1/1P6/1KP5/8 b - - 5 56|c5d4 b8b4 d4e5 b4g4|rookEndgame skewer
+1021|r3k2r/3p2pp/2pQpp2/p1N5/2b1P3/PP6/K1P4P/5q2 b kq - 0 24|c4b5 d6d7 e8f8 c5e6 f8g8 d7g7|mateIn3
+1021|3r2k1/1p5p/6p1/pPq2p2/P2p3P/1P1B1RP1/5P2/5RK1 b - - 2 33|c5c3 d3c4 g8f8 f3c3|discoveredAttack
+1023|r4rk1/3qppbp/p1p2np1/2p5/5P2/2NP1Q2/PPP3PP/R1B2RK1 w - - 0 13|c3a4 d7d4 c1e3 d4a4|fork
+1023|8/4kpb1/1qpNp1p1/3pP1P1/p4P2/1P6/P1P5/2K4Q b - - 0 25|a4b3 d6c8 e7d7 c8b6|fork
+1023|1r3r1k/4RPp1/4N3/3p4/2p3p1/6P1/5P1P/3n2K1 b - - 4 36|c4c3 e6f8 b8f8 e7e8 h8h7 e8f8|attraction pin
+1026|r5k1/pp6/4pb2/2P1n2p/3p1nb1/1B4P1/PPP2P1P/R2QR1K1 w - - 1 24|d1d2 e5f3 g1h1 f3d2|fork
+1028|rnbq1b1r/pp4kp/2pp1np1/6N1/4P3/5Q2/PB3PPP/RN3RK1 b - - 3 11|b8d7 g5e6 g7f7 e6d8|fork
+1029|5r2/p1p5/1k6/4p3/1PPp4/P2P1rP1/4R1K1/7R w - - 3 43|e2e5 f3f2 g2h3 f8h8 h3g4 h8h1|rookEndgame skewer
+1029|rnb1kb1r/ppp2p1p/3p1p2/3Np2q/4P3/3P1N2/PPP1K1PP/R2Q1B1R b kq - 1 9|b8a6 d5f6 e8d8 f6h5|fork
+1030|r4rk1/pp5p/4QppB/3n4/4b3/1P1q4/P4PPP/2R3K1 b - - 0 22|f8f7 c1c8 a8c8 e6c8 f7f8 c8f8|kingsideAttack mateIn3
+1031|1br3k1/p4pp1/1p3q2/2p2P2/2Pp1p2/3P3P/PP2RPB1/4R1K1 b - - 2 28|f6f5 e2e8 c8e8 e1e8 g8h7 g2e4|fork pin
+1032|5r1k/2R3p1/Q6p/5p2/3P4/4PqP1/Pr3P1P/2R3K1 w - - 1 31|c7c2 b2c2 c1c2 f3d1 g1g2 d1c2|attraction fork
+1033|7k/4q1pp/1p3p2/r3pP2/3bP1RP/Pn5K/2Q1R1P1/8 w - - 0 44|c2b3 a5a3 g4g3 a3b3|pin
+1033|1Q6/pp1k3p/2p2p2/q5pb/3p2P1/P2P3P/P1P2P2/R3n2K w - - 0 25|g4h5 a5d5 f2f3 d5f3 h1g1 f3g2|exposedKing kingsideAttack mateIn3
+1033|q4r1k/2p1Nbp1/p6p/8/P4Q2/2PP2PP/1P1B2P1/4RK2 w - - 9 32|f4e4 f7d5 f1g1 d5e4|discoveredAttack discoveredCheck
+1033|8/8/3k3p/1p3p2/1P1K1P2/7P/8/8 w - - 1 45|d4d3 d6d5 h3h4 h6h5 d3e3 d5c4|pawnEndgame quietMove zugzwang
+1035|2rq3r/pp1nkpbp/4p1p1/3p4/2BP4/5NP1/PPP1QPP1/R3K2R w KQ - 0 14|c4d5 d8a5 e1f1 a5d5|fork
+1036|r3k2r/pp1b1ppp/2n1p3/1B1pP3/Qb1q4/1N6/PP3PPP/R1B2RK1 b kq - 5 13|d4e5 b5c6 b7c6 a4b4|capturingDefender
+1039|8/pp6/3p1k1p/Pb1P4/5p2/5NpP/6P1/4K3 b - - 4 40|f6f5 f3d4 f5e4 d4b5|fork
+1041|7r/5p2/pK1k4/1p3b2/r6P/6P1/P7/R3R3 b - - 6 30|h8h6 a1d1 f5d3 d1d3 a4d4 d3d4|exposedKing mateIn3
+1042|r1b1kbnr/pppq1ppp/8/3N4/2Q1p3/8/PP1PNPPP/R1B1K2R b KQkq - 0 10|g8e7 d5c7 e8d8 c7a8|fork
+1043|4r2k/1pQ2pp1/p3qn1p/8/8/1P5N/5PPP/2R2K1R w - - 3 27|c7b7 e6e2 f1g1 e2e1 c1e1 e8e1|backRankMate mateIn3 sacrifice
+1044|8/2b2ppk/2P4p/8/1BR3P1/1P5P/1R3P2/1K5q w - - 1 36|c4c1 h1e4 b2c2 e4b4|fork
+1045|2R5/3N2pk/p3r2p/8/2p5/7P/r4PP1/6K1 b - - 3 37|a2c2 d7f8 h7g8 f8e6|discoveredAttack discoveredCheck fork
+1047|r4Bk1/pp1b1ppp/3Np3/3p4/8/b5P1/P5PP/3R1RK1 b - - 0 21|g8f8 f1f7 f8g8 f7d7|fork
+1048|rn2r1k1/pp3ppp/8/2bPqb2/8/3B4/P2NQBPP/R3R1K1 b - - 0 16|c5f2 e2f2 e5a1 e1a1|
+1048|4r2k/2p2R2/1p1p3p/p1bP2pN/2P1r1P1/1P5P/6P1/5R1K b - - 0 32|e8e7 f7f8 h8h7 h5f6|kingsideAttack
+1049|6R1/p7/1p4R1/8/4k1P1/4b3/PP5r/1K6 w - - 1 34|g6c6 h2h1 b1c2 h1c1 c2b3 c1c6|skewer
+1049|4kb1r/1pr1qp2/p7/3p1p1p/P2PpQ2/2P5/2KN1PPP/RR6 b k - 1 21|e7d7 f4e5 d7e7 e5h8|fork
+1050|r1b2rk1/ppp3pp/2nb1q2/3p4/6n1/2P2N2/PP2BPPP/R1BQRNK1 b - - 3 13|d6c5 d1d5 c8e6 d5c5|fork
+1050|2r2rk1/2q1bppp/1pN1pn2/1P1p4/8/P2QP1P1/1B3PBP/2R3K1 b - - 0 21|f6e8 c6e7 c7e7 c1c8|discoveredAttack skewer
+1051|N2k3r/pb1p2pp/1p1Pp3/8/n7/8/P2B1PPP/2R3K1 b - - 0 24|b7a8 d2g5 d8e8 c1c8 e8f7 c8h8|fork skewer
+1051|2r2r2/1p3kpQ/pn4B1/3p4/PP6/4P2P/1B4q1/R2K3R b - - 12 33|g2g6 h1f1 f7e7 h7g6|deflection
+1052|8/4n3/1p2p1k1/p1p1P1Bp/2PpK2P/PP1P4/8/8 b - - 2 46|g6f7 g5e7 f7e7 e4f4|defensiveMove
+1052|r1bN2k1/pp4bp/1np3p1/3pP3/3P4/BP6/P1P3PP/RN3BK1 w - - 1 16|e5e6 g7d4 g1h1 d4a1 e6e7 c8d7|defensiveMove fork
+1054|r2q1rk1/pQ4pp/3pb3/2p1np2/P1P5/2P1P3/4BPPP/R1B2RK1 b - - 0 15|e6c4 e2c4 e5c4 b7d5|
+1055|7R/p7/1p6/4p1p1/1P4k1/4r3/P2K4/8 b - - 1 36|g4f3 h8h3 f3f4 h3e3|rookEndgame
+1058|3r4/p3R1k1/2pN1np1/1p5p/7P/8/P4PP1/6K1 b - - 2 31|g7f8 e7f7 f8g8 f7f6|fork
+1058|4r1k1/5p1p/Q7/2p2q2/8/7P/1P3PP1/3R2K1 w - - 1 27|a6d3 e8e1 d1e1 f5d3|deflection
+1060|r3kbnr/1p3ppp/p1n5/8/Q1B1q3/5N2/PP3PPP/R1B1K2R w KQkq - 2 12|c1e3 f8b4 a4b4 c6b4|
+1061|3q3k/1p3Bp1/p6p/4pQ2/Pb2P3/7P/5PP1/6K1 w - - 0 29|f5e5 d8d1 g1h2 b4d6 e5g3 d6g3|pin
+1063|3b2rk/3r3Q/3pbPp1/ppqNp1P1/4P3/3B4/PPP5/2KR3R b - - 0 26|d7h7 h1h7 h8h7 d1h1 e6h3 h1h3|attraction exposedKing kingsideAttack mateIn3
+1063|1r1r2k1/p3q2p/b3p1p1/5p2/8/1Pb5/P1PB1PPP/1R1QRNK1 w - - 4 20|d1f3 c3d2 f1d2 d8d2|
+1063|r2qk2r/4bppp/pn1p4/2pPp3/2P5/P4N1P/1P3PP1/R1BQR1K1 b kq - 0 15|b6c4 d1a4 d8d7 a4c4|fork
+1064|r4rk1/pp2p1bp/2n3p1/q2Bp3/3p1N2/5Q2/PPP2PPP/R4RK1 b - - 0 16|g8h8 f4g6 h7g6 f3h3 g7h6 h3h6|kingsideAttack mateIn3 sacrifice
+1064|4bk2/8/7R/2KPN2p/5r2/8/8/8 b - - 3 73|f4f1 h6h8 f8g7 h8e8|deflection skewer
+1066|2kr3r/1pp2ppp/p1pb3q/4p3/4P2n/1NBP1P2/PPP2P2/R2K1Q1R b - - 1 18|h6f6 f1h3 c8b8 h3h4|
+1068|r5k1/4bppp/1Bp1p3/2Pp4/rpqPn3/PR2P2P/1Q3PP1/RN4K1 w - - 10 26|b3b4 a4b4 a3b4 a8a1|discoveredAttack
+1069|r1b2rk1/p1p2pbq/1p4p1/4p3/6P1/4PB2/PPPN4/R2Q1KR1 b - - 1 18|a8b8 g1h1 h7h1 f3h1|trappedPiece
+1070|5rk1/2R2pb1/4p1p1/3pP2p/Q2Pq3/4B2P/5PPK/8 w - - 9 31|a4b3 g7e5 d4e5 e4e5 e3f4 e5f4|fork
+1071|r2b1r2/pp1q1pkp/3Pp1np/2p1P3/2P5/2N1QN1P/PP4P1/R4RK1 w - - 2 18|e3c5 d8b6 c5f2 b6f2|pin
+1073|r3r1k1/2p2ppp/p2q4/2p5/6n1/PPN1Pb1P/2PP2P1/R3QRK1 w - - 0 16|f1f3 d6h2 g1f1 h2h1 f1e2 h1g2|deflection kingsideAttack
+1074|2r2rk1/pb1n1ppp/2qppn2/6B1/3P4/2PB4/P1QN1PPP/2R2RK1 w - - 1 16|d2e4 f6e4 d3e4 c6e4 c2e4 b7e4|
+1074|2br3k/1p4pp/p4b2/8/4B3/2r2P2/4N1PP/R3R1K1 b - - 1 25|c3c2 e4c2 f6a1 e1a1|
+1075|rn2kb1r/pp3ppp/2p1pn2/4N3/1q1P1B2/2N3PP/PPP1bP2/R2QK2R w KQkq - 0 11|d1e2 b4b2 e1g1 b2c3|fork
+1075|1r3q1k/1p4bp/p5p1/B4p2/2P1p3/1P4P1/P2R1PBP/3R2K1 b - - 1 26|g7e5 d2d8 b8d8 d1d8 f8d8 a5d8|pin
+1077|8/1pr5/1K1N1k2/p1P5/P7/8/8/8 b - - 7 50|c7c6 b6b7 c6c5 d6e4 f6e6 e4c5|exposedKing fork
+1078|r1b2r2/pp3pkp/2np1np1/2q1p2P/4P1P1/5P2/PPPQ4/2KR1BNR b - - 2 14|g6h5 d2g5 g7h8 g5f6|deflection
+1079|rn1q1rk1/pp3pp1/2p1p3/4P2p/5B2/2n3Q1/PPP2PPP/3R1RK1 w - - 0 15|d1d8 c3e2 g1h1 e2g3 h2g3 f8d8|fork
+1080|3q1rk1/4b1pp/8/5p2/3P4/3pP1P1/rB1Q1PBP/5RK1 b - - 1 24|d8b6 g2d5 g8h8 d5a2|fork
+1081|r1bk1br1/1ppqp3/p1n4p/2B4B/1P4p1/P2P4/2P2PPN/R2Q1RK1 w - - 0 18|h5g4 g8g4 h2g4 d7g4 d1g4 c8g4|
+1084|8/p4kpp/2p2p2/2Np4/2P2Pb1/PP1P1n2/2r2P1P/R4K1B b - - 2 30|f3h2 f1g2 h2f3 g2g3 f3d4 g3g4|defensiveMove
+1084|6k1/2rbQ2p/p1q2pp1/2p5/4P3/1P5P/P4PP1/3R2K1 b - - 1 35|c6e6 e7d8 d7e8 d8c7|fork
+1085|r4rk1/p1p2ppp/1b6/3N4/3n2Q1/2q4P/P5P1/3R1R1K b - - 1 24|c3c6 d5e7 g8h8 e7c6|fork
+1085|3r2k1/p4pp1/q4n1p/1p1PR3/8/4QP2/3R1P2/6K1 w - - 0 32|e3d3 a6a1 d2d1 a1e5|fork
+1087|8/p1n4r/6pP/k3P1Pb/2pP4/2P1K3/P6N/1R6 w - - 3 37|b1b7 c7d5 e3f2 h7b7|discoveredAttack
+1087|r2qk2r/p4ppp/b1p1p3/8/1b1PP3/5N2/P4PPP/R1BQ2KR b kq - 4 12|c6c5 d1a4 d8d7 a4a6|fork
+1088|8/5k2/p4p2/1pq5/2P5/7b/3Q3P/2R3K1 w - - 2 35|d2f2 c5g5 f2g3 g5c1|fork
+1089|2r1k2r/5q2/1ppQ2n1/4p3/4P1p1/2P2pP1/PP1N3P/R4R1K b k - 0 26|h8h2 h1h2 c8d8 d6c6|hangingPiece
+1090|r4rk1/1pp1b1pp/p4q2/8/4Q3/8/PPP2PPP/R1B1R1K1 w - - 3 16|e4e7 f6f2 g1h1 f2f1 e1f1 f8f1|backRankMate mateIn3 sacrifice
+1091|r3k1nr/pp1qppbp/2p3p1/4B3/3P4/2N2Q2/PPP3PP/R3R1K1 b kq - 4 14|g8f6 e5f6 g7f6 f3f6|pin
+1092|2rq1k2/5ppp/p7/1p6/5Q2/2P5/P1P2PPP/4RK2 b - - 7 22|c8c3 f4b4 f8g8 b4c3|fork
+1092|1Q6/1b3rpk/4B3/2p4p/1q6/7P/1pP3P1/1R5K w - - 3 32|e6f7 b7g2 h1g2 b4b8|discoveredAttack
+1093|r5k1/ppq1rppR/2p3n1/3p4/3P2p1/2PQ4/PP1N1PP1/2K4R b - - 0 22|a8e8 h7h8 g6h8 d3h7 g8f8 h7h8|clearance deflection kingsideAttack mateIn3 sacrifice
+1095|6n1/5k2/ppK1p3/2p5/P1P5/4N3/8/8 b - - 1 58|g8f6 c6b6 f6d7 b6a6|knightEndgame
+1095|r2q1rk1/ppp2pp1/2n1bn1p/3Pp3/1b4P1/1QNP3P/PP1BPPB1/R3K1NR b KQ - 0 9|e6d5 c3d5 b4d2 e1d2|
+1096|2r1q1k1/4r1p1/5R2/p2p3P/1ppP1Q2/2P2P2/1P6/1NK3R1 w - - 3 33|f6g6 e7e1 g1e1 e8e1 c1c2 b4b3|mateIn3 queensideAttack
+1098|r6k/6p1/p4r1p/Pp4NQ/1q6/8/6PP/R4R1K w - - 0 38|f1f5 f6f5 g5f7 f5f7|hangingPiece
+1098|2r5/pp3pk1/6p1/1qnp4/8/rNP1PPP1/PQ4P1/R5K1 b - - 1 31|a3a4 c3c4 g7g8 c4b5|discoveredAttack discoveredCheck
+1100|r2q2k1/5ppp/1p2p3/2P5/3p4/1P2PP2/P3QP1P/2R3K1 w - - 0 27|e3d4 d8g5 g1f1 g5c1|fork
+1101|8/5pk1/5b1p/5Qp1/3r4/6PK/7P/8 w - - 3 41|f5f3 g5g4 f3g4 d4g4|fork
+1102|r1b1kb1r/1pqp1ppp/4p3/p2nP3/2BQ1P2/8/PPP3PP/RNB2RK1 w kq - 1 10|c4d5 f8c5 c1e3 c5d4|pin
+1103|4r1k1/1p1q1p1p/3p1Pp1/2pPr3/PpP2QP1/1Pb4P/8/3R1RNK b - - 2 35|e5e4 f4h6 c3f6 f1f6|
+1104|2q5/4k3/1Pb1p1pp/4p3/2Q1P3/3NbB1P/6PK/8 b - - 4 47|e3b6 c4b4 e7e8 b4b6|fork
+1105|r3k3/pp1nq2p/2p3p1/3pP1P1/8/2P3P1/PP2Q2P/2KR1N2 b q - 2 20|e7e5 e2e5 d7e5 d1e1 e8d7 e1e5|pin
+1106|3r4/2p5/1kP2p2/pN2p3/Pn5p/1Q2n2P/1P1q3R/1K4R1 b - - 0 34|d2h2 b3e3 d8d4 b5d4 e5d4 e3d4|hangingPiece
+1107|5rk1/p4q1p/1p4p1/4Q3/8/P1P1P3/1P4PP/R5K1 w - - 1 23|e5e4 f7f2 g1h1 f2f1 a1f1 f8f1|backRankMate mateIn3 sacrifice
+1108|8/ppb3k1/6r1/1Pp2Q2/2P4p/8/P5K1/8 w - - 1 43|g2f1 g6f6 f5f6 g7f6|pin
+1109|r7/p3Q3/kppp4/2n2P1q/2P2Bp1/2P1N3/P2K1P2/R7 w - - 6 29|e7d6 c5e4 d2c2 e4d6|fork
+1110|1R6/6p1/1p4kp/p7/6R1/1P4KP/2r2rP1/8 b - - 1 47|g6f6 b8f8 f6e5 f8f2|rookEndgame
+1111|6k1/pp1r4/2p1q1pQ/3pp2p/8/1P3r2/PKP5/6R1 b - - 1 31|f3f5 g1g6 e6g6 h6g6 d7g7 g6f5|exposedKing fork
+1113|8/2Qbrkp1/2p1qpp1/1p2p3/4P3/2P2N2/5RP1/6K1 b - - 3 36|d7e8 f3g5 f7g8 g5e6 e7c7 e6c7|pin
+1114|r1bqk1nr/pp3ppp/2nbp3/1Bp5/3pP3/5NN1/PPPP1PPP/R1BQK2R w KQkq - 4 7|d2d3 d8a5 f3d2 a5b5|fork
+1115|6k1/p5p1/1n6/2Q5/2Pp2qp/3P1NN1/P5K1/8 w - - 0 41|c5d4 g4g3 g2h1 g3f3|deflection
+1117|6k1/pp6/2p3pp/4Npq1/3Pp3/2P5/PP1bQP2/5K2 b - - 1 28|d2f4 e2c4 g8h8 e5f7 h8g7 f7g5|exposedKing fork
+1117|3r2k1/1pb2bp1/p6p/2P1p3/1P2n3/P3B1PP/2Q2P2/6K1 w - - 0 31|c2e4 d8d1 g1g2 f7d5 e4d5 d1d5|pin
+1118|1r3rk1/ppp2ppp/4b3/1BQ1n1q1/8/N1P5/PP3PPP/R4RK1 w - - 0 15|f2f4 e5f3 g1h1 g5c5|discoveredAttack pin
+1118|8/3R1ppk/7p/pp6/3R2P1/P7/1PP1q3/1K6 w - - 0 34|d7f7 e2e1 b1a2 e1e6|queenRookEndgame
+1118|rnbqr1k1/ppp1ppbp/3p4/7Q/3P1B2/2PBP3/PP3PP1/RN2K1N1 b Q - 0 9|b8d7 h5h7 g8f8 f4h6|kingsideAttack
+1120|r2qk2r/pb2bppp/1p1p1n2/4p1B1/2P1P3/2NB4/PP3PPP/R2QK2R w KQkq - 4 11|c3d5 f6d5 c4d5 e7g5|discoveredAttack
+1121|8/8/8/pK6/P3k3/8/8/8 b - - 9 44|e4e5 b5a5 e5d6 a5b6|defensiveMove pawnEndgame
+1122|r4rk1/1pp1qpp1/p2p1n1p/2b5/2PN4/4B1P1/PP1QPPKP/R4R2 w - - 2 15|d4f5 e7e4 f2f3 e4f5|fork
+1122|4k3/pp3p1Q/1q2pP2/3p4/3P4/bP3NN1/r1n3PP/5RK1 w - - 1 25|f3e5 b6d4 g1h1 d4e5|fork
+1122|8/8/1P6/3b1p2/3r1k2/P1R2p2/5P2/4K3 b - - 0 54|d4c4 c3c4 d5c4 b6b7|advancedPawn
+1124|2rr2k1/5ppp/2P5/1p1Pp1q1/1N3n2/4QP2/P5PP/2RR2K1 w - - 3 30|g2g3 f4h3 g1g2 g5e3|discoveredAttack kingsideAttack
+1124|4n1k1/2r2p1p/b2p2p1/3Pp3/1P2P3/1p3NNP/1P3PP1/2R4K w - - 1 37|g3e2 a6e2 c1c7 e8c7|hangingPiece
+1125|6k1/1Q3pp1/3rp2p/4N3/8/1P5P/P1q2bP1/5RK1 w - - 0 30|f1f2 d6d1 g1h2 c2f2|deflection
+1127|2bq2k1/p4p1p/1p4pb/4QpN1/P6P/2Pr1B2/1P4P1/4R1K1 b - - 2 29|h6g7 e5e8 d8e8 e1e8 g7f8 e8c8|fork
+1129|8/8/p4k2/1p6/1P2KPp1/8/P7/8 w - - 0 40|f4f5 g4g3 e4f3 f6f5|pawnEndgame
+1130|4r3/p1q2pk1/1p1p3p/3Q2p1/8/5P2/PPPR2PP/2K5 w - - 0 25|d5d6 e8e1 d2d1 c7d6|pin
+1131|4r1k1/1ppq2pp/p4r2/3Q1p2/1b6/2N5/PPP2PPP/R3R1K1 b - - 0 18|d7d5 e1e8 g8f7 c3d5|hangingPiece intermezzo kingsideAttack
+1131|r1b3nr/ppq2kpp/4p3/5p1Q/5P2/1K1B4/PPP5/R6R b - - 1 20|g7g6 h5h7 h8h7 h1h7 f7f6 h7c7|sacrifice skewer
+1133|3r1rk1/ppp1qp1p/6p1/4P3/1P1n4/P4B2/1Q2RPP1/RN4K1 w - - 1 22|e2e3 d4f3 e3f3 d8d1|clearance kingsideAttack
+1133|5r1k/1Qb2qp1/7p/8/3p4/3N2PP/5PK1/4R3 b - - 0 41|c7d8 b7f7 f8f7 e1e8 h8h7 e8d8|fork
+1133|r5r1/p1p2p1k/2p2p1p/3b1N2/6R1/3n3P/PPP2PP1/R1B3K1 w - - 4 20|g4h4 g8g2 g1f1 g2f2|kingsideAttack
+1135|3r3k/1R1P4/p2RB1pp/2p5/3b4/7P/P4rP1/6K1 w - - 0 34|g1h1 f2f1 h1h2 d4e5 g2g3 e5d6|fork
+1137|3r4/p3kpp1/1p5p/2n1PPN1/2P4P/4K3/P7/7R w - - 0 26|g5e4 d8d3 e3e2 c5e4 e2d3 e4f2 d3e3 f2h1|deflection exposedKing fork sacrifice
+1137|3k2r1/1b2n1P1/1p3pRp/4p3/pp1PP2P/8/P7/2R2B1K w - - 1 39|f1c4 b7e4 h1h2 e4g6|fork
+1138|3n4/8/3P4/2P5/1pN2kpK/8/1P6/8 w - - 1 44|c4a5 g4g3 h4h3 f4f3|defensiveMove knightEndgame
+1142|r2qk2r/pp2b1pp/2pp4/5b2/5Pn1/1BN5/PPP3PP/R1BQR1K1 w kq - 1 14|h2h3 d8b6 c1e3 g4e3|
+1142|1k4r1/pp1n1N2/4pn2/8/4PP1R/qPBB1P2/P1PQ4/2K5 w - - 1 29|c3b2 g8g1 d2d1 g1d1 c1d1 a3b2|queensideAttack
+1143|2k2r1r/pppqnQ1p/3p4/8/4PN2/7P/PPP2PP1/2KR3R w - - 1 18|f7e6 f8f4 e6d7 c8d7|hangingPiece
+1144|r1b1k1nr/pppp1ppp/8/3NP3/1n6/8/PqPNPPPP/R2QKB1R w KQkq - 1 9|a1b1 b4c2 d1c2 b2c2|
+1145|2R5/5kpp/2K5/8/1P6/p1p4P/8/8 w - - 0 40|c6b5 a3a2 c8c3 a2a1q|advancedPawn promotion rookEndgame
+1145|r3r1k1/ppp2ppp/8/4nq2/2P5/P1Q1P3/1P2BPPP/3R1RK1 w - - 2 17|c3a5 e5f3 e2f3 f5a5|discoveredAttack
+1145|8/5k2/2p3p1/1p4Rp/p2Ppn2/P6P/1P3P2/6K1 w - - 0 43|h3h4 f4h3 g1f1 h3g5|fork
+1146|r7/1p2kn1R/p3p3/3p4/5q2/1PN5/P1P1Q3/1K6 b - - 2 29|a8g8 c3d5 e7f8 d5f4 g8g1 b1b2|defensiveMove pin
+1149|2r3k1/2p3pp/1q1p4/8/2b2Q2/7P/1P3RP1/7K b - - 3 39|d6d5 f4f7 g8h8 f7f8 c8f8 f2f8|backRankMate mateIn3 sacrifice
+1149|r1b3k1/pp3rpp/8/2ppp1B1/3n3P/P1qB2Q1/2P2PP1/1R1K3R b - - 1 18|c5c4 d3h7 g8h7 g3c3|discoveredAttack
+1150|4rk2/5p1p/R5pP/8/4n3/P7/8/KR6 w - - 0 51|b1b7 e4c5 a6b6 c5b7|fork
+1151|2r2rk1/p4ppp/2n1p3/1pPpP1q1/1P5n/2B2B2/P4PPP/2RQR1K1 w - - 3 20|c3d2 h4f3 d1f3 g5d2|kingsideAttack pin
+1152|1B6/7n/4k2P/4p3/1P3pK1/2Nb4/1P6/8 w - - 4 54|c3d1 d3e2 g4h4 e2d1|fork
+1153|5rk1/ppq3p1/3bPn1p/2p2p2/P1N1p3/2B4Q/1P3KPP/R3R3 w - - 1 22|h3f5 f6g4 f2e2 f8f5|discoveredAttack pin
+1154|r4rk1/ppq1bppp/2p5/4pN2/2B1Pnb1/2P1RN2/PPQ2PPP/3R2K1 b - - 3 17|g7g6 f5h6 g8g7 h6g4|fork
+1156|r4rk1/ppp2ppp/3p2q1/3N2b1/2BPPRb1/6P1/PPP4P/4RQK1 b - - 4 17|g5f4 d5e7 g8h8 e7g6|fork
+1157|2k4r/1pq4p/p5pQ/2b1p3/2PnP3/3BB3/P4rPP/1R1K3R b - - 4 26|f2g2 h6h3 c7d7 h3g2|fork
+1159|r1r3k1/p1q2ppp/4b3/1Q6/2BRp3/4P3/PP3PPP/1K5R w - - 3 22|c4e6 c7c2 b1a1 c2c1 h1c1 c8c1|backRankMate mateIn3 sacrifice
+1159|2rr2k1/p6p/1p4p1/5p2/4pP2/PN4P1/1P4NP/1K5R w - - 0 25|g2e3 d8d3 h1e1 d3b3|fork
+1159|1k6/1pq2pp1/p5p1/3Q2P1/7r/4R3/PPP5/2K5 b - - 1 26|h4h2 e3e8 b8a7 d5d4 c7b6 e8a8 a7a8 d4b6 h2h1 c1d2|deflection
+1160|2kr1bnr/2pqpppp/p1p5/3P1b2/Q4B2/2N1P3/PP3PPP/R3K1NR w KQ - 0 11|d5c6 d7d2 e1f1 f5d3|
+1163|4r3/4P1pk/1p4bp/p1p2p2/5K2/1BP5/PP4r1/4RRB1 w - - 1 35|b3a4 g2g4 f4f3 g4a4|skewer
+1163|r7/5R2/p1N4p/5p1k/5P2/1r3P2/5K2/8 b - - 1 39|h5g6 c6e5 g6h5 f7f5 h5h4 e5g6 h4h3 f5h5|deflection mateIn4
+1165|8/p5k1/3Q3p/2p1r3/3b3P/4p3/PPK1R3/5r2 b - - 3 42|f1f7 e2g2 e5g5 h4g5|
+1167|2r2rk1/ppp2p2/3pq3/3Nb3/2P1Q3/1P2P2p/P4PP1/2R2RK1 b - - 1 21|e5h2 g1h2 e6e4 d5f6 g8g7 f6e4|fork sacrifice
+1168|6k1/pp6/1bpBbrpp/5p2/5PP1/1P1B3P/P3R3/5K2 w - - 3 30|e2e6 f6e6 d3c4 g8f7|defensiveMove hangingPiece
+1168|8/k7/2PKp3/4P3/2P5/5bp1/6B1/8 w - - 2 55|d6d7 f3g2 c6c7 g2b7 c7c8q b7c8|bishopEndgame hangingPiece quietMove
+1168|3r2k1/p3bppp/b1p2n2/2P1p3/1p2P3/1N3P2/PP4PP/RNB3K1 w - - 0 17|c1e3 d8d1 g1f2 d1f1|kingsideAttack
+1168|1r4k1/3R4/8/3p1rpp/3P4/1p3P2/6PP/4R1K1 w - - 0 30|e1e7 b3b2 e7g7 g8f8 d7d8 b8d8|advancedPawn rookEndgame
+1169|2k1r3/Npp5/p2p1q2/6p1/8/3pB1P1/PPQK2P1/2R4r b - - 1 29|c8b8 c2c7 b8a8 c7c8 e8c8 c1c8|mateIn3 queensideAttack sacrifice
+1171|rn5r/pp4k1/2p5/4qBp1/2P1p3/4P1P1/PP5P/R2Q1RK1 w - - 1 20|g1g2 e5b2 f1f2 h8h2 g2h2 b2f2|attraction deflection
+1171|7r/5k2/b7/2rp1pP1/Pp6/1P6/5PP1/R3R1K1 b - - 0 32|h8e8 g5g6 f7g6 e1e8|deflection
+1172|2R5/5rkp/6p1/p7/5P1P/1P4PK/P5Q1/1q6 w - - 7 37|h4h5 b1f5 g3g4 f5c8|fork
+1172|4rr2/ppk3p1/4bqQ1/4R1N1/8/8/P4PPP/3R2K1 w - - 1 23|e5e6 f6f2 g1h1 f2f1 d1f1 f8f1|backRankMate mateIn3 sacrifice
+1175|8/1p5k/p1b4p/2B5/PP3P2/7K/r7/5R2 w - - 5 35|a4a5 c6g2 h3g3 g2f1|fork
+1177|b7/5p1k/3pr2p/4P2P/2pN2Q1/2q5/5PP1/4R1K1 w - - 0 35|d4e6 c3e1 g1h2 e1e5|hangingPiece
+1177|6k1/1p4p1/p1p2qn1/2Pp3p/1P3P2/P2Q2PP/4NK2/8 w - - 0 29|f2f3 g6e5 f3e3 e5d3|pin
+1179|R7/8/8/3n1Bp1/3k2P1/1p2p3/pK6/8 w - - 0 70|b2b3 e3e2 a8a2 e2e1q|advancedPawn promotion
+1179|3rr3/2p2pk1/1p2b1pp/p1p5/P1P5/3BR2P/2P2PP1/3R2K1 b - - 5 26|e6c4 e3e8 d8e8 d3c4|intermezzo
+1179|2r1brk1/6p1/4p1P1/ppbp1p1R/5B1q/2PBP2P/PP6/2KQ4 b - - 4 24|h4f2 h5h8 g8h8 d1h5 h8g8 h5h7|attraction kingsideAttack mateIn3 sacrifice
+1180|5rk1/p1p1R1p1/1p3r1p/3q4/3P4/P1PQ3P/1P2R1P1/6K1 w - - 7 32|e7c7 f6f1 g1h2 d5d6 e2e5 d6c7|fork
+1181|5q1k/7p/p5p1/1p1B4/3b1P2/7P/P2Q3K/8 b - - 1 33|d4c5 d2c3 f8g7 c3c5|deflection
+1182|2r2r1k/6b1/2b1R1q1/1p5p/pP1p4/P5PP/QB3P2/R5K1 b - - 1 27|g6c2 e6h6 c2h7 h6h7|kingsideAttack
+1183|2rq1rk1/1pb1nppp/2n5/1B1pPp2/1P1B4/P1N5/2P2PPP/R2Q1RK1 w - - 1 15|f2f4 c6d4 d1d4 c7b6|pin
+1184|8/4B3/1p2p3/8/6kP/2P1Kp2/8/8 w - - 4 41|e7g5 g4g3 e3e4 f3f2|advancedPawn bishopEndgame
+1184|2k5/2b5/8/4P1p1/2QP1q2/2P1K2P/6P1/8 w - - 11 56|e3d3 f4f1 d3e4 f1c4|deflection skewer
+1185|r5k1/P4pp1/4p2p/3p4/Rp3R2/6P1/5PKP/1r6 b - - 4 33|b4b3 f4b4 g8h7 b4b8 a8a7 a4a7|rookEndgame
+1187|8/4r1k1/3Q1b2/5Pp1/6P1/5K1p/8/8 w - - 0 64|f3g3 f6e5 g3h3 e5d6|fork
+1187|8/8/8/5pkp/7P/5KP1/8/8 b - - 0 53|g5f6 f3f4 f6e6 f4g5 e6e5 g5h5 f5f4 g3f4|pawnEndgame zugzwang
+1189|5R2/1k2r1pp/bp6/4P3/1K6/P1R3B1/6rP/8 w - - 0 39|f8c8 g2b2 c3b3 b2b3 b4b3 b7c8|
+1190|2r2rk1/1p1qbpp1/p7/2Pp2p1/2nP4/PR1N1PB1/6PP/3Q1RK1 b - - 0 23|c4e3 d3e5 e3d1 e5d7|
+1190|r2q1rk1/1b1pnpbp/p3p1p1/1p6/3BPP2/2P2N2/PP1QB1PP/R4RK1 b - - 0 15|b7e4 d4g7 g8g7 d2d4 g7g8 d4e4|attraction fork
+1191|r1bqkb1r/1p1npp1p/p2p1np1/6B1/3N4/3BP3/PPP2PPP/RN1QK2R w KQkq - 0 8|c2c4 d8a5 b1c3 a5g5|fork
+1193|5bk1/p5pp/1p2p3/3pN3/1P1P4/P3q3/6PP/5Q1K b - - 1 24|f8d6 f1f7 g8h8 f7e8 d6f8 e8f8|mateIn3
+1193|8/7k/pR5p/3p4/5r2/2P1p2P/P5P1/6K1 w - - 0 40|b6a6 e3e2 a6e6 f4f1|advancedPawn rookEndgame
+1195|r1b3r1/pp1nbk1p/5n2/2PB3N/1q6/8/PP3PPP/RNBQ2K1 b - - 0 16|f6d5 d1d5 f7e8 d5g8|deflection skewer
+1195|6k1/2pq1pp1/1p2n1np/p2Np3/P1P1P3/1P1Q2PP/5PBK/8 b - - 12 43|c7c6 d5f6 g7f6 d3d7|discoveredAttack
+1196|5rk1/ppR5/6p1/2p1p3/2P1P3/3P1rK1/PP6/3R4 w - - 1 39|g3g4 f8f4 g4g5 f3g3 g5h6 f4h4|mateIn3 rookEndgame
+1196|2kr1b1r/1p6/2p1qN2/3pP3/3P3n/1Q5p/1n5K/2RB1R2 b - - 1 35|b2c4 d1g4 e6g4 f6g4|pin
+1197|2r2rk1/5pp1/pp2p3/3b2p1/1P1P4/P2BR3/5PPP/2R3K1 w - - 2 22|c1c2 c8c2 d3c2 f8c8|clearance

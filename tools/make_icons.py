@@ -269,12 +269,26 @@ def wikipedia(p):
     p.line([(68, 64), (88, 86)], 10)
 
 
+def chess(p):
+    # a knight on a corner of a board
+    for r in range(2):
+        for c in range(2):
+            if (r + c) % 2:
+                p.rect((8 + c * 40, 8 + r * 40, 48 + c * 40, 48 + r * 40), w=3)
+    p.rect((8, 8, 88, 88), w=4)
+    p.white_rect((22, 16, 74, 84))
+    p.poly([(30, 80), (70, 80), (66, 66), (62, 40), (52, 22), (44, 22), (42, 28), (30, 40), (28, 50),
+            (34, 54), (44, 46), (46, 52), (34, 66)], fill=True)
+    p.white_ellipse((45, 31, 51, 37))
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
-         'freecell': freecell, 'wikipedia': wikipedia}
+         'freecell': freecell, 'wikipedia': wikipedia,
+         'chess': chess}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

@@ -55,6 +55,11 @@ whose data is licensed CC BY-SA 4.0; senses, example sentences and similar words
 3.0**, Princeton University ("WordNet ® Princeton University", licence in
 `apps/anki/LICENSE-WORDNET.txt`). The deck files are therefore shared under CC BY-SA 4.0 as well.
 
+## Chess puzzles — `apps/chess/data/`
+
+Puzzles from the Lichess puzzle database, https://database.lichess.org/#puzzles, released under
+CC0 (public domain) by lichess.org; chosen by `apps/chess/make_banks.py`.
+
 ## Not included
 
 Nothing from Xteink's firmware is in this repository. The packer embeds only the *public* half of
