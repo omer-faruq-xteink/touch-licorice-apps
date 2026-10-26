@@ -28,8 +28,8 @@ copy a package to the SD card and install it from the reader's own file browser.
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
 
-Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
-size, no network). Notes, RSS, Instapaper, Dictionary, Merchant, Slide Puzzle and the newer puzzle games declare `"api": "2.0"` and get **API 2.9**: finger movement,
+Two host APIs exist on this build. 2048, Sokoban and Suguru use the default **API 0.8** (taps,
+swipes, one text size, no network). The other apps declare `"api": "2.0"` and get **API 2.9**: finger movement,
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 

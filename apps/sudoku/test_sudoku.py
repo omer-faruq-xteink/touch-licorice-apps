@@ -1,6 +1,7 @@
-"""Offline test of sudoku/index.lua under Lua 5.4 (lupa), with a ctx.data emulation written from the
-firmware's reader code (open_text -> reader with read_line / seek / tell / close; exists; read_text;
-size), fed the exact files xtpack.collect_data_files() will put into the package.
+"""Offline test of sudoku/index.lua (API 2.9) under Lua 5.4 (lupa), with a ctx.package emulation
+written from the firmware's reader code (open_text -> reader with read_line / seek / tell / close;
+exists; read_text; size), fed the exact files xtpack.collect_data_files() will put into the
+package; fonts that measure 13 px a character, storage, a clock.
 
   python -I sudoku/test_sudoku.py        (from the Xteink folder)
 """
@@ -16,14 +17,18 @@ FILES = dict(xtpack.collect_data_files(HERE))
 print('data files:', {k: len(v) for k, v in FILES.items()})
 
 LUA_STUBS = r'''
-cmds = 0; texts = {}; inval = 0
+cmds = 0; texts = {}; inval = 0; fills = 0; ms = 1000; store = {}
 g = setmetatable({}, {__index = function(_, k) return function(self, ...)
   cmds = cmds + 1
   if k == 'text' then local x, y, s = ...; texts[#texts+1] = s end
-  if k == 'measure_text' then local s = ...; return 13 * #s, 24 end
+  if k == 'rect' then local o = select(5, ...); if type(o) == 'table' and o.fill then fills = fills + 1 end end
 end end})
-ctx = { state = {}, invalidate = function() inval = inval + 1 end, display = { full_refresh = function() end },
-        sys = { millis = function() return 1 end, epoch_sec = function() return 2 end }, data = {} }
+local function font(lh) return { line_height = lh, measure = function(self, s) return 13 * #s end } end
+ctx = { state = {}, invalidate = function() inval = inval + 1 end, package = {},
+        fonts = { small = font(20), medium = font(24), large = font(30) },
+        clock = { millis = function(self) ms = ms + 300; return ms end },
+        storage = { write = function(self, n, d) store[n] = d; return true end,
+                    read = function(self, n) if store[n] then return store[n] end return nil, 'not_found' end } }
 __TEST = {}
 '''
 
@@ -32,7 +37,7 @@ def make_rt(with_data=True):
     rt = L.LuaRuntime(unpack_returned_tuples=True)
     rt.execute(LUA_STUBS)
     store = FILES if with_data else {}
-    data = rt.eval('ctx.data')
+    data = rt.eval('ctx.package')
 
     def open_text(self, name, opts=None):
         if name not in store:
@@ -107,7 +112,7 @@ T = lambda **kw: rt.table_from(kw)  # noqa: E731
 on_input = rt.eval('on_input')
 
 
-def tap(x, y): on_input(None, T(type='touch', gesture='tap', x=x, y=y))
+def tap(x, y): on_input(None, T(type='pointer', phase='up', gesture='tap', x=x, y=y))
 def tap_cell(i): r, c = divmod(i, 9); tap(15 + c * 50 + 25, 96 + r * 50 + 25)
 def tap_digit(d): tap(17 + (d - 1) * 50 + 23, 572 + 28)
 def tap_act(k): tap(15 + k * 115 + 52, 644 + 28)   # 0 erase, 1 check, 2 next, 3 bank
@@ -163,12 +168,13 @@ for i, d in enumerate(solution):
     if givens[i] == '0':
         tap_cell(i); tap_digit(int(d))
 S = api.state(); assert S['solved'] is True and S['cells'] == solution
-rt.execute('texts = {}'); rt.eval('on_draw')(); assert any('Solved' in t for t in texts())
+rt.execute('texts = {}'); rt.eval('on_draw')(rt.eval('ctx'), rt.eval('g')); assert any('Solved' in t for t in texts())
 gi = next(i for i, c in enumerate(givens) if c != '0'); tap_cell(gi); tap_digit(5)
 assert api.state()['cells'] == solution
 print('solve through taps OK (wrong digit marked, erase, solved message, givens locked)')
 
-rt.execute('cmds = 0'); rt.eval('on_draw')(); n = rt.eval('cmds')
+rt.execute('cmds = 0; fills = 0'); rt.eval('on_draw')(rt.eval('ctx'), rt.eval('g')); n = rt.eval('cmds')
+assert rt.eval('fills') >= 40     # grid lines are solid bars: 2 px, boxes 4 px
 print('draw commands (full board, check on):', n); assert n < 1024
 
 # toggle / next / bank / side buttons
@@ -196,7 +202,22 @@ print('state resume + garbage OK')
 rt2, api2 = make_rt(with_data=False)
 rt2.eval('on_load')(rt2.eval('ctx')); S2 = api2.state()
 assert api2.data_ok() is False and S2['bank'] == 'builtin' and S2['givens'] == api2.builtin()[1]
-rt2.execute('texts = {}'); rt2.eval('on_draw')()
+rt2.execute('texts = {}'); rt2.eval('on_draw')(rt2.eval('ctx'), rt2.eval('g'))
 assert any('built-in bank' in t for t in rt2.eval('texts').values())
 print('fallback without data section OK')
+
+# progress: state.txt is written on every move and read first; a 0.8 install's ctx.state still resumes
+tap_act(2); idx_before, bank_before = api.state()['idx'], api.state()['bank']
+tap_cell(80); cells_now = api.state()['cells']
+saved = rt.eval('store')['state.txt']
+assert f'idx={idx_before}' in saved and f'bank={bank_before}' in saved and f'cells={cells_now}' in saved, saved
+rt3, api3 = make_rt()
+rt3.eval('store')['state.txt'] = saved
+rt3.eval('on_load')(rt3.eval('ctx'))
+assert api3.state()['bank'] == bank_before and api3.state()['idx'] == idx_before and api3.state()['sel'] == 81
+rt4, api4 = make_rt()
+rt4.eval('ctx').state = rt4.table_from({'bank': 'easy.txt', 'idx': 42, 'givens': givens, 'cells': givens, 'check': True})
+rt4.eval('on_load')(rt4.eval('ctx'))
+assert api4.state()['bank'] == 'easy.txt' and api4.state()['idx'] == 42
+print('progress in state.txt and from ctx.state OK')
 print('ALL SUDOKU TESTS PASSED')

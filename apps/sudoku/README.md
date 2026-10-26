@@ -1,8 +1,11 @@
 # Sudoku — XTOS Licorice mini app
 
-A port of CPR-vCodex's Sudoku to the stock firmware's Lua mini-app host (API 0.8). Same rules:
-givens are fixed, "solved" is a full grid with no repeated digit in any row, column or 3x3 box,
-optional marking of the cells that currently break a rule.
+A port of CPR-vCodex's Sudoku to the stock firmware's Lua mini-app host (API 2.9; API 0.8 before
+v0.9.0). Same rules: givens are fixed, "solved" is a full grid with no repeated digit in any row,
+column or 3x3 box, optional marking of the cells that currently break a rule. Digits use the
+large system font and the grid solid 2 px / 4 px lines, so it reads on panels that show thin
+strokes faintly. Progress is kept in `state.txt` (and the host's `ctx.state`, which is all the
+API 0.8 version used, so an update keeps the puzzle you were on).
 
 ## Puzzle banks: data files inside the package
 

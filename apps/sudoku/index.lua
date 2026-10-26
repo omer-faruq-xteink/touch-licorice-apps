@@ -1,4 +1,4 @@
--- Sudoku for XTOS Licorice mini apps (Lua API 0.8, 480 x 800 portrait, 1 bpp).
+-- Sudoku for XTOS Licorice mini apps (Lua API 2.9, 480 x 800 portrait, 1 bpp).
 --
 -- Rules as in CPR-vCodex's Sudoku: a 9x9 grid, givens are fixed, "solved" means every cell is filled
 -- and no digit repeats in a row, column or 3x3 box (the banks have unique solutions, so that is the
@@ -12,7 +12,11 @@
 -- the small bank embedded below.
 --
 -- Controls: tap a cell, then a digit on the pad; Erase clears; Chk toggles mistake marking; Next /
--- Bank move on; the side buttons go to the previous / next puzzle. Progress lives in ctx.state.
+-- Bank move on; the side buttons go to the previous / next puzzle. Progress lives in ctx.state and
+-- in state.txt (storage), so it survives the move from API 0.8, which kept only ctx.state.
+--
+-- Drawn for panels that show thin strokes faintly: digits in the large system font, cell lines
+-- 2 px, box lines 4 px, the selected cell framed 3 px.
 
 local CELL = 50
 local GX, GY = 15, 96                       -- grid origin; 9 * 50 = 450 wide, ends at y 546
@@ -69,8 +73,6 @@ local S                 -- ctx.state: bank, idx, givens, cells, sel, check, solv
 local BANKS = {}        -- { {name=, label=, count=, stride=, file=} ... }, built-in last
 local msg = nil
 local data_ok = false   -- the data section answered
-local entries_since_full = 0
-local FULL_EVERY = 8    -- e-ink: full refresh this often to clear ghosting
 
 ------------------------------------------------------------------ puzzle text
 
@@ -95,8 +97,11 @@ end
 
 ------------------------------------------------------------------ banks (data section + built-in)
 
+-- API 2.9 calls the data section ctx.package (API 0.8: ctx.data)
 local function open_text(name)
-  local ok, r, err = pcall(function() return ctx.data:open_text(name) end)
+  local D = ctx.package or ctx.data
+  if not D then return nil, 'no data section' end
+  local ok, r, err = pcall(function() return D:open_text(name) end)
   if ok and r ~= nil and type(r) ~= 'string' then return r end
   return nil, (ok and err) or r
 end
@@ -132,10 +137,12 @@ local function read_puzzle(bank, idx)
   if not r then return nil end
   local line
   local ok = pcall(function()
-    if bank.stride and bank.stride > 0 and idx > 1 then
-      if not r:seek((idx - 1) * bank.stride) then error('seek') end
+    if bank.stride and bank.stride > 0 and idx > 1 and r.seek and r:seek((idx - 1) * bank.stride) then
       line = r:read_line()
     else
+      -- no seek on this reader: read up to the line
+      pcall(function() r:close() end)
+      r = open_text(bank.file)
       for _ = 1, idx do line = r:read_line() end
     end
   end)
@@ -219,11 +226,6 @@ local function set_cell(i, d)
   if S.givens:sub(i, i) ~= '0' then msg = 'that cell is a given'; return end
   S.cells = S.cells:sub(1, i - 1) .. d .. S.cells:sub(i + 1)
   msg = nil
-  entries_since_full = entries_since_full + 1
-  if entries_since_full >= FULL_EVERY then
-    entries_since_full = 0
-    pcall(function() ctx.display:full_refresh() end)
-  end
   if is_solved(S.cells) then S.solved = true; msg = 'Solved!  Next for another' end
 end
 
@@ -240,25 +242,58 @@ local function next_bank()
   msg = nil
 end
 
+------------------------------------------------------------------ storage
+
+-- ctx.state is the host's, and was all API 0.8 had; state.txt in the app's storage is read first
+local function save_state()
+  pcall(function()
+    ctx.storage:write('state.txt', 'bank=' .. S.bank .. '\nidx=' .. S.idx .. '\ngivens=' .. S.givens ..
+      '\ncells=' .. S.cells .. '\nsel=' .. (S.sel or 0) .. '\ncheck=' .. tostring(S.check))
+  end)
+end
+
+local function read_saved()
+  local ok, s = pcall(function() return ctx.storage:read('state.txt') end)
+  if not ok or type(s) ~= 'string' then return nil end
+  local t = {}
+  for k, v in s:gmatch('([%w_]+)=([^\n]*)') do t[k] = v end
+  if not t.givens then return nil end
+  return { bank = t.bank, idx = math.tointeger(tonumber(t.idx)), givens = t.givens, cells = t.cells,
+           sel = math.tointeger(tonumber(t.sel)), check = t.check ~= 'false' }
+end
+
 ------------------------------------------------------------------ drawing
 
-local function text_w(s)
-  local ok, w = pcall(function() return g:measure_text(s) end)
+local G                 -- the graphics of the running on_draw
+
+local function font(name) return ctx.fonts and ctx.fonts[name] end
+local function line_h(name)
+  local ok, h = pcall(function() return font(name).line_height end)
+  return (ok and tonumber(h)) or (name == 'large' and 30 or name == 'small' and 20 or 24)
+end
+local function text_w(s, f)
+  local ok, w = pcall(function() return f:measure(s) end)
   if ok and type(w) == 'number' and w > 0 then return w end
   return 13 * #s
 end
-local function ctext(cx, cy, s) g:text(cx - text_w(s) // 2, cy - 12, s) end
-local function rtext(right, y, s) g:text(right - text_w(s), y, s) end
+local function ctext(cx, cy, s, name)
+  name = name or 'medium'
+  local f = font(name)
+  G:text(cx - text_w(s, f) // 2, cy - line_h(name) // 2, s, { font = f })
+end
+local function rtext(right, y, s, name)
+  local f = font(name or 'medium')
+  G:text(right - text_w(s, f), y, s, { font = f })
+end
+local function bar(x, y, w, h) G:rect(x, y, w, h, { fill = true }) end
 
 local function draw_grid()
-  local x1, y1 = GX + 9 * CELL, GY + 9 * CELL
   for k = 0, 9 do
-    local x, y = GX + k * CELL, GY + k * CELL
+    local v = k * CELL
     if k % 3 == 0 then
-      g:line(x, GY, x, y1); g:line(x + 1, GY, x + 1, y1)          -- 2 px box lines: visible, light on e-ink
-      g:line(GX, y, x1, y); g:line(GX, y + 1, x1, y + 1)
+      bar(GX + v - 2, GY - 2, 4, 9 * CELL + 4); bar(GX - 2, GY + v - 2, 9 * CELL + 4, 4)
     else
-      g:line(x, GY, x, y1); g:line(GX, y, x1, y)
+      bar(GX + v - 1, GY, 2, 9 * CELL); bar(GX, GY + v - 1, 9 * CELL, 2)
     end
   end
   local bad = S.check and conflicts(S.cells) or {}
@@ -267,11 +302,13 @@ local function draw_grid()
       local i = cell_index(r, c)
       local x, y = GX + c * CELL, GY + r * CELL
       local d = S.cells:sub(i, i)
-      if i == S.sel then g:rect(x + 3, y + 3, CELL - 6, CELL - 6); g:rect(x + 5, y + 5, CELL - 10, CELL - 10) end
+      if i == S.sel then G:rect(x + 4, y + 4, CELL - 8, CELL - 8, { line_width = 3 }) end
       if d ~= '0' then
-        ctext(x + CELL // 2, y + CELL // 2, d)
-        if S.givens:sub(i, i) == '0' then g:line(x + 18, y + 40, x + 32, y + 40) end   -- entered, not given
-        if bad[i] then g:line(x + 38, y + 6, x + 46, y + 14); g:line(x + 46, y + 6, x + 38, y + 14) end
+        ctext(x + CELL // 2, y + CELL // 2, d, 'large')
+        if S.givens:sub(i, i) == '0' then bar(x + 17, y + 41, 16, 2) end      -- entered, not given
+        if bad[i] then
+          for o = 0, 2 do G:line(x + 34 + o, y + 5, x + 45 + o, y + 16); G:line(x + 45 + o, y + 5, x + 34 + o, y + 16) end
+        end
       end
     end
   end
@@ -284,27 +321,29 @@ local function act_label(id)
   return 'Bank'
 end
 
-function on_draw()
-  g:clear(0)
+function on_draw(c, gg)
+  G = gg or rawget(_G, 'g')
+  if not G then return end
+  G:clear(0)
   local bank = bank_by_name(S.bank)
-  g:text(GX, 30, 'Sudoku')
-  rtext(480 - GX, 30, bank.label .. '  ' .. S.idx .. '/' .. bank.count)
-  g:line(GX, 70, 480 - GX, 70)
+  G:text(GX, 18, 'Sudoku', { font = font('large') })
+  rtext(480 - GX, 24, bank.label .. '  ' .. S.idx .. '/' .. bank.count)
+  bar(GX, 70, 480 - 2 * GX, 2)
   draw_grid()
   for d = 1, 9 do
     local x = PAD_X + (d - 1) * (PAD_W + PAD_GAP)
-    g:rect(x, PAD_Y, PAD_W, PAD_H)
-    ctext(x + PAD_W // 2, PAD_Y + PAD_H // 2, tostring(d))
+    G:rect(x, PAD_Y, PAD_W, PAD_H, { line_width = 2 })
+    ctext(x + PAD_W // 2, PAD_Y + PAD_H // 2, tostring(d), 'large')
   end
   for k, id in ipairs(ACTS) do
     local x = ACT_X + (k - 1) * (ACT_W + ACT_GAP)
-    g:rect(x, ACT_Y, ACT_W, ACT_H)
+    G:rect(x, ACT_Y, ACT_W, ACT_H, { line_width = 2 })
     ctext(x + ACT_W // 2, ACT_Y + ACT_H // 2, act_label(id))
   end
   if msg then ctext(240, 730, msg)
   elseif not data_ok then ctext(240, 730, 'built-in bank (no data section)') end
-  g:line(GX, 752, 480 - GX, 752)
-  ctext(240, 776, 'tap a cell, then a digit')
+  bar(GX, 752, 480 - 2 * GX, 2)
+  ctext(240, 776, 'tap a cell, then a digit', 'small')
 end
 
 ------------------------------------------------------------------ input and lifecycle
@@ -333,29 +372,44 @@ local function tap(x, y)
   end
 end
 
+-- side buttons send more than one event per press: keep the press, once
+local last_key, last_key_ms = nil, nil
+local function key_accepted(ev)
+  local ph = ev.phase or ev.action or ev.state
+  if ph == 'up' or ph == 'release' or ph == 'released' or ev.pressed == false or ev.down == false then return false end
+  local okm, now = pcall(function() return ctx.clock:millis() end)
+  local t = tonumber(ev.time_ms) or (okm and tonumber(now)) or nil
+  if t and last_key == ev.key and last_key_ms and t - last_key_ms >= 0 and t - last_key_ms < 250 then return false end
+  last_key, last_key_ms = ev.key, t
+  return true
+end
+
 function on_input(_, ev)
   if type(ev) ~= 'table' then return false end
   if ev.type == 'key' then
-    if ev.state ~= nil and ev.state ~= 'down' then return true end
-    if ev.key == 'up' then step_puzzle(-1) elseif ev.key == 'down' then step_puzzle(1) end
-    pcall(ctx.invalidate)
+    if not key_accepted(ev) then return true end
+    if ev.key == 'up' or ev.key == 'left' then step_puzzle(-1) elseif ev.key == 'down' or ev.key == 'right' then step_puzzle(1) end
+  elseif (ev.type == 'pointer' and ev.phase == 'up' and (ev.gesture == nil or ev.gesture == 'tap'))
+      or (ev.type == 'touch' and ev.gesture == 'tap') then
+    tap(ev.x or 0, ev.y or 0)
+  else
     return true
   end
-  if ev.type == 'touch' then
-    if ev.gesture == 'tap' then tap(ev.x or 0, ev.y or 0); pcall(ctx.invalidate) end
-    return true
-  end
-  return false
+  save_state()
+  pcall(function() ctx.invalidate() end)
+  return true
 end
 
 function on_load(c)
   c = c or ctx
   if type(c.state) ~= 'table' then c.state = {} end
   load_banks()
+  local saved = read_saved()
+  if saved then for k, v in pairs(saved) do c.state[k] = v end end
   adopt_state(c.state)
 end
 
-function on_leave() end     -- the host saves ctx.state itself
+function on_leave() save_state() end
 
 if rawget(_G, '__TEST') then
   __TEST.api = { parse_line = parse_line, conflicts = conflicts, is_solved = is_solved, load_banks = load_banks,

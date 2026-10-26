@@ -10,6 +10,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   deck converts on a computer with `apkg2cards.py` (included) into small text files for
   `XTApps/anki/files/`; pictures and sounds are dropped, so even 200 MB decks shrink to a few
   hundred kilobytes, and `--update` keeps your progress when a deck changes.
+- **Sudoku** moves to the newer API 2.9: digits in the bold large system font, solid grid lines
+  (2 px, boxes 4 px) and a thick frame on the selected cell, for panels that show thin strokes
+  faintly. Your puzzle and progress carry over.
 
 ## Update
 
@@ -21,6 +24,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `anki.xtapp`, `apkg2cards.py` | **new**: the app and its deck converter (Python 3) |
+| `sudoku.xtapp` | **updated**: API 2.9, bold digits, heavier lines |
 | all other `.xtapp` packages | unchanged since v0.8.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
