@@ -741,12 +741,12 @@ end
 
 local function draw_list(gg)
   local F = ctx.fonts
+  if preview then draw_preview(gg); draw_status(gg); return end   -- the box alone, nothing above it
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
   local who = (multi() and acct) and (acct_label() .. ' · ') or ''
   gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
-  if preview then draw_preview(gg); draw_status(gg); return end
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
@@ -926,11 +926,15 @@ local function row_item(y)
   return nil
 end
 
--- full title, feed and date, and the feed's summary in a box over the list, with Open / Close.
--- The box never reaches the bottom of the screen, so there is always room to tap outside it.
+-- full title, feed and date, and the feed's summary in a box over the list, with Prev / Open /
+-- Close / Next. The box always has the same size, from near the top to 64 px above the bottom
+-- (room to tap outside it); the list's bar and header are hidden meanwhile. A longer summary is
+-- cut with an ellipsis.
+local PREVIEW_Y, PREVIEW_BOTTOM = 16, H - 64   -- fixed box: the list's bar and header are hidden
+
 local function open_preview(item)
   measure_cache = {}
-  local x, y, w = 16, TOP + 26, W - 32
+  local x, y, w = 16, PREVIEW_Y, W - 32
   local inner = w - 32
   local lines = {}
   local S = st()
@@ -941,7 +945,9 @@ local function open_preview(item)
   local ex = item.excerpt or ''
   if ex ~= '' then wrap_para(lines, ex, S.body, inner, 0) else wrap_para(lines, '(no summary in the feed)', 'small', inner, 0) end
   local btn_h, pad = 44, 16
-  local max_content = (H - 60) - y - pad - pad - btn_h - pad
+  -- one size for every article: as tall as the screen allows, with room below it to tap outside
+  local h = PREVIEW_BOTTOM - y
+  local max_content = h - pad - pad - btn_h - pad
   local kept, used = {}, 0
   for _, ln in ipairs(lines) do
     if used + ln.h > max_content then
@@ -952,7 +958,6 @@ local function open_preview(item)
     kept[#kept + 1] = ln
     used = used + ln.h
   end
-  local h = pad + used + pad + btn_h + pad
   local bw = math.floor((w - 5 * pad) / 4)
   local by = y + h - pad - btn_h
   local function btn(n, label) return { x = x + pad + (n - 1) * (bw + pad), y = by, w = bw, h = btn_h, label = label } end

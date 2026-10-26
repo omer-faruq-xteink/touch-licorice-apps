@@ -15,6 +15,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   held 320 puzzles rated 7.0 to 9.1 that need dynamic forcing chains, which come down to trial and
   error; they are replaced by puzzles from the same public-domain source rated 5.0 to 6.9.
   Diabolical still needs chains, but no guessing.
+- **RSS: a steady preview box.** The long-press preview no longer grows and shrinks with the summary:
+  it always has the same, tallest size, and the list's buttons and header are hidden while it is open.
 
 ## Update
 
@@ -27,6 +29,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `suguru.xtapp` | **new** |
 | `sudoku.xtapp` | **changed**: diabolical bank |
+| `rss.xtapp` | **changed**: preview box |
 | all other `.xtapp` packages | unchanged since v0.6.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 

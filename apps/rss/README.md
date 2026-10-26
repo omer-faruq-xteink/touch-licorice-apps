@@ -37,7 +37,8 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   loaded article fetches the next twelve and appends them, so the list simply continues.
   **Reload** starts over at the newest. Up to 240 rows are kept.
 - **Long-press** an article for a preview: the whole title, feed and date, and the feed's summary
-  (up to 400 characters, from the Worker's list). **Prev / Next** in the box, the side buttons or
+  (up to 400 characters, from the Worker's list), in a box of one fixed size that takes the screen
+  (the list's buttons are hidden meanwhile). **Prev / Next** in the box, the side buttons or
   a swipe move to the previous / next article's preview; Next on the last loaded article loads the
   next page and shows its first article. **Open** reads it, and Back from that article returns to
   the preview (an article opened straight from the list returns to the list); **Close**, a tap outside the box or

@@ -128,6 +128,8 @@ assert len(requests) == n_req, 'a long press must not fetch the article'
 assert 'Open' in r and 'Close' in r and 'Article 0' not in r, list(r)
 assert 'more words' in r and any(s.startswith('Summary sentence.') for s in r), list(r)
 assert r['Open'][1] < 740, r['Open']                                                  # room left below the box
+assert 'Back' not in r and 'Reload' not in r and not any(k.startswith('Unread  ') for k in r), list(r)  # bar hidden
+open_y = r['Open'][1]                                                                  # the box's size is fixed
 tap_label('Close')
 assert 'Article 0' in texts() and 'Open' not in texts()
 long_ev(100, row_y(2), 'up', 'long')                                                  # release-only variant
@@ -136,7 +138,7 @@ tap(240, 790)                                                                   
 assert 'Article 0' in texts()
 long_ev(100, row_y(4), 'up', 'long')                                                  # very long summary: cut with "…"
 t = texts()
-assert any(s.endswith(' …') for s in t) and recs()['Open'][1] < 740, t
+assert any(s.endswith(' …') for s in t) and recs()['Open'][1] == open_y, t
 key('back')
 assert 'Article 0' in texts()
 long_ev(100, row_y(2), 'up', 'long')
@@ -202,7 +204,7 @@ tap_label('Close')
 assert 'Article 0' in texts() and header() == 'Unread  1-12 / 12+'
 long_ev(100, row_y(0), 'up', 'long')                  # first article: no Prev button, Prev does nothing
 t = texts()
-assert t.count('Prev') == 1 and t.count('Next') == 2, t   # top bar has Prev / Next; the box only Next
+assert t.count('Prev') == 0 and t.count('Next') == 1, t   # the bar is hidden; the box has only Next
 kev('left', 12000)
 assert 'Article 0' in texts() and 'Close' in texts()
 key('back')
@@ -211,7 +213,7 @@ assert 'Close' not in texts()
 # Next on the last loaded article loads the next page and shows its first article
 n_req = len(requests)
 long_ev(100, row_y(11), 'up', 'long')
-assert texts().count('Next') == 2 and texts().count('Prev') == 2      # more on the server: Next offered
+assert texts().count('Next') == 1 and texts().count('Prev') == 1      # more on the server: Next offered
 tap_label('Next')
 assert len(requests) == n_req + 1 and requests[-1].endswith('kind=unread&page=2&n=12'), requests[-1]
 assert 'Article 11' in texts()                        # still the same article until the page arrives
