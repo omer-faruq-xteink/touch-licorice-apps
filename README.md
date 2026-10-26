@@ -8,6 +8,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 |---|---|
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
+| **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 generated puzzles from 5x5 to 8x8 |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
@@ -64,6 +65,14 @@ Tap a cell, then a digit on the pad. **Erase** clears, **Chk on/off** marks the 
 rule, **Next** and **Bank** move through 600 puzzles each of easy, medium, hard and diabolical. Side
 buttons go to the previous / next puzzle. Puzzle banks are plain text files inside the package;
 adding your own is one command. [More](apps/sudoku/README.md)
+
+### Suguru
+
+Also called Tectonic. Regions of one to five cells (thick borders) each hold 1 to n; touching
+cells, diagonals included, never hold the same number. Tap a cell, then a number; **Erase**, **Chk**,
+**Next** and **Bank** work as in Sudoku. 200 generated puzzles each of 5x5 easy, 6x6 medium, 7x7 hard
+and 8x8 expert, every one with a single solution. Drawn with heavy lines and bold digits for faint
+panels. [More](apps/suguru/README.md)
 
 ### Sokoban
 
@@ -144,6 +153,7 @@ firmware's file reader written from the firmware's own code:
 python -I apps/game2048/test_2048.py
 python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
+python -I apps/suguru/test_suguru.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

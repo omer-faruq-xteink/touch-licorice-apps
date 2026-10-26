@@ -1,3 +1,30 @@
+# v0.7.0
+
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301** and **26102401**).
+
+## Changed
+
+- **New: Suguru** (also called Tectonic). Regions of one to five cells each hold 1 to n, and
+  touching cells, diagonals included, never hold the same number. 200 puzzles each of 5x5 easy,
+  6x6 medium, 7x7 hard and 8x8 expert, generated for this app, every one with a single solution;
+  mistake marking, progress kept. Drawn with heavy region borders and bold digits so the grid
+  stays readable on panels that show thin lines faintly.
+
+## Update
+
+Install the changed packages **over** the installed apps (SD card root → All Files → Install).
+Do not uninstall first: that deletes the app's folder (settings, pages, dictionaries).
+
+## Files
+
+| file | content |
+|---|---|
+| `suguru.xtapp` | **new** |
+| all other `.xtapp` packages | unchanged since v0.6.0 |
+| `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.6.0
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, build **26102301**).
