@@ -91,7 +91,9 @@ g.store['game4.txt'] = 'grid=1,2,3,4;5,6,7,8;9,10,11,12;13,14,0,15\nmoves=5\nela
 g = start()
 draw()
 tile = 456 // 4
-inner = [w for w in L.eval('rects').values() if w == tile - 18]
+inset = max(10, tile // 6)                                                 # well inside the border
+assert inset >= 19
+inner = [w for w in L.eval('rects').values() if w == tile - 2 * inset]
 assert len(inner) == 14, len(inner)                                        # 1..14 are home, 15 is not
 assert int(L.eval('fills')) == 0 and not any(v.white for v in draw().values())
 # a tile not next to the gap does not move

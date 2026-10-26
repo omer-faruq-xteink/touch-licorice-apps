@@ -314,8 +314,10 @@ local function draw_board(gg)
         gg:rect(x + 3, y + 3, tile - 6, tile - 6, { line_width = 3 })
         if home then
           -- in its final place: a second frame inside (the plugin inverts the tile, but a black
-          -- tile ghosts on e-ink and this host ignores a white text colour)
-          gg:rect(x + 9, y + 9, tile - 18, tile - 18, { line_width = 2 })
+          -- tile ghosts on e-ink and this host ignores a white text colour). A sixth of the tile in
+          -- from the edge, so it stands apart from the border; it still clears the number on 7x7.
+          local inset = math.max(10, tile // 6)
+          gg:rect(x + inset, y + inset, tile - 2 * inset, tile - 2 * inset, { line_width = 3 })
         end
         local s = tostring(v)
         local tx = x + math.floor((tile - width(f, s)) / 2)
