@@ -33,7 +33,9 @@ PICS = ('<p>Before the pictures.</p>'
         '<img src="https://t.example.com/p.gif" width="1" height="1">'
         '<p>Between.</p><figure><img src="img/rel.jpg"></figure><p>After.</p>')
 pages = {
-    'section=home&limit=12&offset=0': {'bookmarks': [bm(i, progress={'percentage': 0.4 if i == 1 else 0}) for i in range(12)], 'total': 20},
+    'section=home&limit=12&offset=0': {'bookmarks': [bm(i, progress={'percentage': 0.4 if i == 1 else 0},
+                                                       **({'description': 'Long description. ' * 120} if i == 7 else {}))
+                                                    for i in range(12)], 'total': 20},
     'section=home&limit=12&offset=12': {'bookmarks': [bm(i) for i in range(12, 20)], 'total': 20},
     'section=folder&limit=12&offset=0&folder_id=77': {'bookmarks': [bm(50, title='In a folder')], 'total': 1},
 }
@@ -148,6 +150,12 @@ tap(*BAR(1))                                             # back to the first scr
 long_press(100, row_y(2))
 t = texts()
 assert 'Description of story 2.' in t and 'Archive' in t and 'Open' in t and 'Close' not in t, t
+assert 'Back' not in t and 'Reload' not in t and not any(x.startswith('Unread  ') for x in t), t   # bar hidden
+open_y = recs()['Open'][1]
+key('back')
+long_press(100, row_y(7))                                 # a very long description: same box, cut with "…"
+t = texts()
+assert recs()['Open'][1] == open_y and any(x.endswith(' …') for x in t), t
 key('back')
 assert 'Story 0' in texts()
 

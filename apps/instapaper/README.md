@@ -24,7 +24,8 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
 - Lists show twelve articles per screen: title, then site, the day it was saved, how far you read
   (`40%`) and `*` for starred. **Prev / Next**, the side buttons or a swipe page through them;
   Next past the last one loads the next twelve. **Reload** starts over.
-- **Long-press** an article for a preview with the saved description: **Prev / Next** step through
+- **Long-press** an article for a preview with the saved description, in a box of one fixed size
+  that takes the screen (the list's buttons are hidden meanwhile): **Prev / Next** step through
   the list, **Open** reads it, **Archive** archives it and moves on to the next one. A tap outside
   the box or Back closes it.
 - Articles are laid out with the system fonts (headings, quotes, lists) and open **where you left
