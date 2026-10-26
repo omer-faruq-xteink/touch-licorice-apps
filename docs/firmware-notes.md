@@ -328,3 +328,21 @@ real list).
   lets it go when the app is left.
 - With Wi-Fi on in the settings none of this applies: Wi-Fi is already up.
 
+
+## App icons in the Ink App grid (2026-10-26, build 26102401)
+
+The grid reads a package's **icons section** (header offset 0x30, never encrypted, no HMAC) and
+needs no feature bit or manifest key. `xtpack.py` packs `APP_DIR/icon.png` into it.
+
+- **XTAB table:** 64-byte header: `XTAB`, u16 version 1 at 4, u32 count at 8 (≤ 8 for icons),
+  u32 64 at 12, u32 data start = 64 + 40·count at 16, u32 section length at 20. Then 40-byte
+  entries: name[24], u32 offset from the data start, u32 length, u16 width, u16 height, u8 format.
+  The reader (around 0x4213a194) takes the entry named exactly `app_icon_s`, else `app_icon_l`.
+- **Image (decoder 0x42137330, validator 0x42136918):** a 24-byte header: `XIC\0`, u16 width at 4,
+  u16 height at 6, u8 1 at 8, u8 format at 9, u8 planes at 10, u8 0 at 11, u8 alpha kind at 14,
+  u8 alpha flag at 15, u32 pixel-data size at 16, which must match exactly. Formats are 1 = 1 bpp
+  (planes 1, ceil(w/8)·h bytes), 4 = 2 bpp as two 1-bit planes, and 16 = 4 bpp packed
+  (ceil(w/2)·h). Alpha kinds 1–3 add a 1-bit, 4-bit or 8-bit mask.
+- **Tested on the device (1 bpp, rows MSB first):** a **set bit is drawn black**. The icon is
+  **scaled to the slot** (64×64 and 96×96 showed at the same size) and clipped to its rounded
+  corners.

@@ -8,7 +8,8 @@ code section. If APP_DIR/data/ exists, its *.txt / *.tsv / *.csv files go into t
 section, readable on the device through ctx.data (open_text / read_text / size / exists); a
 generated banks.tsv lists them ("name<TAB>line count<TAB>stride<TAB>label"). A RECORD file (nearly
 every line the same length, e.g. a puzzle bank) is reduced to those lines so an app can seek to
-record N at N * stride; any other file is kept line for line with stride 0.
+record N at N * stride; any other file is kept line for line with stride 0. An APP_DIR/icon.png
+becomes the app's icon in the Ink App grid (1 bpp, dark pixels black, scaled to the slot).
 
 The package is encrypted for the device key that XTOS Licorice carries. That key is a constant in
 the firmware, identical on every unit, so its PUBLIC half is embedded here (DEVICE_PUBKEY_HEX) and
@@ -100,6 +101,62 @@ def read_xtdt(blob):
     return out
 
 
+XTAB_MAGIC = b'XTAB'
+XTAB_HEAD, XTAB_ENTRY, XTAB_NAME, XTAB_MAX_ICONS = 64, 40, 24, 8
+XIC_MAGIC = b'XIC\0'
+# A set bit is drawn black (device, 26102401); the grid scales the icon to its slot.
+ICON_INK_BIT = 1
+
+
+def build_xic_1bpp(img, ink_bit=ICON_INK_BIT):
+    """A Pillow image as the firmware's 1-bpp image: a 24-byte XIC header (u16 width at 4, height
+    at 6, version 1 at 8, format 1 = 1 bpp at 9, planes 1 at 10, no alpha at 14/15, u32 size at 16)
+    and rows of ceil(w/8) bytes, most significant bit first; dark pixels get ink_bit."""
+    img = img.convert('L')
+    w, h = img.size
+    stride = (w + 7) // 8
+    px = img.load()
+    rows = bytearray(stride * h)
+    for y in range(h):
+        for x in range(w):
+            if (px[x, y] < 128) == bool(ink_bit):
+                rows[y * stride + x // 8] |= 0x80 >> (x % 8)
+    head = bytearray(24)
+    head[0:4] = XIC_MAGIC
+    struct.pack_into('<HHBBB', head, 4, w, h, 1, 1, 1)
+    struct.pack_into('<I', head, 16, len(rows))
+    return bytes(head) + bytes(rows)
+
+
+def build_xtab(entries):
+    """The icons section: a 64-byte XTAB header (version 1 at 4, count at 8, 64 at 12, data start at
+    16, section length at 20), 40-byte entries (name[24], offset from the data start, length, u16 w,
+    u16 h, u8 format) and the blobs. The Ink App grid looks up "app_icon_s", then "app_icon_l"."""
+    if not 1 <= len(entries) <= XTAB_MAX_ICONS:
+        raise SystemExit(f'the icons section holds 1..{XTAB_MAX_ICONS} entries, got {len(entries)}')
+    start = XTAB_HEAD + XTAB_ENTRY * len(entries)
+    table, blobs = b'', b''
+    for name, blob in entries:
+        w, h, fmt = struct.unpack_from('<HH', blob, 4) + (blob[9],)
+        table += name.encode('ascii').ljust(XTAB_NAME, b'\0') + struct.pack('<IIHHB', len(blobs), len(blob), w, h, fmt) + bytes(3)
+        blobs += blob
+    head = bytearray(XTAB_HEAD)
+    head[0:4] = XTAB_MAGIC
+    struct.pack_into('<HHIIII', head, 4, 1, 0, len(entries), XTAB_HEAD, start, start + len(blobs))
+    return bytes(head) + table + blobs
+
+
+def collect_icons(app_dir):
+    """APP_DIR/icon.png as the grid icon (app_icon_s); None when there is none."""
+    path = os.path.join(app_dir, 'icon.png')
+    if not os.path.isfile(path):
+        return None
+    from PIL import Image
+    img = Image.open(path)
+    print(f'  icon.png: {img.size[0]}x{img.size[1]}, 1 bpp')
+    return build_xtab([('app_icon_s', build_xic_1bpp(img))])
+
+
 def collect_data_files(app_dir):
     """Normalised data files from APP_DIR/data plus the generated banks.tsv; [] when there is none."""
     ddir = os.path.join(app_dir, 'data')
@@ -134,7 +191,7 @@ def collect_data_files(app_dir):
     return files
 
 
-def build_container(manifest_obj, pubkey, code_files, data_files):
+def build_container(manifest_obj, pubkey, code_files, data_files, icons=None):
     obj = collections.OrderedDict(manifest_obj)
     dek, E, wrapped = xtapp.licorice_wrap_dek(pubkey)
     obj['dek_wrap_alg'] = xtapp.LICORICE_ALG
@@ -163,6 +220,10 @@ def build_container(manifest_obj, pubkey, code_files, data_files):
     code_off = H + len(blob) + (-(H + len(blob)) % 16)
     data_off = code_off + len(code) + (-(code_off + len(code)) % 16) if data else 0
     total = (data_off + len(data)) if data else (code_off + len(code))
+    # the icons section is read in the clear (no DEK, no HMAC), so it can follow everything else
+    icons_off = total + (-total % 16) if icons else 0
+    if icons:
+        total = icons_off + len(icons)
     head = bytearray(H)
     head[0:4] = xtapp.MAGIC
     struct.pack_into('<HH', head, 4, xtapp.VERSION, H)
@@ -172,9 +233,13 @@ def build_container(manifest_obj, pubkey, code_files, data_files):
     struct.pack_into('<II', head, 0x18, code_off, len(code))
     if data:
         struct.pack_into('<II', head, 0x38, data_off, len(data))
+    if icons:
+        struct.pack_into('<II', head, 0x30, icons_off, len(icons))
     out = bytes(head) + blob + bytes(code_off - H - len(blob)) + code
     if data:
         out += bytes(data_off - len(out)) + data
+    if icons:
+        out += bytes(icons_off - len(out)) + icons
     return out, dek
 
 
@@ -225,7 +290,8 @@ def pack(app_dir, out=None, image=None):
         raise SystemExit(f'lockscreen entry {lock.get("entry")!r} not found in {app_dir}')
     data_files = collect_data_files(app_dir)
     out = out or os.path.join(app_dir, man['app_id'] + '.xtapp')
-    pkg, _ = build_container(man, device_pubkey(image), code_files, data_files)
+    icons = collect_icons(app_dir)
+    pkg, _ = build_container(man, device_pubkey(image), code_files, data_files, icons)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, 'wb') as f:
         f.write(pkg)
