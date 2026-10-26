@@ -21,6 +21,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
+| **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
@@ -160,6 +161,14 @@ where you left off (the progress Instapaper keeps, also from KOReader or the web
 back when you leave; **Archive** and **Star** from the preview or the article's end. No Worker: the
 app talks to Instapaper directly with a personal access token. [More](apps/instapaper/README.md)
 
+### Anki
+
+Flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled like the KOReader Anki
+Viewer). Ships with 1438 English words (B2-C1) with example sentences; add and delete your own
+cards on the reader. Any Anki deck (`.apkg`, e.g. from [AnkiWeb's shared decks](https://ankiweb.net/shared/decks))
+converts on a computer with `apps/anki/apkg2cards.py` into small text files for
+`XTApps/anki/files/`: only the text is kept, so even large decks fit. [More](apps/anki/README.md)
+
 ### Dictionary
 
 Type with the firmware keyboard, pick a suggestion, read the entry; several dictionaries side by
@@ -211,6 +220,7 @@ python -I apps/nonogram/test_nonogram.py
 python -I apps/knightstour/test_knightstour.py
 python -I apps/minesweeper/test_minesweeper.py
 python -I apps/mahjong/test_mahjong.py
+python -I apps/anki/test_anki.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

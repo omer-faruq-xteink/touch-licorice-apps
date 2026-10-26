@@ -241,11 +241,19 @@ def mahjong(p):
     p.rect((35, 28, 41, 80), fill=True)
 
 
+def anki(p):
+    # two flash cards: one behind, the front one with a question mark
+    p.rect((30, 10, 86, 64), w=4, r=6)
+    p.white_rect((10, 30, 66, 86))
+    p.rect((10, 30, 66, 86), w=5, r=6)
+    p.text((38, 59), '?', font('arialbd.ttf', 36))
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
-         'minesweeper': minesweeper, 'mahjong': mahjong}
+         'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

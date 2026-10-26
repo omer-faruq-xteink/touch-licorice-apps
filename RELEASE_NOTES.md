@@ -4,7 +4,12 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **New: Anki** — flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled like
+  the KOReader Anki Viewer). Ships with **1438 English words (B2-C1)**, each with its meaning, an
+  example sentence and similar words. Add and delete cards on the reader, undo a rating. Any Anki
+  deck converts on a computer with `apkg2cards.py` (included) into small text files for
+  `XTApps/anki/files/`; pictures and sounds are dropped, so even 200 MB decks shrink to a few
+  hundred kilobytes, and `--update` keeps your progress when a deck changes.
 
 ## Update
 
@@ -15,7 +20,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages | unchanged since v0.8.0 |
+| `anki.xtapp`, `apkg2cards.py` | **new**: the app and its deck converter (Python 3) |
+| all other `.xtapp` packages | unchanged since v0.8.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

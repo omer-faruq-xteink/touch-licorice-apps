@@ -1,0 +1,10 @@
+{
+  "app_id": "anki",
+  "display_name": "Anki",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, and Anki decks converted with apkg2cards.py.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

@@ -48,6 +48,13 @@ shards the Dictionary app reads. WordNet is free to use and redistribute under i
 whose text is included in the zip as `LICENSE-WORDNET.txt` and requires this notice:
 "WordNet ® Princeton University". The data is not in the git repository, only in releases.
 
+## Anki built-in deck — `apps/anki/data/`
+
+Word choice by frequency from **wordfreq** by Robyn Speer (https://github.com/rspeer/wordfreq),
+whose data is licensed CC BY-SA 4.0; senses, example sentences and similar words from **WordNet
+3.0**, Princeton University ("WordNet ® Princeton University", licence in
+`apps/anki/LICENSE-WORDNET.txt`). The deck files are therefore shared under CC BY-SA 4.0 as well.
+
 ## Not included
 
 Nothing from Xteink's firmware is in this repository. The packer embeds only the *public* half of

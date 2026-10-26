@@ -1,0 +1,5 @@
+name=English words B2-C1
+cards=1438
+shards=8
+per=200
+source=words by frequency from wordfreq (CC BY-SA 4.0), senses and examples from WordNet 3.0
