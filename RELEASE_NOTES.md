@@ -10,6 +10,11 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   has a single solution reached by logic, without guessing, and each bank runs from easiest to
   hardest. Mistake marking, progress kept. Drawn with heavy region borders and bold digits so the grid
   stays readable on panels that show thin lines faintly.
+- **Sudoku: diabolical puzzles a person can solve.** All 2400 puzzles were checked: each has a
+  single solution, and easy, medium and hard need only standard techniques. The diabolical bank
+  held 320 puzzles rated 7.0 to 9.1 that need dynamic forcing chains, which come down to trial and
+  error; they are replaced by puzzles from the same public-domain source rated 5.0 to 6.9.
+  Diabolical still needs chains, but no guessing.
 
 ## Update
 
@@ -21,6 +26,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `suguru.xtapp` | **new** |
+| `sudoku.xtapp` | **changed**: diabolical bank |
 | all other `.xtapp` packages | unchanged since v0.6.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
