@@ -1,7 +1,7 @@
 """Offline test of the Wikipedia app (gamekit harness with a stand-in network that answers like
 the MediaWiki API, and ctx.json): search, results, an article laid out in pages with headings,
 paging, a random article, the language choice in the request, the articles kept for offline
-reading, long articles cut, errors shown.
+reading, long articles in parts (also when the JSON decoder gives up on them), errors shown.
 
   python -I apps/wikipedia/test_wikipedia.py
 """
@@ -45,7 +45,7 @@ def answer(url):
                 'query': {'pages': [{'pageid': 1, 'title': q.get('titles', '?'), 'extract': text}]}}
     raw = json.dumps(body, ensure_ascii=mode['ascii'])
     if mode['cut']:
-        raw = raw[:60000]
+        raw = raw[:15000]
     return {'status': 200, 'body': raw, 'host': host}
 
 
@@ -146,7 +146,7 @@ mode['fail'] = False
 mode['long'] = True
 g.tap_label('Search'); type_text('long'); answer_now()
 g.tap(100, 64 + 8 + 10); answer_now()
-assert any('The article is longer' in str(ln.s) for ln in A().art().lines.values())
+assert any('Part 1. Next: part 2.' in str(ln.s) for ln in A().art().lines.values())
 mode['long'] = False
 bar(1); bar(1)
 
@@ -158,7 +158,19 @@ for ascii_ in (False, True):
     assert str(A().screen()) == 'article', (ascii_, A().status())
     lines = [str(ln.s) for ln in A().art().lines.values()]
     assert 'Atatürk "Gazi" \\ ilk cumhurbaşkanı. 😀' in ' '.join(lines), lines[:6]
-    assert 'Hayatı' in lines and any('The article is longer' in l for l in lines)
+    assert 'Hayatı' in lines and any('Part 1. Next: part 2.' in l for l in lines)
+    # past the last page: part 2 is fetched and starts where part 1 ended; back again
+    first_part = ' '.join(lines)
+    pages = int(A().art().pages)
+    for _ in range(pages):
+        bar(3)
+    answer_now()
+    assert int(A().art().part) == 2 and int(A().art().page) == 1
+    second = ' '.join(str(ln.s) for ln in A().art().lines.values())
+    assert 'Selanik’te doğdu.' in second and 'Gazi' not in second, second[:300]
+    assert 'Part 2. Next: part 3.' in second
+    bar(2); answer_now()
+    assert int(A().art().part) == 1 and int(A().art().page) == int(A().art().pages)
     bar(1); bar(1)
 # a reply cut short: what came is shown, and said so
 mode['cut'] = True

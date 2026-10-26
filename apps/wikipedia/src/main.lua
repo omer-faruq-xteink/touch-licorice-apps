@@ -3,7 +3,8 @@
 -- Search, a random article, or one read before (kept for offline reading). Articles come as
 -- plain text from the MediaWiki API of the chosen language's Wikipedia (the TextExtracts
 -- "explaintext" extract: sections marked "== Heading =="), are laid out with the system fonts
--- and paged with taps, swipes or the side buttons. Languages: a list of common ones written in
+-- and paged with taps, swipes or the side buttons; a long article in parts of about 20 KB
+-- (Next past a part's last page fetches the next one). Languages: a list of common ones written in
 -- Latin script (the reader's fonts may not carry other scripts) and any other code typed in.
 --
 -- Requests go one at a time (the host answers one at a time) and Wi-Fi is kept up while the app
@@ -11,7 +12,8 @@
 
 local W, H = kit.W, kit.H
 local TOP = 64
-local TEXT_MAX = 60000                 -- longer articles are cut (the device has ~1 MB for Lua)
+local TEXT_MAX = 20000                 -- an article is read in parts this big (the device has ~1 MB for Lua)
+local DECODE_MAX = 100000              -- bigger answers are not given to the JSON decoder
 local HISTORY_MAX = 30
 local UA = 'XteinkLicoriceWikipedia/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 local LANGS = {
@@ -101,7 +103,9 @@ local function net_finish(job, resp, err)
   job.done = true
   if net_active == job then net_active = nil end
   if not net_active and #net_queue == 0 then loading = nil end
-  job.on_result(resp, err)
+  -- an error while handling the answer (memory, say) is shown instead of closing the app
+  local ok, e = pcall(job.on_result, resp, err)
+  if not ok then status = 'Error: ' .. short(e, 40) end
   net_pump()
   refresh()
 end
@@ -130,7 +134,7 @@ local function urlenc(s)
 end
 
 -- GET the API of the chosen Wikipedia with these parameters; on_done(data), or on_done(nil, err)
--- and the raw body when it came but did not decode (see page_from)
+-- and the raw body when it came but did not decode (see part_from)
 local function api(params, label, on_done)
   local q = { 'format=json', 'formatversion=2', 'utf8=1' }
   for k, v in pairs(params) do q[#q + 1] = k .. '=' .. urlenc(v) end
@@ -146,6 +150,7 @@ local function api(params, label, on_done)
       local code = tonumber(resp.status) or tonumber(resp.code)
       if code and code >= 400 then on_done(nil, 'HTTP ' .. code); return end
       if type(resp.body) ~= 'string' then on_done(nil, tostring(resp.error or 'empty answer')); return end
+      if #resp.body > DECODE_MAX then on_done(nil, 'too big to decode', resp.body); return end
       local ok, data = pcall(function() return ctx.json:decode(resp.body) end)
       if not ok or type(data) ~= 'table' then on_done(nil, 'not JSON: ' .. short(resp.body, 30), resp.body); return end
       if type(data.error) == 'table' then on_done(nil, tostring(data.error.info or data.error.code)); return end
@@ -157,12 +162,14 @@ end
 
 ------------------------------------------------------------------ article layout
 
-local measure_cache = {}
+-- word widths, remembered while one part is laid out (at most 800 words: memory)
+local measure_cache, measure_n = {}, 0
 local function measure(font, s)
   local w = measure_cache[s]
   if w then return w end
   w = kit.width(font, s)
-  measure_cache[s] = w
+  if measure_n > 800 then measure_cache, measure_n = {}, 0 end
+  measure_cache[s], measure_n = w, measure_n + 1
   return w
 end
 
@@ -189,7 +196,7 @@ local function wrap_para(out, para, fname, width)
 end
 
 local function layout(title, text)
-  measure_cache = {}
+  measure_cache, measure_n = {}, 0
   local S = SIZES[cfg.size]
   local out = {}
   local function gap(h) out[#out + 1] = { s = '', f = 'small', h = h } end
@@ -219,88 +226,129 @@ end
 
 local function show_article(title, text)
   layout(title, text)
+  art.part, art.more, art.offs = 1, false, { 0 }
   screen, status = 'article', nil
 end
 
 ------------------------------------------------------------------ actions
 
-local function clean_text(t)
-  t = t:gsub('\r', ''):gsub('\n\n\n+', '\n\n')
-  if #t > TEXT_MAX then
-    local cut = t:sub(1, TEXT_MAX):match('^(.*)\n') or t:sub(1, TEXT_MAX)
-    t = cut .. '\n\n(The article is longer; the rest is not shown here.)'
-  end
-  return t
-end
-
 -- A JSON string value read straight from the text after `"key":"` (from position `from`),
--- unescaped, up to `max` bytes: for answers the host's JSON decoder gives up on (a long article
--- such as tr: Mustafa Kemal Atatürk) or that arrived cut short. Returns the text and whether the
--- closing quote was reached.
-local function json_string(body, key, from, max)
+-- unescaped: `skip` bytes are passed over, then at most `max` bytes are kept. For answers the
+-- host's JSON decoder gives up on (a long article: tr "Mustafa Kemal Atatürk" is 172 KB) or that
+-- arrived cut short. Returns the text and how it ended: 'end' (the closing quote), 'max' (more
+-- follows) or 'cut' (the answer stops inside the string).
+local function json_string(body, key, from, skip, max)
   local _s, e = body:find('"' .. key .. '"%s*:%s*"', from or 1)          -- keys are plain words
   if not e then return nil end
-  local out, len, i = {}, 0, e + 1
+  skip, max = skip or 0, max or math.huge
+  local out, pos, kept, i = {}, 0, 0, e + 1
+  local function emit(seg)
+    local n = #seg
+    if pos + n > skip and kept < max then
+      local piece = (pos < skip) and seg:sub(skip - pos + 1) or seg
+      if kept + #piece > max then piece = piece:sub(1, max - kept) end     -- never more than max
+      out[#out + 1] = piece
+      kept = kept + #piece
+    end
+    pos = pos + n
+  end
   while true do
     local j = body:find('[\\"]', i)
-    if not j then out[#out + 1] = body:sub(i); return table.concat(out), false end
-    out[#out + 1] = body:sub(i, j - 1)
-    len = len + (j - i)
-    if body:byte(j) == 34 then return table.concat(out), true end
+    if not j then emit(body:sub(i)); return table.concat(out), 'cut' end
+    emit(body:sub(i, j - 1))
+    if kept >= max then break end
+    if body:byte(j) == 34 then return table.concat(out), 'end' end
     local x = body:sub(j + 1, j + 1)
-    if x == 'n' then out[#out + 1] = '\n'
-    elseif x == 't' then out[#out + 1] = ' '
+    if x == 'n' then emit('\n')
+    elseif x == 't' then emit(' ')
     elseif x == 'u' then
       local cp, adv = tonumber(body:sub(j + 2, j + 5), 16) or 63, 4
       if cp >= 0xD800 and cp <= 0xDBFF and body:sub(j + 6, j + 7) == '\\u' then
         local lo = tonumber(body:sub(j + 8, j + 11), 16)
         if lo then cp, adv = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00), 10 end
       end
-      if cp < 0xD800 or cp > 0xDFFF then out[#out + 1] = utf8.char(cp) end
+      if cp < 0xD800 or cp > 0xDFFF then emit(utf8.char(cp)) end
       j = j + adv
-    elseif x ~= 'r' then out[#out + 1] = x end           -- \" \\ \/
+    elseif x ~= 'r' then emit(x) end                      -- \" \\ \/
     i = j + 2
-    if max and len > max then return table.concat(out), false end
+    if kept >= max then break end
   end
+  return table.concat(out), 'max'
 end
 
--- the page of a query answer: title, plain text and whether all of it came
-local function page_from(data, body)
+-- An article is read in parts of about TEXT_MAX bytes, each ending at a paragraph: a long one
+-- would not fit the ~1 MB the reader gives Lua once laid out. `skip` is where the part starts in
+-- the article's text. Returns the title, the part's text and whether more follows; the part
+-- tells when the answer arrived cut short.
+local function part_from(data, body, skip)
+  local title, text, how
   if data then
     local p = data.query and data.query.pages and data.query.pages[1]
-    if p and not p.missing and type(p.extract) == 'string' then return p.title, p.extract, true end
-    return nil
+    if not p or p.missing or type(p.extract) ~= 'string' then return nil end
+    title, text = p.title, p.extract:sub(skip + 1, skip + TEXT_MAX)
+    how = (#p.extract > skip + TEXT_MAX) and 'max' or 'end'
+  else
+    if type(body) ~= 'string' then return nil end
+    local at = body:find('"pages"%s*:%s*%[')
+    if not at then return nil end
+    title = json_string(body, 'title', at, 0, 300)
+    text, how = json_string(body, 'extract', at, skip, TEXT_MAX)
+    if not text then return nil end
   end
-  if type(body) ~= 'string' then return nil end
-  local at = body:find('"pages"%s*:%s*%[')
-  if not at then return nil end
-  local title = json_string(body, 'title', at, 300)
-  local text, whole = json_string(body, 'extract', at, TEXT_MAX + 2000)
-  if not text then return nil end
-  if not whole and #text <= TEXT_MAX then text = text .. '\n\n(The rest of the article did not arrive.)' end
-  return title, text, whole
+  if how == 'max' then
+    -- end the part at a paragraph, else between words, else at least at a whole UTF-8 character
+    local cut = text:match('^(.*\n)')
+    if not cut or #cut <= TEXT_MAX // 2 then cut = text:match('^(.* )') end
+    if cut and #cut > TEXT_MAX // 2 then text = cut
+    else text = text:gsub('[\192-\255][\128-\191]*$', '') end
+  end
+  if how == 'cut' then text = text .. '\n\n(The rest of the article did not arrive.)' end
+  return title, text, how == 'max'
+end
+
+local function tidy(t) return (t:gsub('\r', ''):gsub('\n\n\n+', '\n\n')) end
+
+-- show part k of the current article (art.offs[k] is where it starts in the text)
+local function show_part(title, text, k, more)
+  local note
+  if more then note = '\n\n(Part ' .. k .. '. Next: part ' .. (k + 1) .. '.)'
+  elseif k > 1 then note = '\n\n(End of the article, part ' .. k .. '.)' end
+  layout(title, tidy(text) .. (note or ''))
+  art.part, art.more = k, more
+  art.offs[k + 1] = more and (art.offs[k] + #text) or nil
+  screen, status = 'article', nil
+end
+
+local function open_answer(data, err, body, fallback, keep)
+  local t, text, more = part_from(data, body, 0)
+  if not text then status = data and 'No such article.' or ('Could not load: ' .. tostring(err)); return end
+  art.offs = { 0 }
+  art.lang = cfg.lang
+  if keep then remember(cfg.lang, t or fallback, tidy(text) .. (more and '\n\n(Only the first part is kept here.)' or '')) end
+  show_part(t or fallback, text, 1, more)
 end
 
 local function open_title(title)
   api({ action = 'query', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki', redirects = '1', titles = title },
-      'Loading ' .. short(title, 30) .. '...', function(data, err, body)
-    local t, text = page_from(data, body)
-    if not text then status = data and 'No such article.' or ('Could not load: ' .. tostring(err)); return end
-    text = clean_text(text)
-    remember(cfg.lang, t or title, text)
-    show_article(t or title, text)
+      'Loading ' .. short(title, 30) .. '...', function(data, err, body) open_answer(data, err, body, title, true) end)
+end
+
+-- another part of the article on the screen; `last_page` shows its end (paging back)
+local function load_part(k, last_page)
+  local title, skip = art.title, art.offs and art.offs[k]
+  if not skip then return end
+  api({ action = 'query', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki', redirects = '1', titles = title },
+      'Loading part ' .. k .. '...', function(data, err, body)
+    local t, text, more = part_from(data, body, skip)
+    if not text then status = 'Could not load: ' .. tostring(err); return end
+    show_part(t or title, text, k, more)
+    if last_page then art.page = art.pages end
   end)
 end
 
 local function open_random()
   api({ action = 'query', generator = 'random', grnnamespace = '0', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki' },
-      'Finding an article...', function(data, err, body)
-    local t, text = page_from(data, body)
-    if not text then status = data and 'Nothing came back; try again.' or ('Could not load: ' .. tostring(err)); return end
-    text = clean_text(text)
-    remember(cfg.lang, t or '?', text)
-    show_article(t or '?', text)
-  end)
+      'Finding an article...', function(data, err, body) open_answer(data, err, body, '?', true) end)
 end
 
 local function search(q)
@@ -356,7 +404,7 @@ end
 
 local HOME = {
   { function() return 'Search' end, function() ask_search() end },
-  { function() return 'Random article' end, function() open_random() end },
+  { function() return 'Random article' end, function() art.back = 'home'; open_random() end },
   { function() return 'Read before (' .. #history .. ')' end, function() screen = 'history'; results_top = 1 end },
   { function() return 'Language: ' .. lang_name(cfg.lang) end, choose_language },
   { function() return 'Text size: ' .. cfg.size end, function()
@@ -454,6 +502,9 @@ end
 
 local function page(delta)
   if screen == 'article' then
+    -- past the last page: the article's next part; before the first: the part before
+    if delta > 0 and art.page >= art.pages and art.more then load_part(art.part + 1); return end
+    if delta < 0 and art.page <= 1 and (art.part or 1) > 1 then load_part(art.part - 1, true); return end
     art.page = math.max(1, math.min(art.pages, art.page + delta))
   elseif screen == 'results' or screen == 'history' then
     local n = #list_rows()
@@ -472,7 +523,8 @@ local function tap(x, y)
   end
   local k = bar_hit(x, y, 4)
   if k == 1 then
-    if screen == 'article' and #results > 0 and results_q ~= '' and not art.from_history then screen = 'results' else screen = 'home' end
+    -- an article goes back to where it was opened: the results, the list read before, home
+    if screen == 'article' then screen = art.back or 'home' else screen = 'home' end
     status = nil
     return
   elseif k == 2 then page(-1); return
@@ -496,8 +548,8 @@ local function tap(x, y)
     local i = results_top + (y - TOP - 8) // ROW_H
     local r = y > TOP and rows[i]
     if r then
-      if r.h then open_history(r.h); art.from_history = true
-      else art.from_history = false; open_title(r.title) end
+      art.back = screen
+      if r.h then open_history(r.h) else open_title(r.title) end
     end
   end
 end
