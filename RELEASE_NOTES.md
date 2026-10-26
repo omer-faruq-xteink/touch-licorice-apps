@@ -6,8 +6,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **New: Suguru** (also called Tectonic). Regions of one to five cells each hold 1 to n, and
   touching cells, diagonals included, never hold the same number. 200 puzzles each of 5x5 easy,
-  6x6 medium, 7x7 hard and 8x8 expert, generated for this app, every one with a single solution;
-  mistake marking, progress kept. Drawn with heavy region borders and bold digits so the grid
+  6x6 medium, 7x7 hard and 8x8 expert, generated for this app; like published Suguru, every one
+  has a single solution reached by logic, without guessing, and each bank runs from easiest to
+  hardest. Mistake marking, progress kept. Drawn with heavy region borders and bold digits so the grid
   stays readable on panels that show thin lines faintly.
 
 ## Update

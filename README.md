@@ -8,7 +8,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 |---|---|
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
-| **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 generated puzzles from 5x5 to 8x8 |
+| **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
@@ -71,8 +71,8 @@ adding your own is one command. [More](apps/sudoku/README.md)
 Also called Tectonic. Regions of one to five cells (thick borders) each hold 1 to n; touching
 cells, diagonals included, never hold the same number. Tap a cell, then a number; **Erase**, **Chk**,
 **Next** and **Bank** work as in Sudoku. 200 generated puzzles each of 5x5 easy, 6x6 medium, 7x7 hard
-and 8x8 expert, every one with a single solution. Drawn with heavy lines and bold digits for faint
-panels. [More](apps/suguru/README.md)
+and 8x8 expert, every one with a single solution that logic reaches without guessing, easiest
+first. Drawn with heavy lines and bold digits for faint panels. [More](apps/suguru/README.md)
 
 ### Sokoban
 

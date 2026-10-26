@@ -112,8 +112,16 @@ banks = api.banks()
 names = [banks[i]['name'] for i in range(1, len(banks) + 1)]
 assert names == ['5x5-easy.txt', '6x6-medium.txt', '7x7-hard.txt', '8x8-expert.txt', 'builtin'], names
 assert api.data_ok() is True
+LEVELS = {name + '.txt': mx for name, _n, mx, _mn, _pool in make_bank.BANKS}
 for b, size in zip(range(1, 5), (5, 6, 7, 8)):
     bank = banks[b]
+    # every puzzle is solvable by logic with its bank's techniques: no guessing (and so unique)
+    for line in FILES[bank['name']].decode().split():
+        half = len(line) // 2
+        letters = {}
+        reg = [letters.setdefault(ch, len(letters)) for ch in line[:half]]
+        ok, _lv, _sc = make_bank.grade(make_bank.Puzzle(size, reg), [int(c) for c in line[half:]], LEVELS[bank['name']])
+        assert ok, (bank['name'], line)
     assert bank['count'] == 200 and bank['stride'] == 2 * size * size + 1, (bank['name'], bank['count'], bank['stride'])
     lines = FILES[bank['name']].decode().split('\n')
     for idx in (1, 2, 100, 200):
@@ -125,7 +133,7 @@ for k in range(1, len(api.builtin()) + 1):
     solve(*api.parse_line(api.builtin()[k]))
 S = api.state()
 assert S['bank'] == '5x5-easy.txt' and S['idx'] == 1 and S['n'] == 5 and S['cells'] == S['givens']
-print('banks: 4 data banks + builtin; seek reads match; sampled puzzles have one solution OK')
+print('banks: 4 data banks + builtin; seek reads match; every puzzle solvable by logic, one solution OK')
 
 
 def play(n):

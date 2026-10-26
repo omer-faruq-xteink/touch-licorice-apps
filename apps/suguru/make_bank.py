@@ -6,21 +6,39 @@ Rules: the grid is split into regions of 1..5 cells; a region of n cells holds 1
 touching cells, diagonals included, never hold the same number.
 
 Each puzzle: regions grown at random (mostly 4 and 5 cells, few singletons), a random full
-solution found by backtracking, then givens taken away one by one as long as the solution stays
-unique (checked by counting solutions up to two, with naked and hidden singles propagated;
-a check that runs too long keeps the given). Easier banks get some givens back. The generator
-is seeded per bank, so a run gives the same files again.
+solution found by backtracking, then givens taken away one by one as long as the puzzle stays
+solvable BY LOGIC with the bank's techniques, as published Suguru are: one solution, reached
+without guessing (a puzzle that logic solves has only that solution). The grader:
+
+  Techniques, cheapest first, with PZL's scores (pzl.org.uk/suguru.html):
+    basic (exclusion in the region, forbidden neighbour of a placed digit, naked single)  0
+    hidden single          3   level 1
+    naked pair             5   level 2
+    hidden pair            6   level 2
+    naked triple           7   level 2
+    hidden triple          8   level 2
+    forbidden neighbour    9   level 3   (every place left for a digit in a region touches one
+                                           outside cell: that cell cannot hold the digit; PZL's
+                                           forbidden pairs / triples are cases of it)
+  Like PZL's solver, the cheapest technique that makes progress is used each step; the score adds
+  the technique's score for every cell it changes.
+
+Banks: easy uses singles only; medium, hard and expert use every technique above and must need
+more than the basic steps; hard and expert keep the highest-scoring half of what is generated.
+Each bank is sorted by score, easiest first. The generator is seeded per bank, so a run gives the
+same files again.
 
 One puzzle per line, all lines of a bank the same length (the packer turns that into a record file
 the app seeks in): n*n region letters, then n*n digits (0 = empty), row by row. Region letters are
 A-Z a-z 0-9 in order of first appearance.
 """
-import argparse, os, random, time
+import argparse, itertools, os, random, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-# file name (the app shows it as the bank's label), size, share of the empty cells given back
-BANKS = [('5x5-easy', 5, 0.30), ('6x6-medium', 6, 0.12), ('7x7-hard', 7, 0.0), ('8x8-expert', 8, 0.0)]
+# file name (the app shows it as the bank's label), size, hardest technique level allowed, easiest
+# level a puzzle must need, how many candidates per kept puzzle (the highest scores are kept)
+BANKS = [('5x5-easy', 5, 1, 0, 1), ('6x6-medium', 6, 3, 1, 1), ('7x7-hard', 7, 3, 1, 2), ('8x8-expert', 8, 3, 1, 2)]
 
 
 def neighbours8(n):
@@ -152,7 +170,121 @@ class TooHard(Exception):
     pass
 
 
-def generate(n, give_back, rnd):
+TECHNIQUES = [  # name, level, score
+    ('hidden single', 1, 3),
+    ('naked pair', 2, 5), ('hidden pair', 2, 6), ('naked triple', 2, 7), ('hidden triple', 2, 8),
+    ('forbidden neighbour', 3, 9),
+]
+
+
+def grade(p, givens, max_level=3):
+    """Solve by logic only. Returns (solved, hardest level used, score)."""
+    n2 = len(givens)
+    nb = [set(x) for x in p.nb]
+    regions = [list(c) for c in p.members.values()]
+    region_of = {}
+    for k, cells in enumerate(regions):
+        for i in cells:
+            region_of[i] = k
+    cand = [{givens[i]} if givens[i] else set(range(1, p.size[i] + 1)) for i in range(n2)]
+    done = [False] * n2
+    used_level, score = 0, 0
+
+    def basic():
+        changed = True
+        while changed:
+            changed = False
+            for i in range(n2):
+                if not done[i] and len(cand[i]) == 1:
+                    done[i] = True
+                    v = next(iter(cand[i]))
+                    for j in nb[i] | set(regions[region_of[i]]):
+                        if j != i and v in cand[j]:
+                            cand[j].discard(v)
+                            if not cand[j]:
+                                return False
+                            changed = True
+        return True
+
+    def hidden_single():
+        hit = 0
+        for cells in regions:
+            for v in range(1, len(cells) + 1):
+                pl = [i for i in cells if v in cand[i]]
+                if len(pl) == 1 and len(cand[pl[0]]) > 1:
+                    cand[pl[0]] = {v}
+                    hit += 1
+        return hit
+
+    def naked(k):
+        hit = 0
+        for cells in regions:
+            open_ = [i for i in cells if len(cand[i]) > 1]
+            for combo in itertools.combinations(open_, k):
+                union = set().union(*[cand[i] for i in combo])
+                if len(union) == k:
+                    for j in open_:
+                        if j not in combo and cand[j] & union:
+                            cand[j] -= union
+                            hit += 1
+            if hit:
+                return hit
+        return hit
+
+    def hidden(k):
+        hit = 0
+        for cells in regions:
+            open_ = [i for i in cells if len(cand[i]) > 1]
+            vals = [v for v in range(1, len(cells) + 1) if any(v in cand[i] for i in open_)
+                    and not any(cand[i] == {v} for i in cells)]
+            for combo in itertools.combinations(vals, k):
+                places = {i for i in open_ for v in combo if v in cand[i]}
+                if len(places) == k:
+                    for i in places:
+                        if cand[i] - set(combo):
+                            cand[i] &= set(combo)
+                            hit += 1
+            if hit:
+                return hit
+        return hit
+
+    def forbidden_neighbour():
+        hit = 0
+        for cells in regions:
+            cs = set(cells)
+            for v in range(1, len(cells) + 1):
+                pl = [i for i in cells if v in cand[i]]
+                if len(pl) < 2:
+                    continue
+                for j in set.intersection(*[nb[i] for i in pl]) - cs:
+                    if v in cand[j]:
+                        cand[j].discard(v)
+                        hit += 1
+        return hit
+
+    steps = [(hidden_single, 1, 3), (lambda: naked(2), 2, 5), (lambda: hidden(2), 2, 6),
+             (lambda: naked(3), 2, 7), (lambda: hidden(3), 2, 8), (forbidden_neighbour, 3, 9)]
+    while True:
+        if not basic() or any(not c for c in cand):
+            return False, used_level, score
+        if all(done):
+            return True, used_level, score
+        progressed = False
+        for fn, level, pts in steps:
+            if level > max_level:
+                break                                   # techniques above this bank's level
+            hit = fn()
+            if hit:
+                used_level = max(used_level, level)
+                score += pts * hit
+                progressed = True
+                break
+        if not progressed:
+            return False, used_level, score             # stuck: logic at this level cannot finish
+
+
+def generate(n, max_level, min_level, rnd):
+    """One puzzle line and its grade (level, score), solvable by logic up to max_level."""
     while True:
         p = Puzzle(n, make_regions(n, rnd))
         try:
@@ -167,22 +299,18 @@ def generate(n, give_back, rnd):
         for i in order:
             keep = givens[i]
             givens[i] = 0
-            try:
-                count, _ = p.solve(givens, 2)
-            except TooHard:
-                count = 2                              # not proven unique in time: keep the given
-            if count != 1:
-                givens[i] = keep
-        empty = [i for i in range(n * n) if givens[i] == 0]
-        for i in rnd.sample(empty, int(len(empty) * give_back)):
-            givens[i] = sol[i]
-        # region letters in order of first appearance
+            if not grade(p, givens, max_level)[0]:
+                givens[i] = keep                       # logic can no longer finish: keep the given
+        ok, level, score = grade(p, givens, max_level)
+        assert ok
+        if level < min_level:
+            continue                                   # too easy for this bank
         names, letters = {}, []
         for r in p.reg:
             if r not in names:
                 names[r] = ALPHA[len(names)]
             letters.append(names[r])
-        return ''.join(letters) + ''.join(map(str, givens)), sol
+        return ''.join(letters) + ''.join(map(str, givens)), level, score
 
 
 def update_builtin(per_bank=3):
@@ -211,19 +339,24 @@ def main():
         return
     out_dir = os.path.join(HERE, 'data')
     os.makedirs(out_dir, exist_ok=True)
-    for name, n, give_back in BANKS:
+    for name, n, max_level, min_level, pool in BANKS:
         rnd = random.Random('suguru-' + name)
         t0 = time.time()
-        lines, seen = [], set()
-        while len(lines) < a.count:
-            line, _ = generate(n, give_back, rnd)
+        found, seen = [], set()
+        while len(found) < a.count * pool:
+            line, level, score = generate(n, max_level, min_level, rnd)
             if line not in seen:
                 seen.add(line)
-                lines.append(line)
-        with open(os.path.join(out_dir, name + '.txt'), 'w', encoding='ascii', newline='\n') as f:
-            f.write('\n'.join(lines) + '\n')
-        empty = sum(l[n * n:].count('0') for l in lines) / len(lines)
-        print(f'{name}: {len(lines)} puzzles, {empty:.1f} empty cells on average, {time.time() - t0:.1f} s')
+                found.append((score, line, level))
+        found.sort(reverse=True)
+        kept = sorted(found[:a.count])                 # the hardest a.count, then easiest first
+        nl = chr(10)
+        with open(os.path.join(out_dir, name + '.txt'), 'w', encoding='ascii', newline=nl) as f:
+            f.write(nl.join(l for _, l, _ in kept) + nl)
+        empty = sum(l[n * n:].count('0') for _, l, _ in kept) / len(kept)
+        levels = {lv: sum(1 for *_, x in kept if x == lv) for lv in (0, 1, 2, 3)}
+        print(f'{name}: {len(kept)} puzzles, {empty:.1f} empty cells on average, score {kept[0][0]}..{kept[-1][0]}, '
+              f'hardest technique levels {levels}, {time.time() - t0:.1f} s')
     update_builtin()
 
 
