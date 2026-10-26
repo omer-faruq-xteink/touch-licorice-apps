@@ -14,6 +14,11 @@ Anki deck converted on a computer.
 - **Menu** while studying: **Undo** the last rating, **Add card** (front and back with the
   firmware keyboard), **Delete card** (it never comes back in this deck), back to the **Decks**.
 - **Long-press a deck** to add a card to it. **My cards** is a deck of your own cards only.
+- **Lock screen**: long-press a deck, **Lock screen**. When the reader locks it shows one of that
+  deck's next cards (due within a day, then new ones), front and answer, a different one every
+  30 minutes; the firmware asks once to make Anki the lock screen (it needs Settings > Display >
+  Off wallpaper on *Default*, and replaces another app's lock screen such as Notes'). Long-press
+  the deck again for **Lock screen off**.
 
 ## The built-in deck: English words B2-C1
 
@@ -53,6 +58,6 @@ Install updates over it.
 
 ## Files
 
-`src/main.lua` (on `tools/gamekit`), `bundle.py`, `apkg2cards.py` (the converter),
+`src/main.lua` (on `tools/gamekit`), `lockscreen.lua`, `bundle.py`, `apkg2cards.py` (the converter),
 `make_default_deck.py` and `data/` (the built-in deck), `test_anki.py`
 (`python -I apps/anki/test_anki.py`).

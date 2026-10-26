@@ -17,6 +17,9 @@
 -- Scheduling is the KOReader Anki Viewer's (SM-2 like): Again / Hard / Good / Easy, an ease
 -- factor from 2.5 (at least 1.3), learning steps of minutes for new and lapsed cards (they come
 -- back in the same session), then intervals in days.
+--
+-- Lock screen: long-press a deck, Lock screen. lockscreen.lua then shows its next cards from
+-- lock_cards.txt, which this app rewrites when the deck list shows and when it is left.
 
 local W, H = kit.W, kit.H
 local BTN_Y, BTN_H = 704, 72
@@ -109,8 +112,11 @@ end
 local function load_settings()
   local t = kv(sread('settings.txt'))
   settings.new_per_day = tonumber(t.new_per_day) or 15
+  settings.lock_deck = (t.lock_deck and t.lock_deck ~= '') and t.lock_deck or nil
 end
-local function save_settings() swrite('settings.txt', 'new_per_day=' .. settings.new_per_day) end
+local function save_settings()
+  swrite('settings.txt', 'new_per_day=' .. settings.new_per_day .. '\nlock_deck=' .. (settings.lock_deck or ''))
+end
 
 local function discover()
   decks = {}
@@ -371,9 +377,78 @@ local function refresh_summaries()
     end
   end
 end
+------------------------------------------------------------------ lock screen
+
+-- lock_cards.txt for lockscreen.lua: the lock deck's name, then up to LOCK_CARDS cards as
+-- "front<TAB>back": those due within a day, then the next new ones. Written when the deck list
+-- shows and when the app is left, so the lock screen follows the studying.
+local LOCK_CARDS = 30
+local function write_lock_cards()
+  local d
+  for _k, x in ipairs(decks) do if x.key == settings.lock_deck then d = x end end
+  if not d then return end
+  local s, now, out = load_state(d), now_sec(), {}
+  local mine = {}
+  for line in lines(sread(d.key .. '_own.txt') or '') do
+    local id, f, b = line:match('^([^\t]+)\t([^\t]*)\t?(.*)$')
+    if id then mine[id] = { f = f, b = b } end
+  end
+  local deleted = {}
+  for line in lines(sread(d.key .. '_del.txt') or '') do deleted[line] = true end
+  local function add(f, b) if f and f ~= '' and #out < LOCK_CARDS then out[#out + 1] = f .. '\t' .. b end end
+  local function base(sh, l)
+    local c = shard(d, sh)[l + 1]
+    if c then add(esc(c.f), esc(c.b)) end
+  end
+  local due = {}
+  for k, m in pairs(s.mins) do
+    if m <= now + 86400 then
+      for l, r in pairs(load_prog(d, k)) do if r.due <= now + 86400 then due[#due + 1] = { s = k, l = l, due = r.due } end end
+    end
+  end
+  table.sort(due, function(a, b) return a.due < b.due end)
+  for _k, e in ipairs(due) do
+    if e.s == 'own' then local c = mine[e.l]; if c then add(c.f, c.b) end else base(e.s, e.l) end
+  end
+  local k, total = s.next, slots(d)
+  while #out < LOCK_CARDS and k < total and d.source ~= 'own' do
+    local sh, l = k // d.per, k % d.per
+    if not deleted[sh .. ':' .. l] then
+      if l >= #shard(d, sh) then break end
+      base(sh, l)
+    end
+    k = k + 1
+  end
+  for _id, c in pairs(mine) do add(c.f, c.b) end
+  swrite('lock_cards.txt', d.name .. '\n' .. table.concat(out, '\n') .. '\n')
+end
+
+-- this deck on the lock screen, or (when it is already) off again
+local function toggle_lock(d)
+  local L = ctx.lockscreen
+  if settings.lock_deck == d.key then
+    settings.lock_deck = nil
+    save_settings()
+    sremove('lock_cards.txt')
+    local okd, isdef = pcall(function() return L:is_default() end)
+    if L and okd and isdef == true then pcall(function() L:clear_default() end) end
+    msg = 'Lock screen: off.'
+    return
+  end
+  settings.lock_deck = d.key
+  save_settings()
+  write_lock_cards()
+  if not L then msg = 'This firmware has no app lock screen.'; return end
+  -- the firmware asks "Set as lock screen" itself (Settings > Display > Off wallpaper: Default)
+  local okd, isdef = pcall(function() return L:is_default() end)
+  if not (okd and isdef == true) then pcall(function() L:set_default() end) end
+  msg = 'Lock screen: cards from ' .. d.name .. '.'
+end
+
 local function show_decks()
   screen, deck = 'decks', nil
   refresh_summaries()
+  pcall(write_lock_cards)
 end
 
 ------------------------------------------------------------------ actions
@@ -637,7 +712,7 @@ function on_draw(c, gg)
       end
       kit.button(gg, 12, BTN_Y, W - 24, BTN_H, 'Decks', { font = 'large' })
     end
-    if msg then gg:text(12, BTN_Y - 30, kit.short(msg, 34), { font = kit.font('small') }) end
+    if msg then gg:text(12, BTN_Y - 30, kit.short(msg, 46), { font = kit.font('small') }) end
     if ERR then gg:text(12, H - 24, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
   end)
   if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
@@ -651,10 +726,13 @@ local function deck_at(x, y)
 end
 
 local function deck_menu(d)
-  kit.show({ title = d.name, lines = {},
+  local on_lock = settings.lock_deck == d.key
+  kit.show({ title = d.name,
+             lines = { on_lock and 'Its cards are on the lock screen.' or 'Lock screen: shows its next cards, a new one every 30 minutes.' },
              rows = { { { 'Study', function() kit.close(); open_deck(d) end },
                         { 'Add card', function() kit.close(); add_card(d) end } },
-                      { { 'Close', kit.close } } },
+                      { { on_lock and 'Lock screen off' or 'Lock screen', function() kit.close(); toggle_lock(d) end },
+                        { 'Close', kit.close } } },
              cancel = kit.close })
 end
 
@@ -736,7 +814,7 @@ function on_load(c)
   local ok, e = pcall(function() load_settings(); discover(); refresh_summaries() end)
   if not ok then ERR = tostring(e) end
 end
-function on_leave() end
+function on_leave() pcall(write_lock_cards) end
 
 if rawget(_G, '__TEST') then
   __TEST.api = {

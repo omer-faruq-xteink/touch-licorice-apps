@@ -191,5 +191,45 @@ assert abs(r3.ivl - 2.5) < 1e-9
 r4 = s(r3, 1, 0)
 assert r4.ivl == 0 and r4.lapses == 1 and abs(r4.ease - 2.3) < 1e-9 and r4.due == 600
 assert str(A().span(90)) == '1m' and str(A().span(3 * 86400)) == '3d' and str(A().span(90 * 86400)) == '3mo'
+
+# the lock screen: long-press a deck, Lock screen -> lock_cards.txt and the firmware's own question
+g.L.execute("lock_calls = {}; ctx.lockscreen = { is_default = function(self) return lock_is end, "
+            "set_default = function(self) lock_calls[#lock_calls + 1] = 'set'; lock_is = true end, "
+            "clear_default = function(self) lock_calls[#lock_calls + 1] = 'clear'; lock_is = false end }")
+hold = g.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); "
+                "on_input(ctx, {type='pointer', phase='hold', gesture='long', x=x, y=y}); "
+                "on_input(ctx, {type='pointer', phase='up', x=x, y=y}) end")
+if str(A().screen()) != 'decks':
+    g.tap(400, 30); g.tap_label('Decks')
+hold(*deck_row('English words B2-C1'))
+g.tap_label('Lock screen')
+lc = g.store['lock_cards.txt'].split('\n')
+assert lc[0] == 'English words B2-C1' and len([l for l in lc[1:] if l]) == 30, lc[:3]
+assert all('\t' in l for l in lc[1:] if l) and list(g.L.eval('lock_calls').values()) == ['set']
+assert 'lock_deck=en' in g.store['settings.txt'] and 'Lock screen: cards from English words B2-C1.' in g.texts()
+hold(*deck_row('English words B2-C1'))
+assert 'Lock screen off' in g.texts()
+g.tap_label('Close')
+
+# lockscreen.lua draws one of those cards, a different one each half hour
+from lupa import lua54
+from harness import STUBS
+L2 = lua54.LuaRuntime(unpack_returned_tuples=True)
+L2.execute(STUBS)
+L2.globals().store['lock_cards.txt'] = g.store['lock_cards.txt']
+L2.execute("fake_epoch = 1800 * 1000; ctx.clock.now = function(self) return { epoch_sec = fake_epoch } end")
+L2.execute(open(os.path.join(HERE, 'lockscreen.lua'), encoding='utf-8').read())
+draw = L2.eval("function() drawn = {}; on_draw(ctx, gg); local t = {} for _, d in ipairs(drawn) do t[#t + 1] = d.s end return t end")
+t1 = list(draw().values())
+assert 'card 11 of 30, a new one every 30 minutes' in t1 and any('English words' in x for x in t1), t1
+L2.execute('fake_epoch = fake_epoch + 1800')
+t2 = list(draw().values())
+assert 'card 12 of 30, a new one every 30 minutes' in t2 and t2 != t1
+assert not any('error' in x for x in t1 + t2)
+
+# off again: clears the firmware's choice and the card list
+hold(*deck_row('English words B2-C1'))
+g.tap_label('Lock screen off')
+assert 'lock_cards.txt' not in g.store and list(g.L.eval('lock_calls').values()) == ['set', 'clear']
 g.no_err()
 print('anki tests passed')

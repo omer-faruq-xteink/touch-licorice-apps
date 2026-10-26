@@ -4,7 +4,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **Anki on the lock screen**: long-press a deck and choose **Lock screen**; when the reader locks
+  it shows one of the deck's next cards with its answer, a different one every 30 minutes.
 
 ## Update
 
@@ -15,7 +16,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py` | unchanged since v0.9.0 |
+| `anki.xtapp` | **updated**: lock screen |
+| all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.9.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
