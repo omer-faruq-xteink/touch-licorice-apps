@@ -9,8 +9,9 @@ made by sliding tiles at random from the solved board).
 
 - **Tap** a tile next to the gap to slide it, or **swipe**: the tile on the far side of the gap
   slides into it. The side buttons slide too.
-- A tile already in its final place is drawn **inverted** (black with a white number), as in the
-  plugin, so you see at a glance what is done.
+- A tile already in its final place gets a **second frame** inside its border, so you see at a
+  glance what is done. (The plugin draws it black; on this e-ink screen a black tile leaves
+  ghosts, and the host would draw its number black too.)
 - The header shows the moves and the time, and your best time and fewest moves for the size.
 - **New** shuffles a new puzzle, **Size** picks 3x3 to 7x7 (each size keeps its own puzzle),
   **Stats** lists the best time, fewest moves and games played per size, **Settings** has the

@@ -8,7 +8,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 |---|---|
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
-| **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place shown inverted; best results per size |
+| **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place framed twice; best results per size |
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
@@ -69,8 +69,8 @@ adding your own is one command. [More](apps/sudoku/README.md)
 
 ### Slide Puzzle
 
-Tap a tile next to the gap or swipe to slide it; tiles already in their final place are drawn
-inverted. Boards from 3x3 to 7x7, each with its own saved puzzle, best time, fewest moves and games
+Tap a tile next to the gap or swipe to slide it; tiles already in their final place get a
+second frame. Boards from 3x3 to 7x7, each with its own saved puzzle, best time, fewest moves and games
 played; seven languages. Ported from the KOReader plugin slidepuzzle.koplugin. [More](apps/slidepuzzle/README.md)
 
 ### Suguru

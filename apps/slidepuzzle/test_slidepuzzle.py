@@ -16,7 +16,7 @@ fake_ms = 100000
 local gmt = {}
 gmt.__index = function(_, k) return function(_, ...)
   if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, white = type(o) == 'table' and o.color == 15 } end
-  if k == 'rect' then local x, y, w, h, o = ...; if type(o) == 'table' and o.fill then fills = fills + 1 end end
+  if k == 'rect' then local x, y, w, h, o = ...; if type(o) == 'table' and o.fill then fills = fills + 1 end; rects[#rects + 1] = w end
 end end
 gg = setmetatable({}, gmt)
 local function M(t)
@@ -50,7 +50,7 @@ g = start()
 tap_ = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
 swipe = L.eval("function(d) on_input(ctx, {type='pointer', phase='up', gesture='swipe_' .. d, x=240, y=300}) end")
 key = L.eval("function(k) fake_ms = fake_ms + 300; on_input(ctx, {type='key', key=k}) end")
-draw = L.eval("function() drawn = {}; fills = 0; on_draw(ctx, gg); return drawn end")
+draw = L.eval("function() drawn = {}; fills = 0; rects = {}; on_draw(ctx, gg); return drawn end")
 
 
 def texts():
@@ -86,13 +86,14 @@ assert 'Best: not set yet' in t and 'New' in t and 'Size' in t and 'Stats' in t 
 assert sorted(int(x) for x in set(t) if x.isdigit()) == list(range(1, 16)), t
 assert 'game4.txt' in g.store
 
-# a puzzle one move from solved: tiles in place are inverted (filled, white digits)
+# a puzzle one move from solved: tiles in place get a second, inner frame; nothing is filled black
 g.store['game4.txt'] = 'grid=1,2,3,4;5,6,7,8;9,10,11,12;13,14,0,15\nmoves=5\nelapsed=30\nstarted=1'
 g = start()
 draw()
-assert int(L.eval('fills')) == 14, L.eval('fills')                        # 1..14 are home, 15 is not
-whites = {str(v.s) for v in draw().values() if v.white}
-assert whites == {str(i) for i in range(1, 15)}, whites
+tile = 456 // 4
+inner = [w for w in L.eval('rects').values() if w == tile - 18]
+assert len(inner) == 14, len(inner)                                        # 1..14 are home, 15 is not
+assert int(L.eval('fills')) == 0 and not any(v.white for v in draw().values())
 # a tile not next to the gap does not move
 tap_tile(4, 1, 1)
 assert 'Only tiles next to the gap can move.' in texts()

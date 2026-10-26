@@ -4,8 +4,9 @@
 --
 -- A square board (3x3 to 7x7) with the moves, time and best results above it and New / Size /
 -- Stats / Settings below. Tap a tile next to the gap or swipe to slide; the side buttons slide
--- too. A tile already in its final place is drawn inverted (black with a white number), as in the
--- plugin. Each size keeps its own puzzle and best results; everything is saved after every move.
+-- too. A tile already in its final place gets a second frame inside its border (the plugin
+-- inverts it; see draw_board). Each size keeps its own puzzle and best results; everything is
+-- saved after every move.
 --
 -- Time: the clock is not redrawn every second (an e-ink refresh each second); it advances with the
 -- moves, counting each pause between two moves up to IDLE_CAP_S, so time away does not count.
@@ -310,17 +311,16 @@ local function draw_board(gg)
       local x, y = BOARD_X + (c - 1) * tile, BOARD_Y + (r - 1) * tile
       if v ~= 0 then
         local home = v == (r - 1) * n + c
+        gg:rect(x + 3, y + 3, tile - 6, tile - 6, { line_width = 3 })
         if home then
-          -- in its final place: inverted, like the plugin
-          gg:rect(x + 3, y + 3, tile - 6, tile - 6, { fill = true })
-        else
-          gg:rect(x + 3, y + 3, tile - 6, tile - 6, { line_width = 3 })
+          -- in its final place: a second frame inside (the plugin inverts the tile, but a black
+          -- tile ghosts on e-ink and this host ignores a white text colour)
+          gg:rect(x + 9, y + 9, tile - 18, tile - 18, { line_width = 2 })
         end
         local s = tostring(v)
         local tx = x + math.floor((tile - width(f, s)) / 2)
         local ty = y + math.floor((tile - line_h('large')) / 2)
         local opts = { font = f }
-        if home then opts.color = 15 end
         gg:text(tx, ty, s, opts)
         gg:text(tx + 1, ty, s, opts)                     -- bold: twice, one pixel apart
       end
