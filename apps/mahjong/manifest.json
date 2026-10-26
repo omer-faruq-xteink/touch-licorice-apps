@@ -1,0 +1,10 @@
+{
+  "app_id": "mahjong",
+  "display_name": "Mahjong",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Mahjong Solitaire: clear 100 tiles in matching pairs. Every deal can be cleared; hint, undo, shuffle.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

@@ -1,0 +1,546 @@
+-- Mahjong Solitaire for XTOS Licorice, API 2.9 (uses tools/gamekit).
+--
+-- Clear the board by removing matching pairs of free tiles. A tile is free when it is on top of
+-- its stack and the stack to its left or to its right is lower. The 100 tiles stand in a 7x8
+-- pyramid of stacks one to four high, drawn from above: a stack shows its top tile, and its
+-- height as stepped edges at the bottom right. Faces are drawn, not printed: dots and bamboo 1-9,
+-- the four winds (N E S W) and three dragons (a boxed stroke, a diamond, a double frame); four
+-- of each. Every deal can be cleared: it is made by playing a random game backwards. Hint frames
+-- a free pair, Undo takes pairs back, Shuffle deals the tiles left anew (again clearable).
+
+local W, H = kit.W, kit.H
+local COLS, ROWS = 7, 8
+local LAYOUT = {
+  { 1, 1, 1, 1, 1, 1, 1 },
+  { 1, 2, 2, 2, 2, 2, 1 },
+  { 1, 2, 3, 3, 3, 2, 1 },
+  { 1, 2, 3, 4, 3, 2, 1 },
+  { 1, 2, 3, 4, 3, 2, 1 },
+  { 1, 2, 3, 3, 3, 2, 1 },
+  { 1, 2, 2, 2, 2, 2, 1 },
+  { 1, 1, 1, 1, 1, 1, 1 },
+}
+local KINDS = 25                 -- 1-9 dots, 10-18 bamboo, 19-22 winds, 23-25 dragons
+local CW, CH = 64, 70            -- a stack's cell
+local FW, FH = 54, 60            -- a tile face; each tile below shows 3 px of edge
+local GX, GY = (480 - COLS * 64) // 2, 98
+local BTN_Y, BTN_H = 704, 60
+
+local stacks = {}                -- stack index (r * COLS + c + 1) -> kinds, bottom first
+local sel, hint = nil, nil
+local history = {}               -- { a, b, ka, kb } pairs removed, or { shuffle = saved board }
+local shuffles = 0
+local stats = { played = 0, won = 0 }
+local msg = nil
+local ERR = nil
+
+local function idx(r, c) return r * COLS + c + 1 end
+local function rc(i) return (i - 1) // COLS, (i - 1) % COLS end
+local function height(i) return #stacks[i] end
+local function top(i) local s = stacks[i]; return s[#s] end
+local function tiles_left() local t = 0; for i = 1, COLS * ROWS do t = t + height(i) end; return t end
+
+-- on top (always, seen from above) and the left or the right neighbour stack is lower
+local function free_in(hs, i)
+  local h = hs[i]
+  if h == 0 then return false end
+  local r, c = rc(i)
+  local left = c > 0 and hs[idx(r, c - 1)] or 0
+  local right = c < COLS - 1 and hs[idx(r, c + 1)] or 0
+  return left < h or right < h
+end
+local function heights()
+  local hs = {}
+  for i = 1, COLS * ROWS do hs[i] = height(i) end
+  return hs
+end
+local function free(i) return free_in(heights(), i) end
+
+------------------------------------------------------------------ dealing
+
+-- a random way to take every tile off: pairs of stacks whose tops are free together. The order
+-- is a solution whatever the kinds, so the kinds go on afterwards.
+local function removal_order(hs)
+  for _t = 1, 200 do
+    local h, order, left = {}, {}, 0
+    for i = 1, COLS * ROWS do h[i] = hs[i]; left = left + hs[i] end
+    while left > 0 do
+      local f = {}
+      for i = 1, COLS * ROWS do if free_in(h, i) then f[#f + 1] = i end end
+      if #f < 2 then break end
+      local a = table.remove(f, math.random(#f))
+      local b = f[math.random(#f)]
+      order[#order + 1] = { a, h[a], b, h[b] }
+      h[a], h[b], left = h[a] - 1, h[b] - 1, left - 2
+    end
+    if left == 0 then return order end
+  end
+  return nil
+end
+
+-- give the pairs of the order the kinds in plist (one kind per pair), shuffled
+local function fill(hs, order, plist)
+  for k = #plist, 2, -1 do
+    local j = math.random(k)
+    plist[k], plist[j] = plist[j], plist[k]
+  end
+  local s = {}
+  for i = 1, COLS * ROWS do s[i] = {} end
+  for k, p in ipairs(order) do
+    s[p[1]][p[2]] = plist[k]
+    s[p[3]][p[4]] = plist[k]
+  end
+  for i = 1, COLS * ROWS do assert(#s[i] == hs[i]) end
+  return s
+end
+
+-- The plan: an order in which the tiles left can all be taken off ({ a, level, b, level } per
+-- pair). A deal and a shuffle come with one; the player's moves are folded into it (see replan),
+-- and Hint shows its first pair.
+local plan = nil
+
+local function plan_str(p)
+  if not p then return '' end
+  local out = {}
+  for _k, st in ipairs(p) do out[#out + 1] = table.concat(st, ':') end
+  return table.concat(out, ';')
+end
+local function plan_from(s)
+  if not s or s == '' then return nil end
+  local p = {}
+  for a, la, b, lb in s:gmatch('(%d+):(%d+):(%d+):(%d+)') do p[#p + 1] = { tonumber(a), tonumber(la), tonumber(b), tonumber(lb) } end
+  return p
+end
+
+-- does p take off every tile left, each pair matching and free together?
+local function plan_ok(p)
+  if not p then return false end
+  local h, n = heights(), 0
+  for _k, st in ipairs(p) do
+    local a, la, b, lb = st[1], st[2], st[3], st[4]
+    if a == b or h[a] ~= la or h[b] ~= lb or not free_in(h, a) or not free_in(h, b) or stacks[a][la] ~= stacks[b][lb] then return false end
+    h[a], h[b] = la - 1, lb - 1
+    n = n + 2
+  end
+  return n == tiles_left()
+end
+
+local function deal()
+  local hs = {}
+  for r = 0, ROWS - 1 do for c = 0, COLS - 1 do hs[idx(r, c)] = LAYOUT[r + 1][c + 1] end end
+  local plist = {}
+  for k = 1, KINDS do plist[#plist + 1] = k; plist[#plist + 1] = k end
+  local order = removal_order(hs)
+  stacks, plan = fill(hs, order, plist), order
+  sel, hint, msg, history, shuffles = nil, nil, nil, {}, 0
+  stats.played = stats.played + 1
+end
+
+local function reshuffle()
+  local hs, plist, count = heights(), {}, {}
+  for i = 1, COLS * ROWS do for _k, v in ipairs(stacks[i]) do count[v] = (count[v] or 0) + 1 end end
+  for v = 1, KINDS do for _k = 1, (count[v] or 0) // 2 do plist[#plist + 1] = v end end
+  local order = removal_order(hs)
+  if not order then msg = 'These tiles cannot be dealt clearable: Undo.'; return false end
+  stacks, plan = fill(hs, order, plist), order
+  return true
+end
+
+------------------------------------------------------------------ storage
+
+local function board_str()
+  local out = {}
+  for i = 1, COLS * ROWS do
+    local s = {}
+    for _k, v in ipairs(stacks[i]) do s[#s + 1] = string.char(96 + v) end
+    out[#out + 1] = table.concat(s)
+  end
+  return table.concat(out, '.')
+end
+
+local function board_from(str)
+  local s, i = {}, 0
+  for part in (str .. '.'):gmatch('([a-y]*)%.') do
+    i = i + 1
+    local t = {}
+    for ch in part:gmatch('.') do t[#t + 1] = ch:byte() - 96 end
+    s[i] = t
+  end
+  if i ~= COLS * ROWS then return nil end
+  for r = 0, ROWS - 1 do
+    for c = 0, COLS - 1 do if #s[idx(r, c)] > LAYOUT[r + 1][c + 1] then return nil end end
+  end
+  return s
+end
+
+local function save()
+  kit.write('game.txt', 'board=' .. board_str() .. '\nplan=' .. plan_str(plan) .. '\nshuffles=' .. shuffles ..
+    '\nplayed=' .. stats.played .. '\nwon=' .. stats.won)
+end
+
+local function load()
+  local t = kit.kv(kit.read('game.txt'))
+  stats.played, stats.won = tonumber(t.played) or 0, tonumber(t.won) or 0
+  local s = t.board and board_from(t.board)
+  if s then
+    stacks, shuffles = s, tonumber(t.shuffles) or 0
+    plan = plan_from(t.plan)
+    if not plan_ok(plan) then plan = nil end
+  else
+    deal(); save()
+  end
+end
+
+------------------------------------------------------------------ the plan and the search
+
+local function plan_step(p, s, l)
+  for t, st in ipairs(p) do
+    if st[1] == s and st[2] == l then return t, 3 end
+    if st[3] == s and st[4] == l then return t, 1 end
+  end
+end
+
+-- An order for a set of pairs, or nil. A pair that can be taken off stays takeable until it is
+-- (heights only fall, and its tiles stay on top), so taking any takeable pair first never hurts.
+local function schedule(steps)
+  local h, pending, out = heights(), {}, {}
+  for k, st in ipairs(steps) do pending[k] = st end
+  while #pending > 0 do
+    local found = nil
+    for k, st in ipairs(pending) do
+      local a, la, b, lb = st[1], st[2], st[3], st[4]
+      if h[a] == la and h[b] == lb and free_in(h, a) and free_in(h, b) then found = k; break end
+    end
+    if not found then return nil end
+    local st = table.remove(pending, found)
+    h[st[1]], h[st[3]] = st[2] - 1, st[4] - 1
+    out[#out + 1] = st
+  end
+  return out
+end
+
+-- after the player took a (from level la) and b (lb) off: drop that pair from the plan. Tiles of
+-- one kind come in two planned pairs; when the player paired them across, their partners become
+-- a pair, and the pairs left are put in order again.
+local function replan(a, la, b, lb)
+  if not plan then return end
+  local t1, pa = plan_step(plan, a, la)
+  local t2, pb = plan_step(plan, b, lb)
+  if not t1 or not t2 then plan = nil; return end
+  local steps = {}
+  for t, st in ipairs(plan) do if t ~= t1 and t ~= t2 then steps[#steps + 1] = st end end
+  if t1 ~= t2 then steps[#steps + 1] = { plan[t1][pa], plan[t1][pa + 1], plan[t2][pb], plan[t2][pb + 1] } end
+  plan = schedule(steps)
+end
+
+-- A new plan, when the old one is lost: a depth-first search over the free pairs, the tallest
+-- stacks first, within a budget of positions. Removals commute, so a position that failed once
+-- is remembered by its stack heights; a position where a kind's last two tiles lie in one stack
+-- is dead at once. Returns the plan, or nil and whether no plan exists at all.
+local SEARCH_BUDGET = 1000
+local function search_plan()
+  local h, nodes, path, failed = heights(), 0, {}, {}
+  local function key()
+    local t = {}
+    for i = 1, COLS * ROWS do t[i] = h[i] end
+    return table.concat(t)
+  end
+  local function dead()
+    local where = {}
+    for i = 1, COLS * ROWS do
+      for l = 1, h[i] do
+        local v = stacks[i][l]
+        local w = where[v]
+        if not w then where[v] = { i, 1 } elseif w[1] == i then w[2] = w[2] + 1 else w[1] = -1; w[2] = w[2] + 1 end
+      end
+    end
+    for _v, w in pairs(where) do if w[1] ~= -1 and w[2] == 2 then return true end end
+    return false
+  end
+  local function moves()
+    local by, out = {}, {}
+    for i = 1, COLS * ROWS do
+      if free_in(h, i) then
+        local v = stacks[i][h[i]]
+        by[v] = by[v] or {}
+        by[v][#by[v] + 1] = i
+      end
+    end
+    for v = 1, KINDS do
+      local list = by[v]
+      if list then
+        for x = 1, #list - 1 do
+          for y = x + 1, #list do out[#out + 1] = { list[x], list[y], h[list[x]] + h[list[y]] } end
+        end
+      end
+    end
+    table.sort(out, function(p, q) return p[3] > q[3] end)
+    return out
+  end
+  local function clears(n)
+    if n == 0 then return true end
+    local k = key()
+    if failed[k] then return false end
+    nodes = nodes + 1
+    if nodes > SEARCH_BUDGET then return false end
+    if not dead() then
+      for _k, m in ipairs(moves()) do
+        local a, b = m[1], m[2]
+        path[#path + 1] = { a, h[a], b, h[b] }
+        h[a], h[b] = h[a] - 1, h[b] - 1
+        local ok = clears(n - 2)
+        h[a], h[b] = h[a] + 1, h[b] + 1
+        if ok then return true end
+        path[#path] = nil
+        if nodes > SEARCH_BUDGET then return false end
+      end
+    end
+    failed[k] = true
+    return false
+  end
+  if clears(tiles_left()) then return path end
+  return nil, nodes <= SEARCH_BUDGET
+end
+
+------------------------------------------------------------------ play
+
+local function free_pairs()
+  local by, out = {}, {}
+  local hs = heights()
+  for i = 1, COLS * ROWS do
+    if free_in(hs, i) then
+      local v = top(i)
+      if by[v] then out[#out + 1] = { by[v], i }; by[v] = nil else by[v] = i end
+    end
+  end
+  return out
+end
+
+local undo
+
+local function do_shuffle()
+  if tiles_left() == 0 then return end
+  history[#history + 1] = { shuffle = board_str(), plan = plan_str(plan), shuffles = shuffles }
+  if reshuffle() then shuffles = shuffles + 1; msg = 'Shuffled.' else table.remove(history) end
+  sel, hint = nil, nil
+  save()
+end
+
+local function stuck_box()
+  local rows = { { { 'Undo', function() kit.close(); undo() end },
+                   { 'New game', function() kit.close(); deal(); save() end } } }
+  local line = tiles_left() .. ' tiles left, and no shuffle can make them clearable.'
+  if removal_order(heights()) then
+    table.insert(rows, 1, { { 'Shuffle', function() kit.close(); do_shuffle() end } })
+    line = tiles_left() .. ' tiles left. Shuffle deals them anew, still clearable.'
+  end
+  kit.show({ title = 'No free pairs left', lines = { line }, rows = rows, cancel = kit.close })
+end
+
+local function after_move()
+  if tiles_left() == 0 then
+    stats.won = stats.won + 1
+    kit.show({
+      title = 'Board cleared!',
+      lines = { shuffles == 0 and 'Without a shuffle.' or ('With ' .. shuffles .. ' shuffle' .. (shuffles > 1 and 's.' or '.')),
+                'Cleared ' .. stats.won .. ' of ' .. stats.played .. ' games.' },
+      rows = { { { 'New game', function() kit.close(); deal(); save() end }, { 'Close', kit.close } } },
+      cancel = kit.close,
+    })
+  elseif #free_pairs() == 0 then
+    stuck_box()
+  end
+end
+
+local function remove(a, b)
+  local la, lb = height(a), height(b)
+  history[#history + 1] = { a, b, top(a), top(b), plan = plan_str(plan) }
+  table.remove(stacks[a]); table.remove(stacks[b])
+  replan(a, la, b, lb)
+  sel, hint, msg = nil, nil, nil
+  kit.moved()
+  after_move()
+  save()
+end
+
+undo = function()
+  local h = table.remove(history)
+  if not h then msg = 'Nothing to undo.'; return end
+  if h.shuffle then
+    stacks, shuffles = board_from(h.shuffle), h.shuffles
+  else
+    table.insert(stacks[h[1]], h[3]); table.insert(stacks[h[2]], h[4])
+  end
+  plan = plan_from(h.plan)
+  if not plan_ok(plan) then plan = nil end
+  sel, hint, msg = nil, nil, nil
+  save()
+end
+
+local function tap_stack(i)
+  hint = nil
+  if height(i) == 0 then sel = nil; return end
+  if not free(i) then msg = 'Blocked: a tile beside it on both sides.'; return end
+  if sel == i then sel = nil; msg = nil; return end
+  if sel and top(sel) == top(i) then remove(sel, i); return end
+  sel, msg = i, nil
+end
+
+local function show_hint()
+  if #free_pairs() == 0 then stuck_box(); return end
+  sel = nil
+  if not plan then
+    local p, none = search_plan()
+    plan = p
+    if not p then
+      hint = free_pairs()[1]
+      msg = none and 'No way to clear from here: Undo or Shuffle.' or 'Hint: a matching pair (no sure way found).'
+      return
+    end
+  end
+  hint, msg = { plan[1][1], plan[1][3] }, 'Hint: the two framed tiles match.'
+end
+
+local BUTTONS = {
+  { 'Undo', function() undo() end },
+  { 'Hint', show_hint },
+  { 'Shuffle', do_shuffle },
+  { 'New', function()
+      kit.show({ title = 'Start a new game?', lines = { 'This board is given up.' },
+                 rows = { { { 'New game', function() kit.close(); deal(); save() end }, { 'Cancel', kit.close } } },
+                 cancel = kit.close })
+    end },
+}
+local function button_rect(k)
+  local bw = math.floor((W - 24 - 3 * 8) / 4)
+  return 12 + (k - 1) * (bw + 8), BTN_Y, bw, BTN_H
+end
+
+------------------------------------------------------------------ drawing
+
+local function circle(gg, x, y, r) pcall(function() gg:circle(x, y, r) end) end
+
+-- pip spots on a 3x3 grid (column, row in -1..1) for 1..9
+local SPOTS = {
+  { { 0, 0 } },
+  { { 0, -1 }, { 0, 1 } },
+  { { -1, -1 }, { 0, 0 }, { 1, 1 } },
+  { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } },
+  { { -1, -1 }, { 1, -1 }, { 0, 0 }, { -1, 1 }, { 1, 1 } },
+  { { -1, -1 }, { 1, -1 }, { -1, 0 }, { 1, 0 }, { -1, 1 }, { 1, 1 } },
+  { { -1, -1 }, { 1, -1 }, { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, 1 }, { 1, 1 } },
+  { { -1, -1 }, { 0, -1 }, { 1, -1 }, { -1, 0 }, { 1, 0 }, { -1, 1 }, { 0, 1 }, { 1, 1 } },
+  { { -1, -1 }, { 0, -1 }, { 1, -1 }, { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, 1 }, { 0, 1 }, { 1, 1 } },
+}
+local WINDS = { 'N', 'E', 'S', 'W' }
+
+local function draw_face(gg, x, y, v)
+  local cx, cy = x + FW // 2, y + FH // 2
+  if v <= 18 then
+    local n = (v - 1) % 9 + 1
+    for _k, s in ipairs(SPOTS[n]) do
+      local px, py = cx + s[1] * 15, cy + s[2] * 17
+      if v <= 9 then
+        circle(gg, px, py, 7); circle(gg, px, py, 6); circle(gg, px, py, 2)
+      else
+        gg:rect(px - 3, py - 7, 7, 15, { line_width = 2 })
+        gg:line(px - 3, py, px + 3, py)
+      end
+    end
+  elseif v <= 22 then
+    local f = kit.font('large')
+    local s = WINDS[v - 18]
+    gg:text(cx - kit.width(f, s) // 2, cy - kit.line_h('large') // 2, s, { font = f })
+  elseif v == 23 then           -- red dragon: a boxed stroke
+    gg:rect(cx - 15, cy - 9, 30, 18, { line_width = 3 })
+    gg:rect(cx - 2, cy - 22, 4, 44, { fill = true })
+  elseif v == 24 then           -- green dragon: a diamond
+    for o = 0, 2 do
+      gg:line(cx, cy - 22 + o, cx + 18 - o, cy); gg:line(cx + 18 - o, cy, cx, cy + 22 - o)
+      gg:line(cx, cy + 22 - o, cx - 18 + o, cy); gg:line(cx - 18 + o, cy, cx, cy - 22 + o)
+    end
+  else                          -- white dragon: a double frame
+    gg:rect(x + 9, y + 9, FW - 18, FH - 18, { line_width = 3 })
+    gg:rect(x + 15, y + 15, FW - 30, FH - 30, { line_width = 1 })
+  end
+end
+
+function on_draw(c, gg)
+  if not gg then return end
+  local ok, e = pcall(function()
+    gg:clear(0)
+    gg:text(12, 12, 'Mahjong', { font = kit.font('large') })
+    gg:text(12, 52, kit.short('Tiles ' .. tiles_left() .. '    Pairs ' .. #free_pairs() .. '    Shuffles ' .. shuffles ..
+      '    Won ' .. stats.won .. '/' .. stats.played, 48), { font = kit.font('small') })
+    gg:line(0, 90, W, 90)
+    if kit.modal() then kit.draw_modal(gg); return end
+    for i = 1, COLS * ROWS do
+      local h = height(i)
+      if h > 0 then
+        local r, cc = rc(i)
+        local x0, y0 = GX + cc * CW, GY + r * CH
+        local tx, ty = x0 + 9 - 3 * (h - 1), y0 + 9 - 3 * (h - 1)
+        -- the tiles below show as edges at the bottom right
+        for k = 1, h - 1 do
+          local ex, ey = tx + 3 * k, ty + 3 * k
+          gg:line(ex + FW, ey, ex + FW, ey + FH)
+          gg:line(ex, ey + FH, ex + FW, ey + FH)
+        end
+        gg:rect(tx, ty, FW, FH, { line_width = 2 })
+        draw_face(gg, tx, ty, top(i))
+        if sel == i then
+          gg:rect(tx + 3, ty + 3, FW - 6, FH - 6, { line_width = 3 })
+        end
+        if hint and (hint[1] == i or hint[2] == i) then
+          gg:rect(tx - 3, ty - 3, FW + 6, FH + 6, { line_width = 3 })
+        end
+      end
+    end
+    local m = msg or (sel and 'Tap a matching free tile.' or 'Tap a free tile, then its match.')
+    gg:text(12, BTN_Y - 34, kit.short(m, 48), { font = kit.font('small') })
+    for k, b in ipairs(BUTTONS) do
+      local x, y, bw, bh = button_rect(k)
+      kit.button(gg, x, y, bw, bh, b[1])
+    end
+    if ERR then gg:text(12, H - 30, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
+  end)
+  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
+end
+
+function on_input(c, ev)
+  ERR = nil
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' then return end
+    if ev.type == 'pointer' and ev.phase == 'up' then
+      local x, y = ev.x or 0, ev.y or 0
+      if kit.tap_modal(x, y) then return end
+      for k, b in ipairs(BUTTONS) do
+        local bx, by, bw, bh = button_rect(k)
+        if x >= bx and x < bx + bw and y >= by and y < by + bh then b[2](); return end
+      end
+      if x >= GX and x < GX + COLS * CW and y >= GY and y < GY + ROWS * CH then
+        tap_stack(idx((y - GY) // CH, (x - GX) // CW))
+      end
+    elseif ev.type == 'key' and kit.key_accepted(ev) and ev.key == 'back' and kit.modal() and kit.modal().cancel then
+      kit.modal().cancel()
+    end
+  end)
+  if not ok then ERR = tostring(e) end
+  kit.refresh()
+  return true
+end
+
+function on_load(c)
+  math.randomseed(kit.now_ms() or 1)
+  load()
+end
+function on_leave() save() end
+
+if rawget(_G, '__TEST') then
+  __TEST.api = {
+    tiles = tiles_left, free = free, height = height, top = top, sel = function() return sel end,
+    hint = function() return hint and hint[1], hint and hint[2] end, shuffles = function() return shuffles end,
+    free_pairs = function() return #free_pairs() end, cell = function() return GX, GY, CW, CH end,
+    board = board_str, plan_ok = function() return plan_ok(plan) end, has_plan = function() return plan ~= nil end,
+  }
+end

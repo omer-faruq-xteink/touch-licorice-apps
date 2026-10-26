@@ -224,10 +224,28 @@ def pegsolitaire(p):
                 p.ellipse((cx - 5, cy - 5, cx + 5, cy + 5), fill=True)
 
 
+def minesweeper(p):
+    # a mine: a black ball with eight spikes and a white glint
+    for a, b in (((48, 12), (48, 84)), ((12, 48), (84, 48)), ((22, 22), (74, 74)), ((74, 22), (22, 74))):
+        p.line([a, b], 7)
+    p.ellipse((24, 24, 72, 72), fill=True)
+    p.white_ellipse((34, 34, 44, 44))
+
+
+def mahjong(p):
+    # two stacked tiles; the front one shows a boxed stroke (the red dragon)
+    p.rect((30, 8, 86, 76), w=4, r=6)
+    p.white_rect((14, 22, 70, 90))
+    p.rect((10, 20, 66, 88), w=5, r=6)
+    p.rect((22, 40, 54, 66), w=4)
+    p.rect((35, 28, 41, 80), fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
-         'lightsout': lightsout, 'pegsolitaire': pegsolitaire}
+         'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
+         'minesweeper': minesweeper, 'mahjong': mahjong}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

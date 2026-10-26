@@ -1,0 +1,10 @@
+{
+  "app_id": "minesweeper",
+  "display_name": "Minesweeper",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Minesweeper that never needs a guess: every board can be cleared by logic. Three sizes, flags, hint, undo.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

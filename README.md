@@ -12,6 +12,8 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Peg Solitaire** | jump pegs down to one, on the English 33-hole board or the 15-hole triangle |
 | **Nonograms** | picture logic puzzles from 5x5 to 12x12, 600 of them, all solvable line by line |
 | **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
+| **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
+| **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
 | **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place framed twice; best results per size |
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
@@ -92,6 +94,19 @@ press, finished lines struck through, Undo, half-done puzzles kept. [More](apps/
 
 Visit every square of a 6x6 or 8x8 board once with a chess knight: the possible jumps are marked,
 Hint follows Warnsdorff's rule, Undo, best result and complete tours per size. [More](apps/knightstour/README.md)
+
+### Minesweeper
+
+Boards that never need a guess: the mines go down after your first tap, and only a board that logic
+clears from there is kept. Easy 8x10, Normal 9x11 and Hard 10x13 fit the screen with finger-sized
+cells; long press or Flag mode for flags, open by tapping a finished number, Hint, Undo, best times.
+[More](apps/minesweeper/README.md)
+
+### Mahjong
+
+Mahjong Solitaire on a 7x8 pyramid of 100 tiles, drawn from above with stack heights as stepped
+edges. Every deal can be cleared, and Hint keeps pointing at a pair that leaves the board clearable;
+Shuffle and Undo when you get stuck. [More](apps/mahjong/README.md)
 
 ### Slide Puzzle
 
@@ -194,6 +209,8 @@ python -I apps/lightsout/test_lightsout.py
 python -I apps/pegsolitaire/test_pegsolitaire.py
 python -I apps/nonogram/test_nonogram.py
 python -I apps/knightstour/test_knightstour.py
+python -I apps/minesweeper/test_minesweeper.py
+python -I apps/mahjong/test_mahjong.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py
