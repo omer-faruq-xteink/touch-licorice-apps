@@ -66,11 +66,17 @@ local function save_history()
   kit.write('history.txt', table.concat(out, '\n'))
 end
 
--- a file name for an article: its language and a hash of its title
+-- a file name for an article: its language and two hashes of its title. Every value stays
+-- below 2^30: the reader's Lua may have 32-bit numbers (a 2^32 modulus there turned the hash
+-- into a float that string.format('%x') refused: "bad argument").
 local function article_file(lang, title)
-  local h = 5381
-  for i = 1, #title do h = (h * 33 + title:byte(i)) % 4294967296 end
-  return 'a_' .. lang:gsub('%-', '') .. '_' .. string.format('%08x', h) .. '.txt'
+  local h1, h2 = 5381, 7
+  for i = 1, #title do
+    local b = title:byte(i)
+    h1 = (h1 * 33 + b) % 16777213
+    h2 = (h2 * 31 + b) % 16777199
+  end
+  return 'a_' .. (lang:gsub('%-', '')) .. '_' .. string.format('%06x%06x', h1, h2) .. '.txt'
 end
 
 local function remember(lang, title, text)

@@ -338,6 +338,14 @@ Count what an on_draw issues (`tools/gamekit/harness.py`: `Game.commands()`) and
 draw shapes as one `g:polyline` (one command for many points), merge boxes that repeat on
 consecutive rows, and draw stacked things (cards in a column) as one frame with dividing lines.
 
+## Numbers may be 32-bit (2026-10-27, build 26102401)
+
+`string.format('%08x', h)` with `h` kept below 2^32 (`% 4294967296`) failed on the device with
+"bad argument", while it works under the 64-bit Lua 5.4 of the tests: the host's Lua is most
+likely built with 32-bit integers (as is usual on the ESP32), where 4294967296 is a float and the
+result no longer an integer. Keep integer arithmetic below 2^31 (hashes with moduli under 2^24,
+epoch seconds plus at most a few years). Not probed directly yet (`math.maxinteger` would say).
+
 ## App icons in the Ink App grid (2026-10-26, build 26102401)
 
 The grid reads a package's **icons section** (header offset 0x30, never encrypted, no HMAC) and

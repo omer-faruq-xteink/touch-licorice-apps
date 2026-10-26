@@ -184,6 +184,7 @@ local TOP = 100
 local LEARN_S = 20 * 60                -- due again within this: shown again in this session
 local MAX_REVIEWS = 300                -- reviews taken into one session
 local MAX_TSV = 300000                 -- a plain .tsv list is read whole
+local MAX_IVL = 1000                   -- the longest interval, in days
 local NEW_CHOICES = { 5, 10, 15, 20, 30, 50 }
 local ROW_H, ROWS = 84, 7
 
@@ -430,6 +431,9 @@ local function schedule(rec, r, now)
       ease = ease + 0.15; ivl = ivl == 0 and 3 or ivl * ease * 1.3; due = now + math.floor(ivl * 86400)
     end
   end
+  -- at most MAX_IVL days: now + the interval in seconds must stay a 32-bit number, which the
+  -- reader's Lua may use
+  if ivl > MAX_IVL then ivl = MAX_IVL; due = now + MAX_IVL * 86400 end
   return { due = due, ivl = ivl, ease = ease, reps = reps + 1, lapses = lapses }
 end
 
