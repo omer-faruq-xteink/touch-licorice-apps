@@ -4,6 +4,17 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **New: Chess puzzles** — 2400 tactics puzzles from the Lichess database (CC0) in six banks:
+  mate in 1, mate in 2, and Easy to Expert by rating (800 to 2400). Tap a piece and its square;
+  Hint frames the piece and then its square, Show makes the move. Themes after each puzzle,
+  counts per bank.
+- **New: Wikipedia** — search or a random article over Wi-Fi, as plain text paged like the RSS
+  articles, in the language you choose (a list of common ones, or any Wikipedia's code). The
+  last 30 articles read stay on the reader for offline reading.
+- **New: FreeCell** — the solitaire with Microsoft's numbered deals (1 to 32000). Tap a card and
+  then where it goes; runs move as far as free cells and empty columns allow, safe cards go home
+  by themselves. **Hint** shows a move of a winning line for deals 1 to 1000 (their solutions ship
+  with the app) and offers the way back when you leave it. Undo, restart.
 - **Anki on the lock screen**: long-press a deck and choose **Lock screen**; when the reader locks
   it shows one of the deck's next cards with its answer, a different one every 30 minutes.
 
@@ -16,6 +27,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
+| `chess.xtapp`, `freecell.xtapp`, `wikipedia.xtapp` | **new** |
 | `anki.xtapp` | **updated**: lock screen |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.9.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

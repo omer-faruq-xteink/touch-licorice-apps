@@ -1,0 +1,10 @@
+{
+  "app_id": "freecell",
+  "display_name": "FreeCell",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "FreeCell solitaire with Microsoft's numbered deals; Hint follows a winning line for deals 1 to 1000. Undo, restart, safe cards go home by themselves.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
