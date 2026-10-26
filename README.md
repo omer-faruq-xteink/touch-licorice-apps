@@ -8,6 +8,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 |---|---|
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
+| **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place shown inverted; best results per size |
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
@@ -21,7 +22,7 @@ Everything here is unofficial and was reverse-engineered from the firmware. It w
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
 
 Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
-size, no network). Notes, RSS, Instapaper, Dictionary and Merchant declare `"api": "2.0"` and get **API 2.9**: finger movement,
+size, no network). Notes, RSS, Instapaper, Dictionary, Merchant and Slide Puzzle declare `"api": "2.0"` and get **API 2.9**: finger movement,
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 
@@ -65,6 +66,12 @@ Tap a cell, then a digit on the pad. **Erase** clears, **Chk on/off** marks the 
 rule, **Next** and **Bank** move through 600 puzzles each of easy, medium, hard and diabolical. Side
 buttons go to the previous / next puzzle. Puzzle banks are plain text files inside the package;
 adding your own is one command. [More](apps/sudoku/README.md)
+
+### Slide Puzzle
+
+Tap a tile next to the gap or swipe to slide it; tiles already in their final place are drawn
+inverted. Boards from 3x3 to 7x7, each with its own saved puzzle, best time, fewest moves and games
+played; seven languages. Ported from the KOReader plugin slidepuzzle.koplugin. [More](apps/slidepuzzle/README.md)
 
 ### Suguru
 
@@ -154,6 +161,7 @@ python -I apps/game2048/test_2048.py
 python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
 python -I apps/suguru/test_suguru.py
+python -I apps/slidepuzzle/test_slidepuzzle.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

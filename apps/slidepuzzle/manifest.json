@@ -1,0 +1,10 @@
+{
+  "app_id": "slidepuzzle",
+  "display_name": "Slide Puzzle",
+  "version": "1.3.0",
+  "author": "omer-faruq",
+  "description": "Classic sliding tile puzzle, 3x3 to 7x7, with moves, time and best results",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

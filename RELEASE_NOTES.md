@@ -10,6 +10,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   has a single solution reached by logic, without guessing, and each bank runs from easiest to
   hardest. Mistake marking, progress kept. Drawn with heavy region borders and bold digits so the grid
   stays readable on panels that show thin lines faintly.
+- **New: Slide Puzzle.** The KOReader plugin's sliding-tile puzzle on the reader: 3x3 to 7x7, tap
+  or swipe to slide, tiles already in place drawn inverted, moves and time, best time / fewest
+  moves / games played per size, seven languages, saved after every move. GPL-3.0 like the plugin.
 - **Sudoku: diabolical puzzles a person can solve.** All 2400 puzzles were checked: each has a
   single solution, and easy, medium and hard need only standard techniques. The diabolical bank
   held 320 puzzles rated 7.0 to 9.1 that need dynamic forcing chains, which come down to trial and
@@ -31,7 +34,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `suguru.xtapp` | **new** |
+| `suguru.xtapp`, `slidepuzzle.xtapp` | **new** |
 | `sudoku.xtapp` | **changed**: diabolical bank |
 | `rss.xtapp`, `instapaper.xtapp` | **changed**: preview box; Instapaper also keeps unsent progress |
 | all other `.xtapp` packages | unchanged since v0.6.0 |

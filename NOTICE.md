@@ -16,6 +16,13 @@ The game rules, themes and translations (`apps/merchant/src/merchant_*.lua`) com
 are, like the whole Merchant app, licensed under the **GNU AGPL v3** (`apps/merchant/LICENSE`),
 not MIT.
 
+## Slide Puzzle — `apps/slidepuzzle/`
+
+The game rules and translations (`apps/slidepuzzle/src/slidepuzzle_*.lua`) come from
+[slidepuzzle.koplugin](https://github.com/omer-faruq/slidepuzzle.koplugin) v1.3.0 by the same
+author and are, like the whole Slide Puzzle app, licensed under the **GNU GPL v3**
+(`apps/slidepuzzle/LICENSE`), not MIT.
+
 ## Sudoku puzzles — `apps/sudoku/data/`
 
 From the [sudoku-exchange puzzle bank](https://github.com/grantm/sudoku-exchange-puzzle-bank) by
