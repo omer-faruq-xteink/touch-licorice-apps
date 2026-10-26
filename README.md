@@ -13,6 +13,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Nonograms** | picture logic puzzles from 5x5 to 12x12, 600 of them, all solvable line by line |
 | **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
+| **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
 | **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place framed twice; best results per size |
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
@@ -21,6 +22,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
+| **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
@@ -103,6 +105,13 @@ clears from there is kept. Easy 8x10, Normal 9x11 and Hard 10x13 fit the screen 
 cells; long press or Flag mode for flags, open by tapping a finished number, Hint, Undo, best times.
 [More](apps/minesweeper/README.md)
 
+### FreeCell
+
+Microsoft's numbered deals: tap a card (with the cards above it, as far as free cells and empty
+columns allow), then where it goes. Safe cards go home by themselves; Hint shows a move of a
+winning line for deals 1 to 1000 (solutions ship with the app) and the way back to it when you
+leave it. Cards are drawn: black suits solid, red suits hollow. [More](apps/freecell/README.md)
+
 ### Mahjong
 
 Mahjong Solitaire on a 7x8 pyramid of 100 tiles, drawn from above with stack heights as stepped
@@ -160,6 +169,12 @@ Your [Instapaper](https://www.instapaper.com) account on the reader: **Unread**,
 where you left off (the progress Instapaper keeps, also from KOReader or the website) and send it
 back when you leave; **Archive** and **Star** from the preview or the article's end. No Worker: the
 app talks to Instapaper directly with a personal access token. [More](apps/instapaper/README.md)
+
+### Wikipedia
+
+Search or open a random article; it comes as plain text in the language you choose (English,
+Türkçe, Deutsch, ... or any Wikipedia's code) and is paged like an RSS article. The last 30
+articles stay on the reader for reading without Wi-Fi. [More](apps/wikipedia/README.md)
 
 ### Anki
 
@@ -221,6 +236,8 @@ python -I apps/knightstour/test_knightstour.py
 python -I apps/minesweeper/test_minesweeper.py
 python -I apps/mahjong/test_mahjong.py
 python -I apps/anki/test_anki.py
+python -I apps/freecell/test_freecell.py
+python -I apps/wikipedia/test_wikipedia.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

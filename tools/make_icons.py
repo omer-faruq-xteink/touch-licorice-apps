@@ -249,11 +249,32 @@ def anki(p):
     p.text((38, 59), '?', font('arialbd.ttf', 36))
 
 
+def freecell(p):
+    # two overlapping cards: a solid spade on the front one
+    p.rect((34, 8, 86, 74), w=4, r=6)
+    p.white_rect((10, 22, 62, 90))
+    p.rect((10, 22, 62, 90), w=5, r=6)
+    p.ellipse((22, 46, 40, 64), fill=True)
+    p.ellipse((32, 46, 50, 64), fill=True)
+    p.poly([(21, 55), (51, 55), (36, 34)], fill=True)
+    p.poly([(36, 58), (28, 76), (44, 76)], fill=True)
+
+
+def wikipedia(p):
+    # lines of text under a magnifying glass (not Wikipedia's own logo)
+    for y, x1 in ((14, 82), (26, 70), (38, 82), (50, 60), (62, 82), (74, 70)):
+        p.line([(10, y), (x1, y)], 4)
+    p.white_ellipse((26, 22, 74, 70))
+    p.ellipse((26, 22, 74, 70), w=6)
+    p.line([(68, 64), (88, 86)], 10)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
-         'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki}
+         'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
+         'freecell': freecell, 'wikipedia': wikipedia}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

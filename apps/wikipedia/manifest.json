@@ -1,0 +1,10 @@
+{
+  "app_id": "wikipedia",
+  "display_name": "Wikipedia",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Read Wikipedia over Wi-Fi: search or a random article in the language you choose; articles read are kept for offline reading.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}
