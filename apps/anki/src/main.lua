@@ -604,7 +604,13 @@ function on_draw(c, gg)
       gg:text(12, 12, 'Anki', { font = kit.font('large') })
       gg:text(12, 52, 'Decks    new cards a day: ' .. settings.new_per_day, { font = kit.font('small') })
     else
-      gg:text(12, 12, kit.short(deck.name, 26), { font = kit.font('large') })
+      -- the deck name, shortened to end before the Menu button
+      local f, name = kit.font('large'), deck.name
+      if kit.width(f, name) > W - 136 then
+        while #name > 1 and kit.width(f, name .. '~') > W - 136 do name = kit.drop_last(name) end
+        name = name .. '~'
+      end
+      gg:text(12, 12, name, { font = f })
       local n, r = counts()
       gg:text(12, 52, 'New ' .. n .. '    Review ' .. r .. '    Done ' .. session.done, { font = kit.font('small') })
       kit.button(gg, W - 112, 10, 100, 44, 'Menu', { font = 'medium' })
@@ -624,7 +630,11 @@ function on_draw(c, gg)
       local lines_ = { session.done .. ' cards studied in this session.',
                        'New cards come back tomorrow; reviews when they are due.',
                        'Menu: Undo, Add card, back to the decks.' }
-      for k, s in ipairs(lines_) do gg:text(24, TOP + 90 + (k - 1) * 30, s, { font = kit.font('small') }) end
+      local y = TOP + 90
+      for _k, s in ipairs(lines_) do
+        for _j, l in ipairs(kit.wrap(s, 'small', W - 48)) do gg:text(24, y, l, { font = kit.font('small') }); y = y + 26 end
+        y = y + 6
+      end
       kit.button(gg, 12, BTN_Y, W - 24, BTN_H, 'Decks', { font = 'large' })
     end
     if msg then gg:text(12, BTN_Y - 30, kit.short(msg, 34), { font = kit.font('small') }) end

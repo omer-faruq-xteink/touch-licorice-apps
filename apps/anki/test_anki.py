@@ -66,6 +66,7 @@ assert 'New/day 15' in t and 'Help' in t
 # study the built-in deck: 15 new cards, the first word of the deck
 g.tap(*deck_row('English words B2-C1'))
 assert str(A().screen()) == 'study' and queue_len() == 15
+assert 'English words B2-C1' in g.texts()
 first = front()
 assert first.startswith('contribution\n(noun)'), first
 t = g.texts()
@@ -93,6 +94,7 @@ for _ in range(40):
     seen.add(front())
     g.tap(240, 300); rate(4)
 assert str(A().screen()) == 'done' and len(seen) == 15 and 'Done for now!' in g.texts()
+assert any(s.startswith('New cards come back') for s in g.texts()) and 'are due.' in ' '.join(g.texts())   # wrapped, not cut
 g.tap(240, 730)                                   # Decks
 assert '1438 cards    due 0    new 0' in g.texts(), g.texts()
 g.tap(*deck_row('English words B2-C1'))
@@ -169,6 +171,7 @@ assert 'Greek letters' in t and 'vocab' in t, t
 assert '4 cards    due 0    new 4' in t and '2 cards    due 0    new 2' in t, t
 g.tap(*deck_row('Greek letters'))
 assert front() == 'alpha' and queue_len() == 4
+assert 'Greek letters' in g.texts()                                            # a short name stays whole
 g.tap(240, 300)
 assert 'the first letter' in g.texts()
 g.tap(400, 30); g.tap_label('Decks')
