@@ -5,7 +5,7 @@ v0.9.0). Same rules: givens are fixed, "solved" is a full grid with no repeated 
 column or 3x3 box, optional marking of the cells that currently break a rule. Digits use the
 large system font and the grid solid 2 px / 4 px lines, so it reads on panels that show thin
 strokes faintly. Progress is kept in `state.txt` (and the host's `ctx.state`, which is all the
-API 0.8 version used, so an update keeps the puzzle you were on).
+API 0.8 version used, so an update should keep the puzzle you were on).
 
 ## Puzzle banks: data files inside the package
 
