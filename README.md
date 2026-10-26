@@ -8,6 +8,10 @@ copy a package to the SD card and install it from the reader's own file browser.
 |---|---|
 | **2048** | the sliding-tile game; swipe or side buttons, score and best kept |
 | **Sudoku** | 9x9 puzzles, 2400 of them in four difficulties, mistake marking, progress kept |
+| **Lights Out** | switch all the lights off on a 5x5 board; target, hint, undo, three levels |
+| **Peg Solitaire** | jump pegs down to one, on the English 33-hole board or the 15-hole triangle |
+| **Nonograms** | picture logic puzzles from 5x5 to 12x12, 600 of them, all solvable line by line |
+| **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
 | **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place framed twice; best results per size |
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
@@ -22,7 +26,7 @@ Everything here is unofficial and was reverse-engineered from the firmware. It w
 Pro running **XTOS Licorice build 26102301** (October 2026). Read "Caveats" before installing.
 
 Two host APIs exist on this build. The games use the default **API 0.8** (taps, swipes, one text
-size, no network). Notes, RSS, Instapaper, Dictionary, Merchant and Slide Puzzle declare `"api": "2.0"` and get **API 2.9**: finger movement,
+size, no network). Notes, RSS, Instapaper, Dictionary, Merchant, Slide Puzzle and the newer puzzle games declare `"api": "2.0"` and get **API 2.9**: finger movement,
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 
@@ -66,6 +70,28 @@ Tap a cell, then a digit on the pad. **Erase** clears, **Chk on/off** marks the 
 rule, **Next** and **Bank** move through 600 puzzles each of easy, medium, hard and diabolical. Side
 buttons go to the previous / next puzzle. Puzzle banks are plain text files inside the package;
 adding your own is one command. [More](apps/sudoku/README.md)
+
+### Lights Out
+
+A tap switches a square and its four neighbours; switch the whole 5x5 board off. Every puzzle is
+solvable, with the fewest presses shown as the target; Hint frames a square of a best solution,
+Undo, three levels. [More](apps/lightsout/README.md)
+
+### Peg Solitaire
+
+Tap a peg, then the hole to jump to; the jumped peg goes. The English 33-hole board and the
+15-hole triangle, Undo, a rating at the end and the best result per board. [More](apps/pegsolitaire/README.md)
+
+### Nonograms
+
+Fill the cells so every row and column matches its clue. 150 puzzles each of 5x5, 8x8, 10x10 and
+12x12 (larger would be too small to tap), every one solvable line by line; X marks by mode or long
+press, finished lines struck through, Undo, half-done puzzles kept. [More](apps/nonogram/README.md)
+
+### Knight's Tour
+
+Visit every square of a 6x6 or 8x8 board once with a chess knight: the possible jumps are marked,
+Hint follows Warnsdorff's rule, Undo, best result and complete tours per size. [More](apps/knightstour/README.md)
 
 ### Slide Puzzle
 
@@ -162,6 +188,10 @@ python -I apps/sudoku/test_sudoku.py
 python -I apps/sokoban/test_sokoban.py
 python -I apps/suguru/test_suguru.py
 python -I apps/slidepuzzle/test_slidepuzzle.py
+python -I apps/lightsout/test_lightsout.py
+python -I apps/pegsolitaire/test_pegsolitaire.py
+python -I apps/nonogram/test_nonogram.py
+python -I apps/knightstour/test_knightstour.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

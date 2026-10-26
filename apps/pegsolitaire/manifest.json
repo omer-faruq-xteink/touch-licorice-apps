@@ -1,0 +1,10 @@
+{
+  "app_id": "pegsolitaire",
+  "display_name": "Peg Solitaire",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Jump pegs until one is left: English 33-hole board and the 15-hole triangle. Undo, best per board.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

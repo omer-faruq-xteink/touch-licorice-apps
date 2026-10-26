@@ -13,6 +13,15 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 - **New: Slide Puzzle.** The KOReader plugin's sliding-tile puzzle on the reader: 3x3 to 7x7, tap
   or swipe to slide, tiles already in place framed twice, moves and time, best time / fewest
   moves / games played per size, seven languages, saved after every move. GPL-3.0 like the plugin.
+- **New: four puzzle games** on a shared toolkit (`tools/gamekit`), all tap-to-select /
+  tap-to-target, nothing filled black, saved after every move:
+  - **Lights Out**: 5x5, every puzzle solvable with the fewest presses as the target, Hint, Undo,
+    three levels.
+  - **Peg Solitaire**: the English 33-hole board and the 15-hole triangle, marked jumps, Undo, a
+    rating and the best result per board.
+  - **Nonograms**: 600 picture puzzles from 5x5 to 12x12, all solvable line by line (generated
+    here), X marks, struck-through finished lines, half-done puzzles kept.
+  - **Knight's Tour**: 6x6 and 8x8, marked jumps, a Warnsdorff hint, Undo, complete tours counted.
 - **Sudoku: diabolical puzzles a person can solve.** All 2400 puzzles were checked: each has a
   single solution, and easy, medium and hard need only standard techniques. The diabolical bank
   held 320 puzzles rated 7.0 to 9.1 that need dynamic forcing chains, which come down to trial and
@@ -34,7 +43,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `suguru.xtapp`, `slidepuzzle.xtapp` | **new** |
+| `suguru.xtapp`, `slidepuzzle.xtapp`, `lightsout.xtapp`, `pegsolitaire.xtapp`, `nonogram.xtapp`, `knightstour.xtapp` | **new** |
 | `sudoku.xtapp` | **changed**: diabolical bank |
 | `rss.xtapp`, `instapaper.xtapp` | **changed**: preview box; Instapaper also keeps unsent progress |
 | all other `.xtapp` packages | unchanged since v0.6.0 |

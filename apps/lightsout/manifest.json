@@ -1,0 +1,10 @@
+{
+  "app_id": "lightsout",
+  "display_name": "Lights Out",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Switch all the lights off: a tap switches a square and its neighbours. Target, hint, undo.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

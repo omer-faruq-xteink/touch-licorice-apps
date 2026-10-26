@@ -1,0 +1,10 @@
+{
+  "app_id": "nonogram",
+  "display_name": "Nonograms",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Picture logic puzzles from 5x5 to 12x12, all solvable line by line. Fill, mark, undo.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

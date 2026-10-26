@@ -1,0 +1,10 @@
+{
+  "app_id": "knightstour",
+  "display_name": "Knight's Tour",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Move a chess knight over every square once, on 6x6 or 8x8. Marked jumps, hint, undo.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
