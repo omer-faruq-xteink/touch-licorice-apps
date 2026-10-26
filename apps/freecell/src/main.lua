@@ -10,7 +10,8 @@
 -- made in another order. Off the line, Hint offers to undo back to it.
 --
 -- Cards are drawn, not printed (the fonts may lack the suit signs): clubs and spades solid,
--- diamonds and hearts hollow.
+-- diamonds and hearts hollow, each sign a polyline and a few boxes (the host draws at most
+-- about 1024 commands a screen).
 
 local R = require('rules')
 local W, H = kit.W, kit.H
@@ -34,30 +35,28 @@ local ERR = nil
 
 ------------------------------------------------------------------ suits
 
-local SPRITES = {
-  [0] = { '....###....', '...#####...', '...#####...', '.##.###.##.', '###########', '###########',
-          '.##..#..##.', '.....#.....', '....###....', '...#####...' },                         -- clubs
-  [1] = { '.....#.....', '....#.#....', '...#...#...', '..#.....#..', '.#.......#.', '#.........#',
-          '.#.......#.', '..#.....#..', '...#...#...', '....#.#....', '.....#.....' },           -- diamonds
-  [2] = { '.##.....##.', '#..#...#..#', '#...#.#...#', '#....#....#', '#.........#', '.#.......#.',
-          '..#.....#..', '...#...#...', '....#.#....', '.....#.....' },                         -- hearts
-  [3] = { '.....#.....', '....###....', '...#####...', '..#######..', '.#########.', '###########',
-          '###########', '.##..#..##.', '.....#.....', '....###....', '...#####...' },           -- spades
+-- A suit sign is one polyline outline in a 0..10 box; clubs and spades also get a few filled
+-- boxes so they read solid. Few draw commands matter: the host draws at most about 1024 per
+-- screen (the rest of the screen is simply left out), and 52 cards each carry a sign.
+local SUITS = {
+  [0] = { { 5, 0, 6.8, 0.6, 7.4, 2.4, 6.6, 4.2, 8.6, 3.6, 10, 4.8, 10, 6.6, 8.6, 7.8, 6.4, 7.2, 6.8, 10, 3.2, 10, 3.6, 7.2,
+            1.4, 7.8, 0, 6.6, 0, 4.8, 1.4, 3.6, 3.4, 4.2, 2.6, 2.4, 3.2, 0.6, 5, 0 },
+          { { 3.6, 0.8, 6.4, 3.8 }, { 1.0, 4.6, 3.8, 7.0 }, { 6.2, 4.6, 9.0, 7.0 }, { 4.4, 3.8, 5.6, 9.8 } } },     -- clubs
+  [1] = { { 5, 0, 9, 5, 5, 10, 1, 5, 5, 0 }, {} },                                                                -- diamonds
+  [2] = { { 5, 2.5, 3.8, 0.6, 2, 0, 0.4, 1, 0, 3, 0.8, 5.2, 5, 10, 9.2, 5.2, 10, 3, 9.6, 1, 8, 0, 6.2, 0.6, 5, 2.5 }, {} },  -- hearts
+  [3] = { { 5, 0, 8.6, 3.6, 10, 5.6, 9.6, 7.4, 8, 8.2, 6.2, 7.4, 6.6, 10, 3.4, 10, 3.8, 7.4, 2, 8.2, 0.4, 7.4, 0, 5.6,
+            1.4, 3.6, 5, 0 },
+          { { 3.8, 1.6, 6.2, 3.0 }, { 2.6, 3.0, 7.4, 4.6 }, { 1.2, 4.6, 8.8, 7.2 }, { 4.2, 7, 5.8, 9.8 } } },     -- spades
 }
 
-local function sprite(gg, suit, x, y, s)
-  for r, row in ipairs(SPRITES[suit]) do
-    local c = 1
-    while c <= #row do
-      if row:sub(c, c) == '#' then
-        local e = c
-        while e < #row and row:sub(e + 1, e + 1) == '#' do e = e + 1 end
-        gg:rect(x + (c - 1) * s, y + (r - 1) * s, (e - c + 1) * s, s, { fill = true })
-        c = e + 1
-      else
-        c = c + 1
-      end
-    end
+local function suit(gg, s, x, y, scale)
+  local shape = SUITS[s]
+  local pts = {}
+  for i, v in ipairs(shape[1]) do pts[i] = math.floor((i % 2 == 1 and x or y) + v * scale + 0.5) end
+  gg:polyline(pts)
+  for _k, b in ipairs(shape[2]) do
+    local x1, y1 = math.floor(x + b[1] * scale + 0.5), math.floor(y + b[2] * scale + 0.5)
+    gg:rect(x1, y1, math.floor(x + b[3] * scale + 0.5) - x1, math.floor(y + b[4] * scale + 0.5) - y1, { fill = true })
   end
 end
 
@@ -334,13 +333,30 @@ end
 
 ------------------------------------------------------------------ drawing
 
-local function draw_card(gg, c, x, y, whole)
+-- a card's face: rank and a small sign at its top, a large sign when the whole card shows
+local function face(gg, c, x, y, whole)
+  gg:text(x + 4, y + 2, RANKS[R.rank(c)], { font = kit.font('medium') })
+  suit(gg, R.suit(c), x + CW - 24, y + 4, 2)
+  if whole then suit(gg, R.suit(c), x + (CW - 32) // 2, y + CH - 40, 3.2) end
+end
+
+local function draw_card(gg, c, x, y)
   gg:rect(x, y, CW, CH, { line_width = 1 })
-  local f = kit.font('medium')
-  local r = RANKS[R.rank(c)]
-  gg:text(x + 4, y + 2, r, { font = f })
-  sprite(gg, R.suit(c), x + CW - 24, y + 5, 2)
-  if whole then sprite(gg, R.suit(c), x + (CW - 33) // 2, y + CH - 40, 3) end
+  face(gg, c, x, y, true)
+end
+
+-- a column: one frame round the stack and a line where each card starts, so the edges of the
+-- cards underneath never cross the faces above them
+local function draw_column(gg, k)
+  local col, x = pos.cols[k], slot_x(k)
+  if #col == 0 then gg:rect(x + 4, TAB_Y + 4, CW - 8, CH - 8, { line_width = 1 }); return end
+  local bottom = card_y(k, #col) + CH
+  gg:rect(x, TAB_Y, CW, bottom - TAB_Y, { line_width = 1 })
+  for i, c in ipairs(col) do
+    local y = card_y(k, i)
+    if i > 1 then gg:line(x, y, x + CW - 1, y) end
+    face(gg, c, x, y, i == #col)
+  end
 end
 
 local function frame(gg, x, y, w, h, lw) gg:rect(x - 3, y - 3, w + 6, h + 6, { line_width = lw or 3 }) end
@@ -358,23 +374,19 @@ function on_draw(c, gg)
       local x = slot_x(k)
       if k <= 4 then
         local cc = pos.free[k]
-        if cc ~= 0 then draw_card(gg, cc, x, SLOT_Y, true)
+        if cc ~= 0 then draw_card(gg, cc, x, SLOT_Y)
         else gg:rect(x + 4, SLOT_Y + 4, CW - 8, CH - 8, { line_width = 1 }) end
       else
         local s = k - 5
-        if pos.home[s] > 0 then draw_card(gg, s * 13 + pos.home[s], x, SLOT_Y, true)
+        if pos.home[s] > 0 then draw_card(gg, s * 13 + pos.home[s], x, SLOT_Y)
         else
           gg:rect(x, SLOT_Y, CW, CH, { line_width = 2 })
-          sprite(gg, s, x + (CW - 22) // 2, SLOT_Y + (CH - 22) // 2, 2)
+          suit(gg, s, x + (CW - 32) // 2, SLOT_Y + (CH - 32) // 2, 3.2)
         end
       end
     end
     -- the tableau
-    for k = 1, 8 do
-      local col, x = pos.cols[k], slot_x(k)
-      if #col == 0 then gg:rect(x + 4, TAB_Y + 4, CW - 8, CH - 8, { line_width = 1 }) end
-      for i, cc in ipairs(col) do draw_card(gg, cc, x, card_y(k, i), i == #col) end
-    end
+    for k = 1, 8 do draw_column(gg, k) end
     -- the picked cards and the hint
     local function mark(from, i, n, lw)
       if from == 'f' then frame(gg, slot_x(i), SLOT_Y, CW, CH, lw); return end

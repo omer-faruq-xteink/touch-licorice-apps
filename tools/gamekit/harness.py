@@ -1,6 +1,7 @@
 """Offline harness for gamekit games under Lua 5.4 (lupa): a method-style ctx stub (storage, fonts
 that measure 10 px per character, clock, input), a gg that records texts, rects and circles, and
-helpers to tap, tap a label, press keys and restart.
+helpers to tap, tap a label, press keys and restart; commands() counts an on_draw's draw
+commands (the host draws about 1024 of them a screen and leaves out the rest).
 
     from harness import Game
     g = Game('apps/lightsout')     # bundles, loads index.lua, calls on_load
@@ -11,9 +12,11 @@ from lupa import lua54
 
 STUBS = r'''
 drawn, rects, circles, store, inputs = {}, {}, {}, {}, {}
+commands = 0                  -- draw commands of the last on_draw (the host draws about 1024 at most)
 fake_ms = 100000
 local gmt = {}
 gmt.__index = function(_, k) return function(_, ...)
+  commands = commands + 1
   if k == 'text' then local x, y, s = ...; drawn[#drawn + 1] = { s = s, x = x, y = y } end
   if k == 'rect' then local x, y, w, h, o = ...; rects[#rects + 1] = { x = x, y = y, w = w, h = h, fill = type(o) == 'table' and o.fill or false } end
   if k == 'circle' then local x, y, r = ...; circles[#circles + 1] = { x = x, y = y, r = r } end
@@ -50,7 +53,7 @@ class Game:
         self.store = self.g.store
         self._tap = self.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
         self._key = self.L.eval("function(k) fake_ms = fake_ms + 300; on_input(ctx, {type='key', key=k}) end")
-        self._draw = self.L.eval("function() drawn, rects, circles = {}, {}, {}; on_draw(ctx, gg); return drawn end")
+        self._draw = self.L.eval("function() drawn, rects, circles, commands = {}, {}, {}, 0; on_draw(ctx, gg); return drawn end")
         self.restart()
 
     def restart(self):
@@ -92,6 +95,11 @@ class Game:
 
     def advance(self, ms):
         self.L.execute(f'fake_ms = fake_ms + {int(ms)}')
+
+    def commands(self):
+        """draw commands of one on_draw; the host leaves out everything past about 1024"""
+        self.draw()
+        return int(self.g.commands)
 
     def no_err(self):
         t = self.texts()

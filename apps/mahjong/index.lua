@@ -598,7 +598,7 @@ local function draw_face(gg, x, y, v)
     for _k, s in ipairs(SPOTS[n]) do
       local px, py = cx + s[1] * 15, cy + s[2] * 17
       if v <= 9 then
-        circle(gg, px, py, 7); circle(gg, px, py, 6); circle(gg, px, py, 2)
+        circle(gg, px, py, 7); circle(gg, px, py, 2)            -- two commands a dot: the host draws ~1024 a screen
       else
         gg:rect(px - 3, py - 7, 7, 15, { line_width = 2 })
         gg:line(px - 3, py, px + 3, py)

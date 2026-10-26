@@ -67,8 +67,12 @@ def follow(m):
         tap_slot(int(m['ti']) + 5)
 
 
+MAX_CMDS = [0]
+
+
 def win_by_hints(limit=200):
     for _ in range(limit):
+        MAX_CMDS[0] = max(MAX_CMDS[0], g.commands())
         if R.won(A().pos()):
             return True
         g.tap_label('Hint')
@@ -152,5 +156,7 @@ for fn in files:
     for l in lines[::9]:
         d, rest = l.split(' ', 1)
         assert check(R, int(d), rest), (fn, d)
+assert 0 < MAX_CMDS[0] < 900, MAX_CMDS      # the host draws about 1024 commands a screen
 g.no_err()
+print(f'draw commands, most on a screen: {MAX_CMDS[0]}')
 print(f'freecell tests passed ({len(files)} solution files)')

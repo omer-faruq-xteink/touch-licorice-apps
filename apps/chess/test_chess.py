@@ -33,7 +33,11 @@ def moves():
     return list(A().puzzle().moves.values())
 
 
+MAX_CMDS = [0]
+
+
 def solve_by_taps():
+    MAX_CMDS[0] = max(MAX_CMDS[0], g.commands())
     while not A().done():
         m = moves()[int(A().ply()) - 1]
         tap_sq(m[0:2]); tap_sq(m[2:4])
@@ -125,5 +129,7 @@ for k in range(1, 7):
             break
     total += n
 assert total >= 2390, total
+assert 0 < MAX_CMDS[0] < 900, MAX_CMDS      # every first position; the host draws about 1024 a screen
+print(f'draw commands, most on a screen: {MAX_CMDS[0]}')
 g.no_err()
 print(f'chess tests passed ({total} puzzles solved by taps)')

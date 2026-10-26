@@ -28,9 +28,13 @@ def kinds():
     return collections.Counter(ch for s in board() for ch in s)
 
 
+MAX_CMDS = [0]
+
+
 def play_by_hints(limit=400):
     """take hinted pairs; shuffle when stuck; returns the shuffles used"""
     for _ in range(limit):
+        MAX_CMDS[0] = max(MAX_CMDS[0], g.commands())
         if int(A().tiles()) == 0:
             return int(A().shuffles())
         if 'No free pairs left' in g.texts():
@@ -120,5 +124,7 @@ for k in range(20):
         assert time.perf_counter() - t0 < 0.5
         assert any(x in g.texts() for x in ('Hint: the two framed tiles match.', 'No way to clear from here: Undo or Shuffle.', 'No free pairs left'))
 assert kept >= 12, kept
+assert 0 < MAX_CMDS[0] < 900, MAX_CMDS      # the host draws about 1024 commands a screen
+print(f'draw commands, most on a screen: {MAX_CMDS[0]}')
 g.no_err()
 print('mahjong tests passed')

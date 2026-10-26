@@ -329,6 +329,15 @@ real list).
 - With Wi-Fi on in the settings none of this applies: Wi-Fi is already up.
 
 
+## About 1024 draw commands a screen (2026-10-27, build 26102401)
+
+The host carries out at most about 1024 drawing commands per redraw and silently leaves out the
+rest: FreeCell's first version drew its suit signs as runs of filled boxes (1256 commands), and
+the screen on the device stopped at command ~1010, in the seventh column, without the buttons.
+Count what an on_draw issues (`tools/gamekit/harness.py`: `Game.commands()`) and keep a margin:
+draw shapes as one `g:polyline` (one command for many points), merge boxes that repeat on
+consecutive rows, and draw stacked things (cards in a column) as one frame with dividing lines.
+
 ## App icons in the Ink App grid (2026-10-26, build 26102401)
 
 The grid reads a package's **icons section** (header offset 0x30, never encrypted, no HMAC) and

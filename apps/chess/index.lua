@@ -188,22 +188,30 @@ local PIECES = {
   p = { '....................', '....................', '........####........', '.......######.......', '.......######.......', '.......######.......', '........####........', '......########......', '.......######.......', '........####........', '........####........', '.......######.......', '......########......', '.....##########.....', '....############....', '....############....', '...##############...', '...##############...', '....................', '....................' },
 }
 
--- the runs of each piece's rows, solid (black) and outline (white): { { row, from, to } ... }
+-- each piece as filled boxes { row, from, to, rows }: the runs of '#' in each row, a run that
+-- repeats on the next rows becoming one taller box. Few boxes matter: the host draws about 1024
+-- commands a screen and leaves out the rest.
 local RUNS = {}
 local function runs_of(rows)
-  local out = {}
+  local out, open = {}, {}
   for r, row in ipairs(rows) do
+    local here = {}
     local c = 1
     while c <= #row do
       if row:sub(c, c) == '#' then
         local e = c
         while e < #row and row:sub(e + 1, e + 1) == '#' do e = e + 1 end
-        out[#out + 1] = { r, c, e }
+        local key = c .. ':' .. e
+        local box = open[key]
+        if box and box[1] + box[4] == r then box[4] = box[4] + 1
+        else box = { r, c, e, 1 }; out[#out + 1] = box end
+        here[key] = box
         c = e + 1
       else
         c = c + 1
       end
     end
+    open = here
   end
   return out
 end
@@ -420,7 +428,7 @@ end
 
 local function draw_piece(gg, p, x, y)
   for _k, run in ipairs(RUNS[p] or {}) do
-    gg:rect(x + (run[2] - 1) * 2, y + (run[1] - 1) * 2, (run[3] - run[2] + 1) * 2, 2, { fill = true })
+    gg:rect(x + (run[2] - 1) * 2, y + (run[1] - 1) * 2, (run[3] - run[2] + 1) * 2, run[4] * 2, { fill = true })
   end
 end
 
