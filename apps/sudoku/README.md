@@ -19,6 +19,12 @@ per difficulty by default) and refreshes the 40-puzzle **built-in fallback** emb
 `index.lua`, which the app uses when the data section is missing or fails to open. The status line
 says which bank is active.
 
+Every puzzle has a single solution (checked), and the source rates each one with Sukaku Explainer:
+easy 1.2 (singles), medium 1.5-2.3 (locked candidates, pairs, triples), hard 2.5-4.7 (up to X-wing,
+swordfish, XY-wing). The diabolical bank is limited to 5.0-6.9 (chains), with
+`--max-rating diabolical=6.9`: from about 7.0 up the source's puzzles need dynamic forcing chains
+and nets, which come down to systematic trial and error.
+
 To add your own bank: drop the file into `data/`, run `python xtpack.py apps/sudoku`, reinstall.
 Names: 1..64 chars of letters, digits, `-`, `.`, `_`, lowercase `.txt` or `.tsv` (`.csv` is
 renamed to `.txt` by the packer). At most 127 files.

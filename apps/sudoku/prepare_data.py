@@ -1,13 +1,18 @@
 """Build sudoku/data/*.txt from the public-domain sudoku-exchange puzzle bank and refresh the
 embedded fallback bank inside index.lua.
 
-  python sudoku/prepare_data.py SRC_DIR [--per-bank 600] [--builtin 40]
+  python sudoku/prepare_data.py SRC_DIR [--per-bank 600] [--builtin 40] [--max-rating diabolical=6.9]
 
 SRC_DIR holds easy.txt / medium.txt / hard.txt / diabolical.txt (or the partial .part downloads)
 from https://github.com/grantm/sudoku-exchange-puzzle-bank (CC0 / public domain). Each line is
 "<12-char id> <81 puzzle digits> <rating>", 99 characters; only complete 99-character lines are kept,
 so a truncated range download is fine. The files are written as downloaded (LF line ends), which is
 what the app's format detection expects; the packer adds banks.tsv next to them.
+
+The rating is Sukaku Explainer's. --max-rating keeps a bank's puzzles at or below a rating: the
+shipped diabolical bank uses 6.9, because from about 7.0 up the puzzles need dynamic forcing chains
+and nets, which come down to systematic trial and error. Banks without a source file are left as
+they are, and so is the fallback bank when easy / medium are not refreshed.
 """
 import argparse, glob, os, re
 
@@ -20,7 +25,10 @@ def main():
     ap.add_argument('src')
     ap.add_argument('--per-bank', type=int, default=600)
     ap.add_argument('--builtin', type=int, default=40)
+    ap.add_argument('--max-rating', action='append', default=[], metavar='BANK=RATING',
+                    help='keep only puzzles rated at most RATING in BANK (repeatable)')
     a = ap.parse_args()
+    max_rating = {k: float(v) for k, v in (x.split('=', 1) for x in a.max_rating)}
     out_dir = os.path.join(HERE, 'data')
     os.makedirs(out_dir, exist_ok=True)
     builtin = []
@@ -30,13 +38,20 @@ def main():
             print(f'{name}: no source file, skipped'); continue
         lines = [l.rstrip('\r') for l in open(src[0], encoding='ascii', errors='replace').read().split('\n')]
         good = [l for l in lines if len(l) == 99 and LINE.match(l)]
+        if name in max_rating:
+            good = [l for l in good if float(l.split()[2]) <= max_rating[name]]
         keep = good[:a.per_bank]
+        if len(keep) < a.per_bank:
+            raise SystemExit(f'{name}: only {len(keep)} usable puzzles; download more of the source')
         with open(os.path.join(out_dir, name + '.txt'), 'w', newline='\n', encoding='ascii') as f:
             f.write('\n'.join(keep) + '\n')
         print(f'{name}.txt: {len(keep)} puzzles ({len(good)} usable in the source), stride 100')
         if name in ('easy', 'medium'):
             half = a.builtin // 2
             builtin += [l[13:94] for l in keep[:half]]
+    if not builtin:
+        print('index.lua: fallback bank unchanged (easy / medium not refreshed)')
+        return
     # the embedded fallback: replace the block between the markers in index.lua
     lua_path = os.path.join(HERE, 'index.lua')
     src = open(lua_path, encoding='utf-8').read()

@@ -151,8 +151,11 @@ print('banks: 4 data banks + builtin; seek reads match the files OK')
 # solve through taps
 givens = S['givens']; solution = solve(givens)
 i0 = givens.index('0'); tap_cell(i0)
-row = givens[i0 - i0 % 9: i0 - i0 % 9 + 9]
-wrong = next(d for d in '123456789' if d != solution[i0] and d in row)
+# a wrong digit that a given in the same row, column or box already holds, so it is marked
+r0, c0 = divmod(i0, 9)
+peers = {r0 * 9 + k for k in range(9)} | {k * 9 + c0 for k in range(9)} | \
+        {(r0 - r0 % 3 + a) * 9 + c0 - c0 % 3 + b for a in range(3) for b in range(3)}
+wrong = next(d for d in '123456789' if d != solution[i0] and any(givens[j] == d for j in peers if j != i0))
 tap_digit(int(wrong)); S = api.state()
 assert S['cells'][i0] == wrong and api.conflicts(S['cells'])[i0 + 1]
 tap_act(0); assert api.state()['cells'][i0] == '0'
