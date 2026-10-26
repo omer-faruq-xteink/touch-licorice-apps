@@ -10,7 +10,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   counts per bank.
 - **New: Wikipedia** — search or a random article over Wi-Fi, as plain text paged like the RSS
   articles, in the language you choose (a list of common ones, or any Wikipedia's code). The
-  last 30 articles read stay on the reader for offline reading.
+  last 30 articles read stay on the reader for offline reading. Long articles come in parts
+  (Next past a part's last page loads the next one).
 - **New: FreeCell** — the solitaire with Microsoft's numbered deals (1 to 32000). Tap a card and
   then where it goes; runs move as far as free cells and empty columns allow, safe cards go home
   by themselves. **Hint** shows a move of a winning line for deals 1 to 1000 (their solutions ship
