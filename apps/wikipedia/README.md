@@ -7,7 +7,8 @@ Read Wikipedia on the reader over Wi-Fi.
 - Articles come as plain text from the MediaWiki API (the TextExtracts extract), laid out with
   the system fonts, sections as headings; page with **Prev / Next**, a tap on the left or right
   part of the page, a swipe or the side buttons. **Text size**: medium, large, small. Very long
-  articles are cut after about 60 000 characters. Pictures, tables and links are not shown.
+  articles are cut after about 60 000 characters (the reader's JSON decoder gives up on such
+  answers, so the app reads the text out of them itself). Pictures, tables and links are not shown.
 - **Language**: English, Simple English, Türkçe, Deutsch, Français, Español, Italiano,
   Nederlands, Português, Polski, Svenska, or any other Wikipedia's code (**Other**). The reader's
   fonts may not carry scripts other than Latin.

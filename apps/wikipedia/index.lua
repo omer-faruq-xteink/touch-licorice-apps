@@ -286,7 +286,8 @@ local function urlenc(s)
   return (tostring(s):gsub('[^%w%-%._~]', function(c) return string.format('%%%02X', c:byte()) end))
 end
 
--- GET the API of the chosen Wikipedia with these parameters; on_done(data) or on_done(nil, err)
+-- GET the API of the chosen Wikipedia with these parameters; on_done(data), or on_done(nil, err)
+-- and the raw body when it came but did not decode (see page_from)
 local function api(params, label, on_done)
   local q = { 'format=json', 'formatversion=2', 'utf8=1' }
   for k, v in pairs(params) do q[#q + 1] = k .. '=' .. urlenc(v) end
@@ -303,7 +304,7 @@ local function api(params, label, on_done)
       if code and code >= 400 then on_done(nil, 'HTTP ' .. code); return end
       if type(resp.body) ~= 'string' then on_done(nil, tostring(resp.error or 'empty answer')); return end
       local ok, data = pcall(function() return ctx.json:decode(resp.body) end)
-      if not ok or type(data) ~= 'table' then on_done(nil, 'not JSON: ' .. short(resp.body, 30)); return end
+      if not ok or type(data) ~= 'table' then on_done(nil, 'not JSON: ' .. short(resp.body, 30), resp.body); return end
       if type(data.error) == 'table' then on_done(nil, tostring(data.error.info or data.error.code)); return end
       on_done(data)
     end,
@@ -389,27 +390,73 @@ local function clean_text(t)
   return t
 end
 
+-- A JSON string value read straight from the text after `"key":"` (from position `from`),
+-- unescaped, up to `max` bytes: for answers the host's JSON decoder gives up on (a long article
+-- such as tr: Mustafa Kemal Atatürk) or that arrived cut short. Returns the text and whether the
+-- closing quote was reached.
+local function json_string(body, key, from, max)
+  local _s, e = body:find('"' .. key .. '"%s*:%s*"', from or 1)          -- keys are plain words
+  if not e then return nil end
+  local out, len, i = {}, 0, e + 1
+  while true do
+    local j = body:find('[\\"]', i)
+    if not j then out[#out + 1] = body:sub(i); return table.concat(out), false end
+    out[#out + 1] = body:sub(i, j - 1)
+    len = len + (j - i)
+    if body:byte(j) == 34 then return table.concat(out), true end
+    local x = body:sub(j + 1, j + 1)
+    if x == 'n' then out[#out + 1] = '\n'
+    elseif x == 't' then out[#out + 1] = ' '
+    elseif x == 'u' then
+      local cp, adv = tonumber(body:sub(j + 2, j + 5), 16) or 63, 4
+      if cp >= 0xD800 and cp <= 0xDBFF and body:sub(j + 6, j + 7) == '\\u' then
+        local lo = tonumber(body:sub(j + 8, j + 11), 16)
+        if lo then cp, adv = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00), 10 end
+      end
+      if cp < 0xD800 or cp > 0xDFFF then out[#out + 1] = utf8.char(cp) end
+      j = j + adv
+    elseif x ~= 'r' then out[#out + 1] = x end           -- \" \\ \/
+    i = j + 2
+    if max and len > max then return table.concat(out), false end
+  end
+end
+
+-- the page of a query answer: title, plain text and whether all of it came
+local function page_from(data, body)
+  if data then
+    local p = data.query and data.query.pages and data.query.pages[1]
+    if p and not p.missing and type(p.extract) == 'string' then return p.title, p.extract, true end
+    return nil
+  end
+  if type(body) ~= 'string' then return nil end
+  local at = body:find('"pages"%s*:%s*%[')
+  if not at then return nil end
+  local title = json_string(body, 'title', at, 300)
+  local text, whole = json_string(body, 'extract', at, TEXT_MAX + 2000)
+  if not text then return nil end
+  if not whole and #text <= TEXT_MAX then text = text .. '\n\n(The rest of the article did not arrive.)' end
+  return title, text, whole
+end
+
 local function open_title(title)
   api({ action = 'query', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki', redirects = '1', titles = title },
-      'Loading ' .. short(title, 30) .. '...', function(data, err)
-    if not data then status = 'Could not load: ' .. tostring(err); return end
-    local page = data.query and data.query.pages and data.query.pages[1]
-    if not page or page.missing or type(page.extract) ~= 'string' then status = 'No such article.'; return end
-    local text = clean_text(page.extract)
-    remember(cfg.lang, page.title or title, text)
-    show_article(page.title or title, text)
+      'Loading ' .. short(title, 30) .. '...', function(data, err, body)
+    local t, text = page_from(data, body)
+    if not text then status = data and 'No such article.' or ('Could not load: ' .. tostring(err)); return end
+    text = clean_text(text)
+    remember(cfg.lang, t or title, text)
+    show_article(t or title, text)
   end)
 end
 
 local function open_random()
   api({ action = 'query', generator = 'random', grnnamespace = '0', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki' },
-      'Finding an article...', function(data, err)
-    if not data then status = 'Could not load: ' .. tostring(err); return end
-    local page = data.query and data.query.pages and data.query.pages[1]
-    if not page or type(page.extract) ~= 'string' then status = 'Nothing came back; try again.'; return end
-    local text = clean_text(page.extract)
-    remember(cfg.lang, page.title or '?', text)
-    show_article(page.title or '?', text)
+      'Finding an article...', function(data, err, body)
+    local t, text = page_from(data, body)
+    if not text then status = data and 'Nothing came back; try again.' or ('Could not load: ' .. tostring(err)); return end
+    text = clean_text(text)
+    remember(cfg.lang, t or '?', text)
+    show_article(t or '?', text)
   end)
 end
 
@@ -420,7 +467,9 @@ local function search(q)
     if not data then status = 'Search failed: ' .. tostring(err); return end
     results, results_top = {}, 1
     for _k, r in ipairs((data.query and data.query.search) or {}) do
+      -- a snippet is a piece of wikitext: tags, entities and reference marks out
       local snip = tostring(r.snippet or ''):gsub('<[^>]+>', ''):gsub('&quot;', '"'):gsub('&amp;', '&'):gsub('&#039;', "'")
+      snip = snip:gsub('%^', ''):gsub('%s+', ' '):gsub('^ ', '')
       results[#results + 1] = { title = tostring(r.title), snippet = snip }
     end
     screen, status = 'results', (#results == 0 and 'Nothing found.' or nil)

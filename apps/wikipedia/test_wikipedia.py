@@ -16,7 +16,7 @@ requests = []
 ARTICLE = ('Istanbul is the largest city in Turkey.\n\n== History ==\nByzantium was founded by Greek colonists.\n\n'
            '=== Ottoman period ===\nThe city became the Ottoman capital in 1453.\n\n' +
            '\n\n'.join(f'Paragraph {k}: ' + 'word ' * 60 for k in range(30)))
-mode = {'fail': False, 'long': False}
+mode = {'fail': False, 'long': False, 'huge': False, 'cut': False, 'ascii': False}
 
 
 def to_lua(v):
@@ -39,8 +39,14 @@ def answer(url):
         body = {'query': {'pages': [{'title': 'Random Topic', 'extract': 'A random article.\n\n== Part ==\nText.'}]}}
     else:
         text = ARTICLE if not mode['long'] else 'x ' * 40000
-        body = {'query': {'pages': [{'title': q.get('titles', '?'), 'extract': text}]}}
-    return {'status': 200, 'body': json.dumps(body), 'host': host}
+        if mode['huge']:
+            text = 'Mustafa Kemal Atatürk "Gazi" \\ ilk cumhurbaşkanı. 😀\n\n== Hayatı ==\n' + 'Selanik’te doğdu. ' * 12000
+        body = {'normalized': [{'from': 'x', 'to': 'Mustafa Kemal Atatürk', 'title': 'wrong one'}],
+                'query': {'pages': [{'pageid': 1, 'title': q.get('titles', '?'), 'extract': text}]}}
+    raw = json.dumps(body, ensure_ascii=mode['ascii'])
+    if mode['cut']:
+        raw = raw[:60000]
+    return {'status': 200, 'body': raw, 'host': host}
 
 
 def request(self, opts, fn):
@@ -54,7 +60,13 @@ def request(self, opts, fn):
 
 net = L.table_from({'request': request, 'keep_wifi': lambda self, ms: None})
 L.globals().ctx.net = net
-L.globals().ctx.json = L.table_from({'decode': lambda self, s: to_lua(json.loads(s))})
+def decode(self, s):
+    if len(s) > 100000:
+        raise ValueError('too big for the decoder')        # as the reader's decoder gave up
+    return to_lua(json.loads(s))
+
+
+L.globals().ctx.json = L.table_from({'decode': decode})
 L.globals().ctx.storage.remove = lambda self, n: L.globals().store.__setitem__(n, None)
 answer_now = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r) end end')
 A = lambda: g.api
@@ -135,7 +147,28 @@ mode['long'] = True
 g.tap_label('Search'); type_text('long'); answer_now()
 g.tap(100, 64 + 8 + 10); answer_now()
 assert any('The article is longer' in str(ln.s) for ln in A().art().lines.values())
+mode['long'] = False
+bar(1); bar(1)
+
+# a reply too big for the JSON decoder: read straight from the text (UTF-8, quotes, \\, emoji)
+for ascii_ in (False, True):
+    mode['huge'], mode['ascii'] = True, ascii_
+    g.tap_label('Search'); type_text('ataturk'); answer_now()
+    g.tap(100, 64 + 8 + 10); answer_now()
+    assert str(A().screen()) == 'article', (ascii_, A().status())
+    lines = [str(ln.s) for ln in A().art().lines.values()]
+    assert 'Atatürk "Gazi" \\ ilk cumhurbaşkanı. 😀' in ' '.join(lines), lines[:6]
+    assert 'Hayatı' in lines and any('The article is longer' in l for l in lines)
+    bar(1); bar(1)
+# a reply cut short: what came is shown, and said so
+mode['cut'] = True
+g.tap_label('Search'); type_text('ataturk'); answer_now()
+g.tap(100, 64 + 8 + 10); answer_now()
+lines = [str(ln.s) for ln in A().art().lines.values()]
+assert str(A().screen()) == 'article' and any('did not arrive' in l for l in lines), lines[-3:]
+mode['cut'] = mode['huge'] = mode['ascii'] = False
+bar(1); bar(1)
 g.restart()
-assert 'Read before (3)' in g.texts() and 'Language: eo' in g.texts()
+assert 'Read before (3)' in g.texts() and 'Language: eo' in g.texts(), g.texts()    # Istanbul in en and in eo (kept once each), Random Topic
 g.no_err()
 print('wikipedia tests passed')
