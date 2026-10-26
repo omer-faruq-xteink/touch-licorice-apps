@@ -4,7 +4,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **App icons.** Every app now has its own icon in the Ink App grid instead of an empty frame.
+  Install the packages over the installed apps to get them.
 
 ## Update
 
@@ -15,7 +16,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages | unchanged since v0.7.0 |
+| all app `.xtapp` packages | **updated**: icons only, the apps themselves are unchanged |
+| `probe.xtapp`, `netprobe.xtapp` | unchanged since v0.7.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

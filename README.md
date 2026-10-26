@@ -163,6 +163,8 @@ python build_all.py
 ```
 
 Every app lands in `dist/` as `<name>.xtapp`. A single app: `python xtpack.py apps/sudoku`.
+An app's `icon.png` (96x96, black on white) becomes its icon in the Ink App grid; `python -I
+tools/make_icons.py` redraws them all.
 
 No firmware dump is needed: packages must be encrypted for a key the firmware carries, and that
 key is a constant shared by every unit, so its public half is embedded in `xtpack.py`. If a future
