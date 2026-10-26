@@ -10,7 +10,7 @@ local kit = (function()
 --   kit.short(s, n), kit.drop_last(s), kit.wrap(s, fname, maxw)
 --   kit.read(name), kit.write(name, s), kit.kv(s)   ctx.storage helpers ("key=value" lines)
 --   kit.now_ms(), kit.refresh()
---   kit.moved()                       count a move; every FULL_EVERY moves ask for a full refresh
+--   kit.moved()                       count a move (a hook for a periodic full refresh; see below)
 --   kit.key_accepted(ev)              side buttons send several events per press: keep one
 --   kit.show(m), kit.close(), kit.modal()   a box over the screen: { title, lines, rows, cancel },
 --                                     rows = { { {label, fn, enabled}, .. }, .. }
@@ -69,17 +69,12 @@ end
 function kit.now_ms() local ok, t = pcall(function() return ctx.clock:millis() end); return ok and tonumber(t) or nil end
 function kit.refresh() pcall(function() ctx.invalidate() end) end
 
--- e-ink: a full refresh every FULL_EVERY moves clears ghosting. API 2.9 offers
--- ctx:defer_full_refresh(n); its exact meaning is not documented (untested), so it is asked for
--- with 0 and any failure is ignored.
-local FULL_EVERY, moves_since = 8, 0
-function kit.moved()
-  moves_since = moves_since + 1
-  if moves_since >= FULL_EVERY then
-    moves_since = 0
-    pcall(function() ctx:defer_full_refresh(0) end)
-  end
-end
+-- e-ink full refresh: API 0.8 had ctx.display:full_refresh(); API 2.9 only offers
+-- ctx:defer_full_refresh(n), which on the device (26102401) did not trigger one, and which by its
+-- name may rather postpone the host's own periodic refresh. So nothing is asked for: the games
+-- showed no ghosting problem without it. kit.moved() stays as the place to add one.
+local moves = 0
+function kit.moved() moves = moves + 1 end
 
 local KEY_GAP_MS = 250
 local last_key, last_key_ms = nil, nil
@@ -172,7 +167,7 @@ end)()
 local W, H = kit.W, kit.H
 local N = 5
 local CELL, GX, GY = 84, 30, 150
-local BTN_Y, BTN_H = 610, 60
+local BTN_Y, BTN_H = 676, 60      -- below the board and two lines of text
 local LEVELS = { { 'Easy', 4, 3 }, { 'Normal', 8, 6 }, { 'Hard', 13, 10 } }   -- name, presses, fewest at least
 
 local board = 0          -- bit i (0-based, row-major) set = light i on
@@ -359,8 +354,9 @@ function on_draw(c, gg)
       end
     end
     local m = msg or 'Tap a square: it and its neighbours switch. Switch them all off.'
+    local lh = kit.line_h('small') + 4
     for k, l in ipairs(kit.wrap(m, 'small', W - 32)) do
-      if k <= 2 then gg:text(16, GY + N * CELL + 12 + (k - 1) * 22, l, { font = kit.font('small') }) end
+      if k <= 2 then gg:text(16, GY + N * CELL + 14 + (k - 1) * lh, l, { font = kit.font('small') }) end
     end
     for k, b in ipairs(BUTTONS) do
       local x, y, bw, bh = button_rect(k)

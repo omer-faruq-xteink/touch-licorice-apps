@@ -10,7 +10,7 @@
 local W, H = kit.W, kit.H
 local N = 5
 local CELL, GX, GY = 84, 30, 150
-local BTN_Y, BTN_H = 610, 60
+local BTN_Y, BTN_H = 676, 60      -- below the board and two lines of text
 local LEVELS = { { 'Easy', 4, 3 }, { 'Normal', 8, 6 }, { 'Hard', 13, 10 } }   -- name, presses, fewest at least
 
 local board = 0          -- bit i (0-based, row-major) set = light i on
@@ -197,8 +197,9 @@ function on_draw(c, gg)
       end
     end
     local m = msg or 'Tap a square: it and its neighbours switch. Switch them all off.'
+    local lh = kit.line_h('small') + 4
     for k, l in ipairs(kit.wrap(m, 'small', W - 32)) do
-      if k <= 2 then gg:text(16, GY + N * CELL + 12 + (k - 1) * 22, l, { font = kit.font('small') }) end
+      if k <= 2 then gg:text(16, GY + N * CELL + 14 + (k - 1) * lh, l, { font = kit.font('small') }) end
     end
     for k, b in ipairs(BUTTONS) do
       local x, y, bw, bh = button_rect(k)

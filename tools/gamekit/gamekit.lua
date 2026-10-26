@@ -7,7 +7,7 @@
 --   kit.short(s, n), kit.drop_last(s), kit.wrap(s, fname, maxw)
 --   kit.read(name), kit.write(name, s), kit.kv(s)   ctx.storage helpers ("key=value" lines)
 --   kit.now_ms(), kit.refresh()
---   kit.moved()                       count a move; every FULL_EVERY moves ask for a full refresh
+--   kit.moved()                       count a move (a hook for a periodic full refresh; see below)
 --   kit.key_accepted(ev)              side buttons send several events per press: keep one
 --   kit.show(m), kit.close(), kit.modal()   a box over the screen: { title, lines, rows, cancel },
 --                                     rows = { { {label, fn, enabled}, .. }, .. }
@@ -66,17 +66,12 @@ end
 function kit.now_ms() local ok, t = pcall(function() return ctx.clock:millis() end); return ok and tonumber(t) or nil end
 function kit.refresh() pcall(function() ctx.invalidate() end) end
 
--- e-ink: a full refresh every FULL_EVERY moves clears ghosting. API 2.9 offers
--- ctx:defer_full_refresh(n); its exact meaning is not documented (untested), so it is asked for
--- with 0 and any failure is ignored.
-local FULL_EVERY, moves_since = 8, 0
-function kit.moved()
-  moves_since = moves_since + 1
-  if moves_since >= FULL_EVERY then
-    moves_since = 0
-    pcall(function() ctx:defer_full_refresh(0) end)
-  end
-end
+-- e-ink full refresh: API 0.8 had ctx.display:full_refresh(); API 2.9 only offers
+-- ctx:defer_full_refresh(n), which on the device (26102401) did not trigger one, and which by its
+-- name may rather postpone the host's own periodic refresh. So nothing is asked for: the games
+-- showed no ghosting problem without it. kit.moved() stays as the place to add one.
+local moves = 0
+function kit.moved() moves = moves + 1 end
 
 local KEY_GAP_MS = 250
 local last_key, last_key_ms = nil, nil

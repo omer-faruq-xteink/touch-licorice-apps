@@ -271,7 +271,7 @@ messages; the Notes and RSS apps are built on the results.
 | `ctx.clock:now()` | `{hour, minute, second, epoch_sec, local_sec, date_order, hour12, …}`; `clock:millis()` |
 | `ctx.device:battery()` | `{percent, charging, voltage_mv, temperature_c}`; `device.firmware`, `device.model`, `device.id_for_app` |
 | `ctx.reader:summary()` / `books()` / `all_books()` / `current()` | reading statistics (streak, books, seconds) and the current book `{title, author, percent, read_sec, format, id}`; needs the `reader` permission |
-| `ctx.save_state()`, `ctx.defer_full_refresh(n)`, `ctx.perf:info()` | as named; `ctx.budget = {extend}` |
+| `ctx.save_state()`, `ctx.defer_full_refresh(n)`, `ctx.perf:info()` | as named; `ctx.budget = {extend}`. `ctx:defer_full_refresh(0)` every 8 moves did **not** trigger a full refresh (26102401); API 2.9 has no counterpart of 0.8's `ctx.display:full_refresh()` |
 
 **Pointer events**: `phase = down / move / up / hold`, `gesture = tap / long / swipe_*` on the
 `up` event. Movement really streams (≈40 moves for two strokes), so freehand drawing works.
