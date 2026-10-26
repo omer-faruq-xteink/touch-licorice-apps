@@ -18,6 +18,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 - **RSS and Instapaper: a steady preview box.** The long-press preview no longer grows and shrinks
   with the summary: it always has the same, tallest size, and the list's buttons and header are
   hidden while it is open.
+- **Instapaper: no reading position lost.** Progress is still sent once per article, when you go
+  back to the list. Leaving the app from inside an article, or a request that fails, used to lose
+  it; now the position is kept on the card and sent at the next start, with the time it was read.
 
 ## Update
 
@@ -30,7 +33,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `suguru.xtapp` | **new** |
 | `sudoku.xtapp` | **changed**: diabolical bank |
-| `rss.xtapp`, `instapaper.xtapp` | **changed**: preview box |
+| `rss.xtapp`, `instapaper.xtapp` | **changed**: preview box; Instapaper also keeps unsent progress |
 | all other `.xtapp` packages | unchanged since v0.6.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 

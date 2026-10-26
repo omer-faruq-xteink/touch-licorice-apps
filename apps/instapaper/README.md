@@ -30,8 +30,10 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
   the box or Back closes it.
 - Articles are laid out with the system fonts (headings, quotes, lists) and open **where you left
   off**: the progress Instapaper keeps (also from KOReader or the website). Leaving an article
-  sends the page you reached back to Instapaper. Tap the left third to go back a page, elsewhere
-  to go on; the side buttons and swipes work too.
+  sends the page you reached back to Instapaper: one request per article, not per page. If you
+  leave the app from inside an article, or the request fails, the position is kept on the card and
+  sent at the next start. Tap the left third to go back a page, elsewhere to go on; the side
+  buttons and swipes work too.
 - The last page shows the article's link as a **QR code** (to open it on a phone), then
   **Archive** (archives it and returns to the list) and **Star**.
 - **Text size** in Settings: small / default / large, as in RSS.

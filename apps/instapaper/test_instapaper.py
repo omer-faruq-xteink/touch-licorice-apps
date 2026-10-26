@@ -304,4 +304,47 @@ key('back'); tap(100, row_y(6)); g.flush()
 for _ in range(4): key('left'); g.flush()
 assert not any('/parse' in c[1] for c in calls[n:]) and any('weserv' in c[1] for c in calls[n:]), calls[n:]
 assert 'Before the pictures.' in texts()
+# progress that could not be sent waits on the card and goes out at the next start
+def restart():
+    L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+    gl = L.globals()
+    gl.pending = L.table()
+    gl.on_load(gl.ctx)
+    return gl
+
+state['token_ok'] = True
+g.store['progress.txt'] = None
+g = restart(); g.flush()
+key('back')                                                  # out of whatever screen we were on
+tap(*MENU(0)); g.flush()
+tap(100, row_y(2)); g.flush()                                # Story 2, from the start
+key('right'); key('right')
+n = len(calls)
+L.execute("on_leave()")                                      # the app is left from inside the article
+assert len(calls) == n, calls[n:]                            # nothing sent on the way out
+saved = str(g.store['progress.txt'])
+assert saved.startswith('1002 0.') and saved.endswith(' 1761400000'), saved
+L.execute("ctx.clock = nil")                                 # a later start: the old timestamp must stay
+g = restart()
+assert calls[-1][1].endswith('/folders'), calls[-1]          # Wi-Fi comes up with the folder request ...
+g.flush()
+m, url, body, _ = calls[-1]
+assert m == 'POST' and url.endswith('/bookmarks/1002') and '"timestamp":1761400000' in body, calls[-1]
+assert '"percentage":' + saved.split()[1] in body, (body, saved)
+assert str(g.store['progress.txt']) == '', g.store['progress.txt']          # sent: nothing left
+L.execute("ctx.clock = { millis = function() return fake_ms end, epoch = function() return 1761400000 end }")
+L.execute("for k, f in pairs(ctx.clock) do local fn = f; ctx.clock[k] = function(self, ...) return fn(...) end end")
+
+# a request that fails on Back keeps the position for the next start
+tap(*MENU(0)); g.flush()
+tap(100, row_y(3)); g.flush()
+key('right')
+state['token_ok'] = False
+key('back'); g.flush()
+assert str(g.store['progress.txt']).startswith('1003 '), g.store['progress.txt']
+assert 'progress kept, sent next time' in texts(), texts()
+state['token_ok'] = True
+g = restart(); g.flush()
+assert any(c[0] == 'POST' and c[1].endswith('/bookmarks/1003') for c in calls[-3:]), calls[-3:]
+assert str(g.store['progress.txt']) == ''
 print('instapaper29 tests passed')

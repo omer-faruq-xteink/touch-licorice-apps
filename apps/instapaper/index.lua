@@ -733,17 +733,69 @@ local function resume_page()
   art.start_page = art.page
 end
 
-local function send_progress()
-  local it, id = art.item, art.id
-  -- nothing to send for an article that never loaded, or when the page did not change
-  if not it or not id or not art.start_page or art.page == art.start_page then return end
+-- Progress that could not be sent (the app was left from inside an article, or the request
+-- failed) waits in progress.txt, one "id percentage timestamp" line per article, and goes out at
+-- the next start right after the folder request that brings Wi-Fi up anyway. The timestamp is the
+-- moment it was read, so Instapaper still knows which position is newer.
+local PENDING = 'progress.txt'
+local function pending_read()
+  local t = {}
+  for line in (cache_read(PENDING) or ''):gmatch('[^\n]+') do
+    local id, pc, ts = line:match('^(%d+) ([%d%.]+) ?(%d*)')
+    if id then t[id] = { p = tonumber(pc), ts = tonumber(ts) } end
+  end
+  return t
+end
+local function pending_write(t)
+  local lines = {}
+  for id, e in pairs(t) do lines[#lines + 1] = id .. ' ' .. string.format('%.4f', e.p) .. ' ' .. tostring(e.ts or '') end
+  table.sort(lines)
+  cache_write(PENDING, table.concat(lines, '\n'))
+end
+
+local function post_progress(id, p, ts)
+  local body = string.format('{"progress":{"percentage":%.4f%s}}', p, ts and (',"timestamp":' .. ts) or '')
+  request('/bookmarks/' .. id, function(data, err)
+    local t = pending_read()
+    if err then
+      t[id] = { p = p, ts = ts }
+      pending_write(t)
+      note('progress kept, sent next time')
+    elseif t[id] then
+      t[id] = nil
+      pending_write(t)
+    end
+  end, 'saving progress', 'POST', body)
+end
+
+-- the position reached in the open article, or nil when there is nothing to send (it never
+-- loaded, or the page did not change)
+local function reached()
+  local it = art.item
+  if not it or not art.id or not art.start_page or art.page == art.start_page then return nil end
   local p = art.page >= art.pages and 1 or (art.page - 1) / art.pages
   it.progress = p
   it.date = row_meta(it)
-  local ts = epoch_now()
-  local body = string.format('{"progress":{"percentage":%.4f%s}}', p, ts and (',"timestamp":' .. ts) or '')
-  request('/bookmarks/' .. id, function(data, err) if err then note('progress not saved: ' .. short(err, 26)) end end,
-    'saving progress', 'POST', body)
+  return p
+end
+
+local function send_progress()
+  local p = reached()
+  if p then post_progress(art.id, p, epoch_now()) end
+end
+
+-- leaving the app from inside an article: keep the position for the next start
+local function keep_progress()
+  local p = screen == 'article' and reached()
+  if not p then return end
+  local t = pending_read()
+  t[art.id] = { p = p, ts = epoch_now() }
+  pending_write(t)
+  art.start_page = art.page                    -- kept; Back (if the app comes back) has nothing new
+end
+
+local function send_pending()
+  for id, e in pairs(pending_read()) do post_progress(id, e.p, e.ts) end
 end
 
 local function open_article(item)
@@ -1459,11 +1511,12 @@ function on_load(c)
   read_accounts(cache_read('accounts.txt'))   -- the saved list draws the folders at once
   keep_wifi(true)
   -- ask the account list right away: it also brings Wi-Fi up for whatever is opened next
-  if cfg.token == '' then screen = 'settings' else load_accounts('connecting Wi-Fi...') end
+  if cfg.token == '' then screen = 'settings' else load_accounts('connecting Wi-Fi...'); send_pending() end
   keep_wifi(true)
 end
 
 function on_leave()
+  pcall(keep_progress)
   -- release: a very short keep lets Wi-Fi go down soon after the app is left
   pcall(function() ctx.net:keep_wifi(1) end)
 end
