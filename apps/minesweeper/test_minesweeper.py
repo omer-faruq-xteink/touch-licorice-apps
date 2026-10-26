@@ -13,6 +13,10 @@ g = Game(HERE)
 long_press = g.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); "
                       "on_input(ctx, {type='pointer', phase='hold', gesture='long', x=x, y=y}); "
                       "on_input(ctx, {type='pointer', phase='up', x=x, y=y}) end")
+# the device repeats the hold event while the finger stays down
+long_hold = g.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); "
+                     "for k = 1, 4 do on_input(ctx, {type='pointer', phase='hold', gesture='long', x=x, y=y}) end; "
+                     "on_input(ctx, {type='pointer', phase='up', x=x, y=y}) end")
 A = lambda: g.api
 
 
@@ -64,6 +68,8 @@ long_press(*xy(h0)); assert str(A().cell(h0)) == 'f'
 assert 'Mines 16' in ' '.join(g.texts())
 g.tap(*xy(h0)); assert str(A().cell(h0)) == 'f'
 long_press(*xy(h0)); assert str(A().cell(h0)) == 'h'
+long_hold(*xy(h0)); assert str(A().cell(h0)) == 'f'      # one flag, however long the press
+long_hold(*xy(h0)); assert str(A().cell(h0)) == 'h'
 
 # Flag mode: a tap flags; back to Dig
 g.tap_label('Dig'); g.tap(*xy(h0)); assert str(A().cell(h0)) == 'f'

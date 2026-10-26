@@ -4,7 +4,7 @@ Clear the board by taking off matching pairs of free tiles.
 
 - **Layout for the portrait screen:** 100 tiles in a 7x8 pyramid of stacks one to four high, tiles
   64x70 px. The board is drawn from above: each stack shows its top tile, and the tiles below it as
-  stepped edges at the bottom right.
+  stepped edges at the bottom right. Free tiles have a bold frame, blocked ones a thin one.
 - **Free tile:** on top of its stack, with the stack to its left or to its right lower.
 - **Faces** are drawn with lines and circles: dots 1-9, bamboo 1-9, the four winds (N E S W) and
   three dragons (a boxed stroke, a diamond, a double frame); four of each.

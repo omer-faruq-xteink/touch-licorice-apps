@@ -3,9 +3,9 @@
 -- Clear the board by removing matching pairs of free tiles. A tile is free when it is on top of
 -- its stack and the stack to its left or to its right is lower. The 100 tiles stand in a 7x8
 -- pyramid of stacks one to four high, drawn from above: a stack shows its top tile, and its
--- height as stepped edges at the bottom right. Faces are drawn, not printed: dots and bamboo 1-9,
--- the four winds (N E S W) and three dragons (a boxed stroke, a diamond, a double frame); four
--- of each. Every deal can be cleared: it is made by playing a random game backwards. Hint frames
+-- height as stepped edges at the bottom right; a free tile has a bold frame. Faces are drawn,
+-- not printed: dots and bamboo 1-9, the four winds (N E S W) and three dragons (a boxed stroke,
+-- a diamond, a double frame); four of each. Every deal can be cleared: it is made by playing a random game backwards. Hint frames
 -- a free pair, Undo takes pairs back, Shuffle deals the tiles left anew (again clearable).
 
 local W, H = kit.W, kit.H
@@ -474,8 +474,9 @@ function on_draw(c, gg)
       '    Won ' .. stats.won .. '/' .. stats.played, 48), { font = kit.font('small') })
     gg:line(0, 90, W, 90)
     if kit.modal() then kit.draw_modal(gg); return end
+    local hs = heights()
     for i = 1, COLS * ROWS do
-      local h = height(i)
+      local h = hs[i]
       if h > 0 then
         local r, cc = rc(i)
         local x0, y0 = GX + cc * CW, GY + r * CH
@@ -486,10 +487,11 @@ function on_draw(c, gg)
           gg:line(ex + FW, ey, ex + FW, ey + FH)
           gg:line(ex, ey + FH, ex + FW, ey + FH)
         end
-        gg:rect(tx, ty, FW, FH, { line_width = 2 })
+        -- a free tile has a bold frame, a blocked one a thin frame
+        gg:rect(tx, ty, FW, FH, { line_width = free_in(hs, i) and 4 or 1 })
         draw_face(gg, tx, ty, top(i))
         if sel == i then
-          gg:rect(tx + 3, ty + 3, FW - 6, FH - 6, { line_width = 3 })
+          gg:rect(tx + 6, ty + 6, FW - 12, FH - 12, { line_width = 3 })
         end
         if hint and (hint[1] == i or hint[2] == i) then
           gg:rect(tx - 3, ty - 3, FW + 6, FH + 6, { line_width = 3 })

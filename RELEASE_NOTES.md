@@ -9,8 +9,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   for finger taps; flags by long press or Flag mode, open around a finished number, Hint (safe
   cell, mine or wrong flag), Undo, best times.
 - **New: Mahjong Solitaire.** 100 tiles in a 7x8 pyramid made for the portrait screen, drawn from
-  above with stack heights as stepped edges. Every deal can be cleared, and Hint keeps pointing at
+  above with stack heights as stepped edges and free tiles in bold frames. Every deal can be cleared, and Hint keeps pointing at
   a pair that leaves the board clearable; Shuffle and Undo when stuck.
+- **Nonograms:** a long press marks one X however long the finger stays down (it used to
+  switch back and forth).
 - **App icons.** Every app now has its own icon in the Ink App grid instead of an empty frame.
   Install the packages over the installed apps to get them.
 
@@ -24,6 +26,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `minesweeper.xtapp`, `mahjong.xtapp` | **new** |
+| `nonogram.xtapp` | **updated**: long press, icon |
 | all app `.xtapp` packages | **updated**: icons only, the apps themselves are unchanged |
 | `probe.xtapp`, `netprobe.xtapp` | unchanged since v0.7.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

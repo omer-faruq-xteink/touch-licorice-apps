@@ -172,6 +172,7 @@ local LEVELS = {
 }
 local GY, BTN_Y, BTN_H = 100, 704, 60
 local TRIES = 300            -- boards tried for one that logic clears
+local TRY_MS = 2000          -- and for at most this long
 local IDLE_MS = 30000        -- longer pauses between moves do not count as play time
 
 local level = 2
@@ -188,6 +189,7 @@ local mode = 'dig'
 local hint, msg = nil, nil
 local history = {}
 local suppress_up = false
+local long_done = false     -- the long press of this touch has acted
 local ERR = nil
 local LOGIC = true           -- false only when no board in TRIES could be cleared by logic
 
@@ -300,7 +302,10 @@ local function lay_mines(first)
   for _k, j in ipairs(nbrs[first]) do banned[j] = true end
   local pool = {}
   for i = 1, n do if not banned[i] then pool[#pool + 1] = i end end
+  local t0 = kit.now_ms()
   for _t = 1, TRIES do
+    local now = kit.now_ms()
+    if t0 and now and now - t0 > TRY_MS then break end
     local m = {}
     for k = 1, total do
       local r = math.random(k, #pool)
@@ -604,13 +609,20 @@ function on_input(c, ev)
     tick()
     if ev.type == 'pointer' then
       local x, y = ev.x or 0, ev.y or 0
+      if ev.phase == 'down' then long_done = false end
       if (ev.gesture == 'long' or ev.phase == 'hold') and not kit.modal() then
-        local i = cell_at(x, y)
-        if i then tap_cell(i, true) end
+        -- the host repeats the hold event while the finger stays down: act once per touch
+        if not long_done then
+          local i = cell_at(x, y)
+          if i then tap_cell(i, true) end
+          long_done = true
+        end
         suppress_up = ev.phase ~= 'up'
+        if ev.phase == 'up' then long_done = false end
         return
       end
       if ev.phase ~= 'up' then return end
+      long_done = false
       if suppress_up then suppress_up = false; return end
       if kit.tap_modal(x, y) then return end
       for k, b in ipairs(BUTTONS) do
@@ -630,9 +642,10 @@ end
 
 function on_load(c)
   math.randomseed(kit.now_ms() or 1)
-  load()
+  local ok, e = pcall(load)
+  if not ok then ERR = tostring(e); setup(2) end
 end
-function on_leave() tick(); last_ms = nil; save() end
+function on_leave() pcall(function() tick(); last_ms = nil; save() end) end
 
 if rawget(_G, '__TEST') then
   __TEST.api = {

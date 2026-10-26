@@ -38,6 +38,10 @@ def cell_xy(i):
     n = size()
     return gx + (i % n) * cell + cell // 2, gy + (i // n) * cell + cell // 2
 long_press = g.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='up', gesture='long', x=x, y=y}) end")
+# the device repeats the hold event while the finger stays down
+long_hold = g.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); "
+                     "for k = 1, 4 do on_input(ctx, {type='pointer', phase='hold', gesture='long', x=x, y=y}) end; "
+                     "on_input(ctx, {type='pointer', phase='up', x=x, y=y}) end")
 
 # the app decodes the first 10x10 puzzle like the bank says
 h = banks[10][0]
@@ -64,8 +68,12 @@ assert cells()[1] == 'x'
 g.tap_label('X')                                        # back to Fill
 long_press(*cell_xy(2))
 assert cells()[2] == 'x'
-g.tap_label('Undo'); g.tap_label('Undo')
-assert cells()[1] == '.' and cells()[2] == '.'
+long_hold(*cell_xy(3))
+assert cells()[3] == 'x'                                # one X, however long the press
+long_hold(*cell_xy(3))
+assert cells()[3] == '.'
+g.tap_label('Undo'); g.tap_label('Undo'); g.tap_label('Undo'); g.tap_label('Undo')
+assert cells()[1] == '.' and cells()[2] == '.' and cells()[3] == '.'
 assert not any(r.fill for r in g.rects())               # nothing filled yet
 g.tap(*cell_xy(5))
 fills = [r for r in g.rects() if r.fill]

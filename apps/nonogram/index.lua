@@ -578,6 +578,7 @@ end
 ------------------------------------------------------------------ input
 
 local suppress_up = false
+local long_done = false     -- the long press of this touch has acted
 
 local function cell_at(x, y)
   local cell, gx, gy = geometry()
@@ -594,13 +595,20 @@ function on_input(c, ev)
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
       local x, y = ev.x or 0, ev.y or 0
+      if ev.phase == 'down' then long_done = false end
       if (ev.gesture == 'long' or ev.phase == 'hold') and not kit.modal() then
-        local i = cell_at(x, y)
-        if i then tap_cell(i, true) end
+        -- the host repeats the hold event while the finger stays down: act once per touch
+        if not long_done then
+          local i = cell_at(x, y)
+          if i then tap_cell(i, true) end
+          long_done = true
+        end
         suppress_up = ev.phase ~= 'up'
+        if ev.phase == 'up' then long_done = false end
         return
       end
       if ev.phase ~= 'up' then return end
+      long_done = false
       if suppress_up then suppress_up = false; return end
       if kit.tap_modal(x, y) then return end
       for k, b in ipairs(BUTTONS) do

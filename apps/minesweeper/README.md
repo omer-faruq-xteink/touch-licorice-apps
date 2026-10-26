@@ -9,7 +9,7 @@ Open every cell that holds no mine; a number tells how many of the eight neighbo
 - Sizes made for the 480x800 touch screen, cells a finger can hit: **Easy** 8x10 with 10 mines,
   **Normal** 9x11 with 17 (the default), **Hard** 10x13 with 27. Classic boards like 16x16 or 30x16
   would need cells under 30 px.
-- A tap opens a cell. A **long press** sets or removes a flag, or switch the **Dig / Flag** button so
+- A tap opens a cell. A **long press** sets or removes a flag (once per press, however long), or switch the **Dig / Flag** button so
   a tap flags. A tap on a number whose mines are all flagged opens its other neighbours.
 - **Undo** takes moves back, also the one that hit a mine. Time (pauses over 30 s do not count),
   games won and the best time per size are kept; the game is saved after every move.
