@@ -71,7 +71,7 @@ t = texts()
 assert t[:2] == ['Word of the Day', 'Tuesday 27 October 2026'], t
 word = t[2]
 assert word in GOOD, t                                # no capitals, phrases or short words
-assert str(store['wotd.txt']).startswith(f'20753\twn_\t{word}\t'), store['wotd.txt']
+assert str(store['wotd.txt']).startswith(f'24:20753\twn_\t{word}\t'), store['wotd.txt']
 assert t[-1] == 'WordNet' and not any('error' in x for x in t), t
 # the same day draws from wotd.txt: no shard is read
 store.pop('wn_d000.txt'); store.pop('wn_d001.txt')
@@ -79,7 +79,7 @@ assert texts()[2] == word
 store.update(WN)
 
 # WordNet layout: part of speech, numbered senses, examples and synonyms indented
-store['wotd.txt'] = '20753\twn_\tabandon\t' + WN['wn_d000.txt'].split('\n')[2].split('\t', 1)[1]
+store['wotd.txt'] = '24:20753\twn_\tabandon\t' + WN['wn_d000.txt'].split('\n')[2].split('\t', 1)[1]
 r = recs()
 t = [x[0] for x in r]
 assert t[2] == 'abandon' and r[2][1] == 'large', r[:3]
@@ -94,9 +94,9 @@ assert all(x[3] < 800 - 40 for x in r[:-1]) and g.commands < 900
 set_day(1)
 t = texts()
 assert t[1] == 'Wednesday 28 October 2026' and t[2] in GOOD, t
-assert str(store['wotd.txt']).startswith('20754\t'), store['wotd.txt']
+assert str(store['wotd.txt']).startswith('24:20754\t'), store['wotd.txt']
 # a long entry stops at the bottom with "..."
-store['wotd.txt'] = '20754\twn_\tbanana\tn 1: ' + ' '.join(['word'] * 600)
+store['wotd.txt'] = '24:20754\twn_\tbanana\tn 1: ' + ' '.join(['word'] * 600)
 r = recs()
 assert r[-2][0] == '...' and max(x[3] for x in r[:-1]) < 800 - 48, r[-3:]
 
@@ -108,6 +108,22 @@ assert texts()[-1] == 'WordNet'
 store['lock_dict.txt'] = 'tr_'                       # switched in the app: the same day picks again
 t = texts()
 assert t[2] == 'çiçek' and 'noun flower' in t and '“Bahçede çiçek var.”' in t and t[-1] == 'Test Tr-En', t
+# a new word every 6 hours: the same one from 12:00 to 17:59, another at 18:00
+def set_time(day, hour): L.execute(f"now.epoch_sec = 1793091600 + {day} * 86400 + ({hour} - 14) * 3600; now.hour = {hour}")
+store['lock_dict.txt'] = 'wn_'
+store['wotd_every.txt'] = '6'
+set_time(5, 12)
+w12 = texts()[2]
+assert str(store['wotd.txt']).startswith('6:%d\t' % ((20753 + 5) * 4 + 2)), store['wotd.txt']
+set_time(5, 17)
+assert texts()[2] == w12
+set_time(5, 18)
+assert texts()[2] in GOOD and str(store['wotd.txt']).startswith('6:%d\t' % ((20753 + 5) * 4 + 3)), store['wotd.txt']
+store['wotd_every.txt'] = '5'                          # not one of the choices: once a day
+texts()
+assert str(store['wotd.txt']).startswith('24:20758\t'), store['wotd.txt']
+L.execute("now.hour = 14")
+
 # no dictionary at all
 for k in list(store): store.pop(k)
 set_day(4)

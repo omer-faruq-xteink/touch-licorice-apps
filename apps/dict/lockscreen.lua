@@ -1,7 +1,8 @@
--- Word of the Day: the Dictionary's lock-screen entry (API 2.9). Picks one word a day from the
--- dictionary chosen in the app (lock_dict.txt; else the first one in storage), shows it with its
--- senses, examples and synonyms, and keeps the pick in wotd.txt so a redraw reads no shard.
--- A pick: a shard and a byte offset from the day number, then the first plain word after it
+-- Word of the Day: the Dictionary's lock-screen entry (API 2.9). Picks one word a day (or every
+-- 12, 6, 3 or 1 hours: wotd_every.txt) from the dictionary chosen in the app (lock_dict.txt; else
+-- the first one in storage), shows it with its senses, examples and synonyms, and keeps the pick
+-- in wotd.txt so a redraw reads no shard.
+-- A pick: a shard and a byte offset from the period's number, then the first plain word after it
 -- (lower-case letters only, a real definition); WordNet's "n 1: ...\n2: ..." is laid out by sense.
 
 local W, H = 480, 800
@@ -72,12 +73,12 @@ local function good(word, def)
   return #word >= 4 and #word <= 16 and word:match('^[%l\128-\255]+$') ~= nil and #def >= 24
 end
 
--- the day's word from dictionary `pre`: returns word, definition
-local function pick(pre, day)
+-- the word for `seed` (a number per period) from dictionary `pre`: returns word, definition
+local function pick(pre, seed)
   local files = {}
   for f in (read(pre .. 'shards.tsv') or ''):gmatch('([^\t\n]+)\t[^\n]*\n?') do files[#files + 1] = f end
   if #files == 0 then return nil end
-  local h = (day * 2654435761 + 12345) % 4294967296
+  local h = (seed * 2654435761 + 12345) % 4294967296
   for k = 0, 2 do                                   -- a shard without a plain word: the next one
     local text = read(files[(h + k) % #files + 1])
     if text and #text > 0 then
@@ -93,16 +94,28 @@ local function pick(pre, day)
   return nil
 end
 
-local function today_word(day)
+-- a new word every EVERY hours (wotd_every.txt, set in the app: 24, 12, 6, 3 or 1); a day's
+-- periods start at midnight
+local EVERY = { [24] = true, [12] = true, [6] = true, [3] = true, [1] = true }
+local function every()
+  local n = tonumber((read('wotd_every.txt') or ''):match('%d+'))
+  return EVERY[n] and n or 24
+end
+
+-- the word of the period that `wall` falls in; the pick is kept in wotd.txt under "hours:period"
+local function current_word(wall)
   local pre = dict_prefix()
   if not pre then return nil end
+  local hours = every()
+  local k = wall // (hours * 3600)
+  local key = hours .. ':' .. k
   local s = read('wotd.txt')
   if s then
-    local d, p, w, def = s:match('^(%d+)\t([^\t]*)\t([^\t]+)\t([^\n]*)')
-    if tonumber(d) == day and p == pre then return w, def, pre end   -- another dictionary: pick again
+    local kk, p, w, def = s:match('^([%d:]+)\t([^\t]*)\t([^\t]+)\t([^\n]*)')
+    if kk == key and p == pre then return w, def, pre end   -- another dictionary or interval: pick again
   end
-  local w, def = pick(pre, day)
-  if w then pcall(function() ctx.storage:write('wotd.txt', day .. '\t' .. pre .. '\t' .. w .. '\t' .. def) end) end
+  local w, def = pick(pre, hours == 24 and k or (k * 7 + hours))
+  if w then pcall(function() ctx.storage:write('wotd.txt', key .. '\t' .. pre .. '\t' .. w .. '\t' .. def) end) end
   return w, def, pre
 end
 
@@ -160,7 +173,7 @@ function on_draw(c, gg)
     gg:text(M, 54, WDAY[day % 7 + 1] .. ' ' .. d .. ' ' .. MONTH[m] .. ' ' .. y, { font = font('medium') })
     gg:line(16, 92, W - 16, 92)
     gg:line(16, 93, W - 16, 93)
-    local word, def, pre = today_word(day)
+    local word, def, pre = current_word(wall)
     if not word then
       gg:text(M, 380, 'Dictionary: copy a dictionary', { font = font('medium') })
       gg:text(M, 410, 'into the app first.', { font = font('medium') })

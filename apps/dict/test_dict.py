@@ -110,6 +110,15 @@ tap(100, LOCK_ROW + 56)
 assert 'from Test Tr-En   (tap to change)' in texts() and str(g.py_store['lock_dict.txt']) == 'tren_'
 tap(100, LOCK_ROW + 56)
 assert str(g.py_store['lock_dict.txt']) == ''
+# how often a new word comes: day, 12, 6, 3, 1 hours, then a day again
+assert 'a new word every day' in texts(), texts()
+seen = []
+for _ in range(5):
+    tap(100, LOCK_ROW + 2 * 56)
+    seen.append(str(g.py_store['wotd_every.txt']))
+assert seen == ['12', '6', '3', '1', '24'] and 'a new word every day' in texts(), seen
+tap(100, LOCK_ROW + 2 * 56)
+assert 'a new word every 12 hours' in texts()
 tap(30, 20)
 assert 'Test En-Tr' in texts()
 ed = g.edits[len(g.edits)]

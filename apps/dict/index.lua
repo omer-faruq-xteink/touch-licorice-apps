@@ -356,7 +356,7 @@ local function bar_hit(x, n)
 end
 
 -- Settings (the box at the top right): which dictionary, and Word of the Day as the lock screen
-local SET_Y, SET_H, MAX_SETS = TOP + 40, 56, 8
+local SET_Y, SET_H, MAX_SETS = TOP + 40, 56, 6
 local function lock_y() return SET_Y + math.min(#sets, MAX_SETS) * SET_H + 40 end
 local function lock_on()
   local ok, v = pcall(function() return ctx.lockscreen:is_default() end)
@@ -378,6 +378,20 @@ local function lock_set()
   local want, list = (storage_read('lock_dict.txt') or ''):match('^([^\n]*)'), lock_sets()
   for k, s in ipairs(list) do if s.prefix == want then return s, k, list end end
   return list[1], 1, list
+end
+-- how often the lock screen shows a new word, in hours (wotd_every.txt)
+local EVERY = { 24, 12, 6, 3, 1 }
+local function lock_every()
+  local n = tonumber((storage_read('wotd_every.txt') or ''):match('%d+'))
+  for k, h in ipairs(EVERY) do if h == n then return h, k end end
+  return 24, 1
+end
+local function every_label(h) return h == 24 and 'a new word every day' or h == 1 and 'a new word every hour' or ('a new word every ' .. h .. ' hours') end
+local function next_every()
+  local _h, k = lock_every()
+  local nxt = EVERY[k % #EVERY + 1]
+  pcall(function() ctx.storage:write('wotd_every.txt', tostring(nxt)) end)
+  note(every_label(nxt))
 end
 local function next_lock_set()
   local _s, k, list = lock_set()
@@ -424,7 +438,9 @@ local function draw_settings(gg)
     if ls then
       gg:rect(12, y + SET_H, W - 24, SET_H - 8)
       gg:text(24, y + SET_H + 12, 'from ' .. short(ls.name or '', 22) .. (#list > 1 and '   (tap to change)' or ''), { font = F and F.medium })
-      gg:text(12, y + 2 * SET_H, 'A new word each day.', { font = F and F.small })
+      gg:rect(12, y + 2 * SET_H, W - 24, SET_H - 8)
+      gg:text(24, y + 2 * SET_H + 12, every_label(lock_every()), { font = F and F.medium })
+      gg:text(12, y + 3 * SET_H, 'Tap a row to change it.', { font = F and F.small })
     else
       gg:text(12, y + SET_H, 'It uses dictionaries copied into the app folder.', { font = F and F.small })
     end
@@ -503,7 +519,8 @@ local function tap(x, y)
     local i = math.floor((y - SET_Y) / SET_H) + 1
     if y >= SET_Y and i <= math.min(#sets, MAX_SETS) then select_dict(i); return end
     if y >= lock_y() and y < lock_y() + SET_H - 8 then toggle_lock()
-    elseif y >= lock_y() + SET_H and y < lock_y() + 2 * SET_H - 8 and ctx.lockscreen then next_lock_set() end
+    elseif y >= lock_y() + SET_H and y < lock_y() + 2 * SET_H - 8 and ctx.lockscreen then next_lock_set()
+    elseif y >= lock_y() + 2 * SET_H and y < lock_y() + 3 * SET_H - 8 and ctx.lockscreen and lock_set() then next_every() end
   elseif screen == 'entry' then
     if y < 46 then
       local b = bar_hit(x, 4)

@@ -33,7 +33,8 @@ install the new `dict.xtapp` over the old one; the files stay.
   insensitive). **Done** or a tap on a suggestion opens the entry.
 - Entry pages: **Back**, **Prev / Next**, tap the right / left third, side buttons, swipes.
 - **Settings** at the top right: pick the dictionary in use (the choice is remembered), turn
-  **Word of the Day** on the lock screen on or off and choose the dictionary it comes from. With an empty search box the last 30 lookups
+  **Word of the Day** on the lock screen on or off, choose the dictionary it comes from and how often a new word comes (every day,
+  12, 6, 3 hours or every hour). With an empty search box the last 30 lookups
   are listed.
 
 ## Word of the Day (lock screen)
@@ -42,7 +43,8 @@ Turned on in Settings (the firmware asks to confirm; Settings → Display → Of
 **Default**), the locked reader shows one word a day from the dictionary chosen for it (the
 **from ...** row; at first the one in use), with its senses,
 up to two examples each and its synonyms. The word is a plain one (lower-case letters, no
-phrases or names), picked from the date, so it changes at midnight; the day's pick is kept in
+phrases or names), picked from the date (and the hour, when it changes more often than daily), so
+it changes at midnight, or every 12, 6, 3 hours or every hour as set in Settings; the day's pick is kept in
 `wotd.txt` and the lock screen reads no shard again that day; choosing another dictionary picks
 again. Only dictionaries in the app's
 folder are used.
