@@ -89,7 +89,8 @@ tap(430, 20)
 t = texts()
 assert 'Test En-Tr  (in use)' in t and 'Test Tr-En' in t and 'off   (tap to turn on)' in t, t
 tap(100, SET_ROW(1))
-assert 'Test Tr-En  (in use)' in texts() and str(g.ctx.state.dict) == 'tren_' and str(g.py_store['lock_dict.txt']) == 'tren_'
+assert 'Test Tr-En  (in use)' in texts() and str(g.ctx.state.dict) == 'tren_'
+assert str(g.py_store['lock_dict.txt']) == ''              # the lock screen keeps its own
 key('back')
 assert 'Test Tr-En' in texts()
 g.edits[len(g.edits)].opts.on_end(g.ctx, 'elma', 'enter')
@@ -103,6 +104,12 @@ tap(100, LOCK_ROW)
 assert g.lock_calls == 'set' and 'on   (tap to turn off)' in texts(), texts()
 tap(100, LOCK_ROW)
 assert g.lock_calls == 'set,clear' and 'off   (tap to turn on)' in texts()
+# the lock screen's dictionary: its own row cycles through them
+assert 'from Test En-Tr   (tap to change)' in texts(), texts()
+tap(100, LOCK_ROW + 56)
+assert 'from Test Tr-En   (tap to change)' in texts() and str(g.py_store['lock_dict.txt']) == 'tren_'
+tap(100, LOCK_ROW + 56)
+assert str(g.py_store['lock_dict.txt']) == ''
 tap(30, 20)
 assert 'Test En-Tr' in texts()
 ed = g.edits[len(g.edits)]

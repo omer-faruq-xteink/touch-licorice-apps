@@ -146,8 +146,8 @@ local function load_dict()
   end
   cache = { file = nil, text = nil }
   pcall(function() ctx.state = ctx.state or {}; ctx.state.dict = s.prefix end)
-  if s.source == 'storage' then                      -- the lock screen's Word of the Day comes from it
-    pcall(function() if storage_read('lock_dict.txt') ~= s.prefix then ctx.storage:write('lock_dict.txt', s.prefix) end end)
+  if s.source == 'storage' and not storage_read('lock_dict.txt') then   -- Word of the Day's, until chosen in Settings
+    pcall(function() ctx.storage:write('lock_dict.txt', s.prefix) end)
   end
   return #dict.shards > 0
 end
@@ -368,6 +368,22 @@ local function toggle_lock()
   if lock_on() then pcall(function() L:clear_default() end); note('lock screen off')
   else pcall(function() L:set_default() end); note('lock screen: word of the day') end
 end
+-- the dictionaries the lock screen can use (those in the app's folder) and the one it uses
+local function lock_sets()
+  local out = {}
+  for _, s in ipairs(sets) do if s.source == 'storage' then out[#out + 1] = s end end
+  return out
+end
+local function lock_set()
+  local want, list = (storage_read('lock_dict.txt') or ''):match('^([^\n]*)'), lock_sets()
+  for k, s in ipairs(list) do if s.prefix == want then return s, k, list end end
+  return list[1], 1, list
+end
+local function next_lock_set()
+  local _s, k, list = lock_set()
+  local nxt = list[k % math.max(1, #list) + 1]
+  if nxt then pcall(function() ctx.storage:write('lock_dict.txt', nxt.prefix) end); note('word of the day from ' .. (nxt.name or '')) end
+end
 
 local function draw_search(gg)
   local F = ctx.fonts
@@ -404,9 +420,14 @@ local function draw_settings(gg)
   else
     gg:rect(12, y, W - 24, SET_H - 8, { line_width = lock_on() and 3 or 1 })
     gg:text(24, y + 12, lock_on() and 'on   (tap to turn off)' or 'off   (tap to turn on)', { font = F and F.medium })
-    local help = dict.source == 'storage' and 'A new word each day from the dictionary in use.'
-      or 'It uses dictionaries copied into the app folder.'
-    gg:text(12, y + SET_H, help, { font = F and F.small })
+    local ls, _k, list = lock_set()
+    if ls then
+      gg:rect(12, y + SET_H, W - 24, SET_H - 8)
+      gg:text(24, y + SET_H + 12, 'from ' .. short(ls.name or '', 22) .. (#list > 1 and '   (tap to change)' or ''), { font = F and F.medium })
+      gg:text(12, y + 2 * SET_H, 'A new word each day.', { font = F and F.small })
+    else
+      gg:text(12, y + SET_H, 'It uses dictionaries copied into the app folder.', { font = F and F.small })
+    end
   end
   if status ~= '' then gg:text(12, H - 30, short(status, 46), { font = F and F.small }) end
 end
@@ -481,7 +502,8 @@ local function tap(x, y)
     if y < 46 then back_to_search(); return end
     local i = math.floor((y - SET_Y) / SET_H) + 1
     if y >= SET_Y and i <= math.min(#sets, MAX_SETS) then select_dict(i); return end
-    if y >= lock_y() and y < lock_y() + SET_H - 8 then toggle_lock() end
+    if y >= lock_y() and y < lock_y() + SET_H - 8 then toggle_lock()
+    elseif y >= lock_y() + SET_H and y < lock_y() + 2 * SET_H - 8 and ctx.lockscreen then next_lock_set() end
   elseif screen == 'entry' then
     if y < 46 then
       local b = bar_hit(x, 4)

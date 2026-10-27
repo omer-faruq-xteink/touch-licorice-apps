@@ -6,7 +6,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **Calendar** (`calendar.xtapp`): the event box now has a white background, so the view behind it no longer shows through. The **Today** button is wider and shows the whole word; the arrows beside it are narrower.
 - **RSS** (`rss.xtapp`) and **Instapaper** (`instapaper.xtapp`): saved articles no longer pile up. The 100 most recently opened stay, older copies are removed, and Instapaper drops an archived article's copy. **Articles saved offline** in Settings shows the count; tap it twice to delete them all.
-- **Dictionary** (`dict.xtapp`): new **Word of the Day** lock screen, one word a day from the dictionary in use with its senses, examples and synonyms. The **dict n/m** box at the top right is now **Settings**: pick the dictionary and turn the lock screen on or off.
+- **Dictionary** (`dict.xtapp`): new **Word of the Day** lock screen, one word a day with its senses, examples and synonyms. The **dict n/m** box at the top right is now **Settings**: pick the dictionary for lookups, turn the lock screen on or off and choose the dictionary its word comes from.
 
 ## Update
 
