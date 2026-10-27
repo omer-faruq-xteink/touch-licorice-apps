@@ -44,7 +44,8 @@ local function try_refresh(cals, every, e, t)
       ctx.net:request(opts, function(cc, resp)
         pcall(function()
           local body = C.answer(resp, via)                 -- nil when cut off: the old copy stays
-          if not body then return end
+          -- a big one is left to the app: it reads in pieces, a lock screen has one callback
+          if not body or #body > 65536 then return end
           local e2, off2 = C.clock()
           local events = C.parse_ics(body, off2, (e2 + off2) // DAY)
           ctx.storage:write(C.cache_name(c.url), C.cache_text(events, e2, off2, #body))

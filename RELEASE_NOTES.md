@@ -12,7 +12,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   **lock screen** in any view: Day starts at the current hour and shows as many hours as fit,
   and the day's earlier and later events go on one line above and below, so none is missing.
   Google's calendar file (its whole history, in a new order each time) is asked for packed
-  (gzip, a quarter of the size); a file that still arrives cut off is never used, so events
+  (gzip, a quarter of the size) and read a piece at a time (the reader closes an app that
+  thinks too long in one go); a file that still arrives cut off is never used, so events
   can't go missing at random. Optionally, the rss-opds Worker (new `/api/ics`) sends only
   the events near today.
   Settings shows the clock and time zone the app uses.

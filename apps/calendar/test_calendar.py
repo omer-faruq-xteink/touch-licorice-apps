@@ -114,9 +114,15 @@ g.restart()                              # on_load again, now with the clock and
 ctx = g.L.globals().ctx
 A = lambda: g.api
 def typed(s): g.L.eval('inputs[#inputs]')(ctx, s)
+def ticks():
+    for _ in range(200):                           # the reading goes on a piece per tick
+        g.L.eval('on_tick')(ctx)
 def answer_all():
-    while answer_now():
-        pass
+    while True:
+        ticks()
+        if not answer_now():
+            break
+    ticks()
 def texts(): return g.texts()
 def has(s): return any(s in t for t in texts())
 
@@ -406,6 +412,41 @@ c = list(A().cals().values())[0]
 assert str(c.err).startswith('cut off after 0 KB packed') and not A().cfg.plain and len(sent) == 1, (c.err, sent)
 assert store[A().C.cache_name(URL1)] == before
 net['cut'] = False
+
+# ---- a big calendar is read a piece per tick (the host stops a long callback), or per draw
+filler = ''.join('\r\n'.join(['BEGIN:VEVENT', 'DTSTART:20200101T100000Z', 'DTEND:20200101T110000Z', 'UID:f%d' % k,
+                              'SUMMARY:Old %d' % k, 'DESCRIPTION:' + 'x' * 300, 'END:VEVENT', '']) for k in range(500))
+big = PERSONAL.replace('END:VCALENDAR', filler + 'END:VCALENDAR')
+assert len(big) > 200000
+net['cut'] = False
+saved_personal = PERSONAL
+PERSONAL = big
+store['settings.txt'] = store['settings.txt'].replace('plain=0', 'plain=1')
+g.restart()
+g.L.execute(f'now_sec = {NOW + 9 * 3600}')
+g.tap_label('Sync')
+assert answer_now()
+steps = 0
+seen = []
+while any(t.startswith('Reading Personal') for t in texts()):
+    seen += [t for t in texts() if t.startswith('Reading Personal')]
+    g.L.eval('on_tick')(ctx)
+    steps += 1
+    assert steps < 100
+assert steps >= 12 and seen[0].endswith(' 0%') or seen[0].endswith('%'), (steps, seen[:3])
+c = list(A().cals().values())[0]
+assert c.err is None and len(list(c.events.values())) == 10 and c.bytes > 200000, (c.err, c.bytes)
+# no ticks at all: each draw reads a piece
+g.L.execute(f'now_sec = {NOW + 18 * 3600}')
+g.tap_label('Sync')
+assert answer_now()
+for _ in range(100):
+    if not any(t.startswith('Reading') for t in texts()):
+        break
+c = list(A().cals().values())[0]
+assert c.err is None and c.updated == NOW + 18 * 3600 and store['sync_step.txt'] == 'done', (c.err, c.updated)
+PERSONAL = saved_personal
+g.L.execute(f'now_sec = {NOW}')
 
 # ---- the Worker: host and login in Settings, /api/ics with Basic auth
 g.tap_label('More')

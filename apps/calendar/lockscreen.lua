@@ -196,10 +196,16 @@ end
 -- closes it without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
 -- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
+local FREE = { function() ctx.gc:collect() end, function() ctx.gc('collect') end, function() ctx.gc:full() end,
+               function() ctx.gc:step() end, function() ctx.gc.collect() end }
+local free_k = nil                    -- the call that worked; false: none does
 function C.free()
-  for _k, f in ipairs({ function() ctx.gc:collect() end, function() ctx.gc:full() end, function() ctx.gc.collect() end }) do
-    if pcall(f) then return end
+  if free_k == false then return end
+  if free_k then pcall(FREE[free_k]); return end
+  for k, f in ipairs(FREE) do
+    if pcall(f) then free_k = k; return end
   end
+  free_k = false
 end
 
 -- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
@@ -377,9 +383,17 @@ function C.rule(rr, off)
   return r
 end
 
+-- the properties read, and how much of a long one is kept (raw, before cleaning)
+local WANT = { SUMMARY = true, DTSTART = true, DTEND = true, DURATION = true, LOCATION = true, DESCRIPTION = true,
+               UID = true, RRULE = true, ['RECURRENCE-ID'] = true, STATUS = true, EXDATE = true }
+local TEXT_MAX = { DESCRIPTION = 1600, SUMMARY = 500, LOCATION = 400 }
+
 -- iCalendar text -> events near `today` (a day number): those within two months back and
 -- 400 days ahead, and every repeating one that has not ended. Notes are cut to keep memory low.
-function C.parse_ics(body, off, today)
+-- C.parser reads it in pieces: p.step(bytes) reads about that many and is true when done, then
+-- p.events (p.pos of p.size tells how far it is). The host closes an app whose callback runs too
+-- long ("callback exceeded its time budget"), and reading 200 KB at once did on the device.
+function C.parser(body, off, today)
   local w0, w1 = today * DAY - KEEP_BACK, today * DAY + KEEP_AHEAD
   local events, moved = {}, {}
   local cur, depth = nil, 0
@@ -403,6 +417,7 @@ function C.parse_ics(body, off, today)
     elseif ev.e < w0 or ev.s > w1 then
       return
     end
+    if ev.desc then ev.desc = text_value(ev.desc, 400) end    -- only for the events kept
     events[#events + 1] = ev
   end
 
@@ -422,7 +437,7 @@ function C.parse_ics(body, off, today)
       elseif name == 'DTEND' then cur.e = C.parse_dt(v, off)
       elseif name == 'DURATION' then cur.dur = C.parse_dur(v)
       elseif name == 'LOCATION' then cur.loc = text_value(v, 100)
-      elseif name == 'DESCRIPTION' then cur.desc = text_value(v, 400)
+      elseif name == 'DESCRIPTION' then cur.desc = v                 -- cleaned in finish, if kept
       elseif name == 'UID' then cur.uid = v:sub(1, 80)
       elseif name == 'RRULE' then cur.rr = v
       elseif name == 'RECURRENCE-ID' then cur.rid = C.parse_dt(v, off)
@@ -436,38 +451,73 @@ function C.parse_ics(body, off, today)
     end
   end
 
-  -- unfold as we go: a line starting with a space or tab continues the one before
-  local pos, n, held = 1, #body, nil
-  while pos <= n do
-    local e = body:find('\n', pos, true) or n + 1
-    local l = body:sub(pos, e - 1)
-    if l:byte(-1) == 13 then l = l:sub(1, -2) end
-    local c1 = l:byte(1)
-    if (c1 == 32 or c1 == 9) and held then
-      if #held < 3000 then held = held .. l:sub(2) end
-    else
-      if held then prop(held) end
-      held = l
+  -- Unfold as we go (a line starting with a space or tab continues the one before), copying out
+  -- only the properties used: the reader has about 1 MB for everything, the unpacked calendar
+  -- takes a fifth of it, and the garbage of copying every line ran it out on the device.
+  -- A property's pieces are joined once, and only up to what is kept of it.
+  local pos, n = 1, #body
+  local parts, plen, pmax = nil, 0, 0
+  local count = 0
+  local p = { pos = 1, size = n }
+  function p.step(budget)
+    if p.events then return true end
+    local stop = math.min(n + 1, pos + budget)
+    while pos <= n and pos < stop do
+      local e = body:find('\n', pos, true) or n + 1
+      local last = e - 1
+      if last >= pos and body:byte(last) == 13 then last = last - 1 end
+      local c1 = body:byte(pos)
+      if c1 == 32 or c1 == 9 then
+        if parts and plen < pmax and last > pos then
+          local piece = body:sub(pos + 1, math.min(last, pos + pmax - plen))
+          parts[#parts + 1] = piece
+          plen = plen + #piece
+        end
+      else
+        if parts then prop(#parts == 1 and parts[1] or table.concat(parts)); parts = nil end
+        local name = body:match('^[%w%-]+', pos)
+        if name then
+          name = name:upper()
+          -- outside an event and inside its alarms only BEGIN and END matter
+          if name == 'BEGIN' or name == 'END' or (cur and depth == 0 and WANT[name]) then
+            pmax = TEXT_MAX[name] or 3000
+            parts = { body:sub(pos, math.min(last, pos + pmax - 1)) }
+            plen = #parts[1]
+          end
+        end
+        count = count + 1
+        if count % 400 == 0 then C.free() end
+      end
+      pos = e + 1
     end
-    pos = e + 1
-  end
-  if held then prop(held) end
+    p.pos = pos
+    if pos <= n then return false end
+    if parts then prop(#parts == 1 and parts[1] or table.concat(parts)); parts = nil end
 
-  for _k, ev in ipairs(events) do
-    local m = ev.rr and ev.uid and moved[ev.uid]
-    if m then for _j, t in ipairs(m) do ev.ex[#ev.ex + 1] = t end end
+    for _k, ev in ipairs(events) do
+      local m = ev.rr and ev.uid and moved[ev.uid]
+      if m then for _j, t in ipairs(m) do ev.ex[#ev.ex + 1] = t end end
+    end
+    -- far too many: keep the repeating ones and those nearest today
+    if #events > MAX_EVENTS then
+      local now = today * DAY
+      table.sort(events, function(a, b)
+        local da = a.rr and -1 or math.abs(a.s - now)
+        local db = b.rr and -1 or math.abs(b.s - now)
+        return da < db
+      end)
+      for k = #events, MAX_EVENTS + 1, -1 do events[k] = nil end
+    end
+    p.events, body = events, nil
+    return true
   end
-  -- far too many: keep the repeating ones and those nearest today
-  if #events > MAX_EVENTS then
-    local now = today * DAY
-    table.sort(events, function(a, b)
-      local da = a.rr and -1 or math.abs(a.s - now)
-      local db = b.rr and -1 or math.abs(b.s - now)
-      return da < db
-    end)
-    for k = #events, MAX_EVENTS + 1, -1 do events[k] = nil end
-  end
-  return events
+  return p
+end
+
+function C.parse_ics(body, off, today)
+  local p = C.parser(body, off, today)
+  while not p.step(1000000000) do end
+  return p.events
 end
 
 ------------------------------------------------------------------ the cache
@@ -1103,7 +1153,8 @@ local function try_refresh(cals, every, e, t)
       ctx.net:request(opts, function(cc, resp)
         pcall(function()
           local body = C.answer(resp, via)                 -- nil when cut off: the old copy stays
-          if not body then return end
+          -- a big one is left to the app: it reads in pieces, a lock screen has one callback
+          if not body or #body > 65536 then return end
           local e2, off2 = C.clock()
           local events = C.parse_ics(body, off2, (e2 + off2) // DAY)
           ctx.storage:write(C.cache_name(c.url), C.cache_text(events, e2, off2, #body))
