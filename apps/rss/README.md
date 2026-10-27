@@ -59,7 +59,9 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
 - A list that fails to load is tried once more; if it still fails, the screen says why (and
   Reload tries again) rather than showing an empty list.
 - Everything fetched is cached in the app's storage (lists, feed list, article texts), so lists
-  and already-opened articles work offline, marked "(offline)".
+  and already-opened articles work offline, marked "(offline)". The 100 most recently opened
+  articles stay; older copies are removed. **Articles saved offline** in Settings shows how many
+  there are; tap it twice to delete them all (lists and settings stay).
 
 ## Images
 

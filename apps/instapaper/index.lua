@@ -258,6 +258,55 @@ local function cache_read(name)
   return nil
 end
 
+-- Offline copies of articles: the CACHE_KEEP most recently opened stay, older ones are removed.
+-- cache_idx.txt lists them, oldest first; copies made before that list existed go in front.
+local CACHE_KEEP, CACHE_IDX = 100, 'cache_idx.txt'
+local cache_names = nil
+local clear_armed = false            -- Settings: the first tap on the offline row asks for a second
+local function is_copy(n) return n:match('^a%d+i?%.txt$') or n:match('^x%d+_a%d+i?%.txt$') end
+local function copies()
+  if cache_names then return cache_names end
+  cache_names = {}
+  local raw = cache_read(CACHE_IDX)
+  if raw then
+    for n in raw:gmatch('[^\n]+') do cache_names[#cache_names + 1] = n end
+  else
+    local ok, t = pcall(function() return ctx.storage:list() end)
+    for _, e in ipairs((ok and type(t) == 'table') and t or {}) do
+      local n = type(e) == 'table' and e.name or e
+      if type(n) == 'string' and is_copy(n) then cache_names[#cache_names + 1] = n end
+    end
+    table.sort(cache_names)
+  end
+  return cache_names
+end
+local function cache_remove(name) pcall(function() ctx.storage:remove(name) end) end
+local function cache_save()
+  cache_write(CACHE_IDX, table.concat(cache_names, '\n'))
+end
+-- name was just read or written: it moves to the end, the oldest beyond CACHE_KEEP go
+local function cache_touch(name)
+  local out = {}
+  for _, n in ipairs(copies()) do if n ~= name then out[#out + 1] = n end end
+  out[#out + 1] = name
+  while #out > CACHE_KEEP do cache_remove(table.remove(out, 1)) end
+  cache_names = out
+  cache_save()
+end
+-- names: the copies to remove (an archived article's, with and without images)
+local function cache_drop(names)
+  local gone, out = {}, {}
+  for _, n in ipairs(names) do gone[n] = true; cache_remove(n) end
+  for _, n in ipairs(copies()) do if not gone[n] then out[#out + 1] = n end end
+  cache_names = out
+  cache_save()
+end
+local function cache_clear()
+  for _, n in ipairs(copies()) do cache_remove(n) end
+  cache_names = {}
+  cache_save()
+end
+
 ------------------------------------------------------------------ text layout
 
 local function measure(font, s)
@@ -807,7 +856,7 @@ local function open_article(item)
   release_images()
   local cname = 'a' .. art.id .. (cfg.images and 'i' or '') .. '.txt'
   local cached = art_decode(cache_read(cname))
-  if cached then layout_article(cached); resume_page(); art.cached = true; note('cached'); load_page_images(); return end
+  if cached then layout_article(cached); resume_page(); art.cached = true; note('cached'); cache_touch(cname); load_page_images(); return end
   local id = art.id
   request('/bookmarks/' .. id .. '/parse', function(data, err)
     if art.id ~= id then return end               -- another article by now
@@ -815,6 +864,7 @@ local function open_article(item)
       local a = to_article(data, item)
       layout_article(a); resume_page(); note('')
       cache_write(cname, art_encode(a))
+      cache_touch(cname)
       load_page_images()
     else
       note(short(err, 44))
@@ -837,6 +887,7 @@ local function bookmark_action(act, item)
     request('/bookmarks/' .. id .. '/move', function(data, err)
       if err then note('archive: ' .. short(err, 36)); return end
       note('archived: ' .. short(item.title or '', 30))
+      cache_drop({ 'a' .. id .. '.txt', 'a' .. id .. 'i.txt' })
       if list.kind ~= 'archive' then remove_from_list(id) end
     end, 'archiving', 'POST', '{"section":"archive"}')
   elseif act == 'star' then
@@ -1032,7 +1083,8 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'Archive', 'archive' }, { 'Folders', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'token', 'Access token (instapaper.com/developers)' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' } }
+local SETTINGS = { { 'token', 'Access token (instapaper.com/developers)' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
+                   { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
 local function bar(gg, labels)
   local F = ctx.fonts
@@ -1197,6 +1249,7 @@ local function draw_settings(gg)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
+    if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'token' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
     gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
   end
@@ -1230,6 +1283,13 @@ end
 local function edit_setting(i)
   local s = SETTINGS[i]
   if not s then return end
+  if s[1] == 'cache' then
+    if #copies() == 0 then clear_armed = false; note('nothing saved offline'); return end
+    if not clear_armed then clear_armed = true; return end
+    cache_clear(); clear_armed = false; note('offline copies deleted')
+    return
+  end
+  clear_armed = false
   if s[1] == 'full' then cfg.full = not cfg.full; save_cfg(); return end
   if s[1] == 'images' then cfg.images = not cfg.images; save_cfg(); return end
   if s[1] == 'size' then
@@ -1283,7 +1343,7 @@ local function tap(x, y)
       end
     end
   elseif screen == 'settings' then
-    if y < 46 then screen = 'menu'; load_accounts(); return end
+    if y < 46 then screen = 'menu'; clear_armed = false; load_accounts(); return end
     for i = 1, #SETTINGS do
       local y0 = TOP + 20 + (i - 1) * 96 + 24
       if y >= y0 and y < y0 + 48 then edit_setting(i); return end
@@ -1491,7 +1551,7 @@ function on_input(c, ev)
       end
       if k == 'back' then
         if screen == 'article' then article_back()
-        elseif screen == 'settings' then screen = 'menu'; load_accounts()
+        elseif screen == 'settings' then screen = 'menu'; clear_armed = false; load_accounts()
         elseif screen ~= 'menu' then screen = 'menu'
         elseif multi() and acct then acct = nil end
       elseif k == 'right' or k == 'down' then

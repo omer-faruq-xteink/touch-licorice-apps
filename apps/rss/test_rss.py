@@ -54,7 +54,9 @@ local function font(name, lh) local f = M({ measure = function(s) return #s * 10
 ctx = {
   set_tick = function() error('no timer: redraws slow the network down') end,
   invalidate = function() end, state = {},
-  storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
+  storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end,
+                   remove = function(n) store[n] = nil; return true end,
+                   list = function() local t = {} for k in pairs(store) do t[#t + 1] = k end return t end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
   input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
   net = M({ keep_wifi = function(ms) kept = kept or {}; kept[#kept + 1] = ms end, request = function(opts, fn)
@@ -567,4 +569,18 @@ t = texts()
 i = t.index('Source:')
 addr_lines = [x for x in t[i + 1:] if x and x[0].isalnum()][:4]
 assert len(addr_lines) == 3 and addr_lines[2].endswith('~') and all(len(x) <= 45 for x in addr_lines), addr_lines
+# offline copies: listed as they are opened; Settings deletes them all after a second tap
+idx = str(g.store['cache_idx.txt']).split(chr(10))
+assert 'a103.txt' in idx and idx[-1] == 'a800.txt', idx
+g = restart(); g.flush()
+tap_label('Settings')
+CACHE_ROW = 56 + 20 + 6 * 96 + 24 + 10
+n = len(idx)
+assert any(x.startswith('%d ' % n) for x in texts()), texts()
+tap(100, CACHE_ROW)
+assert 'Tap again to delete %d' % n in texts() and g.store['a103.txt'] is not None
+tap(100, CACHE_ROW)
+assert any(x.startswith('0 ') for x in texts()) and 'offline copies deleted' in texts(), texts()
+assert g.store['a103.txt'] is None and g.store['x2_a900.txt'] is None and str(g.store['cache_idx.txt']) == ''
+assert g.store['l_unread_0_1.txt'] is not None and g.store['config.txt'] is not None
 print('rss29 tests passed')

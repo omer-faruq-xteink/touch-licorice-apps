@@ -41,7 +41,10 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
   as greyscale JPEGs fitted to the screen width, from the free images.weserv.nl resizer, loaded
   for the page on screen only. Icons and tracking pixels are left out; a picture that cannot be
   loaded shows as `[image]`, the text never waits for it.
-- Opened articles and lists are saved on the card and open again without a connection.
+- Opened articles and lists are saved on the card and open again without a connection. The 100
+  most recently opened articles stay; older copies are removed, and an archived article's copy
+  goes at once. **Articles saved offline** in Settings shows how many there are; tap it twice to
+  delete them all (lists, settings and reading progress stay).
 
 ## Files
 

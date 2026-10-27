@@ -86,7 +86,9 @@ fake_ms = 1000
 local function font(name, lh) local f = M({ measure = function(s) return #s * 10 end }); f.name = name; f.line_height = lh; return f end
 ctx = {
   invalidate = function() end, state = {},
-  storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
+  storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end,
+                   remove = function(n) store[n] = nil; return true end,
+                   list = function() local t = {} for k in pairs(store) do t[#t + 1] = k end return t end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
   input = M({ text = function(opts, fn) inputs[#inputs + 1] = fn end }),
   clock = M({ millis = function() return fake_ms end, epoch = function() return 1761400000 end }),
@@ -214,6 +216,8 @@ assert any(c[0] == 'POST' and c[1].endswith('/bookmarks/1003/move') and c[2] == 
 t = texts()
 assert 'Story 3' not in t and 'Story 4' in t and 'Back' in t, t                          # back on the list, gone
 assert not any(c[1].endswith('/bookmarks/1003') for c in calls[-2:]), 'archived: no progress to send'
+assert g.store['a1003.txt'] is None and 'a1003.txt' not in str(g.store['cache_idx.txt']), 'archived: its offline copy goes'
+assert 'a1001.txt' in str(g.store['cache_idx.txt']) and g.store['a1001.txt'] is not None
 
 # archive from the preview: it moves on to the next story, the archived one leaves the list
 long_press(100, row_y(0))
@@ -347,4 +351,25 @@ state['token_ok'] = True
 g = restart(); g.flush()
 assert any(c[0] == 'POST' and c[1].endswith('/bookmarks/1003') for c in calls[-3:]), calls[-3:]
 assert str(g.store['progress.txt']) == ''
+
+# offline copies: the latest 100 stay; Settings deletes them all after a second tap
+g.store['cache_idx.txt'] = '\n'.join('a%d.txt' % (5000 + i) for i in range(100))
+for i in range(100): g.store['a%d.txt' % (5000 + i)] = 'old'
+g = restart(); g.flush()
+key('back')
+tap(*MENU(0)); g.flush()
+tap(100, row_y(1)); g.flush()
+idx = str(g.store['cache_idx.txt']).split('\n')
+assert len(idx) == 100 and idx[-1].startswith('a1001') and 'a5000.txt' not in idx and g.store['a5000.txt'] is None, idx[:2]
+assert g.store['a5001.txt'] == 'old'
+key('back'); key('back')
+tap(*MENU(4))
+row = TOP + 20 + 3 * 96 + 24 + 10
+assert any(x.startswith('100 ') for x in texts()), texts()
+tap(100, row)
+assert 'Tap again to delete 100' in texts() and g.store['a5001.txt'] == 'old'
+tap(100, row)
+assert any(x.startswith('0 ') for x in texts()) and 'offline copies deleted' in texts(), texts()
+assert g.store['a5001.txt'] is None and str(g.store['cache_idx.txt']) == ''
+assert g.store['config.txt'] is not None and g.store['progress.txt'] is not None
 print('instapaper29 tests passed')
