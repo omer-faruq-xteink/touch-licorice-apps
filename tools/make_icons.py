@@ -305,6 +305,32 @@ def klondike(p):
     p.line([(19, 56), (32, 76), (45, 56)], 3)
 
 
+def tasks(p):
+    # a checklist: three boxes, the first two ticked, and lines
+    for k in range(3):
+        y = 14 + k * 26
+        p.rect((12, y, 32, y + 20), w=4)
+        p.rect((42, y + 8, 86 - k * 12, y + 13), fill=True)
+    for k in range(2):
+        y = 14 + k * 26
+        p.line([(16, y + 10), (21, y + 16), (34, y - 2)], 5)
+
+
+def weather(p):
+    # a sun behind a cloud, with rain
+    p.ellipse((14, 10, 50, 46), w=5)
+    for x0, y0, x1, y1 in ((32, 0, 32, 5), (4, 28, 9, 28), (12, 8, 16, 12), (52, 8, 48, 12), (12, 48, 16, 44)):
+        p.line([(x0, y0), (x1, y1)], 4)
+    p.white_ellipse((26, 26, 62, 62))
+    p.white_ellipse((44, 20, 86, 62))
+    p.white_rect((20, 44, 92, 72))
+    p.ellipse((26, 30, 58, 62), fill=True)
+    p.ellipse((44, 22, 84, 62), fill=True)
+    p.rect((20, 46, 90, 70), fill=True, r=12)
+    for x in (34, 54, 74):
+        p.line([(x, 78), (x - 6, 92)], 5)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -312,7 +338,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
-         'klondike': klondike}
+         'klondike': klondike, 'tasks': tasks, 'weather': weather}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

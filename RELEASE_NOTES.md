@@ -4,6 +4,12 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **New: Tasks** — to-do lists: tick an item with a tap, add with the keyboard, **Clear done**
+  removes the ticked ones (after asking); edit, move and delete items, several lists. One list can
+  be the **lock screen**. Everything is kept in a plain text file you can also edit on a computer.
+- **New: Weather** — the forecast from Open-Meteo (free, no key) for a place you search by name:
+  the temperature now in large digits, the next 12 hours and four days, °C or °F. Kept between
+  visits, and it can be the **lock screen**.
 - **Wikipedia offline**: a pack of English Wikipedia's 10 000 vital articles (opening sections,
   `wikipedia-en-vital.zip`: 7 MB, 18 MB unzipped) reads without Wi-Fi; search by the start of a title,
   random article, read before. With a pack on the card the app opens on a list of sources
@@ -27,7 +33,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `calculator.xtapp`, `klondike.xtapp` | **new** |
+| `calculator.xtapp`, `klondike.xtapp`, `tasks.xtapp`, `weather.xtapp` | **new** |
 | `anki.xtapp` | **updated**: FSRS scheduling |
 | `wikipedia.xtapp` | **updated**: offline packs |
 | `wikipedia-en-vital.zip` | **new**: the offline pack (unzip into `XTApps/wikipedia/files/`) |

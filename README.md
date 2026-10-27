@@ -25,6 +25,8 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
+| **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
+| **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
@@ -192,6 +194,18 @@ Türkçe, Deutsch, ... or any Wikipedia's code) and is paged like an RSS article
 articles stay on the reader for reading without Wi-Fi. Offline: the release's pack of English
 Wikipedia's 10 000 vital articles (opening sections), or one made with `wiki2pack.py`; the app then
 opens on a list of sources. [More](apps/wikipedia/README.md)
+
+### Tasks
+
+To-do lists: tap the box to tick an item, Add with the firmware keyboard, Clear done to remove the
+ticked ones; edit, move and delete items, several lists. One list can be the lock screen. Kept in
+`XTApps/tasks/files/lists.txt`, plain text you can also edit on a computer. [More](apps/tasks/README.md)
+
+### Weather
+
+The forecast from [Open-Meteo](https://open-meteo.com) (free, no key) for a place found by name:
+now, the next 12 hours and four days, in °C or °F. The forecast is kept, so it opens at once; it
+can be the lock screen. [More](apps/weather/README.md)
 
 ### Calculator
 
