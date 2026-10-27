@@ -264,6 +264,7 @@ messages; the Notes and RSS apps are built on the results.
 | `g:polyline({x1, y1, x2, y2, …})` | one command per stroke chunk; there is a point limit, chunk at ~60 points |
 | `g:image(img, x, y, {w =, h =})` | the only working argument order (`g:image(x, y, img)` draws nothing) |
 | `g:rect(x, y, w, h, {fill = true})` / `g:text(..., {color = 15})` | the fill draws a solid black box; the text colour is ignored (the text stays black, so it vanishes on a filled box; seen in Slide Puzzle on 26102401). Mark things with frames instead: a large black area also ghosts on e-ink |
+| `g:image(white, x, y, {w =, h =})` | **a white area over a drawn screen**: a 1x1 white JPEG (`ctx.image:decode`) stretched to any size draws opaque white, so text under it is hidden (Calendar's event box on 26102401). The way to give a box a white background |
 | `ctx.qr:encode(text)` | QR image for `g:image`, one pixel per module (33×33 for a short URL); draw it scaled with `{w =, h =}` by a whole factor |
 | `ctx.image:decode(bytes, opts_table)` | not yet exercised with real image data |
 | `ctx.layers:create(w, h)` | layer userdata `{width, height, draw(fn), release}`; `layer:draw(fn)` draws into it (0.8's `draw_with`) |

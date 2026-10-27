@@ -202,6 +202,22 @@ assert not any('Alarm' in s for s in t)
 assert '16:00 Call' not in t and '07' not in t and 'Sync' not in t, t   # the box has no fill: nothing under it
 g.key('back')
 assert not has('Close')
+# a reader that decodes the white JPEG: the view stays, the image blanks the box's area
+g.L.execute("images = {}; ctx.image = {decode = function(self, b) assert(#b == 333 and b:sub(1, 2) == '\\255\\216'); return {width = 1, height = 1} end};"
+            "rawset(gg, 'image', function(self, img, x, y, o) images[#images + 1] = {x = x, y = y, w = o.w, h = o.h} end)")
+g.restart()
+g.tap_label('Day')
+h = {str(x.it.sum): x for x in A().hits().values() if x.it}['Dentist']
+g.tap(h.x + 5, h.y + 5)
+t = texts()
+im = list(g.g.images.values())
+box = [r for r in g.rects() if r.w > 300 and r.h > 100][0]
+assert '16:00 Call' in t and 'Close' in t and len(im) == 1, (t, len(im))
+assert (im[0].x, im[0].y, im[0].w, im[0].h) == (box.x, box.y, box.w, box.h), (im[0].x, im[0].y, box.x, box.y)
+g.key('back')
+g.L.execute("ctx.image = nil; rawset(gg, 'image', nil)")
+g.restart()
+g.tap_label('Day')
 g.tap_label('>')
 assert has('Wednesday 28 October 2026') and not has('Team meeting') and has('Standup')
 g.key('left')

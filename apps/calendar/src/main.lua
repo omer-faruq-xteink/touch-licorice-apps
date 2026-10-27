@@ -426,13 +426,42 @@ local function draw_settings(gg)
   end
 end
 
+-- A box has no fill (a fill draws black), but an image draws its white: a 1x1 white JPEG
+-- stretched over the box hides the view under it. Without the image the box gets a clean screen.
+local WHITE_JPG = ('ffd8ffe000104a46494600010100000100010000ffdb0043000101010101010101010101010101010101010101010101' ..
+  '0101010101010101010101010101010101010101010101010101010101010101010101010101010101ffc0000b080001' ..
+  '000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b51000020103' ..
+  '03020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f024336272' ..
+  '82090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475' ..
+  '767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9' ..
+  'cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda0008010100003f00fefe2bffd9')
+local white = nil                    -- the decoded image; false when the reader cannot decode it
+
+local function white_image()
+  if white == nil then
+    local ok, img = pcall(function()
+      return ctx.image:decode((WHITE_JPG:gsub('..', function(h) return string.char(tonumber(h, 16)) end)))
+    end)
+    white = (ok and img) or false
+  end
+  return white
+end
+
+-- the box's frame, taken from a dry run of kit.draw_modal (its first rect)
+local function modal_rect()
+  local r = nil
+  kit.draw_modal(setmetatable({}, { __index = function(_, k)
+    return function(_, x, y, w, h) if k == 'rect' and not r then r = { x, y, w, h } end end
+  end }))
+  return r
+end
+
 function on_draw(c, gg)
   if not gg then return end
   local ok, e = pcall(function()
     pump()
     gg:clear(0)
-    -- a box has no fill (white fills draw black), so it goes on a clean screen
-    if kit.modal() then kit.draw_modal(gg); return end
+    if kit.modal() and not white_image() then kit.draw_modal(gg); return end
     if screen == 'settings' then draw_settings(gg) else draw_main(gg) end
     local line = (reading and ('Reading ' .. kit.short(reading.c.name, 20) .. '... ' ..
                     (reading.p.pos * 100 // math.max(1, reading.p.size)) .. '%'))
@@ -442,6 +471,11 @@ function on_draw(c, gg)
     for k, b in ipairs(bs) do
       local x, y, bw, bh = button_rect(k, #bs)
       kit.button(gg, x, y, bw, bh, b, { font = 'medium' })
+    end
+    if kit.modal() then
+      local r = modal_rect()
+      if not (r and pcall(function() gg:image(white, r[1], r[2], { w = r[3], h = r[4] }) end)) then gg:clear(0) end
+      kit.draw_modal(gg)
     end
   end)
   if not ok then pcall(function() gg:text(8, H - 40, kit.short('draw ERR ' .. tostring(e), 46)) end) end
