@@ -13,13 +13,12 @@ local W, H = kit.W, kit.H
 local DAY = 86400
 local TAB_H, TOP, BODY_H = 52, 104, 584
 local BTN_Y, BTN_H = 716, 64
-local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 local MODES = { 'day', 'week', 'month', 'agenda' }
 local MODE_LABEL = { day = 'Day', week = 'Week', month = 'Month', agenda = 'Agenda' }
 local LOCKS = { 'off', 'agenda', 'day', 'week', 'month' }
 local EVERY = { 1, 3, 6, 12, 24 }
 
-local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week' }
+local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week', host = '', auth = '' }
 local cals = {}
 local mode, anchor, back_mode = 'week', 0, nil
 local ag = { first = 0, starts = { 1 }, page = 1 }
@@ -38,7 +37,8 @@ end
 ------------------------------------------------------------------ storage
 
 local function save_cfg()
-  kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode)
+  kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
+    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0'))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
 
@@ -50,6 +50,8 @@ local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.ws = t.ws == '0' and 0 or 1
   cfg.every = tonumber(t.every) or 6
+  cfg.host, cfg.auth = t.host or '', t.auth or ''
+  cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
   for _k, m in ipairs(MODES) do if t.mode == m then mode = m end end
   cals = C.parse_list(kit.read('calendars.txt'))
@@ -72,17 +74,20 @@ local function after_sync()
   data_ver = data_ver + 1
 end
 
-local function take_body(c, resp)
-  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then c.err = 'no answer'; return end
-  local code = tonumber(resp.status) or tonumber(resp.code)
-  if code and code >= 400 then c.err = 'HTTP ' .. code; return end
-  local body = resp.body
-  if not body:find('BEGIN:VCALENDAR', 1, true) then c.err = 'not an iCal address'; return end
+-- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
+local function take_body(c, resp, via)
+  local body, why, what, packed = C.answer(resp, via)
+  if what == 'gzip' and not cfg.plain then
+    cfg.plain = true
+    save_cfg()
+    return 'again'
+  end
+  if not body then c.err = why; return end      -- the last whole copy stays
   local e, _wall, today = clock()
   local events = C.parse_ics(body, OFF, today)
   local bytes = #body
   kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes))
-  c.events, c.updated, c.bytes, c.err = events, e, bytes, nil
+  c.events, c.updated, c.bytes, c.packed, c.err = events, e, bytes, packed, nil
   sync_done = sync_done + 1
 end
 
@@ -97,11 +102,12 @@ sync_next = function()
   sync_cur, sync_since = c, kit.now_ms()
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
-    ctx.net:request({ url = c.url, method = 'GET', timeout_ms = 45000,
-                      headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' } }, function(cc, resp)
+    local opts, via = C.request(c.url, cfg, not cfg.plain)
+    ctx.net:request(opts, function(cc, resp)
       if sync_cur ~= c then return end
-      local okb, e = pcall(take_body, c, resp)
+      local okb, e = pcall(take_body, c, resp, via)
       if not okb then c.err = kit.short(tostring(e), 60) end
+      if okb and e == 'again' then table.insert(sync_q, 1, c) end
       sync_cur = nil
       sync_next()
       kit.refresh()
@@ -279,6 +285,26 @@ local function calendar_box(c)
     } })
 end
 
+-- optional: the rss-opds Worker sends only the events near today (/api/ics), for calendars too
+-- big for the reader even packed. Its host, then its login.
+local function ask_worker()
+  ask_text('Worker host, e.g. rss-opds.you.workers.dev (empty: none)', cfg.host, function(s)
+    if s == nil then return end
+    cfg.host = s:gsub('^[ 	]+', ''):gsub('[ 	]+$', ''):gsub('^%a+://', ''):gsub('/+$', '')
+    if cfg.host == '' then
+      cfg.auth = ''
+      save_cfg()
+      status = 'Worker: off.'
+      return
+    end
+    ask_text('Worker login as user:password (empty: none)', cfg.auth, function(a)
+      cfg.auth = (a or ''):gsub('^[ 	]+', ''):gsub('[ 	]+$', '')
+      save_cfg()
+      sync(true)
+    end)
+  end)
+end
+
 ------------------------------------------------------------------ lock screen
 
 local function set_lock(l)
@@ -352,9 +378,10 @@ local function setting_rows()
     { 'Week starts on: ' .. (cfg.ws == 1 and 'Monday' or 'Sunday'), 'ws' },
     { 'Sync when older than: ' .. cfg.every .. ' h', 'every' },
     { 'Lock screen: ' .. (cfg.lock == 'off' and 'off' or MODE_LABEL[cfg.lock]), 'lock' },
+    { 'Worker: ' .. (cfg.host ~= '' and kit.short(cfg.host, 30) or 'off (straight to the calendar)'), 'worker' },
   }
 end
-local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 470, 58
+local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 466, 54
 
 local function draw_settings(gg)
   gg:text(16, 12, 'Settings', { font = kit.font('large') })
@@ -370,7 +397,9 @@ local function draw_settings(gg)
     local info
     if sync_cur == c then info = 'syncing...'
     elseif c.err then info = 'error: ' .. c.err
-    elseif c.updated then info = #(c.events or {}) .. ' events, ' .. ((c.bytes or 0) // 1024) .. ' KB, synced ' .. ago(c.updated, e)
+    elseif c.updated then
+      info = #(c.events or {}) .. ' events, ' .. ((c.bytes or 0) // 1024) .. ' KB' ..
+        ((c.packed or 0) > 0 and (' (' .. (c.packed // 1024) .. ' KB gzip)') or '') .. ', synced ' .. ago(c.updated, e)
     else info = 'not synced yet' end
     gg:text(20, y + 36, kit.short(info, 46), { font = kit.font('small') })
     gg:line(16, y + CAL_H - 2, W - 16, y + CAL_H - 2)
@@ -382,7 +411,7 @@ local function draw_settings(gg)
   for k, r in ipairs(setting_rows()) do
     local y = OPT_Y + (k - 1) * OPT_H
     gg:rect(12, y, W - 24, OPT_H - 8)
-    gg:text(24, y + 14, r[1], { font = kit.font('medium') })
+    gg:text(24, y + 12, r[1], { font = kit.font('medium') })
   end
 end
 
@@ -420,6 +449,8 @@ local function tap_settings(x, y)
         for i, v in ipairs(EVERY) do if v == cfg.every then nxt = EVERY[i % #EVERY + 1] end end
         cfg.every = nxt
         save_cfg()
+      elseif r[2] == 'worker' then
+        ask_worker()
       else
         local nxt = LOCKS[1]
         for i, v in ipairs(LOCKS) do if v == cfg.lock then nxt = LOCKS[i % #LOCKS + 1] end end

@@ -8,7 +8,6 @@ local C = require('cal')
 local V = require('views')
 local W, H = 480, 800
 local DAY = 86400
-local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 local asked_at = nil
 
 local function read(name)
@@ -26,7 +25,7 @@ local function kv(s)
   return t
 end
 
-local function try_refresh(cals, every, e)
+local function try_refresh(cals, every, e, t)
   if asked_at and e - asked_at < 3600 then return end
   local q = {}
   for _k, c in ipairs(cals) do
@@ -41,14 +40,14 @@ local function try_refresh(cals, every, e)
       return
     end
     local ok = pcall(function()
-      ctx.net:request({ url = c.url, method = 'GET', timeout_ms = 45000,
-                        headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' } }, function(cc, resp)
+      local opts, via = C.request(c.url, { host = t.host, auth = t.auth }, t.plain ~= '1')
+      ctx.net:request(opts, function(cc, resp)
         pcall(function()
-          if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return end
-          if (tonumber(resp.status) or 200) >= 400 or not resp.body:find('BEGIN:VCALENDAR', 1, true) then return end
+          local body = C.answer(resp, via)                 -- nil when cut off: the old copy stays
+          if not body then return end
           local e2, off2 = C.clock()
-          local events = C.parse_ics(resp.body, off2, (e2 + off2) // DAY)
-          ctx.storage:write(C.cache_name(c.url), C.cache_text(events, e2, off2, #resp.body))
+          local events = C.parse_ics(body, off2, (e2 + off2) // DAY)
+          ctx.storage:write(C.cache_name(c.url), C.cache_text(events, e2, off2, #body))
         end)
         nxt()
       end)
@@ -89,7 +88,7 @@ function on_draw(c, gg)
       gg:text(24, 380, 'Calendar: open the app to add one.', { font = font('medium') })
       return
     end
-    if oldest then try_refresh(cals, (tonumber(t.every) or 6) * 3600, e) end
+    if oldest then try_refresh(cals, (tonumber(t.every) or 6) * 3600, e, t) end
 
     local top, bh = 104, H - 104 - 40
     local first, n = V.window(mode, today, ws)

@@ -157,6 +157,88 @@ function C.fix_url(u)
   return (u:gsub('^webcals?://', 'https://'))
 end
 
+------------------------------------------------------------------ fetching
+
+local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
+
+function C.enc(s)
+  return (s:gsub('[^A-Za-z0-9%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
+end
+-- the request for a calendar: straight to its address, or through the rss-opds Worker
+-- (wk.host = 'name.workers.dev', wk.auth = 'user:password'; /api/ics sends only the events near
+-- today). gz asks for the file compressed: Google's iCal file holds a calendar's whole history,
+-- and the reader takes in only so much of an answer (gzip makes it about a quarter).
+function C.request(url, wk, gz)
+  local host = wk and (wk.host or ''):gsub('^%a+://', ''):gsub('/+$', '') or ''
+  local headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' }
+  if gz then headers['Accept-Encoding'] = 'gzip' end
+  if host == '' then return { url = url, method = 'GET', timeout_ms = 45000, headers = headers } end
+  if wk.auth and wk.auth ~= '' then
+    local ok, b64 = pcall(function() return ctx.base64:encode(wk.auth) end)
+    if ok and type(b64) == 'string' then headers['Authorization'] = 'Basic ' .. b64 end
+  end
+  return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
+end
+
+-- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
+function C.gunzip(b)
+  local z = ctx.zlib
+  if not z then return nil end
+  local tries = {
+    function() return z:decompress(b) end,
+    function() return z:decompress(b, 'gzip') end,
+    function() return z:decompress(b, { format = 'gzip' }) end,
+    function() return z:decompress(b, { gzip = true }) end,
+    function() return z:gunzip(b) end,
+    function() return z:inflate(b) end,
+  }
+  for _k, f in ipairs(tries) do
+    local ok, out = pcall(f)
+    if ok and type(out) == 'string' and out:find('BEGIN:VCALENDAR', 1, true) then return out end
+  end
+  return nil
+end
+
+-- does the firmware's zlib unpack gzip at all (a tiny calendar, packed)
+local SAMPLE = '\31\139\8\0\0\0\0\0\2\10\115\114\117\247\244\179\10\115\118\244\113\245\115\113\12\226\229\2\82\200\92\0\242\161\89\152\32\0\0\0'
+local gz_ok = nil
+function C.gunzip_works()
+  if gz_ok == nil then gz_ok = C.gunzip(SAMPLE) ~= nil end
+  return gz_ok
+end
+
+-- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
+-- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
+-- be missing at random, as Google sends them in a different order each time.
+function C.answer(resp, via)
+  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
+  local body = resp.body
+  local code = tonumber(resp.status) or tonumber(resp.code)
+  if code and code >= 400 then
+    if via and code == 401 then return nil, 'Worker login is wrong' end
+    if via and code == 404 then return nil, 'the Worker has no /api/ics yet: update it' end
+    local why = body:match('"error"%s*:%s*"([^"]*)"')
+    return nil, why or ('HTTP ' .. code)
+  end
+  local packed = 0
+  if body:sub(1, 2) == '\31\139' then
+    packed = #body
+    local text = C.gunzip(body)
+    if not text then
+      if C.gunzip_works() then                   -- it unpacks, so this answer ended early
+        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+      end
+      return nil, 'could not unpack', 'gzip'
+    end
+    body = text
+  end
+  if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
+  if not body:find('END:VCALENDAR', 1, true) then
+    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+  end
+  return body, nil, nil, packed
+end
+
 function C.parse_list(text)
   local out = {}
   for ln in (text or ''):gmatch('[^\n]+') do

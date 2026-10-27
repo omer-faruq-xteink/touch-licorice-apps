@@ -8,7 +8,7 @@ draw-command count.
 
   python -I apps/calendar/test_calendar.py
 """
-import calendar as pycal, os, sys
+import calendar as pycal, gzip, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 from harness import Game, STUBS  # noqa: E402
@@ -64,9 +64,23 @@ WORK = '\r\n'.join([
 URL1 = 'https://calendar.google.com/calendar/ical/me%40gmail.com/private-abc/basic.ics'
 URL2 = 'webcal://example.org/work.ics'
 requests = []
+sent = []                                          # (url, headers) of every request
+net = {'gzip': False, 'cut': False}
 
 
-def answer(url):
+def answer(url, headers=None):
+    gz = (headers or {}).get('Accept-Encoding') == 'gzip'
+    if url == URL1 and net['cut']:
+        body = PERSONAL[:len(PERSONAL) * 6 // 10]              # the reader took in only part of it
+        return {'status': 200, 'body': gzip.compress(body.encode())[:400] if gz and net['gzip'] else body}
+    if url == URL1 and gz and net['gzip']:
+        return {'status': 200, 'body': gzip.compress(PERSONAL.encode())}
+    if url.startswith('https://w.example/api/ics?url='):
+        if (headers or {}).get('Authorization') != 'Basic dTpw':
+            return {'status': 401, 'body': '{"error":"unauthorized"}'}
+        return {'status': 200, 'body': WORK}
+    if url.startswith('https://old.example/api/ics'):
+        return {'status': 404, 'body': '{"error":"not found"}'}
     if url == URL1:
         return {'status': 200, 'body': PERSONAL}
     if url == 'https://example.org/work.ics':
@@ -79,7 +93,9 @@ def answer(url):
 def setup(L):
     def request(self, opts, fn):
         requests.append(opts['url'])
-        L.globals().pending_resp = L.table_from(answer(opts['url']))
+        hd = dict(opts['headers'].items()) if opts['headers'] else {}
+        sent.append((opts['url'], hd))
+        L.globals().pending_resp = L.table_from(answer(opts['url'], hd))
         L.globals().pending_fn = fn
         return L.table_from({'cancel': lambda self: None})
 
@@ -322,5 +338,77 @@ g.store['calendars.txt'] = '# mine\n' + URL1 + '\nWork|https://example.org/work.
 g.restart(); setup(g.L)
 cs = list(A().cals().values())
 assert [(str(c.name), bool(c.on)) for c in cs] == [('calendar.google.com', True), ('Work', False)]
+g.no_err()
+
+# ---- packed answers: gzip asked for and unpacked with the firmware's zlib
+g.L.globals().py_unzip = lambda hx: gzip.decompress(bytes.fromhex(hx)).decode()   # lupa can't hand binary to Python
+unzip = g.L.eval("function(self, b, ...) if select('#', ...) > 0 then error('one argument') end "
+                 "return py_unzip((b:gsub('.', function(ch) return string.format('%02x', ch:byte()) end))) end")
+ctx.base64 = g.L.table_from({'encode': lambda self, s: __import__('base64').b64encode(s.encode() if isinstance(s, str) else s).decode()})
+store['calendars.txt'] = 'Personal|' + URL1 + '|on\n'
+g.restart()
+net['gzip'] = True
+ctx.zlib = g.L.table_from({'decompress': unzip})
+del sent[:]
+g.tap_label('Sync'); answer_all()
+assert sent[0][1].get('Accept-Encoding') == 'gzip', sent
+c = list(A().cals().values())[0]
+assert c.err is None and len(list(c.events.values())) == 10 and c.packed > 0, (c.err, c.packed)
+g.tap_label('More')
+assert any('KB gzip)' in t for t in texts()), texts()
+g.tap_label('Back')
+# a reader whose zlib can't unpack it: asked once more as it is, and from then on
+ctx.zlib = g.L.table_from({'decompress': lambda self, b, *m: None})
+del sent[:]
+g.tap_label('Sync'); answer_all()
+assert [h.get('Accept-Encoding') for u, h in sent] == ['gzip', None], sent
+assert A().cfg.plain and 'plain=1' in store['settings.txt'] and c.err is None
+del sent[:]
+g.tap_label('Sync'); answer_all()
+assert [h.get('Accept-Encoding') for u, h in sent] == [None], sent
+
+# ---- cut off: never used; the last whole copy stays, the reason is shown
+before = store[A().C.cache_name(URL1)]
+net['cut'] = True
+g.L.execute(f'now_sec = {NOW + 60}')
+g.tap_label('Sync'); answer_all()
+c = list(A().cals().values())[0]
+assert str(c.err).startswith('cut off after ') and c.err.endswith('KB: try the Worker (Settings)'), c.err
+assert store[A().C.cache_name(URL1)] == before and len(list(c.events.values())) == 10
+assert any(t.startswith('Personal: cut off after') for t in texts()), texts()
+# the lock screen doesn't take a cut-off copy either
+t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}')
+fetch = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r) end; return f ~= nil end')
+assert fetch() and store[A().C.cache_name(URL1)] == before
+assert L.globals().store[A().C.cache_name(URL1)] == before
+
+# a packed answer cut off: reported as cut, gzip stays on
+g.store['settings.txt'] = store['settings.txt'].replace('plain=1', 'plain=0')
+g.restart()
+ctx.zlib = g.L.table_from({'decompress': unzip})
+net['gzip'] = True
+del sent[:]
+g.tap_label('Sync'); answer_all()
+c = list(A().cals().values())[0]
+assert str(c.err).startswith('cut off after 0 KB packed') and not A().cfg.plain and len(sent) == 1, (c.err, sent)
+assert store[A().C.cache_name(URL1)] == before
+net['cut'] = False
+
+# ---- the Worker: host and login in Settings, /api/ics with Basic auth
+g.tap_label('More')
+g.tap_label('Worker: off (straight to the calendar)')
+typed('https://w.example/'); typed('u:p')
+answer_all()
+assert A().cfg.host == 'w.example' and 'host=w.example' in store['settings.txt'] and 'auth=u:p' in store['settings.txt']
+u, h = sent[-1]
+assert u == 'https://w.example/api/ics?url=' + __import__('urllib.parse').parse.quote(URL1, safe='-._~') and h['Authorization'] == 'Basic dTpw', sent[-1]
+c = list(A().cals().values())[0]
+assert c.err is None and [str(e.sum) for e in c.events.values()] == ['Dentist', 'Quarterly review', 'Late show', 'Night train'], c.err
+assert has('Worker: w.example')
+g.tap_label('Worker: w.example'); typed('old.example'); typed('')
+answer_all()
+assert list(A().cals().values())[0].err == 'the Worker has no /api/ics yet: update it'
+g.tap_label('Worker: old.example'); typed('')
+assert A().cfg.host == '' and A().cfg.auth == '' and has('Worker: off (straight to the calendar)')
 g.no_err()
 print('calendar: all tests passed')

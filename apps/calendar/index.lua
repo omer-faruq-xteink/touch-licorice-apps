@@ -327,6 +327,88 @@ function C.fix_url(u)
   return (u:gsub('^webcals?://', 'https://'))
 end
 
+------------------------------------------------------------------ fetching
+
+local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
+
+function C.enc(s)
+  return (s:gsub('[^A-Za-z0-9%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
+end
+-- the request for a calendar: straight to its address, or through the rss-opds Worker
+-- (wk.host = 'name.workers.dev', wk.auth = 'user:password'; /api/ics sends only the events near
+-- today). gz asks for the file compressed: Google's iCal file holds a calendar's whole history,
+-- and the reader takes in only so much of an answer (gzip makes it about a quarter).
+function C.request(url, wk, gz)
+  local host = wk and (wk.host or ''):gsub('^%a+://', ''):gsub('/+$', '') or ''
+  local headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' }
+  if gz then headers['Accept-Encoding'] = 'gzip' end
+  if host == '' then return { url = url, method = 'GET', timeout_ms = 45000, headers = headers } end
+  if wk.auth and wk.auth ~= '' then
+    local ok, b64 = pcall(function() return ctx.base64:encode(wk.auth) end)
+    if ok and type(b64) == 'string' then headers['Authorization'] = 'Basic ' .. b64 end
+  end
+  return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
+end
+
+-- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
+function C.gunzip(b)
+  local z = ctx.zlib
+  if not z then return nil end
+  local tries = {
+    function() return z:decompress(b) end,
+    function() return z:decompress(b, 'gzip') end,
+    function() return z:decompress(b, { format = 'gzip' }) end,
+    function() return z:decompress(b, { gzip = true }) end,
+    function() return z:gunzip(b) end,
+    function() return z:inflate(b) end,
+  }
+  for _k, f in ipairs(tries) do
+    local ok, out = pcall(f)
+    if ok and type(out) == 'string' and out:find('BEGIN:VCALENDAR', 1, true) then return out end
+  end
+  return nil
+end
+
+-- does the firmware's zlib unpack gzip at all (a tiny calendar, packed)
+local SAMPLE = '\31\139\8\0\0\0\0\0\2\10\115\114\117\247\244\179\10\115\118\244\113\245\115\113\12\226\229\2\82\200\92\0\242\161\89\152\32\0\0\0'
+local gz_ok = nil
+function C.gunzip_works()
+  if gz_ok == nil then gz_ok = C.gunzip(SAMPLE) ~= nil end
+  return gz_ok
+end
+
+-- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
+-- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
+-- be missing at random, as Google sends them in a different order each time.
+function C.answer(resp, via)
+  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
+  local body = resp.body
+  local code = tonumber(resp.status) or tonumber(resp.code)
+  if code and code >= 400 then
+    if via and code == 401 then return nil, 'Worker login is wrong' end
+    if via and code == 404 then return nil, 'the Worker has no /api/ics yet: update it' end
+    local why = body:match('"error"%s*:%s*"([^"]*)"')
+    return nil, why or ('HTTP ' .. code)
+  end
+  local packed = 0
+  if body:sub(1, 2) == '\31\139' then
+    packed = #body
+    local text = C.gunzip(body)
+    if not text then
+      if C.gunzip_works() then                   -- it unpacks, so this answer ended early
+        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+      end
+      return nil, 'could not unpack', 'gzip'
+    end
+    body = text
+  end
+  if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
+  if not body:find('END:VCALENDAR', 1, true) then
+    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+  end
+  return body, nil, nil, packed
+end
+
 function C.parse_list(text)
   local out = {}
   for ln in (text or ''):gmatch('[^\n]+') do
@@ -1134,13 +1216,12 @@ local W, H = kit.W, kit.H
 local DAY = 86400
 local TAB_H, TOP, BODY_H = 52, 104, 584
 local BTN_Y, BTN_H = 716, 64
-local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 local MODES = { 'day', 'week', 'month', 'agenda' }
 local MODE_LABEL = { day = 'Day', week = 'Week', month = 'Month', agenda = 'Agenda' }
 local LOCKS = { 'off', 'agenda', 'day', 'week', 'month' }
 local EVERY = { 1, 3, 6, 12, 24 }
 
-local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week' }
+local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week', host = '', auth = '' }
 local cals = {}
 local mode, anchor, back_mode = 'week', 0, nil
 local ag = { first = 0, starts = { 1 }, page = 1 }
@@ -1159,7 +1240,8 @@ end
 ------------------------------------------------------------------ storage
 
 local function save_cfg()
-  kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode)
+  kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
+    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0'))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
 
@@ -1171,6 +1253,8 @@ local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.ws = t.ws == '0' and 0 or 1
   cfg.every = tonumber(t.every) or 6
+  cfg.host, cfg.auth = t.host or '', t.auth or ''
+  cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
   for _k, m in ipairs(MODES) do if t.mode == m then mode = m end end
   cals = C.parse_list(kit.read('calendars.txt'))
@@ -1193,17 +1277,20 @@ local function after_sync()
   data_ver = data_ver + 1
 end
 
-local function take_body(c, resp)
-  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then c.err = 'no answer'; return end
-  local code = tonumber(resp.status) or tonumber(resp.code)
-  if code and code >= 400 then c.err = 'HTTP ' .. code; return end
-  local body = resp.body
-  if not body:find('BEGIN:VCALENDAR', 1, true) then c.err = 'not an iCal address'; return end
+-- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
+local function take_body(c, resp, via)
+  local body, why, what, packed = C.answer(resp, via)
+  if what == 'gzip' and not cfg.plain then
+    cfg.plain = true
+    save_cfg()
+    return 'again'
+  end
+  if not body then c.err = why; return end      -- the last whole copy stays
   local e, _wall, today = clock()
   local events = C.parse_ics(body, OFF, today)
   local bytes = #body
   kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes))
-  c.events, c.updated, c.bytes, c.err = events, e, bytes, nil
+  c.events, c.updated, c.bytes, c.packed, c.err = events, e, bytes, packed, nil
   sync_done = sync_done + 1
 end
 
@@ -1218,11 +1305,12 @@ sync_next = function()
   sync_cur, sync_since = c, kit.now_ms()
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
-    ctx.net:request({ url = c.url, method = 'GET', timeout_ms = 45000,
-                      headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' } }, function(cc, resp)
+    local opts, via = C.request(c.url, cfg, not cfg.plain)
+    ctx.net:request(opts, function(cc, resp)
       if sync_cur ~= c then return end
-      local okb, e = pcall(take_body, c, resp)
+      local okb, e = pcall(take_body, c, resp, via)
       if not okb then c.err = kit.short(tostring(e), 60) end
+      if okb and e == 'again' then table.insert(sync_q, 1, c) end
       sync_cur = nil
       sync_next()
       kit.refresh()
@@ -1400,6 +1488,26 @@ local function calendar_box(c)
     } })
 end
 
+-- optional: the rss-opds Worker sends only the events near today (/api/ics), for calendars too
+-- big for the reader even packed. Its host, then its login.
+local function ask_worker()
+  ask_text('Worker host, e.g. rss-opds.you.workers.dev (empty: none)', cfg.host, function(s)
+    if s == nil then return end
+    cfg.host = s:gsub('^[ 	]+', ''):gsub('[ 	]+$', ''):gsub('^%a+://', ''):gsub('/+$', '')
+    if cfg.host == '' then
+      cfg.auth = ''
+      save_cfg()
+      status = 'Worker: off.'
+      return
+    end
+    ask_text('Worker login as user:password (empty: none)', cfg.auth, function(a)
+      cfg.auth = (a or ''):gsub('^[ 	]+', ''):gsub('[ 	]+$', '')
+      save_cfg()
+      sync(true)
+    end)
+  end)
+end
+
 ------------------------------------------------------------------ lock screen
 
 local function set_lock(l)
@@ -1473,9 +1581,10 @@ local function setting_rows()
     { 'Week starts on: ' .. (cfg.ws == 1 and 'Monday' or 'Sunday'), 'ws' },
     { 'Sync when older than: ' .. cfg.every .. ' h', 'every' },
     { 'Lock screen: ' .. (cfg.lock == 'off' and 'off' or MODE_LABEL[cfg.lock]), 'lock' },
+    { 'Worker: ' .. (cfg.host ~= '' and kit.short(cfg.host, 30) or 'off (straight to the calendar)'), 'worker' },
   }
 end
-local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 470, 58
+local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 466, 54
 
 local function draw_settings(gg)
   gg:text(16, 12, 'Settings', { font = kit.font('large') })
@@ -1491,7 +1600,9 @@ local function draw_settings(gg)
     local info
     if sync_cur == c then info = 'syncing...'
     elseif c.err then info = 'error: ' .. c.err
-    elseif c.updated then info = #(c.events or {}) .. ' events, ' .. ((c.bytes or 0) // 1024) .. ' KB, synced ' .. ago(c.updated, e)
+    elseif c.updated then
+      info = #(c.events or {}) .. ' events, ' .. ((c.bytes or 0) // 1024) .. ' KB' ..
+        ((c.packed or 0) > 0 and (' (' .. (c.packed // 1024) .. ' KB gzip)') or '') .. ', synced ' .. ago(c.updated, e)
     else info = 'not synced yet' end
     gg:text(20, y + 36, kit.short(info, 46), { font = kit.font('small') })
     gg:line(16, y + CAL_H - 2, W - 16, y + CAL_H - 2)
@@ -1503,7 +1614,7 @@ local function draw_settings(gg)
   for k, r in ipairs(setting_rows()) do
     local y = OPT_Y + (k - 1) * OPT_H
     gg:rect(12, y, W - 24, OPT_H - 8)
-    gg:text(24, y + 14, r[1], { font = kit.font('medium') })
+    gg:text(24, y + 12, r[1], { font = kit.font('medium') })
   end
 end
 
@@ -1541,6 +1652,8 @@ local function tap_settings(x, y)
         for i, v in ipairs(EVERY) do if v == cfg.every then nxt = EVERY[i % #EVERY + 1] end end
         cfg.every = nxt
         save_cfg()
+      elseif r[2] == 'worker' then
+        ask_worker()
       else
         local nxt = LOCKS[1]
         for i, v in ipairs(LOCKS) do if v == cfg.lock then nxt = LOCKS[i % #LOCKS + 1] end end

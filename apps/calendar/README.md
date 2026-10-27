@@ -44,6 +44,10 @@ The address is a password to your calendar: don't share `calendars.txt`.
   **Show**, **Rename** or **Delete** it (only from this list).
 - **Clock**: the date, time and UTC offset the app uses (from the reader's clock); if events
   sit at the wrong hours, check the reader's time zone.
+- **Worker** (optional, off by default): the host and login of your
+  [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker, the same as in RSS or
+  Hacker News. Calendars are then fetched through its `/api/ics`, which sends only the events
+  near today: a few KB instead of the whole history. Needs a Worker with `/api/ics`.
 - **Week starts on** Monday or Sunday; **Sync when older than** 1, 3, 6, 12 or 24 h.
 - **Lock screen**: Off, Agenda, Day, Week or Month (the firmware asks once; only one app can be
   the lock screen at a time). It shows today's date and that view. **Day** starts at the current
@@ -57,9 +61,12 @@ The address is a password to your calendar: don't share `calendars.txt`.
 
 - Only events from two months back to about 13 months ahead are kept, plus every repeating
   event that hasn't ended, with titles, places and notes shortened, so the cache stays small.
-  The **whole** iCal file still has to fit into the app's memory while it is read. A calendar
-  with many years of history can be several megabytes and then fails to sync (the error says
-  so); a separate calendar for what you want on the reader helps.
+- Google's iCal file holds the calendar's whole history, in a different order on every
+  download, and the reader takes in only so much of an answer. The app asks for it packed
+  (gzip, about a quarter of the size; Settings shows both sizes) and unpacks it. A file that
+  still arrives **cut off is never used** — it would miss events at random — the last whole
+  copy stays and the calendar says "cut off after N KB". Then use the Worker (below), or a
+  separate calendar for what you want on the reader.
 - Times in UTC are moved to the reader's time zone (from its clock). Times given with a time
   zone are shown as written, which is right when the calendar is in your own time zone.
 - Repeats: daily, weekly (on given weekdays), monthly (on a day, "the last Friday", "the 2nd
