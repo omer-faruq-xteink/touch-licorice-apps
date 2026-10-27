@@ -1,0 +1,645 @@
+-- Hacker News for XTOS Licorice, API 2.9 (uses tools/gamekit and src/hn.lua). Needs Wi-Fi.
+--
+-- Top, New, Best, Ask and Show in HN's own order, and search (Algolia). A story opens with its
+-- text (Ask HN), or the linked article as text through the user's rss-opds Worker (/api/read, the
+-- same full-text services RSS uses), else its address as a QR code. Comments open level by level:
+-- a page shows the replies to one story or comment in HN's order, loaded one by one while you
+-- read; tap a comment's "replies" to go down, Back to come up. Settings: the Worker, text size.
+--
+-- One request at a time (a queue); leaving a screen drops what it still waited for.
+
+local N = require('hn')
+local W, H = kit.W, kit.H
+local BTN_Y, BTN_H = 704, 64
+local LIST_TOP, ROW_H, ROWS = 64, 78, 8
+local DOC_TOP, DOC_BOTTOM = 14, BTN_Y - 30
+local QR_PX = 200
+local MAX_ROWS = 240
+local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
+local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
+local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
+
+local cfg = { host = '', token = '', auth = '', size = 'medium' }
+local screen = 'list'           -- list | story | thread | settings
+local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
+local S = nil                   -- the open story: { row, item, article, article_err, lines, pages, page }
+local levels = {}               -- comment levels, deepest last: { parent, kids, got, next, page, lines, pages }
+local thread_from = 'list'
+local status, ERR = nil, nil
+
+local function now_sec()
+  local ok, t = pcall(function() return ctx.clock:now() end)
+  return (ok and type(t) == 'table' and tonumber(t.epoch_sec)) and math.floor(tonumber(t.epoch_sec)) or 0
+end
+
+------------------------------------------------------------------ settings
+
+local function load_cfg()
+  local t = kit.kv(kit.read('settings.txt'))
+  for k in pairs(cfg) do if t[k] then cfg[k] = t[k] end end
+  if not SIZES[cfg.size] then cfg.size = 'medium' end
+end
+local function save_cfg()
+  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size)
+end
+local function worker_url(path)
+  local host = cfg.host:gsub('^https?://', ''):gsub('/+$', '')
+  if host == '' then return nil end
+  return 'https://' .. host .. (cfg.token ~= '' and ('/k/' .. cfg.token) or '') .. path
+end
+
+------------------------------------------------------------------ network: a queue, one at a time
+
+local queue, inflight = {}, nil
+
+local function keep_wifi() pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end) end
+
+local function finish(job, resp)
+  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then
+    job.on_done(nil, type(resp) == 'table' and resp.error and tostring(resp.error) or 'no answer'); return
+  end
+  local code = tonumber(resp.status) or tonumber(resp.code)
+  local okj, data = pcall(function() return ctx.json:decode(resp.body) end)
+  if not okj then data = nil end
+  if code and code >= 400 then
+    job.on_done(nil, (type(data) == 'table' and data.error) and tostring(data.error) or ('HTTP ' .. code), code); return
+  end
+  if data == nil then job.on_done(nil, 'not JSON'); return end
+  job.on_done(data, nil, code, resp.body)
+end
+
+local pump
+pump = function()
+  if inflight and kit.now_ms() and inflight.since and kit.now_ms() - inflight.since > inflight.timeout + 10000 then
+    inflight = nil                                         -- never answered
+  end
+  if inflight or #queue == 0 then return end
+  local job = table.remove(queue, 1)
+  inflight, job.since = job, kit.now_ms()
+  keep_wifi()
+  local ok, err = pcall(function()
+    ctx.net:request({ url = job.url, method = 'GET', headers = job.headers, timeout_ms = job.timeout }, function(c, resp)
+      if inflight ~= job then return end
+      inflight = nil
+      if not job.dropped then
+        local okh, e = pcall(finish, job, resp)
+        if not okh then status = 'Error: ' .. tostring(e) end
+      end
+      pump()
+      kit.refresh()
+    end)
+  end)
+  if not ok then
+    inflight = nil
+    pcall(job.on_done, nil, 'could not ask: ' .. tostring(err))
+    pump()
+  end
+end
+
+local function get(url, label, on_done, headers, timeout)
+  queue[#queue + 1] = { url = url, label = label, on_done = on_done, timeout = timeout or 30000,
+                        headers = headers or { ['User-Agent'] = UA, ['Accept'] = 'application/json' } }
+  pump()
+end
+local function drop_all()
+  for _k, j in ipairs(queue) do j.dropped = true end
+  queue = {}
+  if inflight then inflight.dropped = true end
+end
+local function busy_label() return inflight and not inflight.dropped and inflight.label or nil end
+
+------------------------------------------------------------------ lists
+
+local function save_list()
+  if L.tab == 'find' then return end
+  local out = {}
+  for k = 1, math.min(#L.rows, N.PER_PAGE) do out[k] = N.row_text(L.rows[k]) end
+  kit.write('list_' .. L.tab .. '.txt', table.concat(out, '\n'))
+end
+
+local function add_rows(rows)
+  if L.stale then L.rows, L.stale, L.top = {}, false, 1 end
+  for _k, r in ipairs(rows) do if #L.rows < MAX_ROWS then L.rows[#L.rows + 1] = r end end
+  if #L.rows >= MAX_ROWS then L.more = false end
+end
+
+local load_more
+local function fetch_rows(list)
+  local ids = {}
+  for k = list.next, math.min(#list.ids, list.next + N.PER_PAGE - 1) do ids[#ids + 1] = list.ids[k] end
+  if #ids == 0 then list.more = false; return end
+  get(N.stories_url(ids), 'Loading stories...', function(d, err)
+    if L ~= list then return end
+    if not d then status = 'Stories failed: ' .. err; return end
+    local by_id = {}
+    for _k, h in ipairs(d.hits or {}) do by_id[tostring(h.objectID)] = N.story(h) end
+    local rows = {}
+    for _k, id in ipairs(ids) do if by_id[id] then rows[#rows + 1] = by_id[id] end end
+    local first = list.next == 1
+    list.next = list.next + #ids
+    list.more = list.next <= #list.ids
+    add_rows(rows)
+    if first then save_list() end
+    if list.want and list.want <= #L.rows then list.top, list.want = list.want, nil end
+  end)
+end
+
+load_more = function()
+  local list = L
+  if list.loading_ids or not list.more then return end
+  if list.tab == 'find' then
+    get(N.search_url(list.query, list.page), 'Searching...', function(d, err)
+      if L ~= list then return end
+      if not d then status = 'Search failed: ' .. err; return end
+      local rows = {}
+      for _k, h in ipairs(d.hits or {}) do rows[#rows + 1] = N.story(h) end
+      list.page = list.page + 1
+      list.more = list.page < (tonumber(d.nbPages) or 0) and #rows > 0
+      add_rows(rows)
+      if #L.rows == 0 then status = 'Nothing found.' end
+      if list.want and list.want <= #L.rows then list.top, list.want = list.want, nil end
+    end)
+  elseif not list.ids then
+    list.loading_ids = true
+    get(N.ids_url(list.tab), 'Loading ' .. list.tab .. ' stories...', function(d, err, code, body)
+      list.loading_ids = false
+      if L ~= list then return end
+      if not d then status = 'List failed: ' .. err; return end
+      list.ids, list.next = N.ids(body), 1
+      fetch_rows(list)
+    end)
+  else
+    fetch_rows(list)
+  end
+end
+
+local function open_tab(tab, query)
+  drop_all()
+  L = { tab = tab, query = query, rows = {}, top = 1, page = 0, more = true }
+  if tab ~= 'find' then
+    for line in (kit.read('list_' .. tab .. '.txt') or ''):gmatch('[^\n]+') do
+      local r = N.row_parse(line)
+      if r then L.rows[#L.rows + 1] = r end
+    end
+    L.stale = #L.rows > 0                                    -- shown until the new list comes
+  end
+  screen, status = 'list', nil
+  load_more()
+end
+
+local function list_page(delta)
+  if delta > 0 then
+    if L.top + ROWS <= #L.rows then L.top = L.top + ROWS
+    elseif L.more then L.want = L.top + ROWS; load_more() end
+  else
+    L.top = math.max(1, L.top - ROWS)
+  end
+end
+
+------------------------------------------------------------------ documents (story, comments)
+
+local function body_font() return cfg.size end
+
+-- text with paragraphs (and the Worker's "# " headings, "> " quotes) as document lines; quotes
+-- are indented (an article's lose the marker, a comment's keep the ">" its writer typed)
+local function add_text(out, text, cidx, article)
+  local f = body_font()
+  for para in (tostring(text) .. '\n'):gmatch('([^\n]*)\n') do
+    if para:match('%S') then
+      local font, x, s = f, 16, para
+      if para:sub(1, 2) == '# ' then font, s = 'large', para:sub(3)
+      elseif para:sub(1, 1) == '>' then x = 40; if article then s = para:gsub('^>%s*', '') end end
+      for _k, l in ipairs(N.wrap(s, font, W - 16 - x)) do
+        out[#out + 1] = { s = l, f = font, x = x, h = kit.line_h(font) + 2, cidx = cidx }
+      end
+      out[#out + 1] = { s = '', f = 'small', x = 0, h = 8, cidx = cidx }
+    end
+  end
+end
+local function add_lines(out, s, font, x, cidx, extra)
+  for _k, l in ipairs(N.wrap(s, font, W - 16 - (x or 16))) do
+    local ln = { s = l, f = font, x = x or 16, h = kit.line_h(font) + 4, cidx = cidx }
+    if extra then for k, v in pairs(extra) do ln[k] = v end end
+    out[#out + 1] = ln
+  end
+end
+
+local function paginate(lines)
+  local pages, y = { 1 }, 0
+  for k, ln in ipairs(lines) do
+    if y + ln.h > DOC_BOTTOM - DOC_TOP and y > 0 then pages[#pages + 1] = k; y = 0 end
+    y = y + ln.h
+  end
+  return pages
+end
+
+local function meta(r)
+  local parts = { r.points .. ' points', 'by ' .. r.by }
+  local ago = N.ago(r.time, now_sec())
+  if ago ~= '' then parts[#parts + 1] = ago end
+  return table.concat(parts, ' · ')
+end
+
+local function build_story()
+  local r, out = S.row, {}
+  add_lines(out, r.title, 'large', 16)
+  add_lines(out, meta(r), 'small', 16)
+  if r.url then add_lines(out, N.domain(r.url) or r.url, 'small', 16) end
+  out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
+  if S.item and S.item.text then add_text(out, N.text(S.item.text)) end
+  if r.url then
+    if S.article then add_text(out, S.article, nil, true)
+    elseif S.article_err then add_lines(out, 'No article text: ' .. S.article_err .. '.', 'small', 16)
+    elseif S.reading then add_lines(out, 'Getting the article...', 'small', 16)
+    elseif not worker_url('') then
+      add_lines(out, 'To read articles here, enter your rss-opds Worker in Settings. The address:', 'small', 16)
+    end
+    out[#out + 1] = { s = '', f = 'small', x = 0, h = 30 + QR_PX + 8, qr = r.url }
+    add_lines(out, r.url, 'small', 16)
+  end
+  S.lines = out
+  S.pages = paginate(out)
+  S.page = math.min(S.page or 1, #S.pages)
+end
+
+local function open_story(row)
+  drop_all()
+  screen, status = 'story', nil
+  S = { row = row, page = 1 }
+  build_story()
+  local story = S
+  get(N.item_url(row.id), 'Opening the story...', function(d, err, code, body)
+    if S ~= story then return end
+    if not d then status = 'Story failed: ' .. err; return end
+    d.kids = N.kids(body)
+    story.item = d
+    if d.score then row.points = tonumber(d.score) or row.points end
+    if d.descendants then row.comments = tonumber(d.descendants) or row.comments end
+    build_story()
+  end)
+  local url = row.url and worker_url('/api/read?max=20000&url=' .. N.enc(row.url))
+  if url then
+    story.reading = true
+    local headers = { ['Accept'] = 'application/json' }
+    if cfg.auth ~= '' then
+      local ok, b64 = pcall(function() return ctx.base64:encode(cfg.auth) end)
+      if ok and b64 then headers['Authorization'] = 'Basic ' .. b64 end
+    end
+    get(url, 'Getting the article...', function(d, err, code)
+      if S ~= story then return end
+      story.reading = false
+      if d and type(d.text) == 'string' and d.text:match('%S') then story.article = d.text
+      else
+        story.article_err = code == 501 and 'the Worker has no full-text service'
+          or (code == 404 and err == 'not found') and 'the Worker is older than /api/read; update it'
+          or tostring(err or 'empty')
+      end
+      build_story()
+    end, headers, 60000)
+    build_story()
+  end
+end
+
+-- comments: one level = the replies to one story or comment
+local function level() return levels[#levels] end
+
+local function build_thread(lv)
+  local out, now = {}, now_sec()
+  local p = lv.parent
+  if p.type == 'story' or #levels == 1 then
+    add_lines(out, tostring(p.title or S and S.row.title or ''), 'medium', 16)
+    add_lines(out, (tonumber(p.descendants) or 0) .. ' comments', 'small', 16)
+  else
+    add_lines(out, 'Replies to ' .. tostring(p.by or '?'), 'medium', 16)
+    local first = N.wrap(N.text(p.text), 'small', W - 48)
+    for k = 1, math.min(3, #first) do
+      out[#out + 1] = { s = (k == 3 and #first > 3) and kit.short(first[k], 40) or first[k], f = 'small', x = 32, h = 22 }
+    end
+  end
+  out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
+  for k, cm in ipairs(lv.got) do
+    -- each comment is wrapped once (per text size), not again whenever another one arrives
+    if cm.block_size ~= cfg.size then
+      local b = {}
+      local ago = N.ago(cm.time, now)
+      add_lines(b, cm.by .. (ago ~= '' and (' · ' .. ago) or ''), 'small', 16, k, { head = true })
+      add_text(b, cm.text, k)
+      if #cm.kids > 0 then
+        add_lines(b, #cm.kids .. (#cm.kids == 1 and ' reply' or ' replies') .. ' >', 'medium', 260, k, { link = true })
+      end
+      b[#b + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
+      cm.block, cm.block_size = b, cfg.size
+    end
+    for _j, ln in ipairs(cm.block) do out[#out + 1] = ln end
+  end
+  if lv.next <= #lv.kids then add_lines(out, 'Loading comments...', 'small', 16)
+  elseif #lv.got == 0 then add_lines(out, 'No comments yet.', 'small', 16)
+  else add_lines(out, '- end of ' .. (#levels == 1 and 'comments' or 'replies') .. ' -', 'small', 16) end
+  lv.lines = out
+  lv.pages = paginate(out)
+  lv.page = math.min(lv.page, #lv.pages)
+end
+
+-- load the next comment while fewer than two pages are ready after the one shown
+local function thread_pump()
+  local lv = level()
+  if not lv or lv.loading or lv.next > #lv.kids or #lv.pages - lv.page >= 2 then return end
+  lv.loading = true
+  get(N.item_url(lv.kids[lv.next]), 'Loading comments...', function(d, err, code, body)
+    lv.loading = false
+    if level() ~= lv then return end
+    lv.next = lv.next + 1                                  -- a comment that failed is left out
+    if not d then status = 'A comment failed: ' .. err end
+    if type(d) == 'table' and not d.deleted and not d.dead and d.text then
+      lv.got[#lv.got + 1] = { by = tostring(d.by or '?'), time = tonumber(d.time) or 0,
+                              text = N.text(d.text), kids = N.kids(body) }
+    end
+    build_thread(lv)
+    thread_pump()
+  end)
+end
+
+local function push_level(parent, kids)
+  local lv = { parent = parent, kids = kids or {}, got = {}, next = 1, page = 1 }
+  levels[#levels + 1] = lv
+  build_thread(lv)
+  thread_pump()
+end
+
+local function open_thread(row)
+  drop_all()
+  thread_from = screen == 'story' and 'story' or 'list'
+  if not S or S.row ~= row then S = { row = row, page = 1 }; build_story() end
+  screen, status, levels = 'thread', nil, {}
+  if S.item and S.item.kids then push_level(S.item, S.item.kids); return end
+  local story = S
+  levels[1] = { parent = { type = 'story', title = row.title, descendants = row.comments }, kids = {}, got = {}, next = 1, page = 1, loading = true }
+  build_thread(levels[1])
+  get(N.item_url(row.id), 'Loading comments...', function(d, err, code, body)
+    if S ~= story or screen ~= 'thread' then return end
+    levels = {}
+    if not d then status = 'Comments failed: ' .. err; d = { type = 'story', title = row.title } end
+    d.kids = N.kids(body)
+    story.item = d
+    push_level(d, d.kids)
+  end)
+end
+
+local function doc_page(delta)
+  local doc = screen == 'thread' and level() or S
+  if not doc then return end
+  doc.page = math.max(1, math.min(#doc.pages, doc.page + delta))
+  if screen == 'thread' then thread_pump() end
+end
+
+------------------------------------------------------------------ drawing
+
+local qr = nil                  -- { url, img } | { url, failed = true }
+local function draw_qr(gg, url, y)
+  if not qr or qr.url ~= url then
+    if qr and qr.img then pcall(function() qr.img:release() end) end
+    local ok, img = pcall(function() return ctx.qr:encode(url) end)
+    qr = (ok and img) and { url = url, img = img } or { url = url, failed = true }
+  end
+  if qr.img then
+    local ok = pcall(function()
+      local w = tonumber(qr.img.width) or 0
+      local size = w > 0 and w * math.max(1, QR_PX // w) or QR_PX
+      gg:image(qr.img, (W - size) // 2, y + 20, { w = size, h = size })
+    end)
+    if not ok then qr.failed = true end
+  end
+end
+
+local function draw_doc(gg, doc)
+  local y = DOC_TOP
+  local last = (doc.pages[doc.page + 1] or (#doc.lines + 1)) - 1
+  for k = doc.pages[doc.page] or 1, last do
+    local ln = doc.lines[k]
+    if ln.rule then gg:line(16, y + ln.h // 2, W - 16, y + ln.h // 2)
+    elseif ln.qr then draw_qr(gg, ln.qr, y)
+    elseif ln.s ~= '' then gg:text(ln.x, y, ln.s, { font = kit.font(ln.f) }) end
+    y = y + ln.h
+  end
+  if #doc.pages > 1 then gg:text(W - 90, BTN_Y - 26, doc.page .. ' / ' .. #doc.pages, { font = kit.font('small') }) end
+end
+
+local function draw_list(gg)
+  local tw = (W - 8) // #TABS
+  for k, t in ipairs(TABS) do
+    kit.button(gg, 4 + (k - 1) * tw, 4, tw - 4, 48, t[1], { font = 'medium', line_width = L.tab == t[2] and 5 or 1 })
+  end
+  if L.tab == 'find' and L.query then gg:text(16, LIST_TOP - 4, kit.short('"' .. L.query .. '"', 40), { font = kit.font('small') }) end
+  local now = now_sec()
+  for k = 0, ROWS - 1 do
+    local r = L.rows[L.top + k]
+    if not r then break end
+    local y = LIST_TOP + k * ROW_H
+    local t = N.wrap(r.title, 'medium', W - 32)
+    gg:text(16, y + 6, t[1] or '', { font = kit.font('medium') })
+    if t[2] then gg:text(16, y + 30, #t > 2 and kit.short(t[2], #t[2] - 2) or t[2], { font = kit.font('medium') }) end
+    local m = r.points .. ' pts · ' .. r.comments .. ' comm.'
+    local d = N.domain(r.url)
+    if d then m = m .. ' · ' .. d end
+    local ago = N.ago(r.time, now)
+    if ago ~= '' then m = m .. ' · ' .. ago end
+    gg:text(16, y + 56, kit.short(m, 52), { font = kit.font('small') })
+    gg:line(16, y + ROW_H - 2, W - 16, y + ROW_H - 2)
+  end
+  if #L.rows == 0 and not busy_label() and not status then
+    gg:text(16, 200, L.tab == 'find' and 'Tap Find to search.' or 'Nothing here yet: Reload.', { font = kit.font('medium') })
+  end
+end
+
+local SETTINGS = { { 'host', 'Worker host (rss-opds)' }, { 'token', 'Path token (after /k/), or empty' },
+                   { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' } }
+local function draw_settings(gg)
+  gg:text(16, 16, 'Settings', { font = kit.font('large') })
+  for k, s in ipairs(SETTINGS) do
+    local y = 70 + (k - 1) * 86
+    local v = cfg[s[1]]
+    if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
+    if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
+    gg:text(16, y + 8, s[2], { font = kit.font('small') })
+    gg:text(16, y + 36, v ~= '' and kit.short(v, 36) or '(empty)', { font = kit.font('medium') })
+    gg:line(16, y + 78, W - 16, y + 78)
+  end
+  local y = 70 + #SETTINGS * 86 + 8
+  for _k, l in ipairs(N.wrap('Stories open as text through your rss-opds Worker (the one RSS uses; it needs /api/read, so update '
+      .. 'it once). Without a Worker a story ends with its address as a QR code.', 'small', W - 32)) do
+    gg:text(16, y, l, { font = kit.font('small') }); y = y + 22
+  end
+end
+
+local function buttons()
+  if screen == 'list' then return { 'Prev', 'Next', 'Reload', 'Settings' } end
+  if screen == 'story' then return { 'Back', 'Prev', 'Next', S.row.comments .. ' comments' }, { 84, 84, 84, 180 } end
+  if screen == 'thread' then return { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' } end
+  return { 'Back' }
+end
+local function button_rects()
+  local bs, widths = buttons()
+  local out, x = {}, 12
+  local n = #bs
+  for k, label in ipairs(bs) do
+    local bw = widths and widths[k] or math.floor((W - 24 - (n - 1) * 8) / n)
+    out[k] = { x = x, y = BTN_Y, w = bw, h = BTN_H, b = label }
+    x = x + bw + 8
+  end
+  return out
+end
+
+function on_draw(c, gg)
+  if not gg then return end
+  local ok, e = pcall(function()
+    gg:clear(0)
+    if kit.modal() then kit.draw_modal(gg); return end
+    if screen == 'list' then draw_list(gg)
+    elseif screen == 'story' then draw_doc(gg, S)
+    elseif screen == 'thread' then draw_doc(gg, level())
+    else draw_settings(gg) end
+    local line = busy_label() or status or ERR
+    if line then gg:text(12, BTN_Y - 26, kit.short(line, screen == 'list' and 46 or 34), { font = kit.font('small') }) end
+    for _k, r in ipairs(button_rects()) do kit.button(gg, r.x, r.y, r.w, r.h, r.b, { font = 'medium' }) end
+  end)
+  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
+end
+
+------------------------------------------------------------------ input
+
+local function ask(title, value, fn)
+  ctx.input:text({ title = title, value = value or '' }, function(c, s)
+    local ok, e = pcall(fn, s)
+    if not ok then ERR = tostring(e) end
+    kit.refresh()
+  end)
+end
+
+local function back()
+  if screen == 'thread' and #levels > 1 then
+    drop_all(); levels[#levels] = nil; build_thread(level()); thread_pump()
+  elseif screen == 'thread' then
+    drop_all(); screen = thread_from == 'story' and 'story' or 'list'
+    if screen == 'story' and (not S.item or S.reading) then open_story(S.row) end
+  elseif screen == 'story' or screen == 'settings' then
+    drop_all(); screen, L.loading_ids = 'list', false
+    if L.more and (#L.rows == 0 or L.stale) then load_more() end
+  end
+  status = nil
+end
+
+local function doc_line_at(doc, y)
+  local yy = DOC_TOP
+  local last = (doc.pages[doc.page + 1] or (#doc.lines + 1)) - 1
+  for k = doc.pages[doc.page] or 1, last do
+    local ln = doc.lines[k]
+    if y >= yy and y < yy + ln.h then return ln end
+    yy = yy + ln.h
+  end
+end
+
+local function tap(x, y, long)
+  if kit.tap_modal(x, y) then return end
+  for _k, r in ipairs(button_rects()) do
+    if x >= r.x and x < r.x + r.w and y >= r.y and y < r.y + r.h then
+      local b = r.b
+      status = nil
+      if b == 'Prev' then if screen == 'list' then list_page(-1) else doc_page(-1) end
+      elseif b == 'Next' then if screen == 'list' then list_page(1) else doc_page(1) end
+      elseif b == 'Reload' then open_tab(L.tab, L.query)
+      elseif b == 'Settings' then drop_all(); screen = 'settings'
+      elseif b == 'Back' then back()
+      elseif b == 'Story' then drop_all(); screen = 'story'; if not S.item or S.reading then open_story(S.row) end
+      elseif b == 'Top' then
+        drop_all(); while #levels > 1 do levels[#levels] = nil end
+        build_thread(level()); thread_pump()
+      else open_thread(S.row) end
+      return
+    end
+  end
+  if screen == 'list' then
+    if y < LIST_TOP - 8 then
+      local t = TABS[math.max(1, math.min(#TABS, (x - 4) // ((W - 8) // #TABS) + 1))]
+      if t[2] == 'find' then
+        ask('Search Hacker News', L.tab == 'find' and L.query or '', function(s) if s and s:match('%S') then open_tab('find', s) end end)
+      else open_tab(t[2]) end
+      return
+    end
+    local r = L.rows[L.top + (y - LIST_TOP) // ROW_H]
+    if r and y >= LIST_TOP and y < LIST_TOP + ROWS * ROW_H then
+      if long then open_thread(r) else open_story(r) end
+    end
+  elseif screen == 'thread' then
+    local lv = level()
+    local ln = doc_line_at(lv, y)
+    local cm = ln and ln.cidx and lv.got[ln.cidx]
+    if cm and #cm.kids > 0 then
+      drop_all()
+      lv.loading = false
+      push_level({ type = 'comment', by = cm.by, text = cm.text }, cm.kids)
+    end
+  elseif screen == 'settings' then
+    local k = (y - 70) // 86 + 1
+    local s = SETTINGS[k]
+    if s and y >= 70 then
+      if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+      else ask(s[2], cfg[s[1]], function(v) if type(v) == 'string' then cfg[s[1]] = (v:gsub('^%s+', ''):gsub('%s+$', '')); save_cfg() end end) end
+    end
+  end
+end
+
+local long_done, suppress_up = false, false
+function on_input(c, ev)
+  ERR = nil
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' then return end
+    pump()
+    if ev.type == 'pointer' then
+      local x, y = ev.x or 0, ev.y or 0
+      if ev.phase == 'down' then long_done = false end
+      if (ev.gesture == 'long' or ev.phase == 'hold') and not kit.modal() then
+        if not long_done then tap(x, y, true) end
+        long_done, suppress_up = true, ev.phase ~= 'up'
+        if ev.phase == 'up' then long_done = false end
+        return
+      end
+      if ev.phase ~= 'up' then return end
+      long_done = false
+      if suppress_up then suppress_up = false; return end
+      if kit.modal() then tap(x, y, false); return end
+      local delta = ev.gesture == 'swipe_up' and 1 or ev.gesture == 'swipe_down' and -1 or nil
+      if delta and screen ~= 'settings' then
+        if screen == 'list' then list_page(delta) else doc_page(delta) end
+        return
+      end
+      tap(x, y, false)
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then
+        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+      elseif ev.key == 'back' then back()
+      else
+        local delta = (ev.key == 'down' or ev.key == 'right') and 1 or (ev.key == 'up' or ev.key == 'left') and -1 or nil
+        if delta and screen == 'list' then list_page(delta) elseif delta and screen ~= 'settings' then doc_page(delta) end
+      end
+    end
+  end)
+  if not ok then ERR = tostring(e) end
+  kit.refresh()
+  return true
+end
+
+function on_load(c)
+  local ok, e = pcall(function() load_cfg(); open_tab('top') end)
+  if not ok then ERR = tostring(e) end
+end
+function on_leave()
+  drop_all()
+  if qr and qr.img then pcall(function() qr.img:release() end) end
+  pcall(function() ctx.net:keep_wifi(1) end)
+end
+
+if rawget(_G, '__TEST') then
+  __TEST.api = { N = N, L = function() return L end, S = function() return S end, screen = function() return screen end,
+                 levels = function() return levels end, level = level, cfg = cfg, status = function() return status end,
+                 queue = function() return #queue + (inflight and 1 or 0) end }
+end

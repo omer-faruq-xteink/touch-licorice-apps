@@ -331,6 +331,15 @@ def weather(p):
         p.line([(x, 78), (x - 6, 92)], 5)
 
 
+def hackernews(p):
+    # an upvote arrow over the lines of a story list
+    p.rect((8, 8, 88, 88), w=5, r=10)
+    p.poly([(30, 44), (48, 18), (66, 44)], fill=True)
+    for k, x1 in enumerate((76, 64)):
+        y = 56 + k * 14
+        p.rect((20, y, x1, y + 6), fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -338,7 +347,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
-         'klondike': klondike, 'tasks': tasks, 'weather': weather}
+         'klondike': klondike, 'tasks': tasks, 'weather': weather,
+         'hackernews': hackernews}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

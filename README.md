@@ -24,6 +24,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
+| **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
@@ -186,6 +187,13 @@ Your [Instapaper](https://www.instapaper.com) account on the reader: **Unread**,
 where you left off (the progress Instapaper keeps, also from KOReader or the website) and send it
 back when you leave; **Archive** and **Star** from the preview or the article's end. No Worker: the
 app talks to Instapaper directly with a personal access token. [More](apps/instapaper/README.md)
+
+### Hacker News
+
+Top, New, Best, Ask and Show in HN's own order, and search. A story opens with its text (Ask HN) or
+the linked article as text through your rss-opds Worker (the one RSS uses), and ends with its
+address as a QR code. Comments come level by level, loaded while you read; tap "replies" to go
+down a level. Read-only: no login. [More](apps/hackernews/README.md)
 
 ### Wikipedia
 

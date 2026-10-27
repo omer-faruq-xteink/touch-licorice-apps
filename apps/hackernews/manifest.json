@@ -1,0 +1,10 @@
+{
+  "app_id": "hackernews",
+  "display_name": "Hacker News",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Hacker News: Top, New, Best, Ask and Show in HN's order, search, comments level by level, articles as text through your rss-opds Worker.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}

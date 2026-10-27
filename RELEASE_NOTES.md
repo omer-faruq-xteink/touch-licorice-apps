@@ -4,6 +4,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **New: Hacker News** — Top, New, Best, Ask and Show in HN's own order, and search. Stories open
+  with their text, or the linked article as text through your rss-opds Worker (update it for the
+  new `/api/read` route), and end with a QR code of the address. Comments come level by level,
+  loaded while you read; a long press on a story goes straight to them.
 - **New: Tasks** — to-do lists: tick an item with a tap, add with the keyboard, **Clear done**
   removes the ticked ones (after asking); edit, move and delete items, several lists. One list can
   be the **lock screen**. Everything is kept in a plain text file you can also edit on a computer.
@@ -33,7 +37,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `calculator.xtapp`, `klondike.xtapp`, `tasks.xtapp`, `weather.xtapp` | **new** |
+| `calculator.xtapp`, `klondike.xtapp`, `tasks.xtapp`, `weather.xtapp`, `hackernews.xtapp` | **new** |
 | `anki.xtapp` | **updated**: FSRS scheduling |
 | `wikipedia.xtapp` | **updated**: offline packs |
 | `wikipedia-en-vital.zip` | **new**: the offline pack (unzip into `XTApps/wikipedia/files/`) |
