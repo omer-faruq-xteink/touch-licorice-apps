@@ -185,6 +185,9 @@ assert g.commands() < 900, g.commands()
 # ---- Day: today's timeline, the shared Dentist once, Late lunch beside it
 g.tap_label('Day')
 assert A().mode() == 'day' and has('Tuesday 27 October 2026')
+# the bottom row: narrow arrows, room for "Today" (it did not fit a fifth of the width on the reader)
+bw = sorted((int(r.x), int(r.w)) for r in g.rects() if int(r.y) == 716)
+assert [w for _x, w in bw] == [64, 98, 64, 98, 98] and bw[-1][0] + bw[-1][1] <= 468, bw
 t = texts()
 assert t.count('14:00 Dentist') == 1, t                  # one hour is one line at this height
 assert '14:30 Late lunch' in t and '16:00 Call' in t and '22:00 Late show' in t and '07' in t and '22' in t, t

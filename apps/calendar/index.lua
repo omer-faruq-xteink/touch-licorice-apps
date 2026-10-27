@@ -1622,9 +1622,16 @@ end
 
 local function main_buttons() return { '<', 'Today', '>', syncing() and 'Wait' or 'Sync', 'More' } end
 local function settings_buttons() return { 'Back', 'Add', syncing() and 'Wait' or 'Sync now' } end
-local function button_rect(k, n)
-  local bw = math.floor((W - 24 - (n - 1) * 8) / n)
-  return 12 + (k - 1) * (bw + 8), BTN_Y, bw, BTN_H
+-- '<' and '>' get narrow buttons and the words share the rest ("Today" did not fit a fifth)
+local ARROW_W = 64
+local function arrow(b) return b == '<' or b == '>' end
+local function button_rect(k, bs)
+  local n, narrow = #bs, 0
+  for _, b in ipairs(bs) do if arrow(b) then narrow = narrow + 1 end end
+  local bw = math.floor((W - 24 - (n - 1) * 8 - narrow * ARROW_W) / (n - narrow))
+  local x = 12
+  for i = 1, k - 1 do x = x + (arrow(bs[i]) and ARROW_W or bw) + 8 end
+  return x, BTN_Y, arrow(bs[k]) and ARROW_W or bw, BTN_H
 end
 
 local function draw_main(gg)
@@ -1745,7 +1752,7 @@ function on_draw(c, gg)
     if line then gg:text(12, BTN_Y - 26, kit.short(line, 48), { font = kit.font('small') }) end
     local bs = screen == 'settings' and settings_buttons() or main_buttons()
     for k, b in ipairs(bs) do
-      local x, y, bw, bh = button_rect(k, #bs)
+      local x, y, bw, bh = button_rect(k, bs)
       kit.button(gg, x, y, bw, bh, b, { font = 'medium' })
     end
     if kit.modal() then
@@ -1788,7 +1795,7 @@ local function tap(x, y)
   if kit.tap_modal(x, y) then return end
   local bs = screen == 'settings' and settings_buttons() or main_buttons()
   for k, b in ipairs(bs) do
-    local bx, by, bw, bh = button_rect(k, #bs)
+    local bx, by, bw, bh = button_rect(k, bs)
     if x >= bx and x < bx + bw and y >= by and y < by + bh then
       status = nil
       if b == '<' then step(-1)
