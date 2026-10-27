@@ -27,9 +27,15 @@ Tap a book to edit it: title, author, the reader's book (link, change or unlink)
 tags, **Start** and **End** (−7 / −1 / +1 / +7 days; tap the date for Today, typing a date or no
 date), **Keep duration** (on: moving Start moves End too), progress, and the estimate:
 
-- a book from the reader: your pace so far (time read over percent read) gives the time left; at
-  the **daily reading goal** (minutes, in More) that many days;
-- a typed book: the pages left at the **pages a day** goal (in More).
+- a book from the reader: the reader's percent can include pages read elsewhere (another reader,
+  a synced position) while its reading time counts only this reader, so their ratio says
+  nothing. Tap **Progress** and type the book's **total pages**: the pages left (the percent left
+  of them) at the **pages a day** goal give the days. Without pages, the app measures your pace
+  from the moment the book came into the planner, once you have read 2% and 10 minutes more on
+  this reader, and uses the **daily reading goal** (minutes);
+- a typed book: the pages left at the **pages a day** goal.
+
+Both goals are in More.
 
 **Set end** puts the estimated end date in. **Plan** / **To wishlist** adds or removes the dates,
 **Done** / **Not done** moves it (a reader book marked not done stays so), **Delete** forgets it.

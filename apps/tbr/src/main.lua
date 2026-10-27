@@ -205,7 +205,7 @@ local function link_box(it)
   kit.show({ title = 'Book on the reader', cancel = kit.close,
     lines = { r and r.title or 'This book is not in the reader\'s list any more.' },
     rows = { { { 'Change', function() kit.close(); pick = { page = 1, link = true }; screen = 'pick' end },
-               { 'Unlink', function() it.book, it.pct, it.sec, it.auto = '', nil, nil, 1; save(); kit.close() end } },
+               { 'Unlink', function() it.book, it.pct, it.sec, it.pct0, it.sec0, it.auto = '', nil, nil, nil, nil, 1; save(); kit.close() end } },
              { { 'Close', kit.close } } } })
 end
 
@@ -431,11 +431,19 @@ local function draw_item(gg)
   -- progress: the reader's, or pages typed in
   local p = T.percent(it)
   if it.book ~= '' then
-    local info = (p and p > 0) and (p .. '% read') or 'not started'
+    -- the reader's percent may include pages read elsewhere: pages typed in give the pages left
+    local info = (p and p > 0) and (p .. '%' .. (T.by_pages(it) and (' of ' .. it.pages .. ' pages') or ' read')) or 'not started'
     if it.sec and it.sec > 0 then info = info .. ', ' .. T.duration(it.sec) end
     local _d, left = T.left(it, cfg)
     if left then info = info .. ', ' .. left end
-    row(9, 'Progress (from the reader)', info)
+    row(9, 'Progress (from the reader; tap: total pages)', info, nil, function()
+      ask_text('Total pages (empty: none)', T.by_pages(it) and tostring(it.pages) or '', function(s)
+        local n = tonumber(tostring(s or ''):match('^%s*(%d+)%s*$'))
+        if trim(s) ~= '' and not n then status = 'Type the number of pages.'; return end
+        it.pages = (n and n > 0) and n or nil
+        save()
+      end)
+    end)
   else
     local info = (it.pages or 0) > 0 and ((it.read or 0) .. ' of ' .. it.pages .. ' pages' .. (p and ('  (' .. p .. '%)') or '')) or 'pages: tap to set'
     row(9, 'Progress (pages read / total)', info, nil, function()
@@ -449,7 +457,7 @@ local function draw_item(gg)
     end)
   end
   -- the end date the daily goal gives
-  local goal = it.book ~= '' and (cfg.minutes .. ' min a day') or (cfg.pages .. ' pages a day')
+  local goal = (it.book ~= '' and not T.by_pages(it)) and (cfg.minutes .. ' min a day') or (cfg.pages .. ' pages a day')
   local e = T.end_from_goal(it, cfg, d)
   y = IY + 9 * IH
   gg:text(16, y + 4, 'At ' .. goal .. ' (the goal is in More)', { font = kit.font('small') })
@@ -466,7 +474,7 @@ local function draw_item(gg)
       T.settle(it); save(); status = 'End set to ' .. T.date(e) .. '.'
     end)
   else
-    local why = it.book ~= '' and 'No estimate before some progress.' or 'No estimate: set the pages.'
+    local why = it.book ~= '' and 'Read more here, or set the pages above.' or 'No estimate: set the pages.'
     gg:text(16, y + 26, fit('small', why, W - 32), { font = kit.font('small') })
   end
 end
@@ -477,7 +485,7 @@ local PICK_Y, PICK_H = 60, 64
 local PICK_N = (BTN_Y - 30 - PICK_Y) // PICK_H
 local function choose(r)
   if pick.link and cur then
-    cur.book, cur.pct, cur.sec, cur.auto = r.id, r.pct, r.sec, 1
+    cur.book, cur.pct, cur.sec, cur.pct0, cur.sec0, cur.auto = r.id, r.pct, r.sec, nil, nil, 1   -- T.sync starts the pace
     if cur.author == '' then cur.author = r.author or '' end
     save()
     screen = 'item'

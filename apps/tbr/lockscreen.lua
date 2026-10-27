@@ -19,13 +19,16 @@ __mods['tbr'] = function()
 -- dates, planned with a start and/or end date, or done. A book "from the reader" carries the
 -- reader's id (ctx.reader: all_books() lists every book opened once, books() the ones in progress
 -- with author and percent); its progress and finished state come from there. The reader gives
--- no page counts and no file paths, and an app cannot open a book, so estimates use reading time:
--- the time read so far over the percent read gives the time left. A typed book can have pages.
+-- no page counts and no file paths, and an app cannot open a book. Its percent may include pages
+-- read elsewhere while its seconds count only this reader, so the estimate is either the pages
+-- left (total pages typed in, times the percent left) or the pace measured since the book came
+-- into the planner (pct0, sec0), once there is enough of it. A typed book has pages read / total.
 --
 -- items.txt: "#tbr1", then one book a line, tab-separated (\t \n \\ escaped):
 --   id, status (wish | plan | done), title, author, book (reader id or empty), priority, tags,
 --   start, end, pages, read (pages read), added, done (day), auto (0: the reader may not mark it
---   done), pct and sec (the reader's last percent and seconds, for the lock screen)
+--   done), pct and sec (the reader's last percent and seconds, for the lock screen), pct0 and
+--   sec0 (the same when the book was linked: the pace counts from there)
 
 local T = {}
 local DAY = 86400
@@ -104,9 +107,9 @@ end
 ------------------------------------------------------------------ the book list
 
 local FIELDS = { 'id', 'status', 'title', 'author', 'book', 'prio', 'tags', 'start', 'end', 'pages',
-                 'read', 'added', 'done', 'auto', 'pct', 'sec' }
+                 'read', 'added', 'done', 'auto', 'pct', 'sec', 'pct0', 'sec0' }
 local NUM = { id = true, prio = true, start = true, ['end'] = true, pages = true, read = true,
-              added = true, done = true, auto = true, pct = true, sec = true }
+              added = true, done = true, auto = true, pct = true, sec = true, pct0 = true, sec0 = true }
 local ESC = { ['\\'] = '\\\\', ['\t'] = '\\t', ['\n'] = '\\n' }
 local UNESC = { t = '\t', n = '\n', ['\\'] = '\\' }
 local function esc(s) return (tostring(s or ''):gsub('[\\\t\n]', ESC)) end
@@ -195,6 +198,7 @@ function T.sync(items, rb, today)
   for _, it in ipairs(items) do
     local r = it.book ~= '' and rb[it.book]
     if r then
+      if it.pct0 == nil and r.pct then it.pct0, it.sec0 = r.pct, r.sec or 0; changed = true end   -- the pace counts from here
       if r.pct and r.pct ~= it.pct then it.pct = r.pct; changed = true end
       if r.sec and r.sec ~= it.sec then it.sec = r.sec; changed = true end
       if it.author == '' and r.author ~= '' then it.author = r.author; changed = true end
@@ -217,17 +221,29 @@ function T.percent(it)
   return nil
 end
 
+-- a reader book's pace counts once this much has been read since it was linked
+T.PACE_PCT, T.PACE_SEC = 2, 600
+
+-- does the estimate use pages (the goal in pages a day) rather than reading time?
+function T.by_pages(it) return (it.pages or 0) > 0 end
+
 -- what is left and how many days it takes at the daily goal: days, text; nil when unknown.
 -- cfg: { minutes = daily reading minutes, pages = pages a day }
 function T.left(it, cfg)
   if it.status == 'done' then return nil end
   if it.book ~= '' then
-    local p, s = it.pct, it.sec
-    if not p or p <= 0 or p >= 100 or not s or s <= 0 then return nil end
-    local rest = s * (100 - p) / p
+    local p = it.pct
+    if not p or p >= 100 then return nil end
+    if T.by_pages(it) then                         -- the pages left, from the reader's percent
+      local rest = math.ceil(it.pages * (100 - p) / 100)
+      return math.max(1, math.ceil(rest / cfg.pages)), T.plural(rest, 'page', 'pages') .. ' left'
+    end
+    local dp, ds = p - (it.pct0 or p), (it.sec or 0) - (it.sec0 or it.sec or 0)
+    if dp < T.PACE_PCT or ds < T.PACE_SEC then return nil end
+    local rest = ds * (100 - p) / dp
     return math.max(1, math.ceil(rest / (cfg.minutes * 60))), '~' .. T.duration(rest) .. ' left'
   end
-  if (it.pages or 0) > 0 then
+  if T.by_pages(it) then
     local rest = math.max(0, it.pages - (it.read or 0))
     if rest == 0 then return nil end
     return math.max(1, math.ceil(rest / cfg.pages)), T.plural(rest, 'page', 'pages') .. ' left'

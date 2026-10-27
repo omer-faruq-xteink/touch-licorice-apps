@@ -74,7 +74,8 @@ t = texts()
 assert 'Planned' in t and any('Nothing planned yet' in s for s in t), t
 assert g.commands() < 900
 
-# ---- a book from the reader: planned from today, the end from the 30-minute goal
+# ---- a book from the reader: planned from today. Its 82% may include reading elsewhere while its
+# 1 h 51 min are this reader's, so no estimate from those: two weeks until pages are set
 g.tap_label('+ New')
 assert has('Add a book')
 g.tap_label('From the reader')
@@ -84,27 +85,33 @@ assert any('Stephen King · 82% · read 26 Oct' in s for s in t) and any('finish
 g.tap_label('Never Flinch')
 it = item()
 assert A().screen() == 'item' and it.status == 'plan' and it.book == 'e2_never' and it.author == 'Stephen King'
-assert it.start == TODAY and it['end'] == TODAY, (it.start, it['end'])     # 24 min left: one day at 30 min
+assert (it.start, it['end']) == (TODAY, TODAY + 13), (it.start, it['end'])
+assert (it.pct0, it.sec0) == (82, 6661)                              # the pace counts from here
 t = texts()
-assert '82% read, 1 h 51 min, ~24 min left' in t and 'Tue 27 Oct' in t, t
-assert any(s.startswith('1 day, ends Tue 27 Oct') for s in t), t
+assert '82% read, 1 h 51 min' in t and 'Read more here, or set the pages above.' in t, t
+# the total pages: 18% of 600 is 108 pages, 6 days at 20 a day
+g.tap_label('82% read, 1 h 51 min')
+typed('600')
+assert it.pages == 600 and has('82% of 600 pages, 1 h 51 min, 108 pages left') and has('At 20 pages a day (the goal is in More)')
+g.tap_label('Set end')
+assert it['end'] == TODAY + 5 and has('6 days, ends Sun 1 Nov')
 # the date buttons (Start's row comes before End's); Keep duration moves the end with the start
 def press(label, n=1):
     r = [x for x in g.draw() if str(x.s) == label][n - 1]
     g.tap(int(r.x) + 3, int(r.y) + 5)
 press('+7')
-assert (it.start, it['end']) == (TODAY + 7, TODAY + 7)
+assert (it.start, it['end']) == (TODAY + 7, TODAY + 12)
 g.tap_label('Keep duration (Start moves End too)')
-assert has('off   1 day')
+assert has('off   6 days')
 press('-1')                                       # Keep duration off: the end stays
-assert (it.start, it['end']) == (TODAY + 6, TODAY + 7), (it.start, it['end'])
+assert (it.start, it['end']) == (TODAY + 6, TODAY + 12), (it.start, it['end'])
 press('+1', 2)                                    # End +1
-assert it['end'] == TODAY + 8 and has('on   3 days') is False
+assert it['end'] == TODAY + 13
 g.tap_label('Keep duration (Start moves End too)')
-press('-7', 2)                                    # End before Start: it stops at Start
+press('-7', 2); press('-7', 2)                    # End before Start: it stops at Start
 assert it['end'] == TODAY + 6
 g.tap_label('Set end')                            # what the goal gives from the start
-assert it['end'] == TODAY + 6 and has('End set to Mon 2 Nov.')
+assert it['end'] == TODAY + 11 and has('End set to Sat 7 Nov.')
 # priority, tags
 press('+'); press('+')
 assert it.prio == 2
@@ -115,7 +122,7 @@ assert it.tags == 'horror, king'
 g.key('back')
 assert A().screen() == 'main'
 t = texts()
-assert 'Never Flinch' in t and any(s.startswith('Stephen King · 2 Nov · 82% · prio 2 · #ho') for s in t), t
+assert 'Never Flinch' in t and any(s.startswith('Stephen King · 2 Nov - 7 Nov · 82% · prio 2') for s in t), t
 
 # ---- a typed book: pages and the pages-a-day goal
 g.tap_label('+ New')
@@ -163,6 +170,14 @@ g.tap_label('From the reader')
 g.tap_label('Kırık Ayna')
 k = item()
 assert k.status == 'wish' and k.author == 'Agatha Christie' and has('not started, 7 min'), (k.status, k.author, texts())
+assert has('Read more here, or set the pages above.')
+g.key('back')
+# 10% more in 30 minutes here: 90% at that pace is 4 h 30 min, 9 days at 30 minutes a day
+g.L.execute("rb_cur[2].percent = 10; rb_cur[2].read_sec = 406 + 1800; rb_all[1].sec = 406 + 1800")
+g.restart()
+g.tap_label('Wishlist')
+g.tap_label('Kırık Ayna')
+assert has('10% read, 37 min, ~4 h 30 min left') and has('9 days, ends Wed 4 Nov'), texts()
 g.key('back')
 g.L.execute("rb_all[1].finished = true; rb_cur[2].finished = true; rb_cur[2].percent = 100")
 g.restart()
@@ -191,7 +206,7 @@ t = texts()
 assert 'October 2026' in t and 'Mon' in t and 'Never Flinch' not in t, t     # 2 November: next month
 g.tap_label('>')
 t = texts()
-assert 'November 2026' in t and 'Neve~' in t, t                # a one-day bar: one cell wide
+assert 'November 2026' in t and 'Never Flinch' in t, t
 assert g.commands() < 900, g.commands()
 r = [x for x in g.draw() if str(x.s) == '2'][0]
 g.tap(int(r.x) + 10, int(r.y) + 40)
@@ -251,8 +266,8 @@ assert 'Reading: streak 4 days, today 12 min' in t and n < 900, t
 # moved to today: it is today's book, with its progress
 t, n = lock_texts(f"now_sec = {NOW + 6 * 86400}")
 assert 'Today' in t and 'Never Flinch' in t, t
-assert any(s.startswith('Stephen King · 82% · ends today · ~24 min') for s in t), t
+assert any(s.startswith('Stephen King · 82% · 5 days left · 108 pa') for s in t), t
 # later still: late
-t, n = lock_texts(f"now_sec = {NOW + 9 * 86400}")
+t, n = lock_texts(f"now_sec = {NOW + 14 * 86400}")
 assert any('3 days late' in s for s in t), t
 print('tbr tests passed')
