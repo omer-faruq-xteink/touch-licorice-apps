@@ -74,7 +74,11 @@ function C.clock()
   if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return 0, 0 end
   local e = math.floor(tonumber(t.epoch_sec))
   local h = tonumber(t.hour)
-  if not h then return e, 0 end
+  if not h then
+    local l = tonumber(t.local_sec)                -- the local time as seconds since 1970
+    if l and math.abs(l - e) <= 14 * 3600 then return e, ((math.floor(l) - e + 450) // 900) * 900 end
+    return e, 0
+  end
   local off = math.floor(h) * 3600 + math.floor(tonumber(t.minute) or 0) * 60 + math.floor(tonumber(t.second) or 0) - e % DAY
   if off > 14 * 3600 then off = off - DAY elseif off < -12 * 3600 then off = off + DAY end
   return e, ((off + 450) // 900) * 900
@@ -116,6 +120,7 @@ function C.fit(f, s, maxw)
   s = tostring(s or '')
   if C.width(f, s) <= maxw then return s end
   local t = s:sub(1, math.max(1, maxw // 4))
+  while #t > 0 and not utf8.len(t) do t = t:sub(1, -2) end      -- not inside a letter
   while #t > 0 and C.width(f, t .. '…') > maxw do t = drop_last(t) end
   return t .. '…'
 end
@@ -743,14 +748,17 @@ function V.day(gg, env, day, x, y, w, h, opts)
   local fs, fm = env.font('small'), env.font('medium')
   local ls, lm = env.lh('small'), env.lh('medium')
   local base = day * DAY
-  local allday, timed = {}, {}
+  local allday, timed, earlier = {}, {}, {}
   for _k, it in ipairs(env.insts) do
     local whole = it.ad or (it.s <= base and it.e >= base + DAY)
     if whole then
       if C.on_day(it, day) then allday[#allday + 1] = it end
     elseif opts.from then
-      if it.s < base + 48 * 3600 and (it.e > base + opts.from * 3600 or (it.e == it.s and it.s >= base + opts.from * 3600)) then
+      local from = base + opts.from * 3600
+      if it.s < base + 48 * 3600 and (it.e > from or (it.e == it.s and it.s >= from)) then
         timed[#timed + 1] = it
+      elseif it.s >= base and it.s < from then
+        earlier[#earlier + 1] = it                 -- over already: one line above the hours
       end
     elseif C.on_day(it, day) then
       timed[#timed + 1] = it
@@ -768,6 +776,12 @@ function V.day(gg, env, day, x, y, w, h, opts)
     text(gg, x + 10, ty + 3, C.fit(fm, ev.sum, w - 24), fm)
     hits[#hits + 1] = { x = x + 4, y = ty, w = w - 8, h = lm + 6, it = ev }
     ty = ty + lm + 10
+  end
+  if #earlier > 0 then
+    local parts = {}
+    for _k, it in ipairs(earlier) do parts[#parts + 1] = C.hm(it.s) .. ' ' .. it.sum end
+    text(gg, x + 6, ty, C.fit(fs, 'Earlier: ' .. table.concat(parts, ', '), w - 12), fs)
+    ty = ty + ls + 4
   end
   local top = ty + 4
   local h0, h1, ph
@@ -872,7 +886,7 @@ function V.day(gg, env, day, x, y, w, h, opts)
     local s = '+' .. #later .. ' later today: ' .. table.concat(parts, ', ')
     text(gg, x + 6, top + (h1 - h0) * ph + 6, C.fit(fs, s, w - 12), fs)
   end
-  if #allday == 0 and #timed == 0 and #later == 0 then
+  if #allday == 0 and #timed == 0 and #later == 0 and #earlier == 0 then
     text(gg, gx + 10, top + ph * 2 + 4, 'No events', fm)
   end
   return hits

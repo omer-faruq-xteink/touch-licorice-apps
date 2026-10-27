@@ -10,7 +10,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   syncs over Wi-Fi and works offline. Repeating events, changed and cancelled occurrences, and
   shared invitations are handled; a tap on an event shows its place and notes. It can be the
   **lock screen** in any view: Day starts at the current hour and shows as many hours as fit,
-  and the day's later events go on one line at the bottom.
+  and the day's earlier and later events go on one line above and below, so none is missing.
+  Settings shows the clock and time zone the app uses.
 
 ## Update
 

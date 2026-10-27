@@ -354,7 +354,7 @@ local function setting_rows()
     { 'Lock screen: ' .. (cfg.lock == 'off' and 'off' or MODE_LABEL[cfg.lock]), 'lock' },
   }
 end
-local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 446, 58
+local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 470, 58
 
 local function draw_settings(gg)
   gg:text(16, 12, 'Settings', { font = kit.font('large') })
@@ -376,6 +376,9 @@ local function draw_settings(gg)
     gg:line(16, y + CAL_H - 2, W - 16, y + CAL_H - 2)
   end
   if #cals == 0 then gg:text(20, CAL_Y + 10, 'None yet: tap Add.', { font = kit.font('medium') }) end
+  local _e, wall = clock()
+  local zone = string.format('UTC%s%d', OFF < 0 and '-' or '+', math.abs(OFF) // 3600) .. (OFF % 3600 ~= 0 and string.format(':%02d', math.abs(OFF) % 3600 // 60) or '')
+  gg:text(16, OPT_Y - 30, 'Clock: ' .. C.date(wall // DAY) .. ' ' .. C.hm(wall) .. ', ' .. zone, { font = kit.font('small') })
   for k, r in ipairs(setting_rows()) do
     local y = OPT_Y + (k - 1) * OPT_H
     gg:rect(12, y, W - 24, OPT_H - 8)

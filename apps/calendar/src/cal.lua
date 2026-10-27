@@ -62,7 +62,11 @@ function C.clock()
   if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return 0, 0 end
   local e = math.floor(tonumber(t.epoch_sec))
   local h = tonumber(t.hour)
-  if not h then return e, 0 end
+  if not h then
+    local l = tonumber(t.local_sec)                -- the local time as seconds since 1970
+    if l and math.abs(l - e) <= 14 * 3600 then return e, ((math.floor(l) - e + 450) // 900) * 900 end
+    return e, 0
+  end
   local off = math.floor(h) * 3600 + math.floor(tonumber(t.minute) or 0) * 60 + math.floor(tonumber(t.second) or 0) - e % DAY
   if off > 14 * 3600 then off = off - DAY elseif off < -12 * 3600 then off = off + DAY end
   return e, ((off + 450) // 900) * 900
@@ -104,6 +108,7 @@ function C.fit(f, s, maxw)
   s = tostring(s or '')
   if C.width(f, s) <= maxw then return s end
   local t = s:sub(1, math.max(1, maxw // 4))
+  while #t > 0 and not utf8.len(t) do t = t:sub(1, -2) end      -- not inside a letter
   while #t > 0 and C.width(f, t .. '…') > maxw do t = drop_last(t) end
   return t .. '…'
 end

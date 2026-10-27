@@ -42,11 +42,14 @@ The address is a password to your calendar: don't share `calendars.txt`.
 
 - Each calendar with its event count, size and last sync (or the error). Tap it to **Hide** /
   **Show**, **Rename** or **Delete** it (only from this list).
+- **Clock**: the date, time and UTC offset the app uses (from the reader's clock); if events
+  sit at the wrong hours, check the reader's time zone.
 - **Week starts on** Monday or Sunday; **Sync when older than** 1, 3, 6, 12 or 24 h.
 - **Lock screen**: Off, Agenda, Day, Week or Month (the firmware asks once; only one app can be
   the lock screen at a time). It shows today's date and that view. **Day** starts at the current
   hour and shows as many hours as fit, past midnight into the next day; the day's events that
-  don't fit are listed on one line at the bottom ("+2 later today: 21:00 Gym, …"). The lock
+  are over are listed on one line above the hours ("Earlier: 09:00 Standup"), those that don't
+  fit on one line at the bottom ("+2 later today: 21:00 Gym, …"). The lock
   screen is redrawn every 15 minutes, and fetches the calendars again (at most once an hour) when
   they are older than the sync interval, if the reader lets it use Wi-Fi.
 

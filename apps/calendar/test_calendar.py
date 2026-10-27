@@ -111,6 +111,9 @@ for y, m, d in ((1970, 1, 1), (2000, 2, 29), (2026, 10, 27), (2037, 12, 31), (19
     assert days == (pycal.timegm((y, m, d, 0, 0, 0)) // 86400), (y, m, d, days)
     assert tuple(C.civil(days)) == (y, m, d), C.civil(days)
     assert C.wday(days) == (pycal.weekday(y, m, d) + 1) % 7
+f = g.L.eval('ctx.fonts.small')
+cut = C.fit(f, 'Çalışma günü ğüşıöç toplantısı', 100)
+assert cut.endswith('…') and len(cut.encode()) > 0 and '�' not in cut, cut
 assert C.month_len(2028, 2) == 29 and C.month_len(2026, 2) == 28 and C.month_len(2026, 12) == 31
 e, off = C.clock()
 assert e == NOW and off == OFF, (e, off)
@@ -147,6 +150,7 @@ assert 'calendars.txt' in store and 'Personal|' + URL1 + '|on' in store['calenda
 assert any(str(k).startswith('c') and str(k).endswith('.txt') and k != 'calendars.txt' for k in store.keys())
 t = texts()
 assert any('Personal' in s for s in t) and any('10 events' in s for s in t), t
+assert 'Clock: Tue 27 Oct 12:00, UTC+3' in t, t
 g.tap_label('Back')
 
 # ---- the week (Monday first): the moved meeting, the skipped Wednesday, standups, all-day days
@@ -290,6 +294,7 @@ for lock in ('agenda', 'day', 'week', 'month'):
         assert '14:00 Dentist' in t and '14:30 Late lunch' in t and '22:00 Late show' in t, t
         assert '12' in t and '11' not in t and 'Wed 28 Oct' in t and '01:00 Night train' in t, t
         assert not any('later today' in s for s in t), t
+        assert 'Earlier: 09:00 Standup' in t, t          # over already, but still there
     if lock == 'week':
         assert '14:00 Team meeting (moved)' in t, t
 # at 08:00 the hours end before the evening: the rest of the day is one line at the bottom
@@ -297,6 +302,7 @@ t, n, _L = lock_texts('day', f'now_sec = {NOW - 4 * 3600}')
 assert '08' in t and '07' not in t and '14:00 Dentist' in t, t
 assert any(s.startswith('+1 later today: 22:00 Late show') for s in t), t
 assert '22:00 Late show' not in t and not any('Night train' in s for s in t), t
+assert not any(s.startswith('Earlier') for s in t), t
 # an old cache: the lock screen fetches again (once) and draws the new data
 t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}')   # the caches are from NOW + 7 h
 fetch = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r) end; return f ~= nil end')
