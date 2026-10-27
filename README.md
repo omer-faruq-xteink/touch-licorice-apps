@@ -28,6 +28,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
+| **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
@@ -214,6 +215,14 @@ ticked ones; edit, move and delete items, several lists. One list can be the loc
 The forecast from [Open-Meteo](https://open-meteo.com) (free, no key) for a place found by name:
 now, the next 12 hours and four days, in °C or °F. The forecast is kept, so it opens at once; it
 can be the lock screen. [More](apps/weather/README.md)
+
+### Calendar
+
+Your Google Calendar, or any calendar with an iCal address, read-only: Day (a timeline), Week,
+Month and Agenda, with each event's time, place and notes a tap away. Add a calendar with its
+secret iCal address, on the reader or as a `calendars.txt` over USB. It syncs over Wi-Fi and
+works offline. It can be the lock screen in any of the four views; Day then runs from the current
+hour on. A port of calendar.koplugin (AGPL v3). [More](apps/calendar/README.md)
 
 ### Calculator
 

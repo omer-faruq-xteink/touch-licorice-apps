@@ -340,6 +340,20 @@ def hackernews(p):
         p.rect((20, y, x1, y + 6), fill=True)
 
 
+def calendar(p):
+    # a desk calendar page: two rings, a header band and a grid of days, one ringed
+    p.rect((10, 16, 86, 88), w=5, r=8)
+    p.rect((10, 16, 86, 34), fill=True, r=8)
+    for x in (30, 66):
+        p.rect((x - 3, 6, x + 3, 24), fill=True, r=2)
+    for r in range(3):
+        for c in range(4):
+            x, y = 20 + c * 16, 42 + r * 14
+            p.rect((x, y, x + 8, y + 7), fill=True)
+    p.white_ellipse((44, 48, 76, 80))
+    p.ellipse((48, 52, 72, 76), w=4)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -348,7 +362,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
-         'hackernews': hackernews}
+         'hackernews': hackernews, 'calendar': calendar}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

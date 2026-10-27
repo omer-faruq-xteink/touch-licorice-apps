@@ -1,0 +1,11 @@
+{
+  "app_id": "calendar",
+  "display_name": "Calendar",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Your Google (or any iCal) calendars in Day, Week, Month and Agenda views, read-only; it can be the lock screen.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 900 }
+}

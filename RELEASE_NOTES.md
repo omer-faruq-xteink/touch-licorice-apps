@@ -4,7 +4,13 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **New: Calendar** — your Google Calendar (or any calendar with an iCal address), read-only, in
+  Day, Week, Month and Agenda views. A port of calendar.koplugin, laid out for the X4 Pro. Add
+  calendars with their secret iCal address in Settings, or as a `calendars.txt` over USB. It
+  syncs over Wi-Fi and works offline. Repeating events, changed and cancelled occurrences, and
+  shared invitations are handled; a tap on an event shows its place and notes. It can be the
+  **lock screen** in any view: Day starts at the current hour and shows as many hours as fit,
+  and the day's later events go on one line at the bottom.
 
 ## Update
 
@@ -15,7 +21,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py` | unchanged since v0.11.0 |
+| `calendar.xtapp` | new: Calendar |
+| all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.11.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
 

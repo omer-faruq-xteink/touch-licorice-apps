@@ -16,6 +16,12 @@ The game rules, themes and translations (`apps/merchant/src/merchant_*.lua`) com
 are, like the whole Merchant app, licensed under the **GNU AGPL v3** (`apps/merchant/LICENSE`),
 not MIT.
 
+## Calendar — `apps/calendar/`
+
+A port of [calendar.koplugin](https://github.com/omer-faruq/calendar.koplugin) by the same
+author (its iCal reading, repeat rules and views, rewritten for the Lua host). The whole Calendar app is
+licensed under the **GNU AGPL v3** (`apps/calendar/LICENSE`), not MIT.
+
 ## Slide Puzzle — `apps/slidepuzzle/`
 
 The game rules and translations (`apps/slidepuzzle/src/slidepuzzle_*.lua`) come from
