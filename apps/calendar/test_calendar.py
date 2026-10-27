@@ -354,6 +354,19 @@ g.tap_label('Sync'); answer_all()
 assert sent[0][1].get('Accept-Encoding') == 'gzip', sent
 c = list(A().cals().values())[0]
 assert c.err is None and len(list(c.events.values())) == 10 and c.packed > 0, (c.err, c.packed)
+assert store['sync_step.txt'] == 'done' and 'gz=ok' in store['settings.txt']
+# the reader closed the app while unpacking: the next start says so, syncs nothing, drops gzip
+store['sync_step.txt'] = 'unpack 1, 47 KB packed'
+n = len(requests)
+g.L.execute(f'now_sec = {NOW + 9 * 3600}')            # stale: would sync at once otherwise
+g.restart()
+assert len(requests) == n and A().cfg.plain and store['sync_step.txt'] == 'done', requests[n:]
+assert A().status() == 'The last sync stopped at: unpack 1, 47 KB packed. Now without gzip.', A().status()
+assert has('The last sync stopped at: unpack 1, 47 KB packed. Now withou~') or any('last sync stopped' in t for t in texts())
+store['settings.txt'] = store['settings.txt'].replace('plain=1', 'plain=0')
+g.L.execute(f'now_sec = {NOW}')
+g.restart()
+ctx.zlib = g.L.table_from({'decompress': unzip})
 g.tap_label('More')
 assert any('KB gzip)' in t for t in texts()), texts()
 g.tap_label('Back')

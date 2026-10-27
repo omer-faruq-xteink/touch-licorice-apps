@@ -350,8 +350,18 @@ function C.request(url, wk, gz)
   return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
 end
 
+-- where a sync is, in sync_step.txt: when the reader closes the app mid-way (out of memory
+-- closes it without a Lua error), the next start knows the step
+function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
+-- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
+function C.free()
+  for _k, f in ipairs({ function() ctx.gc:collect() end, function() ctx.gc:full() end, function() ctx.gc.collect() end }) do
+    if pcall(f) then return end
+  end
+end
+
 -- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
-function C.gunzip(b)
+function C.gunzip(b, log)
   local z = ctx.zlib
   if not z then return nil end
   local tries = {
@@ -362,7 +372,8 @@ function C.gunzip(b)
     function() return z:gunzip(b) end,
     function() return z:inflate(b) end,
   }
-  for _k, f in ipairs(tries) do
+  for k, f in ipairs(tries) do
+    if log then C.step('unpack ' .. k .. ', ' .. (#b // 1024) .. ' KB packed') end
     local ok, out = pcall(f)
     if ok and type(out) == 'string' and out:find('BEGIN:VCALENDAR', 1, true) then return out end
   end
@@ -380,9 +391,10 @@ end
 -- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
 -- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
 -- be missing at random, as Google sends them in a different order each time.
-function C.answer(resp, via)
+function C.answer(resp, via, log)
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
   local body = resp.body
+  resp.body = nil                                -- one copy less while it is unpacked and read
   local code = tonumber(resp.status) or tonumber(resp.code)
   if code and code >= 400 then
     if via and code == 401 then return nil, 'Worker login is wrong' end
@@ -393,14 +405,16 @@ function C.answer(resp, via)
   local packed = 0
   if body:sub(1, 2) == '\31\139' then
     packed = #body
-    local text = C.gunzip(body)
+    C.free()
+    local text = C.gunzip(body, log)
     if not text then
       if C.gunzip_works() then                   -- it unpacks, so this answer ended early
         return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
       end
       return nil, 'could not unpack', 'gzip'
     end
-    body = text
+    body, text = text, nil
+    C.free()
   end
   if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
   if not body:find('END:VCALENDAR', 1, true) then
@@ -630,22 +644,22 @@ local function fields(l)
   end
 end
 
-function C.cache_text(events, updated, off, bytes)
-  local out = { '#cal\t' .. updated .. '\t' .. off .. '\t' .. (bytes or 0) }
+function C.cache_text(events, updated, off, bytes, packed)
+  local out = { '#cal\t' .. updated .. '\t' .. off .. '\t' .. (bytes or 0) .. '\t' .. (packed or 0) }
   for _k, ev in ipairs(events) do
     out[#out + 1] = table.concat({ ev.s, ev.e, ev.ad and 1 or 0, esc(ev.rr), table.concat(ev.ex or {}, ','),
                                    esc(ev.uid), esc(ev.sum), esc(ev.loc), esc(ev.desc) }, '\t')
   end
   return table.concat(out, '\n')
 end
--- -> events, updated (UTC seconds), bytes; nil when there is no cache
+-- -> events, updated (UTC seconds), bytes, packed bytes (0: not gzip); nil when there is no cache
 function C.load_cache(text)
   if not text or text:sub(1, 4) ~= '#cal' then return nil end
-  local events, updated, bytes = {}, 0, 0
+  local events, updated, bytes, packed = {}, 0, 0, 0
   for l in text:gmatch('[^\n]+') do
     local f = fields(l)
     if f[1] == '#cal' then
-      updated, bytes = tonumber(f[2]) or 0, tonumber(f[4]) or 0
+      updated, bytes, packed = tonumber(f[2]) or 0, tonumber(f[4]) or 0, tonumber(f[5]) or 0
     elseif #f >= 9 and tonumber(f[1]) then
       local ex = {}
       for t in f[5]:gmatch('[^,]+') do ex[#ex + 1] = tonumber(t) end
@@ -655,7 +669,7 @@ function C.load_cache(text)
                               loc = f[8] ~= '' and unesc(f[8]) or nil, desc = d ~= '' and d or nil }
     end
   end
-  return events, updated, bytes
+  return events, updated, bytes, packed
 end
 
 ------------------------------------------------------------------ recurrence
@@ -1241,13 +1255,14 @@ end
 
 local function save_cfg()
   kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
-    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0'))
+    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0') ..
+    '\ngz=' .. (cfg.gz and 'ok' or ''))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
 
 local function load_cal(c)
-  local events, updated, bytes = C.load_cache(kit.read(C.cache_name(c.url)))
-  c.events, c.updated, c.bytes = events, events and updated or nil, bytes
+  local events, updated, bytes, packed = C.load_cache(kit.read(C.cache_name(c.url)))
+  c.events, c.updated, c.bytes, c.packed = events, events and updated or nil, bytes, packed
 end
 local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
@@ -1255,6 +1270,7 @@ local function load_all()
   cfg.every = tonumber(t.every) or 6
   cfg.host, cfg.auth = t.host or '', t.auth or ''
   cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
+  cfg.gz = t.gz == 'ok'                -- gzip has worked here (the lock screen asks for it only then)
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
   for _k, m in ipairs(MODES) do if t.mode == m then mode = m end end
   cals = C.parse_list(kit.read('calendars.txt'))
@@ -1279,17 +1295,22 @@ end
 
 -- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
 local function take_body(c, resp, via)
-  local body, why, what, packed = C.answer(resp, via)
+  local body, why, what, packed = C.answer(resp, via, true)
   if what == 'gzip' and not cfg.plain then
     cfg.plain = true
     save_cfg()
     return 'again'
   end
   if not body then c.err = why; return end      -- the last whole copy stays
+  if (packed or 0) > 0 and not cfg.gz then cfg.gz = true; save_cfg() end
+  local bytes = #body
+  C.step('read ' .. (bytes // 1024) .. ' KB')
   local e, _wall, today = clock()
   local events = C.parse_ics(body, OFF, today)
-  local bytes = #body
-  kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes))
+  body = nil
+  C.free()
+  C.step('save')
+  kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes, packed))
   c.events, c.updated, c.bytes, c.packed, c.err = events, e, bytes, packed, nil
   sync_done = sync_done + 1
 end
@@ -1299,10 +1320,12 @@ sync_next = function()
   local c = sync_q and table.remove(sync_q, 1)
   if not c then
     sync_q, sync_cur = nil, nil
+    C.step('done')
     after_sync()
     return
   end
   sync_cur, sync_since = c, kit.now_ms()
+  C.step('download ' .. c.name .. (cfg.plain and '' or ' (gzip)'))
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
     local opts, via = C.request(c.url, cfg, not cfg.plain)
@@ -1740,6 +1763,19 @@ function on_load(c)
   local ok, e = pcall(function()
     load_all()
     go_today()
+    -- the reader closed the app during the last sync: say where, don't start one at once, and
+    -- when it was unpacking, ask for the file as it is from now on
+    local last = kit.read('sync_step.txt')
+    if last and last ~= '' and last ~= 'done' then
+      status = 'The last sync stopped at: ' .. last .. '.'
+      if last:match('^unpack') then
+        cfg.plain = true
+        save_cfg()
+        status = status .. ' Now without gzip.'
+      end
+      C.step('done')
+      return
+    end
     sync(false)
   end)
   if not ok then ERR = tostring(e) end

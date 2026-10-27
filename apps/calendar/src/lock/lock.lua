@@ -40,7 +40,7 @@ local function try_refresh(cals, every, e, t)
       return
     end
     local ok = pcall(function()
-      local opts, via = C.request(c.url, { host = t.host, auth = t.auth }, t.plain ~= '1')
+      local opts, via = C.request(c.url, { host = t.host, auth = t.auth }, t.plain ~= '1' and t.gz == 'ok')
       ctx.net:request(opts, function(cc, resp)
         pcall(function()
           local body = C.answer(resp, via)                 -- nil when cut off: the old copy stays

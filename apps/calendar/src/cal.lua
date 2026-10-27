@@ -180,8 +180,18 @@ function C.request(url, wk, gz)
   return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
 end
 
+-- where a sync is, in sync_step.txt: when the reader closes the app mid-way (out of memory
+-- closes it without a Lua error), the next start knows the step
+function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
+-- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
+function C.free()
+  for _k, f in ipairs({ function() ctx.gc:collect() end, function() ctx.gc:full() end, function() ctx.gc.collect() end }) do
+    if pcall(f) then return end
+  end
+end
+
 -- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
-function C.gunzip(b)
+function C.gunzip(b, log)
   local z = ctx.zlib
   if not z then return nil end
   local tries = {
@@ -192,7 +202,8 @@ function C.gunzip(b)
     function() return z:gunzip(b) end,
     function() return z:inflate(b) end,
   }
-  for _k, f in ipairs(tries) do
+  for k, f in ipairs(tries) do
+    if log then C.step('unpack ' .. k .. ', ' .. (#b // 1024) .. ' KB packed') end
     local ok, out = pcall(f)
     if ok and type(out) == 'string' and out:find('BEGIN:VCALENDAR', 1, true) then return out end
   end
@@ -210,9 +221,10 @@ end
 -- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
 -- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
 -- be missing at random, as Google sends them in a different order each time.
-function C.answer(resp, via)
+function C.answer(resp, via, log)
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
   local body = resp.body
+  resp.body = nil                                -- one copy less while it is unpacked and read
   local code = tonumber(resp.status) or tonumber(resp.code)
   if code and code >= 400 then
     if via and code == 401 then return nil, 'Worker login is wrong' end
@@ -223,14 +235,16 @@ function C.answer(resp, via)
   local packed = 0
   if body:sub(1, 2) == '\31\139' then
     packed = #body
-    local text = C.gunzip(body)
+    C.free()
+    local text = C.gunzip(body, log)
     if not text then
       if C.gunzip_works() then                   -- it unpacks, so this answer ended early
         return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
       end
       return nil, 'could not unpack', 'gzip'
     end
-    body = text
+    body, text = text, nil
+    C.free()
   end
   if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
   if not body:find('END:VCALENDAR', 1, true) then
@@ -460,22 +474,22 @@ local function fields(l)
   end
 end
 
-function C.cache_text(events, updated, off, bytes)
-  local out = { '#cal\t' .. updated .. '\t' .. off .. '\t' .. (bytes or 0) }
+function C.cache_text(events, updated, off, bytes, packed)
+  local out = { '#cal\t' .. updated .. '\t' .. off .. '\t' .. (bytes or 0) .. '\t' .. (packed or 0) }
   for _k, ev in ipairs(events) do
     out[#out + 1] = table.concat({ ev.s, ev.e, ev.ad and 1 or 0, esc(ev.rr), table.concat(ev.ex or {}, ','),
                                    esc(ev.uid), esc(ev.sum), esc(ev.loc), esc(ev.desc) }, '\t')
   end
   return table.concat(out, '\n')
 end
--- -> events, updated (UTC seconds), bytes; nil when there is no cache
+-- -> events, updated (UTC seconds), bytes, packed bytes (0: not gzip); nil when there is no cache
 function C.load_cache(text)
   if not text or text:sub(1, 4) ~= '#cal' then return nil end
-  local events, updated, bytes = {}, 0, 0
+  local events, updated, bytes, packed = {}, 0, 0, 0
   for l in text:gmatch('[^\n]+') do
     local f = fields(l)
     if f[1] == '#cal' then
-      updated, bytes = tonumber(f[2]) or 0, tonumber(f[4]) or 0
+      updated, bytes, packed = tonumber(f[2]) or 0, tonumber(f[4]) or 0, tonumber(f[5]) or 0
     elseif #f >= 9 and tonumber(f[1]) then
       local ex = {}
       for t in f[5]:gmatch('[^,]+') do ex[#ex + 1] = tonumber(t) end
@@ -485,7 +499,7 @@ function C.load_cache(text)
                               loc = f[8] ~= '' and unesc(f[8]) or nil, desc = d ~= '' and d or nil }
     end
   end
-  return events, updated, bytes
+  return events, updated, bytes, packed
 end
 
 ------------------------------------------------------------------ recurrence

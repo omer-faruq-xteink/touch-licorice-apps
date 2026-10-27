@@ -38,13 +38,14 @@ end
 
 local function save_cfg()
   kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
-    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0'))
+    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0') ..
+    '\ngz=' .. (cfg.gz and 'ok' or ''))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
 
 local function load_cal(c)
-  local events, updated, bytes = C.load_cache(kit.read(C.cache_name(c.url)))
-  c.events, c.updated, c.bytes = events, events and updated or nil, bytes
+  local events, updated, bytes, packed = C.load_cache(kit.read(C.cache_name(c.url)))
+  c.events, c.updated, c.bytes, c.packed = events, events and updated or nil, bytes, packed
 end
 local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
@@ -52,6 +53,7 @@ local function load_all()
   cfg.every = tonumber(t.every) or 6
   cfg.host, cfg.auth = t.host or '', t.auth or ''
   cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
+  cfg.gz = t.gz == 'ok'                -- gzip has worked here (the lock screen asks for it only then)
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
   for _k, m in ipairs(MODES) do if t.mode == m then mode = m end end
   cals = C.parse_list(kit.read('calendars.txt'))
@@ -76,17 +78,22 @@ end
 
 -- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
 local function take_body(c, resp, via)
-  local body, why, what, packed = C.answer(resp, via)
+  local body, why, what, packed = C.answer(resp, via, true)
   if what == 'gzip' and not cfg.plain then
     cfg.plain = true
     save_cfg()
     return 'again'
   end
   if not body then c.err = why; return end      -- the last whole copy stays
+  if (packed or 0) > 0 and not cfg.gz then cfg.gz = true; save_cfg() end
+  local bytes = #body
+  C.step('read ' .. (bytes // 1024) .. ' KB')
   local e, _wall, today = clock()
   local events = C.parse_ics(body, OFF, today)
-  local bytes = #body
-  kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes))
+  body = nil
+  C.free()
+  C.step('save')
+  kit.write(C.cache_name(c.url), C.cache_text(events, e, OFF, bytes, packed))
   c.events, c.updated, c.bytes, c.packed, c.err = events, e, bytes, packed, nil
   sync_done = sync_done + 1
 end
@@ -96,10 +103,12 @@ sync_next = function()
   local c = sync_q and table.remove(sync_q, 1)
   if not c then
     sync_q, sync_cur = nil, nil
+    C.step('done')
     after_sync()
     return
   end
   sync_cur, sync_since = c, kit.now_ms()
+  C.step('download ' .. c.name .. (cfg.plain and '' or ' (gzip)'))
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
     local opts, via = C.request(c.url, cfg, not cfg.plain)
@@ -537,6 +546,19 @@ function on_load(c)
   local ok, e = pcall(function()
     load_all()
     go_today()
+    -- the reader closed the app during the last sync: say where, don't start one at once, and
+    -- when it was unpacking, ask for the file as it is from now on
+    local last = kit.read('sync_step.txt')
+    if last and last ~= '' and last ~= 'done' then
+      status = 'The last sync stopped at: ' .. last .. '.'
+      if last:match('^unpack') then
+        cfg.plain = true
+        save_cfg()
+        status = status .. ' Now without gzip.'
+      end
+      C.step('done')
+      return
+    end
     sync(false)
   end)
   if not ok then ERR = tostring(e) end
