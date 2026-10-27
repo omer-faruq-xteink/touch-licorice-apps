@@ -292,13 +292,27 @@ def calculator(p):
             p.rect((x, y, x + 10, y + 9), fill=True)
 
 
+def klondike(p):
+    # a fan of three cards, the front one with a hollow heart
+    p.rect((52, 8, 88, 58), w=3, r=5)
+    p.white_rect((34, 18, 72, 70))
+    p.rect((34, 18, 72, 70), w=3, r=5)
+    p.white_rect((10, 30, 56, 90))
+    p.rect((10, 30, 56, 90), w=5, r=6)
+    p.ellipse((18, 46, 33, 61), w=3)
+    p.ellipse((31, 46, 46, 61), w=3)
+    p.white_rect((20, 56, 44, 62))
+    p.line([(19, 56), (32, 76), (45, 56)], 3)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'calculator': calculator}
+         'chess': chess, 'calculator': calculator,
+         'klondike': klondike}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

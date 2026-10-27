@@ -1,0 +1,10 @@
+{
+  "app_id": "klondike",
+  "display_name": "Klondike",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Klondike solitaire: draw one or three, numbered deals, hint, undo, and Finish when nothing is hidden.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

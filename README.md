@@ -14,6 +14,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
+| **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
 | **Slide Puzzle** | the classic sliding-tile puzzle, 3x3 to 7x7; tiles in place framed twice; best results per size |
@@ -112,6 +113,12 @@ cells; long press or Flag mode for flags, open by tapping a finished number, Hin
 Find the best move: 2400 puzzles from the Lichess database (CC0) in six banks, from mate in 1 to
 2000+ rated tactics. Tap a piece and its square; the reply comes at once. Hint frames the piece
 and then its square, Show makes the move; themes and counts per bank. [More](apps/chess/README.md)
+
+### Klondike
+
+The classic solitaire: turn the stock one or three cards at a time, tap a card and then where it
+goes, Finish sends everything home once nothing is hidden. Hint suggests a useful move; Undo,
+numbered deals. [More](apps/klondike/README.md)
 
 ### FreeCell
 
@@ -254,6 +261,7 @@ python -I apps/freecell/test_freecell.py
 python -I apps/chess/test_chess.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
+python -I apps/klondike/test_klondike.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

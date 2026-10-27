@@ -4,6 +4,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **New: Klondike** — the classic solitaire, draw one or three, cards drawn like FreeCell's. Tap a
+  card and then where it goes; Hint suggests a useful move, Finish sends everything home once
+  nothing is hidden, Undo, numbered deals.
 - **New: Calculator** — thumb-sized keys and exact decimal arithmetic (0.1 + 0.2 − 0.3 is 0, as on a
   desk calculator); a scientific mode with trigonometry in degrees or radians, logarithms,
   powers, roots, n!, pi and e, brackets and Ans. The last results stay above the display.
@@ -20,7 +23,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| `calculator.xtapp` | **new** |
+| `calculator.xtapp`, `klondike.xtapp` | **new** |
 | `anki.xtapp` | **updated**: FSRS scheduling |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.10.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
