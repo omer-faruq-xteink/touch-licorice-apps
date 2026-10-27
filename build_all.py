@@ -27,6 +27,18 @@ for app in apps:
     for root, _, fns in os.walk(app):
         lua_files += [os.path.join(root, fn) for fn in fns if fn.endswith('.lua')]
 subprocess.run([sys.executable, '-I', os.path.join(HERE, 'tools', 'lualint55.py'), *lua_files], check=True)
+# and through a real Lua 5.5 compiler when lupa has one (lupa >= 2.5): the lint missed an
+# assignment to a for-loop variable on the loop's own line, and TBR Planner closed on start
+try:
+    from lupa import lua55
+except ImportError:
+    print('lua55: not checked (pip install -U lupa)')
+else:
+    check = lua55.LuaRuntime().eval('function(s, n) local f, e = load(s, n); return e end')
+    errors = [e for e in (check(open(f, encoding='utf-8').read(), '@' + os.path.relpath(f, HERE)) for f in lua_files) if e]
+    for e in errors: print(e)
+    if errors: sys.exit('Lua 5.5 rejects the files above')
+    print(f'lua55: {len(lua_files)} files compile')
 for app in apps:
     if os.path.isfile(os.path.join(app, 'manifest.json')):
         print(f'== {os.path.basename(app)}')

@@ -772,7 +772,10 @@ local function row_info(it, d)
   if it.prio ~= 0 then parts[#parts + 1] = 'prio ' .. it.prio end
   if it.tags ~= '' then
     local tg = {}
-    for t in it.tags:gmatch('[^,]+') do t = trim(t); if t ~= '' then tg[#tg + 1] = '#' .. t end end
+    for raw in it.tags:gmatch('[^,]+') do
+      local t = trim(raw)
+      if t ~= '' then tg[#tg + 1] = '#' .. t end
+    end
     parts[#parts + 1] = table.concat(tg, ' ')
   end
   return table.concat(parts, ' · ')
