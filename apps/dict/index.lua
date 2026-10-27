@@ -12,7 +12,7 @@ local MAX_SUGGEST = 7
 local HISTORY_MAX = 30
 
 local G, ERR = nil, nil
-local screen = 'search'           -- search | entry | nodata
+local screen = 'search'           -- search | entry | settings | nodata
 local status = ''
 local dict = { name = '', words = 0, shards = {}, source = '' }   -- shards: { {file, lo, hi} ... }
 local query, suggestions = '', {}
@@ -146,12 +146,15 @@ local function load_dict()
   end
   cache = { file = nil, text = nil }
   pcall(function() ctx.state = ctx.state or {}; ctx.state.dict = s.prefix end)
+  if s.source == 'storage' then                      -- the lock screen's Word of the Day comes from it
+    pcall(function() if storage_read('lock_dict.txt') ~= s.prefix then ctx.storage:write('lock_dict.txt', s.prefix) end end)
+  end
   return #dict.shards > 0
 end
 
-local function next_dict()
-  if #sets < 2 then return end
-  set_index = set_index % #sets + 1
+local function select_dict(i)
+  if not sets[i] or i == set_index then return end
+  set_index = i
   load_dict()
   query, suggestions = '', {}
 end
@@ -352,10 +355,24 @@ local function bar_hit(x, n)
   return nil
 end
 
+-- Settings (the box at the top right): which dictionary, and Word of the Day as the lock screen
+local SET_Y, SET_H, MAX_SETS = TOP + 40, 56, 8
+local function lock_y() return SET_Y + math.min(#sets, MAX_SETS) * SET_H + 40 end
+local function lock_on()
+  local ok, v = pcall(function() return ctx.lockscreen:is_default() end)
+  return ok and v == true
+end
+local function toggle_lock()
+  local L = ctx.lockscreen
+  if not L then note('no app lock screen here'); return end
+  if lock_on() then pcall(function() L:clear_default() end); note('lock screen off')
+  else pcall(function() L:set_default() end); note('lock screen: word of the day') end
+end
+
 local function draw_search(gg)
   local F = ctx.fonts
-  gg:text(12, 10, dict.name ~= '' and short(dict.name, 30) or 'Dictionary', { font = F and F.medium })
-  if #sets > 1 then gg:rect(W - 110, 6, 98, 30); gg:text(W - 100, 12, 'dict ' .. set_index .. '/' .. #sets, { font = F and F.small }) end
+  gg:text(12, 10, dict.name ~= '' and short(dict.name, 26) or 'Dictionary', { font = F and F.medium })
+  gg:rect(W - 110, 6, 98, 30); gg:text(W - 96, 12, 'Settings', { font = F and F.small })
   gg:text(12, 36, dict.words .. ' words (' .. dict.source .. ')' .. (status ~= '' and ('  ' .. status) or ''), { font = F and F.small })
   gg:rect(12, 62, W - 24, 40)
   gg:text(24, 70, query ~= '' and query or 'type a word…', { font = F and F.medium })
@@ -369,6 +386,29 @@ local function draw_search(gg)
     y = y + 32
   end
   if not editor then gg:text(12, H - 30, 'tap the box to type', { font = F and F.small }) end
+end
+
+local function draw_settings(gg)
+  local F = ctx.fonts
+  bar(gg, { 'Back' })
+  gg:text(12, TOP + 12, 'Dictionary', { font = F and F.small })
+  for i = 1, math.min(#sets, MAX_SETS) do
+    local y = SET_Y + (i - 1) * SET_H
+    gg:rect(12, y, W - 24, SET_H - 8, { line_width = i == set_index and 3 or 1 })
+    gg:text(24, y + 12, short(sets[i].name or '', 34) .. (i == set_index and '  (in use)' or ''), { font = F and F.medium })
+  end
+  local y = lock_y()
+  gg:text(12, y - 28, 'Word of the Day on the lock screen', { font = F and F.small })
+  if not ctx.lockscreen then
+    gg:text(12, y, 'This firmware has no app lock screen.', { font = F and F.small })
+  else
+    gg:rect(12, y, W - 24, SET_H - 8, { line_width = lock_on() and 3 or 1 })
+    gg:text(24, y + 12, lock_on() and 'on   (tap to turn off)' or 'off   (tap to turn on)', { font = F and F.medium })
+    local help = dict.source == 'storage' and 'A new word each day from the dictionary in use.'
+      or 'It uses dictionaries copied into the app folder.'
+    gg:text(12, y + SET_H, help, { font = F and F.small })
+  end
+  if status ~= '' then gg:text(12, H - 30, short(status, 46), { font = F and F.small }) end
 end
 
 local function draw_entry(gg)
@@ -409,6 +449,7 @@ local function draw_impl(gg)
   gg:clear(0)
   if screen == 'search' then draw_search(gg)
   elseif screen == 'entry' then draw_entry(gg)
+  elseif screen == 'settings' then draw_settings(gg)
   else draw_nodata(gg) end
   if ERR then gg:text(6, H - 60, short('ERR ' .. ERR, 46), { font = ctx.fonts and ctx.fonts.small }) end
 end
@@ -431,11 +472,16 @@ local function tap(x, y)
   if screen == 'nodata' then
     if discover_sets() and load_dict() then screen = 'search'; open_editor('') else note('still no shards.tsv') end
   elseif screen == 'search' then
-    if y < 40 and x >= W - 110 and #sets > 1 then next_dict(); open_editor(''); return end
+    if y < 40 and x >= W - 110 then close_editor(); note(''); screen = 'settings'; return end
     if y >= 62 and y < 102 then open_editor(query); return end
     local list = #suggestions > 0 and suggestions or (query == '' and history or {})
     local i = math.floor((y - 132) / 32) + 1
     if y >= 132 and list[i] then show_entry(list[i]) end
+  elseif screen == 'settings' then
+    if y < 46 then back_to_search(); return end
+    local i = math.floor((y - SET_Y) / SET_H) + 1
+    if y >= SET_Y and i <= math.min(#sets, MAX_SETS) then select_dict(i); return end
+    if y >= lock_y() and y < lock_y() + SET_H - 8 then toggle_lock() end
   elseif screen == 'entry' then
     if y < 46 then
       local b = bar_hit(x, 4)
@@ -458,7 +504,8 @@ function on_input(c, ev)
       elseif g == nil or g == 'tap' then tap(ev.x or 0, ev.y or 0) end
     elseif ev.type == 'key' and key_accepted(ev) then
       local k = ev.key
-      if screen == 'entry' then
+      if screen == 'settings' and k == 'back' then back_to_search()
+      elseif screen == 'entry' then
         if k == 'back' then back_to_search()
         elseif k == 'right' or k == 'down' then page_entry(1)
         elseif k == 'left' or k == 'up' then page_entry(-1) end

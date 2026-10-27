@@ -36,12 +36,15 @@ local function M(t)
   return out
 end
 local function font(name, lh) local f = M({ measure = function(s) return #s * 10 end }); f.name = name; f.line_height = lh; return f end
-edits = {}
+edits, lock_def, lock_calls = {}, false, ''
 ctx = {
   invalidate = function() end, state = {},
   storage = M({ write = function(n, d) py_store[n] = d; return true end, read = function(n) local v = py_store[n]; if v ~= nil then return v end return nil, 'not_found' end,
     list = function() local t = {}; for k in python.iter(py_store) do if not k:find('^pkg:') then t[#t + 1] = k end end return t end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
+  lockscreen = M({ is_default = function() return lock_def end,
+    set_default = function() lock_def = true; lock_calls = lock_calls == '' and 'set' or lock_calls .. ',set' end,
+    clear_default = function() lock_def = false; lock_calls = lock_calls .. ',clear' end }),
   input = M({ edit = function(opts) local ed = M({ close = function() end }); ed.opts = opts; edits[#edits + 1] = ed; return ed end }),
   package = M({ open_text = function(name, opts)
     local text = py_store['pkg:' .. name]
@@ -78,14 +81,29 @@ if len(sys.argv) > 1:
     sys.exit(0)
 
 t = texts()
-assert 'Test En-Tr' in t and '9 words (storage)' in t and 'dict 1/2' in t, t
-# switch to the second dictionary and back
+assert 'Test En-Tr' in t and '9 words (storage)' in t and 'Settings' in t, t
+assert str(g.py_store['lock_dict.txt']) == ''                 # the lock screen's dictionary
+# Settings: the second dictionary, then back to the search
+SET_ROW = lambda i: 56 + 40 + i * 56 + 10
 tap(430, 20)
-assert 'Test Tr-En' in texts() and str(g.ctx.state.dict) == 'tren_'
+t = texts()
+assert 'Test En-Tr  (in use)' in t and 'Test Tr-En' in t and 'off   (tap to turn on)' in t, t
+tap(100, SET_ROW(1))
+assert 'Test Tr-En  (in use)' in texts() and str(g.ctx.state.dict) == 'tren_' and str(g.py_store['lock_dict.txt']) == 'tren_'
+key('back')
+assert 'Test Tr-En' in texts()
 g.edits[len(g.edits)].opts.on_end(g.ctx, 'elma', 'enter')
 assert 'noun apple' in texts()
 tap(30, 20)
 tap(430, 20)
+tap(100, SET_ROW(0))
+# the lock screen: on and off through the firmware
+LOCK_ROW = 56 + 40 + 2 * 56 + 40 + 10
+tap(100, LOCK_ROW)
+assert g.lock_calls == 'set' and 'on   (tap to turn off)' in texts(), texts()
+tap(100, LOCK_ROW)
+assert g.lock_calls == 'set,clear' and 'off   (tap to turn on)' in texts()
+tap(30, 20)
 assert 'Test En-Tr' in texts()
 ed = g.edits[len(g.edits)]
 # typing "ap" suggests apple, Apple, applet, apply in shard order

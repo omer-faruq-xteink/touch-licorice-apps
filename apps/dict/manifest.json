@@ -3,8 +3,13 @@
   "display_name": "Dictionary",
   "version": "0.1.0",
   "author": "omer-faruq",
-  "description": "StarDict lookup from shards copied into the app's storage folder",
+  "description": "StarDict lookup from shards copied into the app's storage folder; a Word of the Day lock screen",
   "entry": "index.lua",
   "api": "2.0",
-  "permissions": []
+  "permissions": [],
+  "lockscreen": {
+    "enabled": true,
+    "entry": "lockscreen.lua",
+    "interval_sec": 3600
+  }
 }

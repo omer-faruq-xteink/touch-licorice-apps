@@ -31,7 +31,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
-| **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
+| **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
@@ -243,7 +243,8 @@ converts on a computer with `apps/anki/apkg2cards.py` into small text files for
 Type with the firmware keyboard, pick a suggestion, read the entry; several dictionaries side by
 side. Dictionaries are StarDict files converted once on a computer into text shards and copied
 over USB into `XTApps/dict/files/` on the SD card — the release ships **WordNet** (English–English)
-converted; for anything else run `apps/dict/stardict2shards.py`. Never uninstall the app (the
+converted; for anything else run `apps/dict/stardict2shards.py`. It can be the lock screen: a
+Word of the Day with its senses and examples, a new one each day. Never uninstall the app (the
 folder goes with it); install updates over it. [More](apps/dict/README.md)
 
 ## Build from source

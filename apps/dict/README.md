@@ -32,8 +32,18 @@ install the new `dict.xtapp` over the old one; the files stay.
 - The keyboard opens at once; suggestions appear above it as you type (prefix match, case-
   insensitive). **Done** or a tap on a suggestion opens the entry.
 - Entry pages: **Back**, **Prev / Next**, tap the right / left third, side buttons, swipes.
-- With more than one dictionary a **dict n/m** box at the top right cycles through them; the
-  choice is remembered. With an empty search box the last 30 lookups are listed.
+- **Settings** at the top right: pick the dictionary in use (the choice is remembered) and turn
+  **Word of the Day** on the lock screen on or off. With an empty search box the last 30 lookups
+  are listed.
+
+## Word of the Day (lock screen)
+
+Turned on in Settings (the firmware asks to confirm; Settings → Display → Off wallpaper must be
+**Default**), the locked reader shows one word a day from the dictionary in use, with its senses,
+up to two examples each and its synonyms. The word is a plain one (lower-case letters, no
+phrases or names), picked from the date, so it changes at midnight; the day's pick is kept in
+`wotd.txt` and the lock screen reads no shard again that day. Only dictionaries in the app's
+folder are used.
 
 ## Format of a converted dictionary
 
@@ -48,6 +58,7 @@ unwrapped with one sense per line.
 python xtpack.py apps/dict
 python -I apps/dict/test_dict.py                 # stub dictionary, both data paths
 python -I apps/dict/test_dict.py out             # against a real converted set
+python -I apps/dict/test_lockscreen.py           # Word of the Day; 60 days of WordNet from the release zip
 ```
 
 Verified on an X4 Pro running Licorice 26102301 (2026-10-24) with the Tureng En–Tr StarDict
