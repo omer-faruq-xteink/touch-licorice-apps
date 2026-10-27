@@ -24,6 +24,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
+| **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
@@ -183,6 +184,12 @@ Search or open a random article; it comes as plain text in the language you choo
 Türkçe, Deutsch, ... or any Wikipedia's code) and is paged like an RSS article. The last 30
 articles stay on the reader for reading without Wi-Fi. [More](apps/wikipedia/README.md)
 
+### Calculator
+
+Thumb-sized keys, the expression typed as on paper, and exact decimal arithmetic: 0.1 + 0.2 − 0.3
+is 0. Sci adds trigonometry in degrees or radians, logarithms, powers, roots, n!, pi and e,
+brackets and Ans; the last results stay above the display. [More](apps/calculator/README.md)
+
 ### Anki
 
 Flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled with FSRS, as in
@@ -246,6 +253,7 @@ python -I apps/anki/test_anki.py
 python -I apps/freecell/test_freecell.py
 python -I apps/chess/test_chess.py
 python -I apps/wikipedia/test_wikipedia.py
+python -I apps/calculator/test_calculator.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py

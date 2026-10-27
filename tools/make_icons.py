@@ -282,13 +282,23 @@ def chess(p):
     p.white_ellipse((45, 31, 51, 37))
 
 
+def calculator(p):
+    # a calculator: a display and a grid of keys
+    p.rect((16, 6, 80, 90), w=5, r=8)
+    p.rect((26, 16, 70, 34), w=3)
+    for r in range(3):
+        for c in range(3):
+            x, y = 26 + c * 16, 44 + r * 15
+            p.rect((x, y, x + 10, y + 9), fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess}
+         'chess': chess, 'calculator': calculator}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

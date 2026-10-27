@@ -1,0 +1,10 @@
+{
+  "app_id": "calculator",
+  "display_name": "Calculator",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "A calculator with exact decimal arithmetic, a scientific mode (trigonometry, logarithms, powers, roots, factorials) and your last results.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
