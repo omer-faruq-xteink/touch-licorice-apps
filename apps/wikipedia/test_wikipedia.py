@@ -182,5 +182,59 @@ mode['cut'] = mode['huge'] = mode['ascii'] = False
 bar(1); bar(1)
 g.restart()
 assert 'Read before (3)' in g.texts() and 'Language: eo' in g.texts(), g.texts()    # Istanbul in en and in eo (kept once each), Random Topic
+
+# offline packs: a small pack in wiki2pack.py's format, three files sorted by title
+titles = sorted([f'Article {k:03d}' for k in range(300)] + ['Ankara', 'Apple', 'Zebra', 'Éclair'],
+                key=lambda t: t.encode('utf-8').lower())
+files, index = {}, []
+for k in range(3):
+    part = titles[k * 102:(k + 1) * 102]
+    files[f'wen_a{k:03d}.txt'] = ''.join(f'{t}\t{t} is an article.\\nSecond line.\n' for t in part)
+    index.append(f'wen_a{k:03d}.txt\t{part[0]}\t{part[-1]}\t{len(part)}')
+for fn, text in files.items():
+    g.store[fn] = text
+g.store['wen_shards.tsv'] = '\n'.join(index) + '\n'
+g.store['wen_info.txt'] = 'name=Test pack\nlang=en\narticles=304\nshards=3\n'
+g.L.globals().ctx.storage.list = lambda self: g.L.table_from([k for k in g.store.keys()])
+g.store['source.txt'] = None
+g.restart()
+assert str(A().screen()) == 'sources', A().screen()
+t = g.texts()
+assert 'Test pack' in t and any('304 articles' in x for x in t) and any(x.startswith('Online') for x in t), t
+g.tap(100, 64 + 8 + 76 + 10)                       # the pack
+assert str(A().screen()) == 'home' and A().source() is not None
+assert any('Test pack' in x and 'offline' in x for x in g.texts())
+# search by the start of a title, across a file boundary, letters folded
+g.tap_label('Search'); type_text('article 10')
+assert str(A().screen()) == 'results'
+found = [str(r.title) for r in A().results().values()]
+assert found == [f'Article {k}' for k in range(100, 110)], found
+assert not requests or 'article 10' not in requests[-1][0]                # no network
+g.tap(100, 64 + 8 + 10)
+assert str(A().screen()) == 'article' and 'Article 100' in g.texts() and 'Article 100 is an article.' in g.texts()
+bar(1); bar(1)
+g.tap_label('Search'); type_text('ap')
+assert [str(r.title) for r in A().results().values()] == ['Apple']
+bar(1)
+g.tap_label('Search'); type_text('zz')
+assert len(list(A().results().values())) == 0 and 'No title starts with that.' in g.texts()
+bar(1)
+# random, then read before: from the pack, and Forget leaves the pack alone
+g.tap_label('Random article')
+assert str(A().screen()) == 'article'
+bar(1)
+before = [k for k in g.store.keys() if str(k).startswith('wen_')]
+g.tap_label('Read before (5)')
+assert 'Test pack' in g.texts()
+bar(4); g.tap_label('Forget')
+assert [k for k in g.store.keys() if str(k).startswith('wen_')] == before
+bar(1)
+# back to the sources: online again, remembered after a restart
+g.tap_label('Online and other packs')
+assert str(A().screen()) == 'sources'
+g.tap(100, 64 + 8 + 10)
+assert A().source() is None and any('wikipedia.org' in x for x in g.texts())
+g.restart()
+assert str(A().screen()) == 'home' and A().source() is None
 g.no_err()
 print('wikipedia tests passed')

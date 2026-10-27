@@ -4,6 +4,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **Wikipedia offline**: a pack of English Wikipedia's 10 000 vital articles (opening sections,
+  `wikipedia-en-vital.zip`: 7 MB, 18 MB unzipped) reads without Wi-Fi; search by the start of a title,
+  random article, read before. With a pack on the card the app opens on a list of sources
+  (Online, and each pack). `wiki2pack.py` makes packs for any language or list of titles.
 - **New: Klondike** — the classic solitaire, draw one or three, cards drawn like FreeCell's. Tap a
   card and then where it goes; Hint suggests a useful move, Finish sends everything home once
   nothing is hidden, Undo, numbered deals.
@@ -25,6 +29,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `calculator.xtapp`, `klondike.xtapp` | **new** |
 | `anki.xtapp` | **updated**: FSRS scheduling |
+| `wikipedia.xtapp` | **updated**: offline packs |
+| `wikipedia-en-vital.zip` | **new**: the offline pack (unzip into `XTApps/wikipedia/files/`) |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.10.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 

@@ -60,6 +60,12 @@ whose data is licensed CC BY-SA 4.0; senses, example sentences and similar words
 Puzzles from the Lichess puzzle database, https://database.lichess.org/#puzzles, released under
 CC0 (public domain) by lichess.org; chosen by `apps/chess/make_banks.py`.
 
+## Wikipedia offline pack — release asset `wikipedia-en-vital.zip`
+
+The opening sections of English Wikipedia's vital articles (level 4), from Wikipedia
+(https://en.wikipedia.org), CC BY-SA 4.0; made with `apps/wikipedia/wiki2pack.py`. Not in the
+git repository, only in releases.
+
 ## Not included
 
 Nothing from Xteink's firmware is in this repository. The packer embeds only the *public* half of

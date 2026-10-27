@@ -189,7 +189,9 @@ app talks to Instapaper directly with a personal access token. [More](apps/insta
 
 Search or open a random article; it comes as plain text in the language you choose (English,
 Türkçe, Deutsch, ... or any Wikipedia's code) and is paged like an RSS article. The last 30
-articles stay on the reader for reading without Wi-Fi. [More](apps/wikipedia/README.md)
+articles stay on the reader for reading without Wi-Fi. Offline: the release's pack of English
+Wikipedia's 10 000 vital articles (opening sections), or one made with `wiki2pack.py`; the app then
+opens on a list of sources. [More](apps/wikipedia/README.md)
 
 ### Calculator
 

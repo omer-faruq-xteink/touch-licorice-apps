@@ -166,6 +166,12 @@ end)()
 --
 -- Requests go one at a time (the host answers one at a time) and Wi-Fi is kept up while the app
 -- is used, as in the RSS app.
+--
+-- Offline packs (made on a computer with wiki2pack.py, copied into XTApps/wikipedia/files/):
+-- <prefix>_info.txt, <prefix>_shards.tsv ("file<TAB>first title<TAB>last title<TAB>count") and
+-- <prefix>_a000.txt ... with "title<TAB>text" lines sorted by title (ASCII letters folded). With a
+-- pack on the card the app opens on a list of sources: Online and each pack. Search in a pack
+-- goes by the start of the title: the shard list points to the one file to read.
 
 local W, H = kit.W, kit.H
 local TOP = 64
@@ -186,7 +192,9 @@ local SIZES = {
 local SIZE_ORDER = { 'medium', 'large', 'small' }
 
 local cfg = { lang = 'en', size = 'medium' }
-local screen = 'home'                  -- home | results | article | history
+local screen = 'home'                  -- sources | home | results | article | history
+local packs = {}                       -- offline packs: { key, name, articles, shards = { { file, lo, hi, count } } }
+local source = nil                     -- the pack in use; nil: online
 local results, results_q, results_top = {}, '', 1
 local art = { title = '', lines = {}, starts = { 1 }, page = 1, pages = 1 }
 local history = {}                     -- { { title, lang, file } ... } newest first
@@ -236,6 +244,17 @@ local function article_file(lang, title)
   return 'a_' .. (lang:gsub('%-', '')) .. '_' .. string.format('%06x%06x', h1, h2) .. '.txt'
 end
 
+-- an article read from a pack: listed under Read before, read again from the pack
+local function remember_offline(pack, title, file)
+  for k = #history, 1, -1 do if history[k].title == title and history[k].lang == pack.key then table.remove(history, k) end end
+  table.insert(history, 1, { lang = pack.key, file = file, title = title })
+  while #history > HISTORY_MAX do
+    local old = table.remove(history)
+    if old.file:sub(1, 2) == 'a_' then pcall(function() ctx.storage:remove(old.file) end) end
+  end
+  save_history()
+end
+
 local function remember(lang, title, text)
   local file = article_file(lang, title)
   kit.write(file, title .. '\n' .. text)
@@ -243,9 +262,81 @@ local function remember(lang, title, text)
   table.insert(history, 1, { lang = lang, file = file, title = title })
   while #history > HISTORY_MAX do
     local old = table.remove(history)
-    pcall(function() ctx.storage:remove(old.file) end)
+    if old.file:sub(1, 2) == 'a_' then pcall(function() ctx.storage:remove(old.file) end) end
   end
   save_history()
+end
+
+------------------------------------------------------------------ offline packs
+
+local function sread(name)
+  local ok, t = pcall(function() return ctx.storage:read(name) end)
+  return (ok and type(t) == 'string') and t or nil
+end
+local function unesc(t)
+  return (t:gsub('\\(.)', function(ch) if ch == 'n' then return '\n' elseif ch == 't' then return '\t' end return ch end))
+end
+local function fold(t) return (t:gsub('%u', string.lower)) end   -- ASCII letters only, as wiki2pack.py sorts
+
+local function find_packs()
+  packs = {}
+  local ok, names = pcall(function() return ctx.storage:list() end)
+  if not ok or type(names) ~= 'table' then return end
+  table.sort(names)
+  for _k, n in ipairs(names) do
+    local pre = n:match('^(%a+)_shards%.tsv$')
+    if pre then
+      local info = kit.kv(sread(pre .. '_info.txt'))
+      local pack = { key = pre, name = info.name or pre, articles = tonumber(info.articles) or 0, shards = {} }
+      for line in ((sread(n) or '') .. '\n'):gmatch('([^\n]*)\n') do
+        local file, lo, hi, cnt = line:match('^([^\t]+)\t([^\t]*)\t([^\t]*)\t(%d+)$')
+        if file then pack.shards[#pack.shards + 1] = { file = file, lo = fold(unesc(lo)), hi = fold(unesc(hi)), count = tonumber(cnt) } end
+      end
+      if #pack.shards > 0 then packs[#packs + 1] = pack end
+    end
+  end
+end
+local function pack_by_key(key) for _k, p in ipairs(packs) do if p.key == key then return p end end end
+
+-- one pack file in memory at a time (they are at most ~150 KB)
+local shard_cache = { file = nil, text = nil }
+local function shard_text(file)
+  if shard_cache.file ~= file then
+    shard_cache.file, shard_cache.text = nil, nil
+    shard_cache.text = sread(file)
+    shard_cache.file = shard_cache.text and file or nil
+  end
+  return shard_cache.text
+end
+
+-- titles of the pack starting with q (letters folded), at most 24, with the start of their text
+local function pack_search(pack, q)
+  local key, out = fold(q), {}
+  local lo, hi = 1, #pack.shards
+  while lo < hi do                                -- the last file whose first title is <= key
+    local mid = (lo + hi + 1) // 2
+    if pack.shards[mid].lo <= key then lo = mid else hi = mid - 1 end
+  end
+  for k = lo, math.min(#pack.shards, lo + 1) do
+    local file = pack.shards[k].file
+    for t, text in (shard_text(file) or ''):gmatch('([^\t\n]+)\t([^\n]*)\n') do
+      local f = fold(t)
+      if f:sub(1, #key) == key then
+        out[#out + 1] = { title = unesc(t), snippet = (unesc(text:sub(1, 120)):gsub('\n', ' ')), file = file }
+        if #out >= 24 then return out end
+      elseif f > key and #out > 0 then
+        return out
+      end
+    end
+  end
+  return out
+end
+
+-- the text of a title in a pack file
+local function pack_article(file, title)
+  for t, text in (shard_text(file) or ''):gmatch('([^\t\n]+)\t([^\n]*)\n') do
+    if unesc(t) == title then return unesc(text) end
+  end
 end
 
 ------------------------------------------------------------------ network (as in the RSS app)
@@ -491,7 +582,14 @@ local function open_answer(data, err, body, fallback, keep)
   show_part(t or fallback, text, 1, more)
 end
 
-local function open_title(title)
+local function open_title(title, file)
+  if source then
+    local text = file and pack_article(file, title)
+    if not text then status = 'Not found in the pack.'; return end
+    remember_offline(source, title, file)
+    show_article(title, text)
+    return
+  end
   api({ action = 'query', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki', redirects = '1', titles = title },
       'Loading ' .. short(title, 30) .. '...', function(data, err, body) open_answer(data, err, body, title, true) end)
 end
@@ -510,12 +608,31 @@ local function load_part(k, last_page)
 end
 
 local function open_random()
+  if source then
+    local sh = source.shards[math.random(#source.shards)]
+    local n, want = 0, math.random(sh.count)
+    for t, text in (shard_text(sh.file) or ''):gmatch('([^\t\n]+)\t([^\n]*)\n') do
+      n = n + 1
+      if n == want then
+        remember_offline(source, unesc(t), sh.file)
+        show_article(unesc(t), unesc(text))
+        return
+      end
+    end
+    status = 'Could not read the pack.'
+    return
+  end
   api({ action = 'query', generator = 'random', grnnamespace = '0', prop = 'extracts', explaintext = '1', exsectionformat = 'wiki' },
       'Finding an article...', function(data, err, body) open_answer(data, err, body, '?', true) end)
 end
 
 local function search(q)
   results_q = q
+  if source then
+    results, results_top = pack_search(source, q), 1
+    screen, status = 'results', (#results == 0 and 'No title starts with that.' or nil)
+    return
+  end
   api({ action = 'query', list = 'search', srsearch = q, srlimit = '24', srprop = 'snippet' },
       'Searching ' .. short(q, 24) .. '...', function(data, err)
     if not data then status = 'Search failed: ' .. tostring(err); return end
@@ -531,13 +648,21 @@ local function search(q)
 end
 
 local function ask_search()
-  ctx.input:text({ title = 'Search Wikipedia (' .. cfg.lang .. ')', value = results_q }, function(c, s)
+  local where = source and ('titles in ' .. source.name) or ('Wikipedia, ' .. cfg.lang)
+  ctx.input:text({ title = 'Search ' .. where, value = results_q }, function(c, s)
     if s and s:match('%S') then search(s) end
     refresh()
   end)
 end
 
 local function open_history(h)
+  local pack = pack_by_key(h.lang)
+  if pack and h.file:sub(1, 2) ~= 'a_' then
+    local text = pack_article(h.file, h.title)
+    if not text then status = 'That pack is no longer on the card.'; return end
+    show_article(h.title, text)
+    return
+  end
   local s = kit.read(h.file)
   if not s then status = 'That article is no longer saved.'; return end
   local title, text = s:match('^([^\n]*)\n(.*)$')
@@ -569,7 +694,8 @@ local HOME = {
   { function() return 'Search' end, function() ask_search() end },
   { function() return 'Random article' end, function() art.back = 'home'; open_random() end },
   { function() return 'Read before (' .. #history .. ')' end, function() screen = 'history'; results_top = 1 end },
-  { function() return 'Language: ' .. lang_name(cfg.lang) end, choose_language },
+  { function() return source and 'Online and other packs' or ('Language: ' .. lang_name(cfg.lang)) end,
+    function() if source then screen = 'sources' else choose_language() end end },
   { function() return 'Text size: ' .. cfg.size end, function()
       local k = 1
       for i, s in ipairs(SIZE_ORDER) do if s == cfg.size then k = i end end
@@ -593,15 +719,30 @@ end
 
 local function list_rows()
   if screen == 'results' then return results end
+  if screen == 'sources' then
+    local out = { { title = 'Online: ' .. lang_name(cfg.lang), snippet = cfg.lang .. '.wikipedia.org, needs Wi-Fi', src = 'online' } }
+    for _k, p in ipairs(packs) do
+      out[#out + 1] = { title = p.name, snippet = 'offline, ' .. p.articles .. ' articles (opening sections)', src = p }
+    end
+    return out
+  end
   local out = {}
-  for _k, h in ipairs(history) do out[#out + 1] = { title = h.title, snippet = lang_name(h.lang), h = h } end
+  for _k, entry in ipairs(history) do
+    local pack = pack_by_key(entry.lang)
+    out[#out + 1] = { title = entry.title, snippet = pack and pack.name or lang_name(entry.lang), h = entry }
+  end
   return out
 end
 local ROW_H = 76
 
 local function draw_list(gg)
   local rows = list_rows()
-  bar(gg, { 'Back', 'Prev', 'Next', screen == 'results' and 'Search' or 'Clear' })
+  if screen == 'sources' then
+    gg:text(16, 16, 'Wikipedia', { font = kit.font('large') })
+    gg:text(16, 56, 'Choose where to read', { font = kit.font('small') })
+  else
+    bar(gg, { 'Back', 'Prev', 'Next', screen == 'results' and 'Search' or 'Clear' })
+  end
   for k = results_top, math.min(#rows, results_top + RESULT_ROWS - 1) do
     local r = rows[k]
     local y = TOP + 8 + (k - results_top) * ROW_H
@@ -630,7 +771,7 @@ end
 
 local function draw_home(gg)
   gg:text(16, 16, 'Wikipedia', { font = kit.font('large') })
-  gg:text(16, 56, cfg.lang .. '.wikipedia.org    needs Wi-Fi', { font = kit.font('small') })
+  gg:text(16, 56, short(source and (source.name .. '    offline') or (cfg.lang .. '.wikipedia.org    needs Wi-Fi'), 48), { font = kit.font('small') })
   gg:line(0, 90, W, 90)
   for k, b in ipairs(HOME) do
     local x, y, w, h = home_rect(k)
@@ -684,6 +825,16 @@ local function tap(x, y)
     end
     return
   end
+  if screen == 'sources' then
+    local rows = list_rows()
+    local r = y > TOP and rows[(y - TOP - 8) // ROW_H + 1]
+    if r then
+      source = r.src ~= 'online' and r.src or nil
+      results, results_q, screen, status = {}, '', 'home', nil
+      kit.write('source.txt', source and source.key or 'online')
+    end
+    return
+  end
   local k = bar_hit(x, y, 4)
   if k == 1 then
     -- an article goes back to where it was opened: the results, the list read before, home
@@ -698,7 +849,9 @@ local function tap(x, y)
       kit.show({ title = 'Forget the articles read?', lines = { 'They are no longer kept for offline reading.' },
                  rows = { { { 'Forget', function()
                               kit.close()
-                              for _i, h in ipairs(history) do pcall(function() ctx.storage:remove(h.file) end) end
+                              for _i, h in ipairs(history) do
+                                if h.file:sub(1, 2) == 'a_' then pcall(function() ctx.storage:remove(h.file) end) end
+                              end
                               history = {}; save_history()
                             end }, { 'Cancel', kit.close } } }, cancel = kit.close })
     end
@@ -712,7 +865,7 @@ local function tap(x, y)
     local r = y > TOP and rows[i]
     if r then
       art.back = screen
-      if r.h then open_history(r.h) else open_title(r.title) end
+      if r.h then open_history(r.h) else open_title(r.title, r.file) end
     end
   end
 end
@@ -731,7 +884,8 @@ function on_input(c, ev)
         if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
       elseif ev.key == 'down' or ev.key == 'right' then page(1)
       elseif ev.key == 'up' or ev.key == 'left' then page(-1)
-      elseif ev.key == 'back' and screen ~= 'home' then screen = 'home' end
+      elseif ev.key == 'back' and screen ~= 'home' then screen = 'home'
+      elseif ev.key == 'back' and #packs > 0 then screen = 'sources' end
     end
   end)
   if not ok then ERR = tostring(e) end
@@ -740,8 +894,14 @@ function on_input(c, ev)
 end
 
 function on_load(c)
+  math.randomseed(kit.now_ms() or 1)
   load_cfg()
   load_history()
+  find_packs()
+  -- with packs on the card: the source chosen last, else the list of sources
+  local last = kit.read('source.txt')
+  source = last and pack_by_key(last) or nil
+  screen = (#packs > 0 and not source and last ~= 'online') and 'sources' or 'home'
   keep_wifi(true)
 end
 function on_leave() pcall(function() ctx.net:keep_wifi(1) end) end
@@ -749,5 +909,6 @@ function on_leave() pcall(function() ctx.net:keep_wifi(1) end) end
 if rawget(_G, '__TEST') then
   __TEST.api = { screen = function() return screen end, art = function() return art end, cfg = cfg,
                  results = function() return results end, history = function() return history end,
-                 status = function() return status end }
+                 status = function() return status end, packs = function() return packs end,
+                 source = function() return source end }
 end
