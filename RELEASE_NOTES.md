@@ -4,7 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- **New: TBR Planner** (`tbr.xtapp`) — plan your to-be-read books: Wishlist, Planned with start and end dates, a month Calendar and Done. Add books from the reader's list (progress and reading time follow, finished books move to Done) or by title; the daily reading goal gives an end date; the lock screen shows today's books. A port of tbrplanner.koplugin (GPL v3).
+- **New: TBR Planner** (`tbr.xtapp`) — plan your to-be-read books: Wishlist, Planned with start and end dates, a month Calendar and Done. Add books from the reader's list (progress and reading time follow, finished books move to Done) or by title; an end date from the book's total pages at your pages a day (or your pace on this reader); the lock screen shows today's books. A port of tbrplanner.koplugin (GPL v3).
 - **Calendar** (`calendar.xtapp`): the event box now has a white background, so the view behind it no longer shows through. The **Today** button is wider and shows the whole word; the arrows beside it are narrower.
 - **RSS** (`rss.xtapp`) and **Instapaper** (`instapaper.xtapp`): saved articles no longer pile up. The 100 most recently opened stay, older copies are removed, and Instapaper drops an archived article's copy. **Articles saved offline** in Settings shows the count; tap it twice to delete them all.
 - **Dictionary** (`dict.xtapp`): new **Word of the Day** lock screen, one word a day with its senses, examples and synonyms. The **dict n/m** box at the top right is now **Settings**: pick the dictionary for lookups, turn the lock screen on or off, choose the dictionary its word comes from and how often a new word comes (every day, 12, 6, 3 hours or every hour).
