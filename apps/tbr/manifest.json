@@ -1,0 +1,11 @@
+{
+  "app_id": "tbr",
+  "display_name": "TBR Planner",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Plan your to-be-read books: wishlist, planned dates, a month calendar and today's books on the lock screen.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["reader"],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 3600 }
+}

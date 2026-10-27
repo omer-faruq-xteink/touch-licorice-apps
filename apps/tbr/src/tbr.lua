@@ -1,0 +1,334 @@
+-- TBR Planner pieces shared by the app (src/main.lua) and the lock screen (lockscreen.lua, which
+-- carries its own copy: lock entries load alone): dates without `os`, the book list (items.txt),
+-- what the reader says about its books, and the estimates. A port of KOReader's
+-- tbrplanner.koplugin.
+--
+-- Dates are day numbers: days since 1970-01-01 in local time. A book is on the wishlist without
+-- dates, planned with a start and/or end date, or done. A book "from the reader" carries the
+-- reader's id (ctx.reader: all_books() lists every book opened once, books() the ones in progress
+-- with author and percent); its progress and finished state come from there. The reader gives
+-- no page counts and no file paths, and an app cannot open a book, so estimates use reading time:
+-- the time read so far over the percent read gives the time left. A typed book can have pages.
+--
+-- items.txt: "#tbr1", then one book a line, tab-separated (\t \n \\ escaped):
+--   id, status (wish | plan | done), title, author, book (reader id or empty), priority, tags,
+--   start, end, pages, read (pages read), added, done (day), auto (0: the reader may not mark it
+--   done), pct and sec (the reader's last percent and seconds, for the lock screen)
+
+local T = {}
+local DAY = 86400
+
+T.WDAY = { 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' }
+T.WDAY_LONG = { 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' }
+T.MON = { 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' }
+T.MONTH = { 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+            'October', 'November', 'December' }
+
+------------------------------------------------------------------ dates
+
+-- days since 1970-01-01 (H. Hinnant's civil algorithms; // floors, as they need)
+function T.days(y, m, d)
+  if m <= 2 then y = y - 1 end
+  local era = y // 400
+  local yoe = y - era * 400
+  local doy = (153 * (m + (m > 2 and -3 or 9)) + 2) // 5 + d - 1
+  return era * 146097 + yoe * 365 + yoe // 4 - yoe // 100 + doy - 719468
+end
+function T.civil(z)
+  z = z + 719468
+  local era = z // 146097
+  local doe = z - era * 146097
+  local yoe = (doe - doe // 1460 + doe // 36524 - doe // 146096) // 365
+  local doy = doe - (365 * yoe + yoe // 4 - yoe // 100)
+  local mp = (5 * doy + 2) // 153
+  local d = doy - (153 * mp + 2) // 5 + 1
+  local m = mp < 10 and mp + 3 or mp - 9
+  return yoe + era * 400 + (m <= 2 and 1 or 0), m, d
+end
+function T.month_len(y, m)
+  if m == 12 then return 31 end
+  return T.days(y, m + 1, 1) - T.days(y, m, 1)
+end
+function T.wday(day) return (day + 4) % 7 end            -- 0 = Sunday
+
+-- today's day number, from the wall hour the device reports against its UTC seconds
+function T.today()
+  local ok, t = pcall(function() return ctx.clock:now() end)
+  if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return 0 end
+  local e = math.floor(tonumber(t.epoch_sec))
+  local h = tonumber(t.hour)
+  if not h then
+    local l = tonumber(t.local_sec)
+    return ((l and math.abs(l - e) <= 14 * 3600) and math.floor(l) or e) // DAY
+  end
+  local off = math.floor(h) * 3600 + math.floor(tonumber(t.minute) or 0) * 60 + math.floor(tonumber(t.second) or 0) - e % DAY
+  if off > 14 * 3600 then off = off - DAY elseif off < -12 * 3600 then off = off + DAY end
+  return (e + ((off + 450) // 900) * 900) // DAY
+end
+
+-- "Tue 27 Oct", "27 Oct", "Tuesday 27 October 2026", "2026-10-27"
+function T.date(day) local _y, m, d = T.civil(day); return T.WDAY[T.wday(day) + 1] .. ' ' .. d .. ' ' .. T.MON[m] end
+function T.short_date(day) local _y, m, d = T.civil(day); return d .. ' ' .. T.MON[m] end
+function T.long_date(day)
+  local y, m, d = T.civil(day)
+  return T.WDAY_LONG[T.wday(day) + 1] .. ' ' .. d .. ' ' .. T.MONTH[m] .. ' ' .. y
+end
+function T.iso(day) local y, m, d = T.civil(day); return string.format('%04d-%02d-%02d', y, m, d) end
+-- "2026-10-27" (any separators) -> day number
+function T.parse_iso(s)
+  local y, m, d = tostring(s or ''):match('^%s*(%d%d%d%d)%D+(%d%d?)%D+(%d%d?)')
+  y, m, d = tonumber(y), tonumber(m), tonumber(d)
+  if not y or m < 1 or m > 12 or d < 1 or d > T.month_len(y, m) then return nil end
+  return T.days(y, m, d)
+end
+function T.plural(n, one, many) return n .. ' ' .. (n == 1 and one or many) end
+-- "1 h 51 min", "25 min"
+function T.duration(sec)
+  local m = math.max(0, math.floor(sec / 60 + 0.5))
+  if m < 60 then return m .. ' min' end
+  return (m // 60) .. ' h ' .. (m % 60) .. ' min'
+end
+
+------------------------------------------------------------------ the book list
+
+local FIELDS = { 'id', 'status', 'title', 'author', 'book', 'prio', 'tags', 'start', 'end', 'pages',
+                 'read', 'added', 'done', 'auto', 'pct', 'sec' }
+local NUM = { id = true, prio = true, start = true, ['end'] = true, pages = true, read = true,
+              added = true, done = true, auto = true, pct = true, sec = true }
+local ESC = { ['\\'] = '\\\\', ['\t'] = '\\t', ['\n'] = '\\n' }
+local UNESC = { t = '\t', n = '\n', ['\\'] = '\\' }
+local function esc(s) return (tostring(s or ''):gsub('[\\\t\n]', ESC)) end
+local function unesc(s) return (s:gsub('\\(.)', UNESC)) end
+local function fields(l)
+  local out, pos = {}, 1
+  while true do
+    local i = l:find('\t', pos, true)
+    if not i then out[#out + 1] = l:sub(pos); return out end
+    out[#out + 1] = l:sub(pos, i - 1)
+    pos = i + 1
+  end
+end
+
+-- items.txt -> the books, the next free id
+function T.load(text)
+  local items, next_id = {}, 1
+  for l in (text or ''):gmatch('[^\n]+') do
+    if l:sub(1, 1) ~= '#' then
+      local f, it = fields(l), {}
+      for k, name in ipairs(FIELDS) do
+        local v = f[k] and unesc(f[k]) or ''
+        if NUM[name] then it[name] = tonumber(v) else it[name] = v end
+      end
+      if it.id and it.title ~= '' then
+        if it.status ~= 'plan' and it.status ~= 'done' then it.status = 'wish' end
+        it.prio = it.prio or 0
+        items[#items + 1] = it
+        if it.id >= next_id then next_id = it.id + 1 end
+      end
+    end
+  end
+  return items, next_id
+end
+function T.text(items)
+  local out = { '#tbr1' }
+  for _, it in ipairs(items) do
+    local f = {}
+    for k, name in ipairs(FIELDS) do f[k] = it[name] == nil and '' or esc(it[name]) end
+    out[#out + 1] = table.concat(f, '\t')
+  end
+  return table.concat(out, '\n') .. '\n'
+end
+
+-- a book with dates is planned, without them on the wishlist (a done one stays done)
+function T.settle(it)
+  if it.status ~= 'done' then it.status = (it.start or it['end']) and 'plan' or 'wish' end
+  if it.start and it['end'] and it['end'] < it.start then it['end'] = it.start end
+end
+
+------------------------------------------------------------------ the reader
+
+-- every book the reader knows: id -> { id, title, author, pct, sec, finished, first, last };
+-- an empty table without the reader permission
+function T.reader_books()
+  local out, R = {}, ctx.reader
+  if not R then return out end
+  local ok, all = pcall(function() return R:all_books() end)
+  for _, b in ipairs((ok and type(all) == 'table') and all or {}) do
+    if type(b) == 'table' and b.id then
+      out[tostring(b.id)] = { id = tostring(b.id), title = tostring(b.title or ''), author = '',
+                              sec = tonumber(b.sec) or 0, finished = b.finished == true,
+                              first = T.parse_iso(b.first_date), last = T.parse_iso(b.last_date) }
+    end
+  end
+  local okb, cur = pcall(function() return R:books() end)
+  for _, b in ipairs((okb and type(cur) == 'table') and cur or {}) do
+    if type(b) == 'table' and b.id then
+      local id = tostring(b.id)
+      local r = out[id] or { id = id, title = tostring(b.title or '') }
+      out[id] = r
+      r.author = tostring(b.author or r.author or '')
+      r.pct = tonumber(b.percent)
+      r.sec = tonumber(b.read_sec) or r.sec or 0
+      if b.finished ~= nil then r.finished = b.finished == true end
+    end
+  end
+  for _, r in pairs(out) do if r.finished then r.pct = 100 end end
+  return out
+end
+
+-- bring linked books up to date: progress, author, done when the reader says finished (unless
+-- the user marked it not done). -> true when something changed
+function T.sync(items, rb, today)
+  local changed = false
+  for _, it in ipairs(items) do
+    local r = it.book ~= '' and rb[it.book]
+    if r then
+      if r.pct and r.pct ~= it.pct then it.pct = r.pct; changed = true end
+      if r.sec and r.sec ~= it.sec then it.sec = r.sec; changed = true end
+      if it.author == '' and r.author ~= '' then it.author = r.author; changed = true end
+      if r.finished and it.status ~= 'done' and it.auto ~= 0 then
+        it.status, it.done = 'done', r.last or today
+        changed = true
+      end
+    end
+  end
+  return changed
+end
+
+------------------------------------------------------------------ progress and estimates
+
+-- percent read (nil when unknown)
+function T.percent(it)
+  if it.status == 'done' then return 100 end
+  if it.book ~= '' then return it.pct end
+  if (it.pages or 0) > 0 then return math.min(100, (it.read or 0) * 100 // it.pages) end
+  return nil
+end
+
+-- what is left and how many days it takes at the daily goal: days, text; nil when unknown.
+-- cfg: { minutes = daily reading minutes, pages = pages a day }
+function T.left(it, cfg)
+  if it.status == 'done' then return nil end
+  if it.book ~= '' then
+    local p, s = it.pct, it.sec
+    if not p or p <= 0 or p >= 100 or not s or s <= 0 then return nil end
+    local rest = s * (100 - p) / p
+    return math.max(1, math.ceil(rest / (cfg.minutes * 60))), '~' .. T.duration(rest) .. ' left'
+  end
+  if (it.pages or 0) > 0 then
+    local rest = math.max(0, it.pages - (it.read or 0))
+    if rest == 0 then return nil end
+    return math.max(1, math.ceil(rest / cfg.pages)), T.plural(rest, 'page', 'pages') .. ' left'
+  end
+  return nil
+end
+
+-- the end date the daily goal gives, from the start (or today, if later)
+function T.end_from_goal(it, cfg, today)
+  local days = T.left(it, cfg)
+  if not days then return nil end
+  return math.max(it.start or today, today) + days - 1
+end
+
+-- where a planned book stands today: 'late', 'today' (reading window includes today), 'soon', nil
+function T.state(it, today)
+  if it.status ~= 'plan' then return nil end
+  local s, e = it.start or it['end'], it['end'] or it.start
+  if e < today then return 'late' end
+  if s <= today then return 'today' end
+  return 'soon'
+end
+
+-- "27 Oct - 3 Nov", "from 27 Oct", "until 3 Nov"
+function T.span(it)
+  local s, e = it.start, it['end']
+  if s and e then
+    if s == e then return T.short_date(s) end
+    return T.short_date(s) .. ' - ' .. T.short_date(e)
+  end
+  if s then return 'from ' .. T.short_date(s) end
+  if e then return 'until ' .. T.short_date(e) end
+  return ''
+end
+
+-- "3 days left", "ends today", "2 days late", "starts Sat 31 Oct"
+function T.when(it, today)
+  local st = T.state(it, today)
+  local s, e = it.start or it['end'], it['end'] or it.start
+  if st == 'late' then return T.plural(today - e, 'day', 'days') .. ' late' end
+  if st == 'today' then
+    if e == today then return 'ends today' end
+    return T.plural(e - today, 'day', 'days') .. ' left'
+  end
+  if st == 'soon' then return s == today + 1 and 'starts tomorrow' or ('starts ' .. T.date(s)) end
+  return ''
+end
+
+------------------------------------------------------------------ lists
+
+local function lower(s) return (tostring(s or ''):gsub('%u', string.lower)) end
+local function matches(it, filter)
+  if not filter or filter == '' then return true end
+  local f = lower(filter)
+  return lower(it.title):find(f, 1, true) or lower(it.author):find(f, 1, true) or lower(it.tags):find(f, 1, true)
+end
+
+T.SORTS = {
+  wish = { 'priority', 'title', 'newest', 'oldest' },
+  plan = { 'date', 'priority', 'title' },
+  done = { 'newest', 'title' },
+}
+
+-- the books of a tab ('wish', 'plan', 'done') in the given order, filtered by text
+function T.list(items, tab, sort, filter)
+  local out = {}
+  for _, it in ipairs(items) do
+    if it.status == tab and matches(it, filter) then out[#out + 1] = it end
+  end
+  local function by_title(a, b)
+    local x, y = lower(a.title), lower(b.title)
+    if x ~= y then return x < y end
+    return a.id < b.id
+  end
+  local cmp
+  if sort == 'title' then cmp = by_title
+  elseif sort == 'priority' then
+    cmp = function(a, b) if a.prio ~= b.prio then return a.prio > b.prio end return by_title(a, b) end
+  elseif sort == 'newest' or sort == 'oldest' then
+    local key = tab == 'done' and 'done' or 'added'
+    cmp = function(a, b)
+      local x, y = a[key] or 0, b[key] or 0
+      if x ~= y then if sort == 'newest' then return x > y end return x < y end
+      if sort == 'newest' then return a.id > b.id end
+      return a.id < b.id
+    end
+  else                                             -- date: the earliest start first
+    cmp = function(a, b)
+      local x, y = a.start or a['end'], b.start or b['end']
+      if x ~= y then return x < y end
+      if a.prio ~= b.prio then return a.prio > b.prio end
+      return by_title(a, b)
+    end
+  end
+  table.sort(out, cmp)
+  return out
+end
+
+-- planned books whose window covers `day`
+function T.on_day(items, day)
+  local out = {}
+  for _, it in ipairs(items) do
+    if it.status == 'plan' then
+      local s, e = it.start or it['end'], it['end'] or it.start
+      if s <= day and day <= e then out[#out + 1] = it end
+    end
+  end
+  table.sort(out, function(a, b)
+    local x, y = a.start or a['end'], b.start or b['end']
+    if x ~= y then return x < y end
+    return a.id < b.id
+  end)
+  return out
+end
+
+return T

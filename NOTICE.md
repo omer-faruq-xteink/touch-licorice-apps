@@ -22,6 +22,12 @@ A port of [calendar.koplugin](https://github.com/omer-faruq/calendar.koplugin) b
 author (its iCal reading, repeat rules and views, rewritten for the Lua host). The whole Calendar app is
 licensed under the **GNU AGPL v3** (`apps/calendar/LICENSE`), not MIT.
 
+## TBR Planner — `apps/tbr/`
+
+A port of [tbrplanner.koplugin](https://github.com/omer-faruq/tbrplanner.koplugin) by the same
+author (its wishlist, planning and calendar, rewritten for the Lua host and the reader's book list).
+The whole TBR Planner app is licensed under the **GNU GPL v3** (`apps/tbr/LICENSE`), not MIT.
+
 ## Slide Puzzle — `apps/slidepuzzle/`
 
 The game rules and translations (`apps/slidepuzzle/src/slidepuzzle_*.lua`) come from

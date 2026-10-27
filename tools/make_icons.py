@@ -354,6 +354,16 @@ def calendar(p):
     p.ellipse((48, 52, 72, 76), w=4)
 
 
+
+def tbr(p):
+    # a to-be-read pile: three books stacked, a bookmark on the top one
+    for (x0, x1, y) in ((14, 82, 66), (20, 76, 46), (10, 72, 26)):
+        p.rect((x0, y, x1, y + 18), w=4, r=3)
+        p.line([(x0 + 8, y + 2), (x0 + 8, y + 16)], 3)
+        p.line([(x1 - 8, y + 2), (x1 - 8, y + 16)], 3)
+    p.poly([(56, 8), (66, 8), (66, 32), (61, 27), (56, 32)], fill=True)
+    p.rect((8, 86, 88, 90), fill=True)
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -362,7 +372,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
-         'hackernews': hackernews, 'calendar': calendar}
+         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

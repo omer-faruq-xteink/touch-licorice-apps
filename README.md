@@ -29,6 +29,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views; can be the lock screen |
+| **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen |
@@ -223,6 +224,14 @@ Month and Agenda, with each event's time, place and notes a tap away. Add a cale
 secret iCal address, on the reader or as a `calendars.txt` over USB. It syncs over Wi-Fi and
 works offline. It can be the lock screen in any of the four views; Day then runs from the current
 hour on. A port of calendar.koplugin (AGPL v3). [More](apps/calendar/README.md)
+
+### TBR Planner
+
+Your to-be-read list: a Wishlist, Planned books with start and end dates (−7 / −1 / +1 / +7
+buttons, Keep duration), a month Calendar and a Done list. Add a book from the reader's own list
+(every book opened once: its progress and reading time follow, and it moves to Done when you
+finish it) or by its title. The daily reading goal gives an end date from your pace so far. The
+lock screen shows today's books. A port of tbrplanner.koplugin (GPL v3). [More](apps/tbr/README.md)
 
 ### Calculator
 
