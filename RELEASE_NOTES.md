@@ -4,7 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **Calendar** (`calendar.xtapp`): the event box no longer shows the day view through it; it now opens on a clean screen.
 
 ## Update
 

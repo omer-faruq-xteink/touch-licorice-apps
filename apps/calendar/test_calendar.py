@@ -199,6 +199,7 @@ t = texts()
 assert 'Dentist' in t and any('At Clinic, 2nd floor' in s for s in t) and any('Bring the card.' in s for s in t), t
 assert any('Tue 27 Oct, 14:00 - 15:00' in s for s in t) and any('Calendar: Personal' in s for s in t), t
 assert not any('Alarm' in s for s in t)
+assert '16:00 Call' not in t and '07' not in t and 'Sync' not in t, t   # the box has no fill: nothing under it
 g.key('back')
 assert not has('Close')
 g.tap_label('>')

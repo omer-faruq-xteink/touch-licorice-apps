@@ -431,6 +431,8 @@ function on_draw(c, gg)
   local ok, e = pcall(function()
     pump()
     gg:clear(0)
+    -- a box has no fill (white fills draw black), so it goes on a clean screen
+    if kit.modal() then kit.draw_modal(gg); return end
     if screen == 'settings' then draw_settings(gg) else draw_main(gg) end
     local line = (reading and ('Reading ' .. kit.short(reading.c.name, 20) .. '... ' ..
                     (reading.p.pos * 100 // math.max(1, reading.p.size)) .. '%'))
@@ -441,7 +443,6 @@ function on_draw(c, gg)
       local x, y, bw, bh = button_rect(k, #bs)
       kit.button(gg, x, y, bw, bh, b, { font = 'medium' })
     end
-    if kit.modal() then kit.draw_modal(gg) end
   end)
   if not ok then pcall(function() gg:text(8, H - 40, kit.short('draw ERR ' .. tostring(e), 46)) end) end
 end
