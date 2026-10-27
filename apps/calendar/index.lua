@@ -331,27 +331,17 @@ end
 
 local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 
-function C.enc(s)
-  return (s:gsub('[^A-Za-z0-9%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
-end
--- the request for a calendar: straight to its address, or through the rss-opds Worker
--- (wk.host = 'name.workers.dev', wk.auth = 'user:password'; /api/ics sends only the events near
--- today). gz asks for the file compressed: Google's iCal file holds a calendar's whole history,
--- and the reader takes in only so much of an answer (gzip makes it about a quarter).
-function C.request(url, wk, gz)
-  local host = wk and (wk.host or ''):gsub('^%a+://', ''):gsub('/+$', '') or ''
+-- the request for a calendar. gz asks for the file compressed: Google's iCal file holds a
+-- calendar's whole history, and the reader takes in only 128 KB of an answer (gzip makes it
+-- about a quarter).
+function C.request(url, gz)
   local headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' }
   if gz then headers['Accept-Encoding'] = 'gzip' end
-  if host == '' then return { url = url, method = 'GET', timeout_ms = 45000, headers = headers } end
-  if wk.auth and wk.auth ~= '' then
-    local ok, b64 = pcall(function() return ctx.base64:encode(wk.auth) end)
-    if ok and type(b64) == 'string' then headers['Authorization'] = 'Basic ' .. b64 end
-  end
-  return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
+  return { url = url, method = 'GET', timeout_ms = 45000, headers = headers }
 end
 
--- where a sync is, in sync_step.txt: when the reader closes the app mid-way (out of memory
--- closes it without a Lua error), the next start knows the step
+-- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
+-- too long is closed without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
 -- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
 local FREE = { function() ctx.gc:collect() end, function() ctx.gc('collect') end, function() ctx.gc:full() end,
@@ -397,17 +387,12 @@ end
 -- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
 -- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
 -- be missing at random, as Google sends them in a different order each time.
-function C.answer(resp, via, log)
+function C.answer(resp, log)
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
   local body = resp.body
   resp.body = nil                                -- one copy less while it is unpacked and read
   local code = tonumber(resp.status) or tonumber(resp.code)
-  if code and code >= 400 then
-    if via and code == 401 then return nil, 'Worker login is wrong' end
-    if via and code == 404 then return nil, 'the Worker has no /api/ics yet: update it' end
-    local why = body:match('"error"%s*:%s*"([^"]*)"')
-    return nil, why or ('HTTP ' .. code)
-  end
+  if code and code >= 400 then return nil, 'HTTP ' .. code end
   local packed = 0
   if body:sub(1, 2) == '\31\139' then
     packed = #body
@@ -415,7 +400,7 @@ function C.answer(resp, via, log)
     local text = C.gunzip(body, log)
     if not text then
       if C.gunzip_works() then                   -- it unpacks, so this answer ended early
-        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed: too big for the reader', 'cut'
       end
       return nil, 'could not unpack', 'gzip'
     end
@@ -424,7 +409,7 @@ function C.answer(resp, via, log)
   end
   if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
   if not body:find('END:VCALENDAR', 1, true) then
-    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB: too big for the reader', 'cut'
   end
   return body, nil, nil, packed
 end
@@ -1285,7 +1270,7 @@ local MODE_LABEL = { day = 'Day', week = 'Week', month = 'Month', agenda = 'Agen
 local LOCKS = { 'off', 'agenda', 'day', 'week', 'month' }
 local EVERY = { 1, 3, 6, 12, 24 }
 
-local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week', host = '', auth = '' }
+local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week' }
 local cals = {}
 local mode, anchor, back_mode = 'week', 0, nil
 local ag = { first = 0, starts = { 1 }, page = 1 }
@@ -1305,7 +1290,7 @@ end
 
 local function save_cfg()
   kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
-    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0') ..
+    '\nplain=' .. (cfg.plain and '1' or '0') ..
     '\ngz=' .. (cfg.gz and 'ok' or ''))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
@@ -1318,7 +1303,6 @@ local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.ws = t.ws == '0' and 0 or 1
   cfg.every = tonumber(t.every) or 6
-  cfg.host, cfg.auth = t.host or '', t.auth or ''
   cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
   cfg.gz = t.gz == 'ok'                -- gzip has worked here (the lock screen asks for it only then)
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
@@ -1346,8 +1330,8 @@ local function after_sync()
 end
 
 -- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
-local function take_body(c, resp, via)
-  local body, why, what, packed = C.answer(resp, via, true)
+local function take_body(c, resp)
+  local body, why, what, packed = C.answer(resp, true)
   if what == 'gzip' and not cfg.plain then
     cfg.plain = true
     save_cfg()
@@ -1397,10 +1381,10 @@ sync_next = function()
   C.step('download ' .. c.name .. (cfg.plain and '' or ' (gzip)'))
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
-    local opts, via = C.request(c.url, cfg, not cfg.plain)
+    local opts = C.request(c.url, not cfg.plain)
     ctx.net:request(opts, function(cc, resp)
       if sync_cur ~= c then return end
-      local okb, e = pcall(take_body, c, resp, via)
+      local okb, e = pcall(take_body, c, resp)
       if not okb then c.err = kit.short(tostring(e), 60) end
       if okb and e == 'reading' then
         pcall(function() ctx:set_tick(50) end)
@@ -1585,26 +1569,6 @@ local function calendar_box(c)
     } })
 end
 
--- optional: the rss-opds Worker sends only the events near today (/api/ics), for calendars too
--- big for the reader even packed. Its host, then its login.
-local function ask_worker()
-  ask_text('Worker host, e.g. rss-opds.you.workers.dev (empty: none)', cfg.host, function(s)
-    if s == nil then return end
-    cfg.host = s:gsub('^[ 	]+', ''):gsub('[ 	]+$', ''):gsub('^%a+://', ''):gsub('/+$', '')
-    if cfg.host == '' then
-      cfg.auth = ''
-      save_cfg()
-      status = 'Worker: off.'
-      return
-    end
-    ask_text('Worker login as user:password (empty: none)', cfg.auth, function(a)
-      cfg.auth = (a or ''):gsub('^[ 	]+', ''):gsub('[ 	]+$', '')
-      save_cfg()
-      sync(true)
-    end)
-  end)
-end
-
 ------------------------------------------------------------------ lock screen
 
 local function set_lock(l)
@@ -1678,7 +1642,6 @@ local function setting_rows()
     { 'Week starts on: ' .. (cfg.ws == 1 and 'Monday' or 'Sunday'), 'ws' },
     { 'Sync when older than: ' .. cfg.every .. ' h', 'every' },
     { 'Lock screen: ' .. (cfg.lock == 'off' and 'off' or MODE_LABEL[cfg.lock]), 'lock' },
-    { 'Worker: ' .. (cfg.host ~= '' and kit.short(cfg.host, 30) or 'off (straight to the calendar)'), 'worker' },
   }
 end
 local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 466, 54
@@ -1752,8 +1715,6 @@ local function tap_settings(x, y)
         for i, v in ipairs(EVERY) do if v == cfg.every then nxt = EVERY[i % #EVERY + 1] end end
         cfg.every = nxt
         save_cfg()
-      elseif r[2] == 'worker' then
-        ask_worker()
       else
         local nxt = LOCKS[1]
         for i, v in ipairs(LOCKS) do if v == cfg.lock then nxt = LOCKS[i % #LOCKS + 1] end end

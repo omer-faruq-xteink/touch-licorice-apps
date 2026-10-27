@@ -75,12 +75,6 @@ def answer(url, headers=None):
         return {'status': 200, 'body': gzip.compress(body.encode())[:400] if gz and net['gzip'] else body}
     if url == URL1 and gz and net['gzip']:
         return {'status': 200, 'body': gzip.compress(PERSONAL.encode())}
-    if url.startswith('https://w.example/api/ics?url='):
-        if (headers or {}).get('Authorization') != 'Basic dTpw':
-            return {'status': 401, 'body': '{"error":"unauthorized"}'}
-        return {'status': 200, 'body': WORK}
-    if url.startswith('https://old.example/api/ics'):
-        return {'status': 404, 'body': '{"error":"not found"}'}
     if url == URL1:
         return {'status': 200, 'body': PERSONAL}
     if url == 'https://example.org/work.ics':
@@ -350,7 +344,6 @@ g.no_err()
 g.L.globals().py_unzip = lambda hx: gzip.decompress(bytes.fromhex(hx)).decode()   # lupa can't hand binary to Python
 unzip = g.L.eval("function(self, b, ...) if select('#', ...) > 0 then error('one argument') end "
                  "return py_unzip((b:gsub('.', function(ch) return string.format('%02x', ch:byte()) end))) end")
-ctx.base64 = g.L.table_from({'encode': lambda self, s: __import__('base64').b64encode(s.encode() if isinstance(s, str) else s).decode()})
 store['calendars.txt'] = 'Personal|' + URL1 + '|on\n'
 g.restart()
 net['gzip'] = True
@@ -392,7 +385,7 @@ net['cut'] = True
 g.L.execute(f'now_sec = {NOW + 60}')
 g.tap_label('Sync'); answer_all()
 c = list(A().cals().values())[0]
-assert str(c.err).startswith('cut off after ') and c.err.endswith('KB: try the Worker (Settings)'), c.err
+assert str(c.err).startswith('cut off after ') and c.err.endswith('KB: too big for the reader'), c.err
 assert store[A().C.cache_name(URL1)] == before and len(list(c.events.values())) == 10
 assert any(t.startswith('Personal: cut off after') for t in texts()), texts()
 # the lock screen doesn't take a cut-off copy either
@@ -448,21 +441,9 @@ assert c.err is None and c.updated == NOW + 18 * 3600 and store['sync_step.txt']
 PERSONAL = saved_personal
 g.L.execute(f'now_sec = {NOW}')
 
-# ---- the Worker: host and login in Settings, /api/ics with Basic auth
+# ---- Settings: no Worker; the calendar is fetched straight from its address
 g.tap_label('More')
-g.tap_label('Worker: off (straight to the calendar)')
-typed('https://w.example/'); typed('u:p')
-answer_all()
-assert A().cfg.host == 'w.example' and 'host=w.example' in store['settings.txt'] and 'auth=u:p' in store['settings.txt']
-u, h = sent[-1]
-assert u == 'https://w.example/api/ics?url=' + __import__('urllib.parse').parse.quote(URL1, safe='-._~') and h['Authorization'] == 'Basic dTpw', sent[-1]
-c = list(A().cals().values())[0]
-assert c.err is None and [str(e.sum) for e in c.events.values()] == ['Dentist', 'Quarterly review', 'Late show', 'Night train'], c.err
-assert has('Worker: w.example')
-g.tap_label('Worker: w.example'); typed('old.example'); typed('')
-answer_all()
-assert list(A().cals().values())[0].err == 'the Worker has no /api/ics yet: update it'
-g.tap_label('Worker: old.example'); typed('')
-assert A().cfg.host == '' and A().cfg.auth == '' and has('Worker: off (straight to the calendar)')
+assert not any('Worker' in t for t in texts()), texts()
+assert all(u.startswith('https://calendar.google.com/') for u, h in sent), sent
 g.no_err()
 print('calendar: all tests passed')

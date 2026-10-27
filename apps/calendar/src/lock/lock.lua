@@ -40,10 +40,10 @@ local function try_refresh(cals, every, e, t)
       return
     end
     local ok = pcall(function()
-      local opts, via = C.request(c.url, { host = t.host, auth = t.auth }, t.plain ~= '1' and t.gz == 'ok')
+      local opts = C.request(c.url, t.plain ~= '1' and t.gz == 'ok')
       ctx.net:request(opts, function(cc, resp)
         pcall(function()
-          local body = C.answer(resp, via)                 -- nil when cut off: the old copy stays
+          local body = C.answer(resp)                 -- nil when cut off: the old copy stays
           -- a big one is left to the app: it reads in pieces, a lock screen has one callback
           if not body or #body > 65536 then return end
           local e2, off2 = C.clock()

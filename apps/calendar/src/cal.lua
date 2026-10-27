@@ -161,27 +161,17 @@ end
 
 local UA = 'XteinkLicoriceCalendar/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 
-function C.enc(s)
-  return (s:gsub('[^A-Za-z0-9%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
-end
--- the request for a calendar: straight to its address, or through the rss-opds Worker
--- (wk.host = 'name.workers.dev', wk.auth = 'user:password'; /api/ics sends only the events near
--- today). gz asks for the file compressed: Google's iCal file holds a calendar's whole history,
--- and the reader takes in only so much of an answer (gzip makes it about a quarter).
-function C.request(url, wk, gz)
-  local host = wk and (wk.host or ''):gsub('^%a+://', ''):gsub('/+$', '') or ''
+-- the request for a calendar. gz asks for the file compressed: Google's iCal file holds a
+-- calendar's whole history, and the reader takes in only 128 KB of an answer (gzip makes it
+-- about a quarter).
+function C.request(url, gz)
   local headers = { ['User-Agent'] = UA, ['Accept'] = 'text/calendar, */*' }
   if gz then headers['Accept-Encoding'] = 'gzip' end
-  if host == '' then return { url = url, method = 'GET', timeout_ms = 45000, headers = headers } end
-  if wk.auth and wk.auth ~= '' then
-    local ok, b64 = pcall(function() return ctx.base64:encode(wk.auth) end)
-    if ok and type(b64) == 'string' then headers['Authorization'] = 'Basic ' .. b64 end
-  end
-  return { url = 'https://' .. host .. '/api/ics?url=' .. C.enc(url), method = 'GET', timeout_ms = 45000, headers = headers }, true
+  return { url = url, method = 'GET', timeout_ms = 45000, headers = headers }
 end
 
--- where a sync is, in sync_step.txt: when the reader closes the app mid-way (out of memory
--- closes it without a Lua error), the next start knows the step
+-- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
+-- too long is closed without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
 -- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
 local FREE = { function() ctx.gc:collect() end, function() ctx.gc('collect') end, function() ctx.gc:full() end,
@@ -227,17 +217,12 @@ end
 -- the answer -> the calendar text, or nil, why and what went wrong ('gzip': it came compressed
 -- and could not be unpacked; 'cut': it ended early). A cut-off file is never used: events would
 -- be missing at random, as Google sends them in a different order each time.
-function C.answer(resp, via, log)
+function C.answer(resp, log)
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'no answer' end
   local body = resp.body
   resp.body = nil                                -- one copy less while it is unpacked and read
   local code = tonumber(resp.status) or tonumber(resp.code)
-  if code and code >= 400 then
-    if via and code == 401 then return nil, 'Worker login is wrong' end
-    if via and code == 404 then return nil, 'the Worker has no /api/ics yet: update it' end
-    local why = body:match('"error"%s*:%s*"([^"]*)"')
-    return nil, why or ('HTTP ' .. code)
-  end
+  if code and code >= 400 then return nil, 'HTTP ' .. code end
   local packed = 0
   if body:sub(1, 2) == '\31\139' then
     packed = #body
@@ -245,7 +230,7 @@ function C.answer(resp, via, log)
     local text = C.gunzip(body, log)
     if not text then
       if C.gunzip_works() then                   -- it unpacks, so this answer ended early
-        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+        return nil, 'cut off after ' .. (#body // 1024) .. ' KB packed: too big for the reader', 'cut'
       end
       return nil, 'could not unpack', 'gzip'
     end
@@ -254,7 +239,7 @@ function C.answer(resp, via, log)
   end
   if not body:find('BEGIN:VCALENDAR', 1, true) then return nil, 'not an iCal address' end
   if not body:find('END:VCALENDAR', 1, true) then
-    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB' .. (via and '' or ': try the Worker (Settings)'), 'cut'
+    return nil, 'cut off after ' .. ((packed > 0 and packed or #body) // 1024) .. ' KB: too big for the reader', 'cut'
   end
   return body, nil, nil, packed
 end

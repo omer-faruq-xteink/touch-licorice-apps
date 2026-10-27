@@ -14,8 +14,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
   Google's calendar file (its whole history, in a new order each time) is asked for packed
   (gzip, a quarter of the size) and read a piece at a time (the reader closes an app that
   thinks too long in one go); a file that still arrives cut off is never used, so events
-  can't go missing at random. Optionally, the rss-opds Worker (new `/api/ics`) sends only
-  the events near today.
+  can't go missing at random.
   Settings shows the clock and time zone the app uses.
 
 ## Update

@@ -18,7 +18,7 @@ local MODE_LABEL = { day = 'Day', week = 'Week', month = 'Month', agenda = 'Agen
 local LOCKS = { 'off', 'agenda', 'day', 'week', 'month' }
 local EVERY = { 1, 3, 6, 12, 24 }
 
-local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week', host = '', auth = '' }
+local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week' }
 local cals = {}
 local mode, anchor, back_mode = 'week', 0, nil
 local ag = { first = 0, starts = { 1 }, page = 1 }
@@ -38,7 +38,7 @@ end
 
 local function save_cfg()
   kit.write('settings.txt', 'ws=' .. cfg.ws .. '\nevery=' .. cfg.every .. '\nlock=' .. cfg.lock .. '\nmode=' .. mode ..
-    '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth .. '\nplain=' .. (cfg.plain and '1' or '0') ..
+    '\nplain=' .. (cfg.plain and '1' or '0') ..
     '\ngz=' .. (cfg.gz and 'ok' or ''))
 end
 local function save_list() kit.write('calendars.txt', C.list_text(cals)) end
@@ -51,7 +51,6 @@ local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.ws = t.ws == '0' and 0 or 1
   cfg.every = tonumber(t.every) or 6
-  cfg.host, cfg.auth = t.host or '', t.auth or ''
   cfg.plain = t.plain == '1'           -- this reader could not unpack gzip: ask for the file as it is
   cfg.gz = t.gz == 'ok'                -- gzip has worked here (the lock screen asks for it only then)
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
@@ -79,8 +78,8 @@ local function after_sync()
 end
 
 -- -> 'again' when the calendar should be asked once more, as it is (gzip could not be unpacked)
-local function take_body(c, resp, via)
-  local body, why, what, packed = C.answer(resp, via, true)
+local function take_body(c, resp)
+  local body, why, what, packed = C.answer(resp, true)
   if what == 'gzip' and not cfg.plain then
     cfg.plain = true
     save_cfg()
@@ -130,10 +129,10 @@ sync_next = function()
   C.step('download ' .. c.name .. (cfg.plain and '' or ' (gzip)'))
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
-    local opts, via = C.request(c.url, cfg, not cfg.plain)
+    local opts = C.request(c.url, not cfg.plain)
     ctx.net:request(opts, function(cc, resp)
       if sync_cur ~= c then return end
-      local okb, e = pcall(take_body, c, resp, via)
+      local okb, e = pcall(take_body, c, resp)
       if not okb then c.err = kit.short(tostring(e), 60) end
       if okb and e == 'reading' then
         pcall(function() ctx:set_tick(50) end)
@@ -318,26 +317,6 @@ local function calendar_box(c)
     } })
 end
 
--- optional: the rss-opds Worker sends only the events near today (/api/ics), for calendars too
--- big for the reader even packed. Its host, then its login.
-local function ask_worker()
-  ask_text('Worker host, e.g. rss-opds.you.workers.dev (empty: none)', cfg.host, function(s)
-    if s == nil then return end
-    cfg.host = s:gsub('^[ 	]+', ''):gsub('[ 	]+$', ''):gsub('^%a+://', ''):gsub('/+$', '')
-    if cfg.host == '' then
-      cfg.auth = ''
-      save_cfg()
-      status = 'Worker: off.'
-      return
-    end
-    ask_text('Worker login as user:password (empty: none)', cfg.auth, function(a)
-      cfg.auth = (a or ''):gsub('^[ 	]+', ''):gsub('[ 	]+$', '')
-      save_cfg()
-      sync(true)
-    end)
-  end)
-end
-
 ------------------------------------------------------------------ lock screen
 
 local function set_lock(l)
@@ -411,7 +390,6 @@ local function setting_rows()
     { 'Week starts on: ' .. (cfg.ws == 1 and 'Monday' or 'Sunday'), 'ws' },
     { 'Sync when older than: ' .. cfg.every .. ' h', 'every' },
     { 'Lock screen: ' .. (cfg.lock == 'off' and 'off' or MODE_LABEL[cfg.lock]), 'lock' },
-    { 'Worker: ' .. (cfg.host ~= '' and kit.short(cfg.host, 30) or 'off (straight to the calendar)'), 'worker' },
   }
 end
 local CAL_Y, CAL_H, MAX_CALS, OPT_Y, OPT_H = 100, 66, 5, 466, 54
@@ -485,8 +463,6 @@ local function tap_settings(x, y)
         for i, v in ipairs(EVERY) do if v == cfg.every then nxt = EVERY[i % #EVERY + 1] end end
         cfg.every = nxt
         save_cfg()
-      elseif r[2] == 'worker' then
-        ask_worker()
       else
         local nxt = LOCKS[1]
         for i, v in ipairs(LOCKS) do if v == cfg.lock then nxt = LOCKS[i % #LOCKS + 1] end end
