@@ -5,8 +5,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Changed
 
 - **New: Hacker News** — Top, New, Best, Ask and Show in HN's own order, and search. Stories open
-  with their text, or the linked article as text through your rss-opds Worker (update it for the
-  new `/api/read` route), and end with a QR code of the address. Comments come level by level,
+  with their text, or the linked article as text and pictures through your rss-opds Worker (update
+  it for the new `/api/read` route), and end with a QR code of the address. A tap turns the page. Comments come level by level,
   loaded while you read; a long press on a story goes straight to them.
 - **New: Tasks** — to-do lists: tick an item with a tap, add with the keyboard, **Clear done**
   removes the ticked ones (after asking); edit, move and delete items, several lists. One list can

@@ -19,7 +19,7 @@ local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-a
 local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
 
-local cfg = { host = '', token = '', auth = '', size = 'medium' }
+local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on' }
 local screen = 'list'           -- list | story | thread | settings
 local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
 local S = nil                   -- the open story: { row, item, article, article_err, lines, pages, page }
@@ -38,9 +38,10 @@ local function load_cfg()
   local t = kit.kv(kit.read('settings.txt'))
   for k in pairs(cfg) do if t[k] then cfg[k] = t[k] end end
   if not SIZES[cfg.size] then cfg.size = 'medium' end
+  if cfg.images ~= 'off' then cfg.images = 'on' end
 end
 local function save_cfg()
-  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size)
+  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images)
 end
 local function worker_url(path)
   local host = cfg.host:gsub('^https?://', ''):gsub('/+$', '')
@@ -59,6 +60,10 @@ local function finish(job, resp)
     job.on_done(nil, type(resp) == 'table' and resp.error and tostring(resp.error) or 'no answer'); return
   end
   local code = tonumber(resp.status) or tonumber(resp.code)
+  if job.raw then
+    if code and code >= 400 then job.on_done(nil, 'HTTP ' .. code, code) else job.on_done(resp.body) end
+    return
+  end
   local okj, data = pcall(function() return ctx.json:decode(resp.body) end)
   if not okj then data = nil end
   if code and code >= 400 then
@@ -96,10 +101,12 @@ pump = function()
   end
 end
 
-local function get(url, label, on_done, headers, timeout)
-  queue[#queue + 1] = { url = url, label = label, on_done = on_done, timeout = timeout or 30000,
+local function get(url, label, on_done, headers, timeout, raw)
+  queue[#queue + 1] = { url = url, label = label, on_done = on_done, timeout = timeout or 30000, raw = raw,
                         headers = headers or { ['User-Agent'] = UA, ['Accept'] = 'application/json' } }
+  local job = queue[#queue]
   pump()
+  return job
 end
 local function drop_all()
   for _k, j in ipairs(queue) do j.dropped = true end
@@ -202,10 +209,15 @@ local function body_font() return cfg.size end
 
 -- text with paragraphs (and the Worker's "# " headings, "> " quotes) as document lines; quotes
 -- are indented (an article's lose the marker, a comment's keep the ">" its writer typed)
-local function add_text(out, text, cidx, article)
+local function add_text(out, text, cidx, article, images)
   local f = body_font()
   for para in (tostring(text) .. '\n'):gmatch('([^\n]*)\n') do
-    if para:match('%S') then
+    local imgn = tonumber(para:match('^%[%[img:(%d+)%]%]$') or '')
+    if imgn then
+      -- an article picture (Settings: Images): a box of its size, drawn once loaded
+      local im = images and images[imgn]
+      if im then out[#out + 1] = { s = '', f = 'small', x = 0, h = im.h + 12, img = im } end
+    elseif para:match('%S') then
       local font, x, s = f, 16, para
       if para:sub(1, 2) == '# ' then font, s = 'large', para:sub(3)
       elseif para:sub(1, 1) == '>' then x = 40; if article then s = para:gsub('^>%s*', '') end end
@@ -233,6 +245,66 @@ local function paginate(lines)
   return pages
 end
 
+------------------------------------------------------------------ article pictures
+-- Greyscale JPEGs of exactly the size the Worker announced, from the resizer address it gave
+-- (another host: no Worker credentials go with them). Only the page on screen has its pictures
+-- fetched and decoded, one at a time; the others are released.
+
+local pics = {}                 -- src -> { img } | { failed = true } | { job } while loading
+
+local function page_range(doc)
+  return doc.pages[doc.page] or 1, (doc.pages[doc.page + 1] or (#doc.lines + 1)) - 1
+end
+
+local function release_pics(keep)
+  for src, p in pairs(pics) do
+    if not (keep and keep[src]) then
+      if p.img then pcall(function() p.img:release() end) end
+      pics[src] = nil
+    end
+  end
+end
+
+local load_pics
+load_pics = function()
+  if screen ~= 'story' or not S or not S.lines then release_pics(); return end
+  local first, last = page_range(S)
+  local on_page, todo = {}, nil
+  for k = first, last do
+    local im = S.lines[k].img
+    if im then
+      on_page[im.src] = true
+      local p = pics[im.src]
+      if p and p.job and p.job.dropped then pics[im.src], p = nil, nil end
+      if not p and not todo then todo = im end
+    end
+  end
+  release_pics(on_page)
+  if not todo then return end
+  for _src, p in pairs(pics) do if p.job then return end end   -- one at a time
+  local story, slot = S, {}
+  pics[todo.src] = slot
+  slot.job = get(todo.src, 'Loading picture...', function(body)
+    if pics[todo.src] ~= slot then return end
+    slot.job = nil
+    local ok, img = false, nil
+    if type(body) == 'string' and body:sub(1, 2) == '\255\216' then
+      ok, img = pcall(function() return ctx.image:decode(body) end)
+    end
+    if ok and img then slot.img = img else slot.failed = true end
+    if S == story then load_pics() end
+  end, { ['Accept'] = 'image/jpeg', ['User-Agent'] = UA }, 30000, true)
+end
+
+local function draw_pic(gg, im, y)
+  local x = math.max(0, (W - im.w) // 2)
+  local p = pics[im.src]
+  if p and p.img and pcall(function() gg:image(p.img, x, y + 6) end) then return end
+  if p and (p.img or p.failed) then gg:text(16, y + 6, '[picture]', { font = kit.font('small') }); return end
+  gg:rect(x, y + 6, im.w, im.h)
+  gg:text(x + 10, y + 16, 'picture...', { font = kit.font('small') })
+end
+
 local function meta(r)
   local parts = { r.points .. ' points', 'by ' .. r.by }
   local ago = N.ago(r.time, now_sec())
@@ -248,7 +320,7 @@ local function build_story()
   out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
   if S.item and S.item.text then add_text(out, N.text(S.item.text)) end
   if r.url then
-    if S.article then add_text(out, S.article, nil, true)
+    if S.article then add_text(out, S.article, nil, true, S.images)
     elseif S.article_err then add_lines(out, 'No article text: ' .. S.article_err .. '.', 'small', 16)
     elseif S.reading then add_lines(out, 'Getting the article...', 'small', 16)
     elseif not worker_url('') then
@@ -260,6 +332,7 @@ local function build_story()
   S.lines = out
   S.pages = paginate(out)
   S.page = math.min(S.page or 1, #S.pages)
+  load_pics()
 end
 
 local function open_story(row)
@@ -277,7 +350,7 @@ local function open_story(row)
     if d.descendants then row.comments = tonumber(d.descendants) or row.comments end
     build_story()
   end)
-  local url = row.url and worker_url('/api/read?max=20000&url=' .. N.enc(row.url))
+  local url = row.url and worker_url('/api/read?max=20000' .. (cfg.images == 'on' and '&images=1' or '') .. '&url=' .. N.enc(row.url))
   if url then
     story.reading = true
     local headers = { ['Accept'] = 'application/json' }
@@ -288,7 +361,12 @@ local function open_story(row)
     get(url, 'Getting the article...', function(d, err, code)
       if S ~= story then return end
       story.reading = false
-      if d and type(d.text) == 'string' and d.text:match('%S') then story.article = d.text
+      if d and type(d.text) == 'string' and d.text:match('%S') then
+        story.article, story.images = d.text, {}
+        for _k, im in ipairs(type(d.images) == 'table' and d.images or {}) do
+          local n, w, h = tonumber(im.n), tonumber(im.w), tonumber(im.h)
+          if n and w and h and type(im.src) == 'string' then story.images[n] = { n = n, w = w, h = h, src = im.src } end
+        end
       else
         story.article_err = code == 501 and 'the Worker has no full-text service'
           or (code == 404 and err == 'not found') and 'the Worker is older than /api/read; update it'
@@ -389,7 +467,7 @@ local function doc_page(delta)
   local doc = screen == 'thread' and level() or S
   if not doc then return end
   doc.page = math.max(1, math.min(#doc.pages, doc.page + delta))
-  if screen == 'thread' then thread_pump() end
+  if screen == 'thread' then thread_pump() else load_pics() end
 end
 
 ------------------------------------------------------------------ drawing
@@ -418,6 +496,7 @@ local function draw_doc(gg, doc)
     local ln = doc.lines[k]
     if ln.rule then gg:line(16, y + ln.h // 2, W - 16, y + ln.h // 2)
     elseif ln.qr then draw_qr(gg, ln.qr, y)
+    elseif ln.img then draw_pic(gg, ln.img, y)
     elseif ln.s ~= '' then gg:text(ln.x, y, ln.s, { font = kit.font(ln.f) }) end
     y = y + ln.h
   end
@@ -451,8 +530,9 @@ local function draw_list(gg)
   end
 end
 
-local SETTINGS = { { 'host', 'Worker host (rss-opds)' }, { 'token', 'Path token (after /k/), or empty' },
-                   { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' } }
+local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev' }, { 'token', 'Path token (after /k/), or empty' },
+                   { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' },
+                   { 'images', 'Pictures in articles' } }
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
   for k, s in ipairs(SETTINGS) do
@@ -465,8 +545,9 @@ local function draw_settings(gg)
     gg:line(16, y + 78, W - 16, y + 78)
   end
   local y = 70 + #SETTINGS * 86 + 8
-  for _k, l in ipairs(N.wrap('Stories open as text through your rss-opds Worker (the one RSS uses; it needs /api/read, so update '
-      .. 'it once). Without a Worker a story ends with its address as a QR code.', 'small', W - 32)) do
+  for _k, l in ipairs(N.wrap('Stories open as text, with their pictures if you like, through your rss-opds Worker (the one RSS '
+      .. 'uses, with the same host and login; it needs /api/read, so update it once). Without a Worker a story ends with its '
+      .. 'address as a QR code. Tap the left third of a page to go back, elsewhere to go on.', 'small', W - 32)) do
     gg:text(16, y, l, { font = kit.font('small') }); y = y + 22
   end
 end
@@ -569,20 +650,26 @@ local function tap(x, y, long)
     if r and y >= LIST_TOP and y < LIST_TOP + ROWS * ROW_H then
       if long then open_thread(r) else open_story(r) end
     end
+  elseif screen == 'story' then
+    if y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end            -- left third back, else on
   elseif screen == 'thread' then
+    if y >= DOC_BOTTOM then return end
     local lv = level()
     local ln = doc_line_at(lv, y)
-    local cm = ln and ln.cidx and lv.got[ln.cidx]
-    if cm and #cm.kids > 0 then
+    local cm = ln and ln.link and lv.got[ln.cidx]
+    if cm then
       drop_all()
       lv.loading = false
       push_level({ type = 'comment', by = cm.by, text = cm.text }, cm.kids)
+    else
+      doc_page(x < W // 3 and -1 or 1)
     end
   elseif screen == 'settings' then
     local k = (y - 70) // 86 + 1
     local s = SETTINGS[k]
     if s and y >= 70 then
       if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+      elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
       else ask(s[2], cfg[s[1]], function(v) if type(v) == 'string' then cfg[s[1]] = (v:gsub('^%s+', ''):gsub('%s+$', '')); save_cfg() end end) end
     end
   end
@@ -624,6 +711,7 @@ function on_input(c, ev)
     end
   end)
   if not ok then ERR = tostring(e) end
+  if screen ~= 'story' then release_pics() end
   kit.refresh()
   return true
 end
@@ -634,6 +722,7 @@ function on_load(c)
 end
 function on_leave()
   drop_all()
+  release_pics()
   if qr and qr.img then pcall(function() qr.img:release() end) end
   pcall(function() ctx.net:keep_wifi(1) end)
 end
@@ -641,5 +730,5 @@ end
 if rawget(_G, '__TEST') then
   __TEST.api = { N = N, L = function() return L end, S = function() return S end, screen = function() return screen end,
                  levels = function() return levels end, level = level, cfg = cfg, status = function() return status end,
-                 queue = function() return #queue + (inflight and 1 or 0) end }
+                 queue = function() return #queue + (inflight and 1 or 0) end, pics = function() return pics end }
 end

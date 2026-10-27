@@ -68,8 +68,17 @@ def answer(url):
             return {'status': 404, 'body': json.dumps({'error': 'not found'})}
         if mode['worker'] == 'none':
             return {'status': 501, 'body': json.dumps({'error': 'no full-text service configured'})}
-        return {'status': 200, 'body': json.dumps({'url': q['url'], 'source': 'diffbot',
-                                                  'text': '# The essay\n\nLisp is a family of languages.\n\n> A quote.\n\n' + 'More text. ' * 300})}
+        body = {'url': q['url'], 'source': 'diffbot',
+                'text': '# The essay\n\nLisp is a family of languages.\n\n> A quote.\n\n' + ('[[img:1]]\n\n' if 'images' in q else '')
+                        + 'More text. ' * 300 + ('\n\n[[img:2]]\n\nThe end.' if 'images' in q else '')}
+        if 'images' in q:
+            body['images'] = [{'n': 1, 'w': 456, 'h': 304, 'src': 'https://img.example/r?u=1'},
+                              {'n': 2, 'w': 300, 'h': 200, 'src': 'https://img.example/r?u=2'}]
+        return {'status': 200, 'body': json.dumps(body)}
+    if u.netloc == 'img.example':
+        if q['u'] == '2':
+            return {'status': 404, 'body': 'gone'}
+        return {'status': 200, 'body': b'\xff\xd8\xff\xe0 fake jpeg'}
     raise AssertionError(url)
 
 
@@ -111,6 +120,8 @@ def decode(self, s):
 ctx = L.globals().ctx
 ctx.net = L.table_from({'request': request, 'keep_wifi': lambda self, ms: None})
 ctx.json = L.table_from({'decode': decode})
+L.execute("decoded, released = 0, 0; ctx.image = { decode = function(self, b) decoded = decoded + 1; "
+          "return { width = 456, release = function() released = released + 1 end } end }")
 L.execute(f"ctx.clock.now = function(self) return {{ epoch_sec = {NOW}, hour = 12, minute = 0, second = 0 }} end")
 answer_one = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r); return true end return false end')
 hold = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); "
@@ -221,6 +232,11 @@ answer_all()
 lv = A().level()
 got = len(list(lv.got.values()))
 assert 4 <= got < 40 and len(lv.pages) - lv.page >= 2, (got, len(lv.pages))
+g.tap(300, 300)                                            # a tap on the text turns the page
+assert A().level().page == 2 and len(A().levels()) == 1
+answer_all()
+g.tap(50, 300)
+assert A().level().page == 1
 assert g.commands() < 900, g.commands()
 for k in range(30):
     g.tap_label('Next'); answer_all()
@@ -240,13 +256,34 @@ assert A().cfg.size == 'medium'
 g.tap_label('Back')
 g.tap(100, row(1))
 answer_all()
-assert any(r.startswith('https://w.example/k/tok/api/read?max=20000&url=https%3A%2F%2Fwww.example.com%2Flisp%3Fx%3D1') for r in requests[-2:]), requests[-2:]
+assert any(r.startswith('https://w.example/k/tok/api/read?max=20000&images=1&url=https%3A%2F%2Fwww.example.com%2Flisp%3Fx%3D1') for r in requests), requests[-3:]
+# the picture on the first page loaded and decoded; the one further on not yet
+assert requests[-1] == 'https://img.example/r?u=1' and L.globals().decoded == 1, requests[-3:]
+assert A().pics()['https://img.example/r?u=1'].img and 'picture...' not in g.texts()
 t = page_text()
 assert 'The essay' in t and 'Lisp is a family of languages.' in t and 'A quote.' in t and 'enter your' not in t, t
 d = {str(x.s): x for x in g.draw()}
 assert int(d['A quote.'].x) == 40
 assert len(A().S().pages) > 3
 assert g.commands() < 900
+# a tap turns the page: the left third back, elsewhere on; the picture left behind is released
+g.tap(300, 400)
+assert A().S().page == 2 and L.globals().released == 1
+g.tap(50, 400)
+assert A().S().page == 1
+answer_all()
+assert L.globals().decoded == 2                            # fetched again: pages keep no bytes
+for k in range(20):
+    g.tap(300, 400); answer_all()
+assert 'https://img.example/r?u=2' in requests and '[picture]' in g.texts() and 'The end.' in page_text()
+g.tap_label('Back')
+assert L.globals().released == 2 and len(list(A().pics().keys())) == 0
+# pictures off
+g.tap_label('Settings'); g.tap(100, 70 + 4 * 86 + 40)
+assert A().cfg.images == 'off' and 'images=off' in g.store['settings.txt']
+g.tap_label('Back'); g.tap(100, row(1)); answer_all()
+assert not any('images=1' in r for r in requests[-2:]) and 'picture' not in page_text()
+g.tap_label('Back'); g.tap_label('Settings'); g.tap(100, 70 + 4 * 86 + 40); g.tap_label('Back'); g.tap(100, row(1)); answer_all()
 mode['worker'] = 'old'
 g.tap_label('Back'); g.tap(100, row(1)); answer_all()
 assert 'the Worker is older than /api/read; update it' in page_text()
