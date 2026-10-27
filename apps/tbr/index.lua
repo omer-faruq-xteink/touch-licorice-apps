@@ -1062,7 +1062,7 @@ local function draw_settings(gg)
   gg:text(16, 12, 'Settings', { font = kit.font('large') })
   local rows = {
     { 'Daily reading goal: ' .. cfg.minutes .. ' min', function() cfg.minutes = cycle(MINUTES, cfg.minutes); save_cfg() end },
-    { 'Typed books: ' .. cfg.pages .. ' pages a day', function() cfg.pages = cycle(PAGES, cfg.pages); save_cfg() end },
+    { 'Pages a day: ' .. cfg.pages, function() cfg.pages = cycle(PAGES, cfg.pages); save_cfg() end },
     { 'Week starts on ' .. (cfg.ws == 1 and 'Monday' or 'Sunday'), function() cfg.ws = 1 - cfg.ws; save_cfg() end },
     { 'Filter: ' .. (filter ~= '' and ('"' .. filter .. '"') or 'none (tap to set)'), function()
         ask_text('Show books whose title, author or tags contain', filter, function(s) filter = trim(s); page = { wish = 1, plan = 1, done = 1 } end)
@@ -1082,8 +1082,9 @@ local function draw_settings(gg)
     hit(12, y, W - 24, 52, r[2])
   end
   local y = 64 + #rows * 60 + 10
-  local help = 'The goal gives a book\'s end date: minutes for books from the reader (from your pace so far), ' ..
-    'pages for typed ones. The reader marks a linked book done when you finish it.'
+  local help = 'The goals give a book\'s end date: pages a day for a book with its total pages, ' ..
+    'minutes a day for a reader book without them (from your pace on this reader). ' ..
+    'The reader marks a linked book done when you finish it.'
   for k, l in ipairs(kit.wrap(help, 'small', W - 32)) do gg:text(16, y + (k - 1) * 24, l, { font = kit.font('small') }) end
 end
 

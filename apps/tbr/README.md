@@ -51,7 +51,7 @@ Both goals are in More.
 
 ## More (settings)
 
-Daily reading goal (10–120 minutes), pages a day for typed books, the first day of the week,
+Daily reading goal (10–120 minutes), pages a day (5–100, for every book with its pages), the first day of the week,
 the filter, and the **lock screen**.
 
 ## Lock screen

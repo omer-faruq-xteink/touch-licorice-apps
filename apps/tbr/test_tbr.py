@@ -1,6 +1,6 @@
 """Offline test of TBR Planner (gamekit harness with a stand-in reader): dates, adding a book from
 the reader and by its title, the date buttons and Keep duration, the end date from the daily goal
-(reading time for reader books, pages for typed ones), the lists and their sorting, Wishlist /
+(total pages, or the pace read on this reader), the lists and their sorting, Wishlist /
 Planned / Done moves, the reader marking a book done, the calendar, Settings, saving, the lock
 screen and the draw-command count.
 
