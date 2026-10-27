@@ -1029,6 +1029,21 @@ end
 
 ------------------------------------------------------------------ day
 
+-- a line from x1 to x2 at y in dashes of `dash` px with `gap` between, left out where it would
+-- cross an event's box
+local function hour_line(gg, x1, x2, y, boxes, dash, gap)
+  local sx = x1
+  while sx < x2 do
+    local ex = math.min(sx + dash, x2)
+    local cut = false
+    for _k, b in ipairs(boxes) do
+      if y >= b[2] - 1 and y <= b[2] + b[4] + 1 and ex >= b[1] - 3 and sx <= b[1] + b[3] + 3 then cut = true; break end
+    end
+    if not cut then gg:line(sx, y, ex, y) end
+    sx = ex + gap
+  end
+end
+
 -- opts.from: start at that hour and show as many hours of opts.ph px as fit, past midnight into the
 -- next day (the lock screen: "from now on"; env.insts must then cover two days)
 function V.day(gg, env, day, x, y, w, h, opts)
@@ -1104,15 +1119,7 @@ function V.day(gg, env, day, x, y, w, h, opts)
     ph = (y + h - top - 4) // (h1 - h0)
   end
   local gx = x + 50
-  for hr = h0, h1 do
-    local ly = top + (hr - h0) * ph
-    gg:line(gx - 4, ly, x + w, ly)
-    if hr == 24 and hr > h0 then
-      gg:line(gx - 4, ly + 1, x + w, ly + 1)
-      text(gg, gx + 4, ly + 3, C.date(day + 1), fs)
-    end
-    if hr < h1 then text(gg, x + 6, ly + 2, string.format('%02d', hr % 24), fs) end
-  end
+  for hr = h0, h1 - 1 do text(gg, x + 6, top + (hr - h0) * ph + 2, string.format('%02d', hr % 24), fs) end
   local function ypos(t)
     local s = math.max(h0 * 3600, math.min(t - base, h1 * 3600)) - h0 * 3600
     return top + s * ph // 3600
@@ -1123,6 +1130,7 @@ function V.day(gg, env, day, x, y, w, h, opts)
     timed = keep
   end
   -- side by side when they overlap: greedy columns inside each group of overlapping events
+  local boxes = {}
   local i = 1
   while i <= #timed do
     local group, ends, j = {}, timed[i].e, i
@@ -1144,6 +1152,7 @@ function V.day(gg, env, day, x, y, w, h, opts)
       local bh = math.max(ls + 6, ypos(math.max(ev.e, ev.s + 1800)) - by - 2)
       local bx = gx + (col[k] - 1) * cw
       gg:rect(bx, by + 1, cw - 3, bh)
+      boxes[#boxes + 1] = { bx, by + 1, cw - 3, bh }
       local inner = cw - 13
       if bh >= ls + lm + 6 then
         text(gg, bx + 5, by + 3, C.hm(ev.s) .. (ev.e > ev.s and (' - ' .. C.hm(ev.e)) or ''), fs)
@@ -1160,6 +1169,16 @@ function V.day(gg, env, day, x, y, w, h, opts)
       hits[#hits + 1] = { x = bx, y = by, w = cw - 3, h = bh, it = ev }
     end
     i = j
+  end
+  -- the hours: dashed, and left out where they would cross an event (midnight: a double line)
+  for hr = h0, h1 do
+    local ly = top + (hr - h0) * ph
+    hour_line(gg, gx - 4, x + w, ly, boxes, 12, 8)
+    if hr == 24 and hr > h0 then
+      hour_line(gg, gx - 4, x + w, ly + 1, boxes, 40, 2)
+      hour_line(gg, gx - 4, x + w, ly + 2, boxes, 40, 2)
+      text(gg, gx + 4, ly + 3, C.date(day + 1), fs)
+    end
   end
   -- now
   if day == env.today then
