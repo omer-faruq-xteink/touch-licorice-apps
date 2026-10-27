@@ -233,7 +233,7 @@ end
 local function buttons()
   if screen == 'item' then
     local it = cur
-    return { it.status == 'plan' and 'To wishlist' or 'Plan', it.status == 'done' and 'Not done' or 'Done' }
+    return { it.status == 'plan' and 'To wishlist' or 'Plan', it.status == 'done' and 'Mark unread' or 'Mark as read' }
   elseif screen == 'pick' then return pick.link and { '<', '>' } or { '<', '>', 'Type it' }
   elseif screen == 'settings' then return { 'Back' } end
   if cfg.tab == 'cal' then return { '<', 'Today', '>', '+ New', 'More' } end
@@ -462,7 +462,7 @@ local function draw_item(gg)
   y = IY + 9 * IH
   gg:text(16, y + 4, 'At ' .. goal .. ' (the goal is in More)', { font = kit.font('small') })
   if it.status == 'done' then
-    gg:text(16, y + 26, 'Done' .. (it.done and (' on ' .. T.date(it.done)) or '') .. '.', { font = kit.font('medium') })
+    gg:text(16, y + 26, 'Read' .. (it.done and (', finished ' .. T.date(it.done)) or '') .. '.', { font = kit.font('medium') })
   elseif e then
     local n = select(1, T.left(it, cfg))
     gg:text(16, y + 26, fit('medium', T.plural(n, 'day', 'days') .. ', ends ' .. T.date(e), W - 160), { font = kit.font('medium') })
@@ -664,8 +664,8 @@ local function press(b)
     end)
   elseif b == 'Plan' then plan(cur)
   elseif b == 'To wishlist' then to_wishlist(cur)
-  elseif b == 'Done' then set_done(cur, true)
-  elseif b == 'Not done' then set_done(cur, false) end
+  elseif b == 'Mark as read' then set_done(cur, true)
+  elseif b == 'Mark unread' then set_done(cur, false) end
 end
 
 local function tap(x, y)

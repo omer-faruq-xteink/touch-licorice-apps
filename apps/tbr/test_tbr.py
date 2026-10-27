@@ -141,7 +141,7 @@ g.tap_label('To wishlist')
 assert it2.status == 'wish' and it2.start is None and it2['end'] is None
 g.tap_label('Plan')
 assert it2.status == 'plan' and it2.start == TODAY and it2['end'] == TODAY + 17
-g.tap_label('Done')
+g.tap_label('Mark as read')
 assert it2.status == 'done' and it2.done == TODAY
 g.key('back')
 
@@ -164,7 +164,7 @@ t = texts()
 assert t.index('Anna Karenina') < t.index('Zorba') and any('by title' in s for s in t), t
 assert 'sort_wish=title' in store['settings.txt']
 
-# ---- the reader finishes a book: it moves to Done; "Not done" keeps it out
+# ---- the reader finishes a book: it moves to Done; "Mark unread" keeps it out
 g.tap_label('+ New')
 g.tap_label('From the reader')
 g.tap_label('Kırık Ayna')
@@ -185,7 +185,7 @@ k = [x for x in A().books().values() if x.title == 'Kırık Ayna'][0]
 assert k.status == 'done' and k.done == TODAY
 g.tap_label('Done')
 g.tap_label('Kırık Ayna')
-g.tap_label('Not done')
+g.tap_label('Mark unread')
 assert k.status == 'wish' and k.auto == 0
 g.restart()
 k = [x for x in A().books().values() if x.title == 'Kırık Ayna'][0]

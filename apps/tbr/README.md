@@ -38,7 +38,7 @@ date), **Keep duration** (on: moving Start moves End too), progress, and the est
 Both goals are in More.
 
 **Set end** puts the estimated end date in. **Plan** / **To wishlist** adds or removes the dates,
-**Done** / **Not done** moves it (a reader book marked not done stays so), **Delete** forgets it.
+**Mark as read** / **Mark unread** moves it to **Done** or back (a reader book marked unread stays so), **Delete** forgets it.
 
 ## Lists and calendar
 
