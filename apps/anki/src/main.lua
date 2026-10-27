@@ -14,9 +14,9 @@
 -- count and the earliest due time of every progress file, so only the files with cards due are
 -- read. Own cards: <key>_own.txt and <key>_pown.txt (by id); deleted cards: <key>_del.txt.
 --
--- Scheduling is the KOReader Anki Viewer's (SM-2 like): Again / Hard / Good / Easy, an ease
--- factor from 2.5 (at least 1.3), learning steps of minutes for new and lapsed cards (they come
--- back in the same session), then intervals in days.
+-- Scheduling is FSRS 4.5 (see "scheduling"): Again / Hard / Good / Easy, steps of minutes for
+-- new and forgotten cards (they come back in the same session), then intervals from each card's
+-- stability and difficulty. Progress saved by the SM-2 scheduler before v0.11 is read as FSRS.
 --
 -- Lock screen: long-press a deck, Lock screen. lockscreen.lua then shows its next cards from
 -- lock_cards.txt, which this app rewrites when the deck list shows and when it is left.
@@ -185,13 +185,24 @@ end
 
 local function pname(d, s) return s == 'own' and (d.key .. '_pown.txt') or string.format('%s_p%03d.txt', d.key, s) end
 
+-- a progress line: "key due S D reps lapses last state"; the 6-field lines of the SM-2 scheduler
+-- before v0.11 ("key due interval ease reps lapses") are read as FSRS records
 local function load_prog(d, s)
   local t = {}
   for line in lines(sread(pname(d, s)) or '') do
-    local k, due, ivl, ease, reps, lapses = line:match('^(%S+) (%-?%d+) ([%d%.]+) ([%d%.]+) (%d+) (%d+)$')
+    local k, due, a, b, reps, lapses, last, state = line:match('^(%S+) (%-?%d+) ([%d%.]+) ([%d%.]+) (%d+) (%d+) ?(%-?%d*) ?([lr]?)$')
     if k then
       if s ~= 'own' then k = tonumber(k) end
-      t[k] = { due = tonumber(due), ivl = tonumber(ivl), ease = tonumber(ease), reps = tonumber(reps), lapses = tonumber(lapses) }
+      due, a, b = tonumber(due), tonumber(a), tonumber(b)
+      if state ~= '' then
+        t[k] = { due = due, s = a, d = b, reps = tonumber(reps), lapses = tonumber(lapses), last = tonumber(last) or due, state = state }
+      else
+        -- SM-2: the interval is the stability, an ease of 1.3 .. 3.5 a difficulty of 10 .. 1
+        local ivl, ease = a, b
+        t[k] = { due = due, s = math.max(ivl, 1), d = math.max(1, math.min(10, 10 - (ease - 1.3) * 4)),
+                 reps = tonumber(reps), lapses = tonumber(lapses),
+                 last = due - math.floor(ivl * 86400), state = ivl >= 1 and 'r' or 'l' }
+      end
     end
   end
   return t
@@ -202,7 +213,7 @@ local function fmt(x) return (string.format('%.2f', x):gsub('%.?0+$', '')) end
 local function save_prog(d, s, t)
   local out, min = {}, nil
   for k, r in pairs(t) do
-    out[#out + 1] = k .. ' ' .. r.due .. ' ' .. fmt(r.ivl) .. ' ' .. fmt(r.ease) .. ' ' .. r.reps .. ' ' .. r.lapses
+    out[#out + 1] = k .. ' ' .. r.due .. ' ' .. fmt(r.s) .. ' ' .. fmt(r.d) .. ' ' .. r.reps .. ' ' .. r.lapses .. ' ' .. r.last .. ' ' .. r.state
     if not min or r.due < min then min = r.due end
   end
   if #out == 0 then sremove(pname(d, s)) else swrite(pname(d, s), table.concat(out, '\n') .. '\n') end
@@ -254,30 +265,63 @@ end
 
 ------------------------------------------------------------------ scheduling
 
--- the KOReader Anki Viewer's rules; r = 1 Again, 2 Hard, 3 Good, 4 Easy
-local function schedule(rec, r, now)
-  local ease, ivl, reps, lapses = rec.ease or 2.5, rec.ivl or 0, rec.reps or 0, rec.lapses or 0
+-- FSRS 4.5 (the open spaced-repetition scheduler Anki uses), with its default parameters. A card
+-- has a stability S (days until recall drops to 90 %) and a difficulty D (1..10). Recall after
+-- t days: R = (1 + 19/81 * t / S) ^ -0.5, so at 90 % retention the next interval is S days. New
+-- and forgotten cards first go through steps of minutes in the same session (as in Anki).
+local FW = { 0.4872, 1.4003, 3.7145, 13.8206, 5.1618, 1.2298, 0.8975, 0.031, 1.6474, 0.1367, 1.0461,
+             2.1072, 0.0793, 0.3246, 1.587, 0.2272, 2.8755 }
+local function w(i) return FW[i + 1] end
+local DECAY, FACTOR, RETENTION = -0.5, 19 / 81, 0.9
+
+local function clamp_d(x) return math.max(1, math.min(10, x)) end
+local function init_d(g) return clamp_d(w(4) - w(5) * (g - 3)) end
+local function next_d(d, g) return clamp_d(w(7) * w(4) + (1 - w(7)) * (d - w(6) * (g - 3))) end
+local function recall(days, s) return (1 + FACTOR * days / s) ^ DECAY end
+-- days until recall drops to RETENTION; at most MAX_IVL so that now + days * 86400 stays a
+-- 32-bit number, which the reader's Lua may use
+local function interval(s)
+  local i = s / FACTOR * (RETENTION ^ (1 / DECAY) - 1)
+  return math.max(1, math.min(MAX_IVL, math.floor(i + 0.5)))
+end
+local function recall_s(d, s, r, g)
+  local hard = g == 2 and w(15) or 1
+  local easy = g == 4 and w(16) or 1
+  return s * (1 + math.exp(w(8)) * (11 - d) * s ^ (-w(9)) * (math.exp(w(10) * (1 - r)) - 1) * hard * easy)
+end
+local function forget_s(d, s, r)
+  return math.min(s, w(11) * d ^ (-w(12)) * ((s + 1) ^ w(13) - 1) * math.exp(w(14) * (1 - r)))
+end
+
+-- a card's record after rating g (1 Again, 2 Hard, 3 Good, 4 Easy) at time now:
+-- { due, s, d, reps, lapses, last (time of this review), state 'l' (learning steps) or 'r' }
+local function schedule(rec, g, now)
+  local s, d, state = rec.s, rec.d, rec.state
+  local reps, lapses = (rec.reps or 0) + 1, rec.lapses or 0
   local due
-  if ivl == 0 and reps == 0 then
-    if r == 1 then ease = math.max(1.3, ease - 0.2); due = now + 60
-    elseif r == 2 then ease = math.max(1.3, ease - 0.15); due = now + 6 * 60
-    elseif r == 3 then due = now + 10 * 60
-    else ease = ease + 0.15; ivl = 4; due = now + ivl * 86400 end
-  else
-    if r == 1 then
-      lapses = lapses + 1; ease = math.max(1.3, ease - 0.2); ivl = 0; due = now + 10 * 60
-    elseif r == 2 then
-      ease = math.max(1.3, ease - 0.15); ivl = math.max(ivl, 1) * 1.2; due = now + math.floor(ivl * 86400)
-    elseif r == 3 then
-      ivl = ivl == 0 and 1 or ivl * ease; due = now + math.floor(ivl * 86400)
+  if not s then                                 -- a new card
+    s, d = w(g - 1), init_d(g)
+    if g == 4 then state, due = 'r', now + interval(s) * 86400
+    else state, due = 'l', now + ({ 60, 6 * 60, 10 * 60 })[g] end
+  elseif state == 'l' then                      -- in the steps: stability stays, then graduates
+    d = next_d(d, g)
+    if g == 1 then due = now + (lapses > 0 and 10 * 60 or 60)
+    elseif g == 2 then due = now + 6 * 60
     else
-      ease = ease + 0.15; ivl = ivl == 0 and 3 or ivl * ease * 1.3; due = now + math.floor(ivl * 86400)
+      if g == 4 then s = s * w(16) end
+      state, due = 'r', now + interval(s) * 86400
+    end
+  else                                          -- a review
+    local r = recall(math.max(0, now - (rec.last or now)) / 86400, s)
+    if g == 1 then
+      lapses = lapses + 1
+      s, d, state, due = forget_s(d, s, r), next_d(d, 1), 'l', now + 10 * 60
+    else
+      s, d = recall_s(d, s, r, g), next_d(d, g)
+      due = now + interval(s) * 86400
     end
   end
-  -- at most MAX_IVL days: now + the interval in seconds must stay a 32-bit number, which the
-  -- reader's Lua may use
-  if ivl > MAX_IVL then ivl = MAX_IVL; due = now + MAX_IVL * 86400 end
-  return { due = due, ivl = ivl, ease = ease, reps = reps + 1, lapses = lapses }
+  return { due = due, s = s, d = d, reps = reps, lapses = lapses, last = now, state = state }
 end
 
 local function span(sec)
@@ -824,7 +868,7 @@ if rawget(_G, '__TEST') then
   __TEST.api = {
     screen = function() return screen end, decks = function() return decks end, deck = function() return deck end,
     queue = function() return queue end, state = function() return st end, shown = function() return shown end,
-    schedule = schedule, span = span, open = function(k) for _i, d in ipairs(decks) do if d.key == k then open_deck(d) end end end,
+    schedule = schedule, span = span, prog = function(key, s) for _i, d in ipairs(decks) do if d.key == key then return load_prog(d, s) end end end, open = function(k) for _i, d in ipairs(decks) do if d.key == k then open_deck(d) end end end,
     card = function() return queue[1] and card_of(queue[1]) end, today = today, own = function() return own end,
   }
 end

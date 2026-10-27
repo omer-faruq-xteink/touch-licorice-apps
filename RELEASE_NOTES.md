@@ -4,7 +4,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **Anki now schedules with FSRS** (version 4.5), the scheduler Anki itself offers: every card
+  keeps a stability and a difficulty learned from your answers, so it comes back just before you
+  would forget it, with fewer reviews than before. Your progress carries over.
 
 ## Update
 
@@ -15,7 +17,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py` | unchanged since v0.10.0 |
+| `anki.xtapp` | **updated**: FSRS scheduling |
+| all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.10.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

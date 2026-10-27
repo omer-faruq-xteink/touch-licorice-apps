@@ -75,12 +75,12 @@ g.tap(240, 300)                                   # tap the card: the answer
 assert A().shown()
 t = g.texts()
 assert any('common endeavor' in s for s in t) and 'Again' in t and 'Easy' in t, t
-assert '1m' in t and '6m' in t and '10m' in t and '4d' in t, t      # a new card's intervals
+assert '1m' in t and '6m' in t and '10m' in t and '14d' in t, t     # a new card's intervals (FSRS)
 
 # Good: a learning step of 10 minutes, so the card comes back in this session (4th place)
 rate(3)
 assert front() != first and str(A().state().next) == '1' and int(A().state().new) == 1
-assert 'en_p000.txt' in g.store and re.match(r'^0 \d+ 0 2\.5 1 0\n$', g.store['en_p000.txt']), g.store['en_p000.txt']
+assert 'en_p000.txt' in g.store and re.match(r'^0 \d+ 3\.71 5\.16 1 0 \d+ l\n$', g.store['en_p000.txt']), g.store['en_p000.txt']
 assert 'next=1' in g.store['en_st.txt'] and 'new=1' in g.store['en_st.txt']
 # Undo puts it back
 g.tap(400, 30); g.tap_label('Undo')
@@ -100,9 +100,9 @@ assert '1438 cards    due 0    new 0' in g.texts(), g.texts()
 g.tap(*deck_row('English words B2-C1'))
 assert str(A().screen()) == 'done'
 
-# five days on: the 15 cards are due (Easy = 4 days) and 15 new ones come
+# fifteen days on: the 15 cards are due (Easy on a new card: 14 days) and 15 new ones come
 g.tap(240, 730)
-advance_days(5)
+advance_days(15)
 g.restart()
 assert '1438 cards    due 15    new 15' in g.texts(), g.texts()
 g.tap(*deck_row('English words B2-C1'))
@@ -180,16 +180,50 @@ assert front() == 'cat'
 g.tap(240, 300); rate(4)
 assert front() == 'dog' and 'tvocab_p000.txt' in g.store
 
-# the scheduler: SM-2 like the KOReader plugin
+# the scheduler: FSRS 4.5 with its default parameters, against a separate Python version
+import math
+FW = [0.4872, 1.4003, 3.7145, 13.8206, 5.1618, 1.2298, 0.8975, 0.031, 1.6474, 0.1367, 1.0461,
+      2.1072, 0.0793, 0.3246, 1.587, 0.2272, 2.8755]
+clamp = lambda x: max(1, min(10, x))
+nd = lambda d, g: clamp(FW[7] * FW[4] + (1 - FW[7]) * (d - FW[6] * (g - 3)))
+ivl = lambda s: max(1, min(1000, math.floor(s / (19 / 81) * (0.9 ** (1 / -0.5) - 1) + 0.5)))
+R = lambda t, s: (1 + 19 / 81 * t / s) ** -0.5
+
+
+def py_review(s, d, t, g):
+    r = R(t, s)
+    if g == 1:
+        return min(s, FW[11] * d ** -FW[12] * ((s + 1) ** FW[13] - 1) * math.exp(FW[14] * (1 - r))), nd(d, 1)
+    k = (FW[15] if g == 2 else 1) * (FW[16] if g == 4 else 1)
+    return s * (1 + math.exp(FW[8]) * (11 - d) * s ** -FW[9] * (math.exp(FW[10] * (1 - r)) - 1) * k), nd(d, g)
+
+
 s = A().schedule
 r = s(g.L.table_from({}), 3, 0)
-assert r.due == 600 and r.ivl == 0 and r.reps == 1
-r2 = s(r, 3, 0)
-assert r2.ivl == 1 and r2.due == 86400
-r3 = s(r2, 3, 0)
-assert abs(r3.ivl - 2.5) < 1e-9
-r4 = s(r3, 1, 0)
-assert r4.ivl == 0 and r4.lapses == 1 and abs(r4.ease - 2.3) < 1e-9 and r4.due == 600
+assert r.due == 600 and r.state == 'l' and abs(r.s - FW[2]) < 1e-9 and abs(r.d - FW[4]) < 1e-9
+r2 = s(r, 3, 600)                                   # Good in the steps: graduates, S days
+assert r2.state == 'r' and r2.due == 600 + ivl(FW[2]) * 86400 == 600 + 4 * 86400
+ps, pd, now = r2.s, r2.d, r2.due
+for g_ in (3, 2, 3, 4, 1, 3):                       # reviews on their due day (Again: a lapse)
+    want_s, want_d = py_review(ps, pd, (now - r2.last) / 86400, g_)
+    r2 = s(r2, g_, now)
+    assert abs(r2.s - want_s) < 1e-6 and abs(r2.d - want_d) < 1e-9, (g_, r2.s, want_s)
+    if g_ == 1:
+        assert r2.state == 'l' and r2.due == now + 600 and r2.lapses == 1
+        r2 = s(r2, 3, now + 600)                    # relearned
+        assert r2.state == 'r'
+    else:
+        assert r2.due == now + ivl(want_s) * 86400, (g_, r2.due - now)
+    ps, pd, now = r2.s, r2.d, r2.due
+assert s(g.L.table_from({}), 4, 0).due == 14 * 86400 and s(g.L.table_from({}), 1, 0).due == 60
+big = s(g.L.table_from({'s': 5000, 'd': 1, 'state': 'r', 'last': 0, 'reps': 9, 'lapses': 0}), 4, 0)
+assert big.due == 1000 * 86400                      # at most 1000 days (32-bit numbers)
+
+# progress saved by the SM-2 scheduler (v0.10 and before) is read as FSRS
+g.store['en_p001.txt'] = '3 1761800000 6 2.5 3 0\n5 1761000000 0 1.3 1 1\n'
+p1 = A().prog('en', 1)
+assert p1[3].state == 'r' and p1[3].s == 6 and abs(p1[3].d - 5.2) < 1e-9 and p1[3].last == 1761800000 - 6 * 86400
+assert p1[5].state == 'l' and p1[5].s == 1 and p1[5].d == 10
 assert str(A().span(90)) == '1m' and str(A().span(3 * 86400)) == '3d' and str(A().span(90 * 86400)) == '3mo'
 
 # the lock screen: long-press a deck, Lock screen -> lock_cards.txt and the firmware's own question

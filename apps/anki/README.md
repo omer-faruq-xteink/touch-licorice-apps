@@ -8,9 +8,12 @@ Anki deck converted on a computer.
 - **Tap a deck** to study it. A card shows its front; tap it (or press a side button) for the
   answer, then rate it: **Again / Hard / Good / Easy**. Each button shows when the card comes
   back. Long cards scroll: swipe up, swipe down for the top.
-- Scheduling follows the KOReader Anki Viewer plugin (SM-2 like): new and forgotten cards go
-  through steps of minutes and come back in the same session, then intervals grow by the card's
-  ease factor. Reviews come first, then new cards up to **New/day** (5 to 50, 15 by default).
+- Scheduling is **FSRS** (version 4.5, its default parameters), the open scheduler Anki itself
+  offers: each card has a stability (the days until you would recall it with 90 % chance) and a
+  difficulty, both updated from each answer, so a card comes back just before you would forget
+  it. New and forgotten cards first go through steps of minutes and come back in the same
+  session. Intervals are at most 1000 days. Progress from versions before v0.11 (SM-2) carries
+  over. Reviews come first, then new cards up to **New/day** (5 to 50, 15 by default).
 - **Menu** while studying: **Undo** the last rating, **Add card** (front and back with the
   firmware keyboard), **Delete card** (it never comes back in this deck), back to the **Decks**.
 - **Long-press a deck** to add a card to it. **My cards** is a deck of your own cards only.

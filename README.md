@@ -185,8 +185,8 @@ articles stay on the reader for reading without Wi-Fi. [More](apps/wikipedia/REA
 
 ### Anki
 
-Flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled like the KOReader Anki
-Viewer). Ships with 1438 English words (B2-C1) with example sentences; add and delete your own
+Flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled with FSRS, as in
+Anki). Ships with 1438 English words (B2-C1) with example sentences; add and delete your own
 cards on the reader. Any Anki deck (`.apkg`, e.g. from [AnkiWeb's shared decks](https://ankiweb.net/shared/decks))
 converts on a computer with `apps/anki/apkg2cards.py` into small text files for
 `XTApps/anki/files/`: only the text is kept, so even large decks fit. [More](apps/anki/README.md)
