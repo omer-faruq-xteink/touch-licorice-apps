@@ -1070,11 +1070,20 @@ local HEAD_H, ROW1_H, ROW2_H = 38, 34, 56
 
 local function row_h(r) return r.it and ((r.it.loc and r.it.loc ~= '') and ROW2_H or ROW1_H) or HEAD_H end
 
+-- an event's time on its day, on one line: "10:30 - 11:30", "all day", "... - 09:00" when it began
+-- the day before, "22:00 - ..." when it goes on past midnight
+local function span(it, day)
+  if it.ad then return 'all day' end
+  local a = it.s < day * DAY and '...' or C.hm(it.s)
+  if it.e == it.s then return a end
+  return a .. ' - ' .. (it.e > (day + 1) * DAY and '...' or C.hm(it.e))
+end
+
 -- draws rows from `from` while they fit (gg nil: only measures); -> hits, the first row not drawn
 function V.agenda(gg, env, rows, from, x, y, w, h)
   local hits = {}
   local fs, fm = env.font('small'), env.font('medium')
-  local ls = env.lh('small')
+  local tw = C.width(fs, '00:00 - 00:00') + 16           -- the time column
   local ty, k = y, from
   while k <= #rows do
     local r = rows[k]
@@ -1085,16 +1094,12 @@ function V.agenda(gg, env, rows, from, x, y, w, h)
     if gg then
       if r.it then
         local it = r.it
-        local tm
-        if it.ad then tm = 'all day'
-        elseif it.s < r.day * DAY then tm = '...' .. (it.e < (r.day + 1) * DAY and C.hm(it.e) or '')
-        else tm = C.hm(it.s) end
-        text(gg, x + 8, ty + 4, tm, fs)
-        if not it.ad and it.e > it.s and it.s >= r.day * DAY and it.e <= (r.day + 1) * DAY then
-          text(gg, x + 8, ty + 4 + ls, C.hm(it.e), fs)
-        end
-        text(gg, x + 86, ty + 3, C.fit(fm, it.sum, w - 96), fm)
-        if it.loc and it.loc ~= '' then text(gg, x + 86, ty + 30, C.fit(fs, it.loc, w - 96), fs) end
+        text(gg, x + 6, ty + 6, C.fit(fs, span(it, r.day), tw - 10), fs)
+        text(gg, x + tw, ty + 3, C.fit(fm, it.sum, w - tw - 8), fm)
+        if it.loc and it.loc ~= '' then text(gg, x + tw, ty + 30, C.fit(fs, it.loc, w - tw - 8), fs) end
+        -- a dashed line to the next event of the same day
+        local nxt = rows[k + 1]
+        if nxt and nxt.it and ty + rh + row_h(nxt) <= y + h then hour_line(gg, x + 4, x + w, ty + rh - 1, {}, 12, 8) end
       else
         text(gg, x + 4, ty + 8, day_label(env, r.day), fm)
         gg:line(x, ty + HEAD_H - 4, x + w, ty + HEAD_H - 4)
