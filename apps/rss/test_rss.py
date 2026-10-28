@@ -28,7 +28,7 @@ def fake_request(url):
         return (200, json.dumps(responses['__root__'])) if '__root__' in responses else (404, '{"error":"not found"}')
     for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
         if key in url:
-            return 200, json.dumps(body)
+            return body if isinstance(body, tuple) else (200, json.dumps(body))
     return 404, '{"error":"not found"}'
 
 
@@ -58,7 +58,7 @@ ctx = {
                    remove = function(n) store[n] = nil; return true end,
                    list = function() local t = {} for k in pairs(store) do t[#t + 1] = k end return t end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
-  input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
+  input = M({ text = function(opts, fn) input_opts = opts; pending[#pending + 1] = fn end }),
   net = M({ keep_wifi = function(ms) kept = kept or {}; kept[#kept + 1] = ms end, request = function(opts, fn)
     assert(type(opts.url) == 'string' and type(fn) == 'function')
     last_headers = opts.headers
@@ -289,7 +289,7 @@ tap(50, 20)
 def fonts_of(word):
     return {str(r.f) for r in draw().values() if word in str(r.s)}
 key('back')                                            # list -> menu
-tap(100, 100 + 4 * 70 + 10)                            # Settings
+tap(100, 100 + 5 * 70 + 10)                            # Settings
 SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
 assert any(x.startswith('default') for x in texts()), texts()
 tap(100, SIZE_ROW)
@@ -304,7 +304,7 @@ long_ev(100, row_y(2), 'up', 'long')                   # the preview follows the
 assert fonts_of('Summary sentence.') == {'large'}, fonts_of('Summary sentence.')
 tap_label('Close')
 key('back')
-tap(100, 100 + 4 * 70 + 10)
+tap(100, 100 + 5 * 70 + 10)
 tap(100, SIZE_ROW)                                     # large -> small
 assert g.store['config.txt'].endswith('size=small\nimages=0')
 tap(100, 20)
@@ -313,7 +313,7 @@ tap(100, 56 + 26 + 3 * 58 + 5)
 assert fonts_of('First paragraph') == {'small'} and fonts_of('Article 3') == {'medium'}, (fonts_of('First paragraph'), fonts_of('Article 3'))
 tap(50, 20)
 key('back')
-tap(100, 100 + 4 * 70 + 10)
+tap(100, 100 + 5 * 70 + 10)
 tap(100, SIZE_ROW)                                     # small -> default again
 assert g.store['config.txt'].endswith('size=default\nimages=0')
 tap(100, 20)
@@ -329,7 +329,7 @@ responses['/api/article/104'] = {'id': '104', 'title': 'Article 4', 'feed': 'Fee
         {'n': 2, 'w': 200, 'h': 100, 'src': 'https://images.weserv.nl/?url=BBB&w=200&h=100'}]}
 IMAGES_ROW = 56 + 20 + 5 * 96 + 24 + 10
 key('back')
-tap(100, 100 + 4 * 70 + 10)                            # Settings
+tap(100, 100 + 5 * 70 + 10)                            # Settings
 assert 'off' in texts()
 tap(100, IMAGES_ROW)
 assert g.store['config.txt'].endswith('images=1'), g.store['config.txt']
@@ -357,7 +357,7 @@ texts()                                                # draw the page: the imag
 assert g.images_drawn >= 2, g.images_drawn
 tap(50, 20)
 key('back')
-tap(100, 100 + 4 * 70 + 10)
+tap(100, 100 + 5 * 70 + 10)
 tap(100, IMAGES_ROW)                                   # images off again
 assert g.store['config.txt'].endswith('images=0')
 tap(100, 20)
@@ -422,11 +422,81 @@ tap(100, 56 + 26 + 5); g.flush()
 assert 'kind=feed&page=1&n=12&id=10' in requests[-1], requests[-1]
 assert 'Only one' in texts()
 
+# Back from a feed's articles goes to the feeds, then to the menu
+key('back')
+assert 'Feed A  (3)' in texts(), texts()
+key('back')
+assert 'Tags' in texts() and 'Settings' in texts(), texts()
+# Tags: the tag list is asked only when the row is tapped; a tag opens its articles
+assert not any('/api/tags' in r for r in requests)
+responses['/api/tags'] = {'items': [{'name': 'to read'}, {'name': 'work'}], 'editable': True}
+responses['/api/list?kind=tag'] = {'title': 'to read', 'page': 1, 'has_more': False, 'items': [
+    {'id': '700', 'title': 'Tagged story', 'feed': 'Feed A', 'feed_id': '10', 'date': '', 'read': True, 'starred': False,
+     'tags': ['to read'], 'excerpt': 'tagged'}]}
+tap(100, 100 + 4 * 70 + 10); g.flush()
+assert requests[-1].endswith('/api/tags'), requests[-1]
+t = texts()
+assert 'to read' in t and 'work' in t, t
+tap(100, 56 + 26 + 5); g.flush()
+assert requests[-1].endswith('kind=tag&page=1&n=12&id=to%20read'), requests[-1]
+assert 'Tagged story' in texts() and 'l_tag_to_20read_1.txt' in g.store
+# the preview shows the tags, and Star / Mark unread / Tags
+long_ev(100, row_y(0), 'up', 'long')
+t = texts()
+assert 'Tags: to read' in t and 'Star' in t and 'Mark unread' in t and 'Tags' in t and 'Open' in t, t
+assert recs()['Star'][1] < recs()['Open'][1], recs()
+responses['/api/star/700'] = {'ok': True}
+tap_label('Star'); g.flush()
+assert requests[-1].endswith('/api/star/700?on=1&feed=10'), requests[-1]
+t = texts()
+assert 'Unstar' in t and any(x.endswith('· starred') for x in t) and 'starred' in t, t
+tap_label('Unstar'); g.flush()
+assert requests[-1].endswith('/api/star/700?on=0&feed=10') and 'Star' in texts(), requests[-1]
+responses['/api/mark/700'] = {'ok': True}
+tap_label('Mark unread'); g.flush()
+assert requests[-1].endswith('/api/mark/700?read=0'), requests[-1]
+t = texts()
+assert 'Mark read' in t and any(x.endswith('· unread') for x in t), t
+# Tags: the keyboard starts with the current ones; the line replaces them
+responses['/api/tag/700'] = {'ok': True, 'tags': ['to read', 'later']}
+g.pending = L.table()
+tap_label('Tags')
+assert g.input_opts.value == 'to read', g.input_opts.value
+fn = g.pending[1]; g.pending = L.table()
+fn(g.ctx, 'to read, later'); g.flush()
+assert requests[-1].endswith('/api/tag/700?tags=to%20read%2C%20later'), requests[-1]
+t = texts()
+assert 'Tags: to read, later' in t and 'tags saved' in t, t
+# a Worker signed in with the API key cannot change tags: say what it needs
+responses['/api/tag/700'] = (501, '{"error":"editing tags needs the CommaFeed username and password on the Worker"}')
+tap_label('Tags')
+fn = g.pending[1]; g.pending = L.table()
+fn(g.ctx, 'x'); g.flush()
+t = texts()
+assert 'Worker: tags need the CommaFeed password' in t and 'Tags: to read, later' in t, t
+# open it (marked read), mark it unread, open again from the offline copy: marked read again
+responses['/api/article/700'] = {'id': '700', 'title': 'Tagged story', 'feed': 'Feed A', 'date': '', 'text': 'Tagged text.'}
+tap_label('Open'); g.flush()
+assert requests[-1].endswith('/api/article/700?max=20000&mark=1&full=1') or requests[-1].endswith('/api/article/700?max=20000&mark=1'), requests[-1]
+key('back')
+tap_label('Mark unread'); g.flush()
+tap_label('Open'); g.flush()
+assert requests[-1].endswith('/api/mark/700?read=1') and 'Tagged text.' in texts(), requests[-1]
+n_req = len(requests)
+key('back'); tap_label('Open'); g.flush()                # already read: nothing sent
+assert len(requests) == n_req
+key('back'); key('back')                                 # article -> preview -> list
+key('back')                                              # list -> the tags
+t = texts()
+assert 'to read' in t and 'work' in t, t
+key('back')
+assert 'Settings' in texts()
+
 # basic auth header and full-text switch
 g.cfg_set = L.eval("function() end")
 L.execute("screen_to_settings = function() end")
 key('back'); key('back')
-tap(100, 100 + 4 * 70 + 10)           # Settings
+tap(100, 100 + 5 * 70 + 10)           # Settings
 tap(100, 56 + 20 + 2 * 96 + 24 + 10)  # auth field
 g.pending[1](g.ctx, 'me:pw')
 g.pending = L.table()
@@ -476,7 +546,7 @@ tap(100, 100 + 10); g.flush()
 assert 'acct=1' in requests[-1] and 'Work story' in texts(), (requests[-1], texts())
 assert 'Work story' in str(g.store['l_unread_0_1.txt'])   # the first account keeps the old cache names
 key('back')
-tap(100, 100 + 4 * 70 + 10)                            # Accounts row goes up as well
+tap(100, 100 + 5 * 70 + 10)                            # Accounts row goes up as well
 assert 'Personal' in texts() and 'Unread' not in texts(), texts()
 # offline start: the cached account list still gives the folders
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")

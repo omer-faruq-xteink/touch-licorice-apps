@@ -1,8 +1,8 @@
 -- RSS reader for XTOS Licorice, API 2.9. Talks to a commafeed-opds Worker's JSON API over
 -- HTTPS (ctx.net), decodes with ctx.json and keeps a small offline cache in ctx.storage.
 --
--- Screens: menu (Unread / Starred / All / Feeds / Settings), list (paged, tap an item), article
--- (word-wrapped text, paged), feeds, settings (host, path token, user:pass, full text).
+-- Screens: menu (Unread / Starred / All / Feeds / Tags / Settings), list (paged, tap an item),
+-- article (word-wrapped text, paged), feeds, tags, settings (host, path token, user:pass, full text).
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
 local W, H, TOP = 480, 800, 56
@@ -132,14 +132,26 @@ local preview = nil
 local suppress_up = false     -- the release that ends a long press must not also act as a tap
 local preview_can             -- defined with the preview navigation; draw_preview needs it
 local article_back            -- Back from an article: to its preview if it was opened there
--- feeds screen
+-- feeds and tags screens: the same rows, one name each (a tag's opens its articles)
 local feeds = { items = {}, top = 1 }
+local tags = { items = {}, top = 1 }
+local function names() return screen == 'tags' and tags or feeds end
+local function on_names() return screen == 'feeds' or screen == 'tags' end
 -- article screen
 local art = { id = nil, title = '', feed = '', date = '', lines = {}, starts = { 1 }, page = 1, pages = 1, cached = false }
 local measure_cache = {}
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
 local function note(s) status = tostring(s or '') end
+local function urlenc(s)
+  return (tostring(s):gsub('[^%w%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
+end
+-- an article's tags as one line ("a, b"), from the list item
+local function tag_text(item)
+  local t = {}
+  for _, name in ipairs(type(item.tags) == 'table' and item.tags or {}) do t[#t + 1] = tostring(name) end
+  return table.concat(t, ', ')
+end
 
 local function refresh() pcall(function() ctx.invalidate() end) end
 
@@ -417,7 +429,9 @@ end
 -- Worker says there is more, and appends it; the new rows start on the next screen.
 
 local function list_cache_name(page)
-  return cpre() .. 'l_' .. list.kind .. '_' .. (list.id or '0') .. '_' .. page .. '.txt'
+  -- a tag name may hold any character: hex for anything but letters and digits
+  local id = tostring(list.id or '0'):gsub('[^%w]', function(ch) return string.format('_%02x', ch:byte()) end)
+  return cpre() .. 'l_' .. list.kind .. '_' .. id .. '_' .. page .. '.txt'
 end
 
 
@@ -452,7 +466,7 @@ end
 -- after(ok) runs once the page is in list.items (from the network or the offline cache)
 local function fetch_page(page, append, after, retried)
   local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. LIST_N
-  if list.id then path = path .. '&id=' .. list.id end
+  if list.id then path = path .. '&id=' .. urlenc(list.id) end
   if not append then list.err = nil end
   request(path, function(data, err, raw)
     local ok = false
@@ -500,7 +514,12 @@ local function open_article(item)
   local cached = cache_read(cname)
   if cached then
     local okj, data = pcall(function() return ctx.json:decode(cached) end)
-    if okj and type(data) == 'table' then layout_article(data); art.cached = true; note('cached'); cache_touch(cname); load_page_images(); return end
+    if okj and type(data) == 'table' then
+      layout_article(data); art.cached = true; note('cached'); cache_touch(cname); load_page_images()
+      -- the copy is from an earlier visit: mark it read again if it is unread now (offline: no matter)
+      if not item.read then item.read = true; request('/api/mark/' .. art.id .. '?read=1', function() end, 'marking read') end
+      return
+    end
   end
   request('/api/article/' .. art.id .. '?max=' .. TEXT_MAX .. '&mark=1' .. (cfg.images and '&images=1' or ''), function(data, err, raw)
     if data then
@@ -527,6 +546,22 @@ local function fetch_feeds(retried)
       else note(short(err, 44)); feeds.err = err end
     end
   end)
+end
+
+-- the tag list is asked only when Tags is opened
+local function fetch_tags(retried)
+  screen = 'tags'
+  tags.items, tags.top, tags.err = {}, 1, nil
+  request('/api/tags', function(data, err, raw)
+    if not data and not retried then fetch_tags(true); return end
+    if data then tags.items = data.items or {}; note(''); if raw then cache_write(cpre() .. 'tags.txt', raw) end
+    else
+      local raw2 = cache_read(cpre() .. 'tags.txt')
+      local okj, d2 = pcall(function() return ctx.json:decode(raw2) end)
+      if raw2 and okj and type(d2) == 'table' then tags.items = d2.items or {}; note('offline: ' .. short(err, 30))
+      else note(short(err, 44)); tags.err = err end
+    end
+  end, 'loading tags')
 end
 
 ------------------------------------------------------------------ images
@@ -695,7 +730,7 @@ end
 
 ------------------------------------------------------------------ drawing
 
-local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Settings', 'settings' } }
+local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Tags', 'tags' }, { 'Settings', 'settings' } }
 local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
@@ -744,7 +779,7 @@ local function menu_items()
     items[#items + 1] = { 'Settings', 'settings' }
     return items
   end
-  return { MENU[1], MENU[2], MENU[3], MENU[4], { 'Accounts', 'accounts' } }
+  return { MENU[1], MENU[2], MENU[3], MENU[4], MENU[5], { 'Accounts', 'accounts' } }
 end
 
 local function draw_menu(gg)
@@ -769,11 +804,11 @@ local function draw_preview(gg)
     if ln.s ~= '' then gg:text(b.x + 16 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  for _, btn in ipairs({ preview.prev, preview.open, preview.close, preview.next }) do
+  for _, btn in ipairs({ preview.star, preview.read, preview.tags, preview.prev, preview.open, preview.close, preview.next }) do
     local shown = (btn ~= preview.prev or preview_can(-1)) and (btn ~= preview.next or preview_can(1))
     if shown then
     gg:rect(btn.x, btn.y, btn.w, btn.h)
-    local f = F and F.medium
+    local f = F and (btn.small and F.small or F.medium)
     local okm, tw = pcall(function() return f:measure(btn.label) end)
     tw = (okm and type(tw) == 'number') and tw or #btn.label * 12
     gg:text(btn.x + math.floor((btn.w - tw) / 2), btn.y + 10, btn.label, { font = f })
@@ -803,6 +838,7 @@ end
 
 local function draw_feeds(gg)
   local F = ctx.fonts
+  local feeds = names()
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
@@ -811,7 +847,7 @@ local function draw_feeds(gg)
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
-  if #feeds.items == 0 and not busy() then draw_empty(gg, y, feeds.err, 'no feeds') end
+  if #feeds.items == 0 and not busy() then draw_empty(gg, y, feeds.err, screen == 'tags' and 'no tags yet' or 'no feeds') end
   draw_status(gg)
 end
 
@@ -856,7 +892,7 @@ local function draw_impl(gg)
   gg:clear(0)
   if screen == 'menu' then draw_menu(gg)
   elseif screen == 'list' then draw_list(gg)
-  elseif screen == 'feeds' then draw_feeds(gg)
+  elseif on_names() then draw_feeds(gg)
   elseif screen == 'article' then draw_article(gg)
   elseif screen == 'settings' then draw_settings(gg) end
 end
@@ -910,12 +946,20 @@ local function page_list(delta)
   end
 end
 
+-- Back from a feed's or a tag's articles: to the feeds or tags they were picked from
+local function list_back()
+  if list.kind == 'feed' and #feeds.items > 0 then screen = 'feeds'
+  elseif list.kind == 'tag' and #tags.items > 0 then screen = 'tags'
+  else screen = 'menu' end
+end
+
 local function page_article(delta)
   local p = art.page + delta
   if p >= 1 and p <= art.pages then art.page = p; load_page_images() end
 end
 
 local function page_feeds(delta)
+  local feeds = names()
   local t = feeds.top + delta * LIST_N
   if t >= 1 and t <= #feeds.items then feeds.top = t end
 end
@@ -929,6 +973,7 @@ local function tap(x, y)
         elseif m[2] == 'accounts' then acct = nil
         elseif m[2] == 'settings' then screen = 'settings'
         elseif m[2] == 'feeds' then fetch_feeds()
+        elseif m[2] == 'tags' then fetch_tags()
         else open_list(m[2], nil, m[1]); fetch_list() end
         return
       end
@@ -942,21 +987,26 @@ local function tap(x, y)
   elseif screen == 'list' then
     if y < 46 then
       local b = bar_hit(x, 4)
-      if b == 1 then screen = 'menu' elseif b == 2 then page_list(-1) elseif b == 3 then page_list(1) elseif b == 4 then net_unstick(); fetch_list() end
+      if b == 1 then list_back() elseif b == 2 then page_list(-1) elseif b == 3 then page_list(1) elseif b == 4 then net_unstick(); fetch_list() end
       return
     end
     local r = math.floor((y - (TOP + 26)) / 58) + 1
     local i = list.top + r - 1
     if y >= TOP + 26 and r >= 1 and r <= LIST_N and i <= #list.items then open_article(list.items[i]) end
-  elseif screen == 'feeds' then
+  elseif on_names() then
+    local is_tags = screen == 'tags'
     if y < 46 then
       local b = bar_hit(x, 4)
-      if b == 1 then screen = 'menu' elseif b == 2 then page_feeds(-1) elseif b == 3 then page_feeds(1) elseif b == 4 then net_unstick(); fetch_feeds() end
+      if b == 1 then screen = 'menu' elseif b == 2 then page_feeds(-1) elseif b == 3 then page_feeds(1)
+      elseif b == 4 then net_unstick(); if is_tags then fetch_tags() else fetch_feeds() end end
       return
     end
-    local i = math.floor((y - (TOP + 26)) / 58) + feeds.top
-    local it = feeds.items[i]
-    if it and y >= TOP + 26 then open_list('feed', tostring(it.id), it.name); fetch_list() end
+    local i = math.floor((y - (TOP + 26)) / 58) + names().top
+    local it = names().items[i]
+    if it and y >= TOP + 26 then
+      if is_tags then open_list('tag', tostring(it.name), tostring(it.name)) else open_list('feed', tostring(it.id), it.name) end
+      fetch_list()
+    end
   elseif screen == 'article' then
     if y < 46 then
       local b = bar_hit(x, 4)
@@ -989,15 +1039,17 @@ local function open_preview(item)
   local lines = {}
   local S = st()
   wrap_para(lines, item.title or '', S.title, inner, 0)
-  local meta = ((item.feed or '') ~= '' and (item.feed .. '  ') or '') .. (item.date or '') .. (item.read and '' or '  · unread')
+  local meta = ((item.feed or '') ~= '' and (item.feed .. '  ') or '') .. (item.date or '') .. (item.read and '' or '  · unread') .. (item.starred and '  · starred' or '')
   if meta ~= '' then wrap_para(lines, meta, S.meta, inner, 0) end
+  local tt = tag_text(item)
+  if tt ~= '' then wrap_para(lines, 'Tags: ' .. tt, S.meta, inner, 0) end
   lines[#lines + 1] = { s = '', f = 'small', h = 10, x = 0 }
   local ex = item.excerpt or ''
   if ex ~= '' then wrap_para(lines, ex, S.body, inner, 0) else wrap_para(lines, '(no summary in the feed)', 'small', inner, 0) end
   local btn_h, pad = 44, 16
   -- one size for every article: as tall as the screen allows, with room below it to tap outside
   local h = PREVIEW_BOTTOM - y
-  local max_content = h - pad - pad - btn_h - pad
+  local max_content = h - pad - pad - btn_h - pad - btn_h - pad
   local kept, used = {}, 0
   for _, ln in ipairs(lines) do
     if used + ln.h > max_content then
@@ -1011,9 +1063,14 @@ local function open_preview(item)
   local bw = math.floor((w - 5 * pad) / 4)
   local by = y + h - pad - btn_h
   local function btn(n, label) return { x = x + pad + (n - 1) * (bw + pad), y = by, w = bw, h = btn_h, label = label } end
+  -- a row above: Star, Mark unread / read and Tags, in three wider buttons
+  local bw3 = math.floor((w - 4 * pad) / 3)
+  local function btn3(n, label) return { x = x + pad + (n - 1) * (bw3 + pad), y = by - pad - btn_h, w = bw3, h = btn_h, label = label, small = true } end
   preview = {
     item = item, lines = kept, box = { x = x, y = y, w = w, h = h },
     prev = btn(1, 'Prev'), open = btn(2, 'Open'), close = btn(3, 'Close'), next = btn(4, 'Next'),
+    star = btn3(1, item.starred and 'Unstar' or 'Star'), read = btn3(2, item.read and 'Mark unread' or 'Mark read'),
+    tags = btn3(3, 'Tags'),
   }
 end
 
@@ -1066,8 +1123,49 @@ article_back = function()
   if it and index_of(it) then open_preview(it) end
 end
 
+-- Star, read / unread and tags change the article in CommaFeed; the preview shows the result
+local function after_change(item, ok, done_note, err)
+  if ok then note(done_note) else note(short(err, 44)) end
+  if preview and preview.item == item then open_preview(item) end
+end
+
+local function toggle_star(item)
+  local on = not item.starred
+  local feed = tostring(item.feed_id or '')
+  request('/api/star/' .. urlenc(item.id) .. '?on=' .. (on and '1' or '0') .. (feed:match('^%d+$') and ('&feed=' .. feed) or ''), function(data, err)
+    if data then item.starred = on end
+    after_change(item, data, on and 'starred' or 'star removed', err)
+  end, on and 'starring' or 'removing the star')
+end
+
+local function toggle_read(item)
+  local read = not item.read
+  request('/api/mark/' .. urlenc(item.id) .. '?read=' .. (read and '1' or '0'), function(data, err)
+    if data then item.read = read end
+    after_change(item, data, read and 'marked read' or 'marked unread', err)
+  end, read and 'marking read' or 'marking unread')
+end
+
+-- the firmware keyboard edits the tags as one line, comma-separated; the line replaces them
+local function edit_tags(item)
+  local ok, e = pcall(function()
+    ctx.input:text({ title = 'Tags, separated by commas', value = tag_text(item) }, function(c, v)
+      if type(v) ~= 'string' then refresh(); return end
+      request('/api/tag/' .. urlenc(item.id) .. '?tags=' .. urlenc(v), function(data, err)
+        if data then item.tags = type(data.tags) == 'table' and data.tags or {} end
+        if err and tostring(err):find('HTTP 501', 1, true) then err = 'Worker: tags need the CommaFeed password' end
+        after_change(item, data, 'tags saved', err)
+      end, 'saving tags')
+    end)
+  end)
+  if not ok then note('edit ! ' .. short(e, 30)) end
+end
+
 local function preview_tap(x, y)
-  if inside(preview.prev, x, y) then preview_step(-1)
+  if inside(preview.star, x, y) then toggle_star(preview.item)
+  elseif inside(preview.read, x, y) then toggle_read(preview.item)
+  elseif inside(preview.tags, x, y) then edit_tags(preview.item)
+  elseif inside(preview.prev, x, y) then preview_step(-1)
   elseif inside(preview.next, x, y) then preview_step(1)
   elseif inside(preview.open, x, y) then
     local it = preview.item
@@ -1105,9 +1203,9 @@ function on_input(c, ev)
       end
       local g = ev.gesture
       if g == 'swipe_left' or g == 'swipe_up' then
-        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
+        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
       elseif g == 'swipe_right' or g == 'swipe_down' then
-        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif screen == 'feeds' then page_feeds(-1) end
+        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
       else
         tap(ev.x or 0, ev.y or 0)
       end
@@ -1122,12 +1220,13 @@ function on_input(c, ev)
       if k == 'back' then
         if screen == 'article' then article_back()
         elseif screen == 'settings' then screen = 'menu'; clear_armed = false; load_accounts()
+        elseif screen == 'list' then list_back()
         elseif screen ~= 'menu' then screen = 'menu'
         elseif multi() and acct then acct = nil end
       elseif k == 'right' or k == 'down' then
-        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end
+        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
       elseif k == 'left' or k == 'up' then
-        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif screen == 'feeds' then page_feeds(-1) end
+        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
       end
     end
   end)

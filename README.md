@@ -172,8 +172,9 @@ without the time and battery level (with them it is redrawn every minute). Pages
 ### RSS
 
 Your [CommaFeed](https://www.commafeed.com) account on the reader, as text: **Unread**, **Starred**,
-**All**, by **Feed**. Articles open inside the app, laid out with the system fonts (headings, quotes,
-lists), optionally as full text extracted by the Worker; opening one marks it read. Lists and read
+**All**, by **Feed** and by **Tag**. Articles open inside the app, laid out with the system fonts (headings, quotes,
+lists), optionally as full text extracted by the Worker; opening one marks it read. The long-press preview
+stars an article, marks it unread and edits its tags. Lists and read
 articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
 Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
 

@@ -30,7 +30,9 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
 
 ## Using it
 
-- Menu: **Unread**, **Starred**, **All**, **Feeds** (one subscription at a time), **Settings**.
+- Menu: **Unread**, **Starred**, **All**, **Feeds** (one subscription at a time), **Tags**,
+  **Settings**. **Tags** asks CommaFeed for your tag names when you open it; tap one for its
+  articles (read and unread). Back from a feed's or a tag's articles returns to the feeds or tags.
 - Lists show twelve articles per screen: title, feed and date; `*` marks unread; the header shows
   which rows are on screen and how many are loaded (`13-24 / 24+`, `+` = more on the server).
   **Prev / Next**, the side buttons or a swipe scroll through what is loaded; Next past the last
@@ -45,7 +47,15 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   the Back key returns to the list, on the screen of the article you were looking at (also when
   you close while the next page is still loading). Previews fetch nothing else and mark nothing
   read.
-- Tap an article: it is fetched as text (and marked read in CommaFeed), laid out with the three
+- The preview also shows the article's tags and whether it is starred, with three buttons:
+  **Star** / **Unstar**, **Mark unread** / **Mark read**, and **Tags**, which opens the keyboard
+  with the current tags (`to read, work`); the line you save replaces them. These change the
+  article in CommaFeed at once. Editing tags needs the Worker to sign in to CommaFeed with
+  `COMMAFEED_USER` + `COMMAFEED_PASSWORD`: CommaFeed takes the API key for reading only, so with a
+  key the app says so; starring and the tag lists work either way. Needs the updated rss-opds
+  Worker.
+- Tap an article: it is fetched as text (and marked read in CommaFeed; an offline copy of an
+  article that is unread again is marked read as well), laid out with the three
   system fonts — title large, feed and date small, headings large, quotes and list items indented —
   and paged. Tap the right / left third of the screen, use the side buttons or swipe to turn pages.
 - At start the app asks the account list at once; that small request also brings Wi-Fi up for

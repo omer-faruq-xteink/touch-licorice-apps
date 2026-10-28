@@ -5,6 +5,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Changed
 
 - **New: wallabag** (`wallabag.xtapp`) — your [wallabag](https://wallabag.org) articles as text, from your own server or a hosted one: Unread, Starred, Archive and Tags, the list, preview and article screens of Instapaper, Archive and Star, offline copies. Sign in once with an API client's ID and secret plus your username and password.
+- **RSS** (`rss.xtapp`): **Star**, **Mark unread** / **Mark read** and **Tags** in the long-press preview, which also shows the article's tags; a new **Tags** menu lists your CommaFeed tags and each tag's articles. Back from a feed's or tag's articles returns to that list. Needs the updated rss-opds Worker; editing tags needs the Worker signed in with the CommaFeed username and password.
 
 ## Update
 
@@ -16,6 +17,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `wallabag.xtapp` | new: wallabag |
+| `rss.xtapp` | changed: star, read / unread, tags |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.13.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
