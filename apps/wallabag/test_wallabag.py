@@ -86,6 +86,12 @@ def fake_request(method, url, body, auth):
         return 200, 'Story 5\r\n\r\nFirst line of the long story.\r\nSecond line of it.\r\n'
     if path.startswith('/api/entries/') and path.endswith('.json'):
         i = int(path.split('/')[3].split('.')[0])
+        if method == 'PATCH' and state.get('patch_as_get'):
+            method = 'GET'                              # the reader's PATCH arrived as a plain read
+        if method == 'POST' and parse_qs(body or '').get('_method') == ['PATCH'] and not state.get('no_override'):
+            method = 'PATCH'                            # Symfony's method override
+        elif method == 'POST':
+            return 405, '{"code":405,"message":"No route found: Method Not Allowed (Allow: GET, PATCH, DELETE)"}'
         if method == 'PATCH':
             f = parse_qs(body or '')
             if f.get('archive') == ['1']: archived.add(i)
@@ -291,6 +297,29 @@ t = texts()
 assert any('(offline)' in s for s in t) and 'Story 2' in t, t
 state['down'] = False
 
+# ---- a PATCH that arrives as a read: the server sends the entry unchanged, so the same goes as a
+# POST asking to be taken as a PATCH; when that fails too, the line says so and nothing moves
+state['patch_as_get'] = True
+g = load()
+n0 = len(calls)
+tap(*MENU(0)); g.flush()
+n = len(calls)
+long_press(100, row_y(0))
+tap_label('Archive')
+assert [(c[0], c[2]) for c in calls[n:]] == [('PATCH', 'archive=1'), ('POST', '_method=PATCH&archive=1')], calls[n:]
+assert 1002 in archived, (calls[n:], sorted(archived))
+key('back')
+assert 'Story 2' not in texts()
+state['no_override'] = True
+n = len(calls)
+long_press(100, row_y(0))
+tap_label('Archive')
+assert [c[0] for c in calls[n:]] == ['PATCH', 'POST'] and 1003 not in archived
+key('back')
+assert 'Story 3' in texts() and any(s.startswith('archive: sign-in refused') or s.startswith('archive: HTTP 405') for s in texts()), texts()
+state['patch_as_get'] = state['no_override'] = False
+key('back')
+
 # ---- a server that sends the texts with the list: asked 3 at a time
 state['old'] = True
 g = load()
@@ -299,8 +328,8 @@ tap(*MENU(0)); g.flush()
 asked = [c[1] for c in calls[n:] if '/api/entries.json' in c[1]]
 assert 'perPage=12' in asked[0] and 'perPage=3' in asked[-1], asked
 t = texts()
-assert 'Story 2' in t and 'Story 4' in t and 'Story 5' not in t and any('1-3 / 3+' in s for s in t), t
+assert 'Story 3' in t and 'Story 5' in t and 'Story 6' not in t and any('1-3 / 3+' in s for s in t), t   # Story 2: archived above
 tap(*BAR(2)); g.flush()
-assert 'perPage=3&page=2' in calls[-1][1] and 'Story 5' in texts()
+assert 'perPage=3&page=2' in calls[-1][1] and 'Story 6' in texts()
 state['old'] = False
 print('wallabag tests passed')

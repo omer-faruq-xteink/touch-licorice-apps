@@ -289,12 +289,13 @@ local function fetch_image(url, on_done)
 end
 
 -- an API call; method defaults to GET, form_body (a urlencoded string) goes with PATCH / POST.
--- raw: hand back the body as it is (no JSON). on_done(data, err, body)
-local function request(path, on_done, label, method, form_body, raw)
+-- raw: hand back the body as it is (no JSON); extra: more headers. on_done(data, err, body)
+local function request(path, on_done, label, method, form_body, raw, extra)
   keep_wifi()
   method = method or 'GET'
   local function call(retried)
     local headers = { ['Accept'] = raw and '*/*' or 'application/json', ['Authorization'] = 'Bearer ' .. tok.access }
+    for k, v in pairs(extra or {}) do headers[k] = v end
     local o = { url = base_url() .. path, method = method, headers = headers }
     if method ~= 'GET' then
       headers['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -931,25 +932,41 @@ local function remove_from_list(id)
   if list.top > #list.items and list.top > 1 then list.top = math.max(1, list.top - LIST_N) end
 end
 
+-- Change an entry (PATCH /api/entries/<id>) and check the entry the server sends back: on the
+-- reader a PATCH did not archive anything (it may not go out as a PATCH, and the server then
+-- just answers with the entry). Then the same goes as a POST that asks to be taken as a PATCH
+-- (_method, and the header; wallabag's Symfony honours them). done(ok, err)
+local function patch_entry(id, fields, label, changed, done)
+  local path = '/api/entries/' .. id .. '.json'
+  request(path, function(data, err)
+    if data and changed(data) then done(true); return end
+    request(path, function(d2, err2)
+      if d2 and changed(d2) then done(true); return end
+      done(false, err2 or err or 'the server did not take the change')
+    end, label, 'POST', '_method=PATCH&' .. fields, false, { ['X-HTTP-Method-Override'] = 'PATCH' })
+  end, label, 'PATCH', fields)
+end
+
 local function bookmark_action(act, item)
   if not item then return end
   local id = tostring(item.id)
   if act == 'archive' then
-    request('/api/entries/' .. id .. '.json', function(data, err)
-      if err then note('archive: ' .. short(err, 36)); return end
+    patch_entry(id, 'archive=1', 'archiving', function(d) return yes(d.is_archived) end, function(ok, err)
+      if not ok then note('archive: ' .. short(err, 44)); return end
       note('archived: ' .. short(item.title or '', 30))
       cache_drop({ 'a' .. id .. '.txt', 'a' .. id .. 'i.txt' })
       if list.kind ~= 'archive' then remove_from_list(id) end
-    end, 'archiving', 'PATCH', 'archive=1')
+    end)
   elseif act == 'star' then
     local want = not item.liked
-    request('/api/entries/' .. id .. '.json', function(data, err)
-      if err then note('star: ' .. short(err, 36)); return end
-      item.liked = want
-      item.date = row_meta(item)
-      note(want and 'starred' or 'star removed')
-      if not want and list.kind == 'starred' and not list.id then remove_from_list(id) end
-    end, want and 'starring' or 'removing the star', 'PATCH', 'starred=' .. (want and '1' or '0'))
+    patch_entry(id, 'starred=' .. (want and '1' or '0'), want and 'starring' or 'removing the star',
+      function(d) return yes(d.is_starred) == want end, function(ok, err)
+        if not ok then note('star: ' .. short(err, 46)); return end
+        item.liked = want
+        item.date = row_meta(item)
+        note(want and 'starred' or 'star removed')
+        if not want and list.kind == 'starred' and not list.id then remove_from_list(id) end
+      end)
   end
 end
 
