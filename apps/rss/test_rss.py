@@ -470,7 +470,7 @@ assert 'Mark read' in t and any(x.endswith('· unread') for x in t), t
 responses['/api/tag/700'] = {'ok': True, 'tags': ['to read', 'later'], 'tag_line': 'to read, later'}
 g.pending = L.table()
 tap_label('Tags')
-assert g.input_opts.value == 'to read', g.input_opts.value
+assert g.input_opts.text == 'to read', g.input_opts.text
 fn = g.pending[1]; g.pending = L.table()
 fn(g.ctx, 'to read, later'); g.flush()
 assert requests[-1].endswith('/api/tag/700?tags=to%20read%2C%20later'), requests[-1]

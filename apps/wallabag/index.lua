@@ -1314,7 +1314,7 @@ local function edit_setting(i)
     return
   end
   local ok, err = pcall(function()
-    ctx.input:text({ title = s[2], value = cfg[s[1]] }, function(c, v)
+    ctx.input:text({ title = s[2], text = cfg[s[1]] }, function(c, v)
       if type(v) == 'string' then
         cfg[s[1]] = v:gsub('^%s+', ''):gsub('%s+$', '')
         save_cfg()

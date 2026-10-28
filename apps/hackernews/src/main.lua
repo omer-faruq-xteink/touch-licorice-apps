@@ -589,7 +589,7 @@ end
 ------------------------------------------------------------------ input
 
 local function ask(title, value, fn)
-  ctx.input:text({ title = title, value = value or '' }, function(c, s)
+  ctx.input:text({ title = title, text = value or '' }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
     kit.refresh()

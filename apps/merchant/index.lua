@@ -2649,7 +2649,7 @@ local function choose_amount(title, max, apply, money, ok_label)
       { { '1/4', function() set(max / 4) end }, { '1/2', function() set(max / 2) end },
         { _('Max'), function() set(max) end }, { _('Type'), function()
           pcall(function()
-            ctx.input:text({ title = title, value = tostring(v) }, function(c, s)
+            ctx.input:text({ title = title, text = tostring(v) }, function(c, s)
               local n = tonumber((tostring(s or ''):gsub('[^%d]', '')))
               if n then set(n) end
               refresh()

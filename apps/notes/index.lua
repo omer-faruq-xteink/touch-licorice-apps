@@ -215,7 +215,7 @@ local function refresh() pcall(function() ctx.invalidate() end) end
 
 local function add_text_at(x, y)
   local ok, err = pcall(function()
-    ctx.input:text({ title = 'Text for page ' .. page, value = '' }, function(c, s)
+    ctx.input:text({ title = 'Text for page ' .. page, text = '' }, function(c, s)
       if type(s) == 'string' and #s > 0 then
         items[#items + 1] = { k = 't', x = x, y = y, f = fsize, text = s }
         save_page()

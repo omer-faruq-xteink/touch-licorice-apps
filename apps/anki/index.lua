@@ -728,7 +728,7 @@ end
 
 local function add_card(d)
   local function ask(title, value, fn)
-    ctx.input:text({ title = title, value = value or '' }, function(c, s) pcall(fn, s) ; kit.refresh() end)
+    ctx.input:text({ title = title, text = value or '' }, function(c, s) pcall(fn, s) ; kit.refresh() end)
   end
   ask('New card: front', '', function(front)
     if not front or front == '' then return end

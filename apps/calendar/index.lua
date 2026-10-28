@@ -1542,7 +1542,7 @@ end
 local function host_of(url) return url:match('^%a+://([^/]+)') or url end
 
 local function ask_text(title, value, fn)
-  ctx.input:text({ title = title, value = value or '', max_chars = 400 }, function(c, s)
+  ctx.input:text({ title = title, text = value or '', max_chars = 400 }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
     kit.refresh()

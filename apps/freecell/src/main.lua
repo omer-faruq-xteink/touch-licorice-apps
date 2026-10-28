@@ -249,7 +249,7 @@ local function tap(x, y)
                               { 'Random', function() kit.close(); start(math.random(1, SOLVED_DEALS)) end } },
                             { { 'Number...', function()
                                   kit.close()
-                                  ctx.input:text({ title = 'Deal number (1-32000)', value = tostring(deal) }, function(c, s)
+                                  ctx.input:text({ title = 'Deal number (1-32000)', text = tostring(deal) }, function(c, s)
                                     local n = tonumber(s)
                                     if n and n >= 1 and n <= 32000 then start(math.floor(n)) end
                                     kit.refresh()

@@ -167,7 +167,7 @@ local function press_button(k)
                           { 'Restart', function() kit.close(); pos = K.deal(deal); draw_n = next_draw; history, moves, draws_idle, sel, hint = {}, 0, 0, nil, nil; save() end } },
                         { { 'Number...', function()
                               kit.close()
-                              ctx.input:text({ title = 'Deal number (1-1000000)', value = tostring(deal) }, function(c, s)
+                              ctx.input:text({ title = 'Deal number (1-1000000)', text = tostring(deal) }, function(c, s)
                                 local n = tonumber(s)
                                 if n and n >= 1 and n <= 1000000 then start(math.floor(n)) end
                                 kit.refresh()

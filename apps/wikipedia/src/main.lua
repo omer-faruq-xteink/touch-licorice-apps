@@ -492,7 +492,7 @@ end
 
 local function ask_search()
   local where = source and ('titles in ' .. source.name) or ('Wikipedia, ' .. cfg.lang)
-  ctx.input:text({ title = 'Search ' .. where, value = results_q }, function(c, s)
+  ctx.input:text({ title = 'Search ' .. where, text = results_q }, function(c, s)
     if s and s:match('%S') then search(s) end
     refresh()
   end)
@@ -520,7 +520,7 @@ local function choose_language()
   end
   row[#row + 1] = { 'Other', function()
     kit.close()
-    ctx.input:text({ title = 'Wikipedia language code (en, tr, ...)', value = cfg.lang }, function(c, s)
+    ctx.input:text({ title = 'Wikipedia language code (en, tr, ...)', text = cfg.lang }, function(c, s)
       s = (s or ''):lower():gsub('%s', '')
       if s:match('^[a-z][a-z%-]+$') and #s <= 12 then cfg.lang = s; save_cfg() end
       refresh()

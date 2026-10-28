@@ -147,7 +147,7 @@ local function urlenc(s)
   return (tostring(s):gsub('[^%w%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
 end
 -- an article's tags as one line ("a, b"), from the list item. The Worker sends them as the
--- string tag_line too: the reader's JSON decoder drops the tags array inside list items.
+-- string tag_line too: the preview showed no tags while the Worker sent them as an array.
 local function tag_text(item)
   if type(item.tag_line) == 'string' then return item.tag_line end
   local t = {}
@@ -445,8 +445,8 @@ local function open_list(kind, id, title)
 end
 
 -- Each row's tag_line, read from the answer's text rather than the decoded table: on the reader
--- the tags of list items came through empty although the Worker sent them, so the decoder is
--- not trusted with them. The Worker writes "id" first in every item and "tag_line" after it.
+-- the preview showed no tags while list items carried them as an array, so the decoded table
+-- is not trusted with them. The Worker writes "id" first in every item and "tag_line" after it.
 local function raw_tag_lines(items, raw)
   if type(raw) ~= 'string' then return end
   local found = {}
@@ -945,7 +945,7 @@ local function edit_setting(i)
     return
   end
   local ok, err = pcall(function()
-    ctx.input:text({ title = s[2], value = cfg[s[1]] }, function(c, v)
+    ctx.input:text({ title = s[2], text = cfg[s[1]] }, function(c, v)
       if type(v) == 'string' then cfg[s[1]] = v:gsub('^%s+', ''):gsub('%s+$', ''); save_cfg() end
       refresh()
     end)
@@ -1170,7 +1170,7 @@ local function edit_tags(item)
   -- offline copy of the list has no tag_line)
   if type(item.tag_line) ~= 'string' then note('Reload the list (and update the Worker) first'); return end
   local ok, e = pcall(function()
-    ctx.input:text({ title = 'Tags, separated by commas', value = tag_text(item) }, function(c, v)
+    ctx.input:text({ title = 'Tags, separated by commas', text = tag_text(item) }, function(c, v)
       if type(v) ~= 'string' then refresh(); return end
       request('/api/tag/' .. urlenc(item.id) .. '?tags=' .. urlenc(v), function(data, err)
         if data then item.tag_line = type(data.tag_line) == 'string' and data.tag_line or v end

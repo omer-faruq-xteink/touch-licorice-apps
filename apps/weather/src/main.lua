@@ -103,7 +103,7 @@ local function find_place(q)
 end
 
 local function ask_place()
-  ctx.input:text({ title = 'Place (city or town)', value = '' }, function(c, s)
+  ctx.input:text({ title = 'Place (city or town)', text = '' }, function(c, s)
     if s and s:match('%S') then find_place(s) end
     kit.refresh()
   end)
