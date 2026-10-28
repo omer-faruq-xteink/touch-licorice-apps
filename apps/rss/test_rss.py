@@ -28,12 +28,19 @@ def fake_request(url):
         return (200, json.dumps(responses['__root__'])) if '__root__' in responses else (404, '{"error":"not found"}')
     for key, body in sorted(responses.items(), key=lambda kv: -len(kv[0])):   # most specific first
         if key in url:
-            return body if isinstance(body, tuple) else (200, json.dumps(body))
+            return body if isinstance(body, tuple) else (200, json.dumps(body, separators=(',', ':'), ensure_ascii=False))
     return 404, '{"error":"not found"}'
 
 
 L.globals().py_request = fake_request
-L.globals().py_json_decode = lambda s: L.table_from(json.loads(s), recursive=True)
+def device_decode(s):
+    # as on the reader: the tags of list items come through empty, whatever the Worker sent
+    d = json.loads(s)
+    for it in (d.get('items') or []) if isinstance(d, dict) else []:
+        if isinstance(it, dict) and 'tag_line' in it:
+            it['tag_line'] = ''
+    return L.table_from(d, recursive=True)
+L.globals().py_json_decode = device_decode
 
 L.execute(r'''
 drawn, store = {}, {}
@@ -432,7 +439,7 @@ assert not any('/api/tags' in r for r in requests)
 responses['/api/tags'] = {'items': [{'name': 'to read'}, {'name': 'work'}], 'editable': True}
 responses['/api/list?kind=tag'] = {'title': 'to read', 'page': 1, 'has_more': False, 'items': [
     {'id': '700', 'title': 'Tagged story', 'feed': 'Feed A', 'feed_id': '10', 'date': '', 'read': True, 'starred': False,
-     'tag_line': 'to read', 'excerpt': 'tagged'},
+     'tag_line': 'to read', 'excerpt': 'tagged {braces} "quoted", fine'},
     {'id': '701', 'title': 'Old list row', 'feed': 'Feed A', 'feed_id': '10', 'date': '', 'read': True, 'starred': False,
      'tags': ['kept'], 'excerpt': 'from an older Worker'}]}
 tap(100, 100 + 4 * 70 + 10); g.flush()

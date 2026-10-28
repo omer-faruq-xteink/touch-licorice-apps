@@ -444,8 +444,24 @@ local function open_list(kind, id, title)
   screen = 'list'
 end
 
-local function apply_page(page, data, append)
+-- Each row's tag_line, read from the answer's text rather than the decoded table: on the reader
+-- the tags of list items came through empty although the Worker sent them, so the decoder is
+-- not trusted with them. The Worker writes "id" first in every item and "tag_line" after it.
+local function raw_tag_lines(items, raw)
+  if type(raw) ~= 'string' then return end
+  local found = {}
+  for id, line in raw:gmatch('"id":"(%d+)",[^{}]-"tag_line":"(.-)"[,}]') do
+    found[id] = line
+  end
+  for _, it in ipairs(items) do
+    local line = found[tostring(it.id)]
+    if line then it.tag_line = (line:gsub('\\(.)', '%1')) end
+  end
+end
+
+local function apply_page(page, data, append, raw)
   local items = data.items or {}
+  raw_tag_lines(items, raw)
   if append then
     local seen = {}
     for _, it in ipairs(list.items) do seen[tostring(it.id)] = true end
@@ -477,7 +493,7 @@ local function fetch_page(page, append, after, retried)
       return
     end
     if data then
-      apply_page(page, data, append)
+      apply_page(page, data, append, raw)
       list.title = data.title or list.title
       list.cached = false
       note('')
@@ -487,7 +503,7 @@ local function fetch_page(page, append, after, retried)
       local raw = cache_read(list_cache_name(page))
       local okj, data2 = pcall(function() return ctx.json:decode(raw) end)
       if raw and okj and type(data2) == 'table' then
-        apply_page(page, data2, append)
+        apply_page(page, data2, append, raw)
         list.cached = true
         note('offline: ' .. short(err, 30))
         ok = true
