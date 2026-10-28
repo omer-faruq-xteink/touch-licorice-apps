@@ -522,8 +522,10 @@ local function draw_list(gg)
     if d then m = m .. ' · ' .. d end
     local ago = N.ago(r.time, now)
     if ago ~= '' then m = m .. ' · ' .. ago end
-    gg:text(16, y + 56, kit.short(m, 52), { font = kit.font('small') })
+    -- the meta line follows the title (no gap after a one-line title) and a double rule ends the story
+    gg:text(16, t[2] and y + 56 or y + 32, kit.short(m, 52), { font = kit.font('small') })
     gg:line(16, y + ROW_H - 2, W - 16, y + ROW_H - 2)
+    gg:line(16, y + ROW_H - 1, W - 16, y + ROW_H - 1)
   end
   if #L.rows == 0 and not busy_label() and not status then
     gg:text(16, 200, L.tab == 'find' and 'Tap Find to search.' or 'Nothing here yet: Reload.', { font = kit.font('medium') })
