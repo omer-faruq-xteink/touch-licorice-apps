@@ -1,0 +1,10 @@
+{
+  "app_id": "wallabag",
+  "display_name": "wallabag",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Read your wallabag articles (your own server or a hosted one); archive, star, tags, offline copies",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}

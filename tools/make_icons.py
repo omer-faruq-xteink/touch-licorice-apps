@@ -364,6 +364,12 @@ def tbr(p):
     p.poly([(56, 8), (66, 8), (66, 32), (61, 27), (56, 32)], fill=True)
     p.rect((8, 86, 88, 90), fill=True)
 
+def wallabag(p):
+    # a bag (wallabag: a bag of articles kept to read later) with a "w"
+    p.arc((30, 8, 66, 50), 180, 360, 6)
+    p.rect((12, 28, 84, 90), w=6, r=6)
+    p.text((48, 60), 'w', font('arialbd.ttf', 40))
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -372,7 +378,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
-         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr}
+         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:
