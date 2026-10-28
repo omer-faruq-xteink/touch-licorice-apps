@@ -25,6 +25,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies |
+| **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags through the rss-opds Worker |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
@@ -200,6 +201,16 @@ article screens as Instapaper; **Archive** and **Star** from the preview or the 
 Sign in once with an API client's ID and secret and your username and password (OAuth: then
 refresh tokens). Articles open where you left off on the reader. [More](apps/wallabag/README.md)
 
+### Readwise
+
+Your [Readwise Reader](https://readwise.io/read) library on the reader: **Inbox**, **Later**,
+**Shortlist**, **Archive**, **Feed** and your **Tags**, with the same list, preview and article
+screens as Instapaper. Reading needs only a Reader access token: the app talks to Reader directly.
+**Archive**, **Later** / **Inbox**, editing **tags** and marking a document seen go through your
+rss-opds Worker (the one RSS uses), signed in with the same user and password: Reader changes
+documents only by PATCH, which the reader cannot send. Without the Worker the app only reads.
+[More](apps/readwise/README.md)
+
 ### Hacker News
 
 Top, New, Best, Ask and Show in HN's own order, and search. A story opens with its text (Ask HN) or
@@ -354,7 +365,7 @@ limits and gotchas are in [docs/firmware-notes.md](docs/firmware-notes.md).
 - **e-ink.** The apps draw lightly and trigger a full refresh every few moves to limit ghosting.
 - **Network.** Only the apps that read something online use it, and each talks only to the
   service it names or you enter: RSS and Hacker News to your Worker, Instapaper to
-  www.instapaper.com, wallabag to your server, Calendar to your calendars' addresses, Weather to
+  www.instapaper.com, wallabag to your server, Readwise to readwise.io (changes through your Worker), Calendar to your calendars' addresses, Weather to
   Open-Meteo, Wikipedia to Wikipedia; article pictures come through images.weserv.nl. Nothing
   else leaves the device. Notes needs no permission at all.
 - Other Xteink models (X4, X4 Classic, X3) are untested.

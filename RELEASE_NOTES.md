@@ -4,7 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- Nothing yet.
+- **New: Readwise** (`readwise.xtapp`) — your [Readwise Reader](https://readwise.io/read) library as text: Inbox, Later, Shortlist, Archive, Feed and Tags, the list, preview and article screens of Instapaper, offline copies, and the page you reached kept on the card. Reading needs only a Reader access token. **Archive**, **Later** / **Inbox**, **tags** and marking documents seen go through the rss-opds Worker with the same user and password as RSS (the reader cannot send PATCH, the only way Reader changes a document); update the Worker for its new `/readwise` relay. Without the Worker the app only reads.
 
 ## Update
 
@@ -15,7 +15,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
+| `readwise.xtapp` | new: Readwise Reader |
+| all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
 

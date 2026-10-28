@@ -446,6 +446,15 @@ def wallabag(p):
     # the wallabag logo (apps/wallabag/logo-square.svg, by Maylis Agniel, Free Art License 1.3)
     p.svg(os.path.join(HERE, 'apps', 'wallabag', 'logo-square.svg'), (6, 4, 90, 92))
 
+def readwise(p):
+    # a page of text with one line highlighted: a reading queue that keeps highlights
+    p.rect((14, 8, 82, 88), w=4, r=4)
+    for y, x1 in ((22, 72), (34, 64), (60, 72), (72, 52)):
+        p.line([(24, y), (x1, y)], 3)
+    p.rect((20, 42, 76, 54), fill=True, r=2)
+    p.line([(26, 48), (66, 48)], 3)
+    p.white_rect((26, 47, 66, 49))
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -454,7 +463,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
-         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag}
+         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
+         'readwise': readwise}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

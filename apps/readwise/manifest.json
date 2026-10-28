@@ -1,0 +1,10 @@
+{
+  "app_id": "readwise",
+  "display_name": "Readwise",
+  "version": "0.1.0",
+  "author": "omer-faruq",
+  "description": "Read your Readwise Reader documents; archive, Later and tags through your Worker",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": ["net"]
+}
