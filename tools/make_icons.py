@@ -7,7 +7,7 @@ grid scales the icon to its slot and rounds the corners, so nothing important go
 6 px. xtpack.py packs APP_DIR/icon.png (docs/firmware-notes.md, "App icons").
 """
 import os, sys
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 N, S = 96, 4                      # icon size, supersampling
@@ -21,6 +21,64 @@ def font(name, px):
         except OSError:
             pass
     return ImageFont.load_default()
+
+
+def svg_paths(path):
+    """The filled paths of a simple SVG file (M L H V C S Z, absolute or relative) as lists of
+    polygons in the file's own units: Bezier curves cut into short lines."""
+    import re
+    out = []
+    for d in re.findall(r'<path(?![^>]*fill="none")[^>]*\sd="([^"]*)"', open(path, encoding='utf-8').read()):
+        toks = re.findall(r'[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?', d)
+        polys, poly, i, cmd = [], [], 0, None
+        x = y = sx = sy = 0.0
+        last_c2 = None
+
+        def num():
+            nonlocal i
+            i += 1
+            return float(toks[i - 1])
+
+        def bez(p0, p1, p2, p3):
+            for k in range(1, 13):
+                t = k / 12
+                a, b, c, e = (1 - t) ** 3, 3 * t * (1 - t) ** 2, 3 * t * t * (1 - t), t ** 3
+                poly.append((a * p0[0] + b * p1[0] + c * p2[0] + e * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + e * p3[1]))
+        while i < len(toks):
+            if toks[i].isalpha():
+                cmd = toks[i]
+                i += 1
+                if cmd in 'Zz':
+                    if poly: polys.append(poly)
+                    poly, x, y, last_c2 = [], sx, sy, None
+                    continue
+            rel = cmd.islower()
+            ox, oy = (x, y) if rel else (0.0, 0.0)
+            c = cmd.upper()
+            if c == 'M':
+                if poly: polys.append(poly)
+                x, y = ox + num(), oy + num()
+                sx, sy, poly = x, y, [(x, y)]
+                cmd = 'l' if rel else 'L'                # more pairs after M are lines
+                last_c2 = None
+            elif c == 'L':
+                x, y = ox + num(), oy + num(); poly.append((x, y)); last_c2 = None
+            elif c == 'H':
+                x = ox + num(); poly.append((x, y)); last_c2 = None
+            elif c == 'V':
+                y = oy + num(); poly.append((x, y)); last_c2 = None
+            elif c == 'C':
+                p1 = (ox + num(), oy + num()); p2 = (ox + num(), oy + num()); p3 = (ox + num(), oy + num())
+                bez((x, y), p1, p2, p3); x, y = p3; last_c2 = p2
+            elif c == 'S':
+                p1 = (2 * x - last_c2[0], 2 * y - last_c2[1]) if last_c2 else (x, y)
+                p2 = (ox + num(), oy + num()); p3 = (ox + num(), oy + num())
+                bez((x, y), p1, p2, p3); x, y = p3; last_c2 = p2
+            else:
+                raise ValueError('path command not handled: ' + cmd)
+        if poly: polys.append(poly)
+        out.append(polys)
+    return out
 
 
 class Pen:
@@ -60,6 +118,26 @@ class Pen:
 
     def white_ellipse(self, box):
         self.d.ellipse(self._b(box), fill=255)
+
+    def svg(self, path, box):
+        """an SVG file's filled paths, their outline fitted into box (icon pixels, centred, the
+        shape kept); holes by the even-odd rule"""
+        paths = svg_paths(path)
+        pts = [pt for polys in paths for poly in polys for pt in poly]
+        minx, maxx = min(q[0] for q in pts), max(q[0] for q in pts)
+        miny, maxy = min(q[1] for q in pts), max(q[1] for q in pts)
+        x0, y0, x1, y1 = box
+        k = min((x1 - x0) / (maxx - minx), (y1 - y0) / (maxy - miny))
+        dx = x0 + ((x1 - x0) - (maxx - minx) * k) / 2 - minx * k
+        dy = y0 + ((y1 - y0) - (maxy - miny) * k) / 2 - miny * k
+        mask = Image.new('1', self.im.size, 0)
+        for polys in paths:
+            for poly in polys:
+                if len(poly) < 3: continue
+                layer = Image.new('1', self.im.size, 0)
+                ImageDraw.Draw(layer).polygon([((dx + px * k) * S, (dy + py * k) * S) for px, py in poly], fill=1)
+                mask = ImageChops.logical_xor(mask, layer)
+        self.im.paste(0, mask=mask)
 
     def save(self, path):
         small = self.im.resize((N, N), Image.LANCZOS)
@@ -365,10 +443,8 @@ def tbr(p):
     p.rect((8, 86, 88, 90), fill=True)
 
 def wallabag(p):
-    # a bag (wallabag: a bag of articles kept to read later) with a "w"
-    p.arc((30, 8, 66, 50), 180, 360, 6)
-    p.rect((12, 28, 84, 90), w=6, r=6)
-    p.text((48, 60), 'w', font('arialbd.ttf', 40))
+    # the wallabag logo (apps/wallabag/logo-square.svg, by Maylis Agniel, Free Art License 1.3)
+    p.svg(os.path.join(HERE, 'apps', 'wallabag', 'logo-square.svg'), (6, 4, 90, 92))
 
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,

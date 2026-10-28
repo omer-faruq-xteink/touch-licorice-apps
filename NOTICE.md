@@ -28,6 +28,13 @@ A port of [tbrplanner.koplugin](https://github.com/omer-faruq/tbrplanner.koplugi
 author (its wishlist, planning and calendar, rewritten for the Lua host and the reader's book list).
 The whole TBR Planner app is licensed under the **GNU GPL v3** (`apps/tbr/LICENSE`), not MIT.
 
+## wallabag icon — `apps/wallabag/icon.png`, `apps/wallabag/logo-square.svg`
+
+The icon is the [wallabag logo](https://github.com/wallabag/logo) by Maylis Agniel, drawn at the
+reader's 96x96, 1-bit icon size by `tools/make_icons.py` from `logo-square.svg` (as served by a
+wallabag instance). Both files are under the **Free Art License 1.3** (<https://artlibre.org>),
+not MIT. The wallabag app is not made or endorsed by the wallabag project.
+
 ## Slide Puzzle — `apps/slidepuzzle/`
 
 The game rules and translations (`apps/slidepuzzle/src/slidepuzzle_*.lua`) come from

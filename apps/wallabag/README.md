@@ -49,5 +49,8 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
 
 ## Files
 
+- `icon.png`, from `logo-square.svg`: the [wallabag logo](https://github.com/wallabag/logo) by Maylis
+  Agniel, Free Art License 1.3 (see NOTICE.md).
+
 - `index.lua` — the app (OAuth and the wallabag API v2, HTML-to-text, screens).
 - `test_wallabag.py` — offline test against a fake wallabag server: `python -I apps/wallabag/test_wallabag.py`.
