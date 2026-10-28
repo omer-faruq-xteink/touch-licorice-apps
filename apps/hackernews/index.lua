@@ -885,7 +885,8 @@ function on_draw(c, gg)
     elseif screen == 'thread' then draw_doc(gg, level())
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
-    if line then gg:text(12, BTN_Y - 26, kit.short(line, screen == 'list' and 46 or 34), { font = kit.font('small') }) end
+    -- under the buttons: above them it overlapped the last list row
+    if line then gg:text(12, BTN_Y + BTN_H + 6, kit.short(line, 46), { font = kit.font('small') }) end
     for _k, r in ipairs(button_rects()) do kit.button(gg, r.x, r.y, r.w, r.h, r.b, { font = 'medium' }) end
   end)
   if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
