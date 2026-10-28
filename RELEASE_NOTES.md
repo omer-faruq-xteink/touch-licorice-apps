@@ -1,3 +1,27 @@
+# v0.15.0
+
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301** and **26102401**).
+
+## Changed
+
+- Nothing yet.
+
+## Update
+
+Install the changed packages **over** the installed apps (SD card root → All Files → Install).
+Do not uninstall first: that deletes the app's folder (settings, pages, dictionaries, decks).
+
+## Files
+
+| file | content |
+|---|---|
+| all `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
+| `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
+| `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
+
 # v0.14.0
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301** and **26102401**).
