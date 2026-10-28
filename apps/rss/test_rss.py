@@ -432,7 +432,9 @@ assert not any('/api/tags' in r for r in requests)
 responses['/api/tags'] = {'items': [{'name': 'to read'}, {'name': 'work'}], 'editable': True}
 responses['/api/list?kind=tag'] = {'title': 'to read', 'page': 1, 'has_more': False, 'items': [
     {'id': '700', 'title': 'Tagged story', 'feed': 'Feed A', 'feed_id': '10', 'date': '', 'read': True, 'starred': False,
-     'tags': ['to read'], 'excerpt': 'tagged'}]}
+     'tag_line': 'to read', 'excerpt': 'tagged'},
+    {'id': '701', 'title': 'Old list row', 'feed': 'Feed A', 'feed_id': '10', 'date': '', 'read': True, 'starred': False,
+     'tags': ['kept'], 'excerpt': 'from an older Worker'}]}
 tap(100, 100 + 4 * 70 + 10); g.flush()
 assert requests[-1].endswith('/api/tags'), requests[-1]
 t = texts()
@@ -458,7 +460,7 @@ assert requests[-1].endswith('/api/mark/700?read=0'), requests[-1]
 t = texts()
 assert 'Mark read' in t and any(x.endswith('· unread') for x in t), t
 # Tags: the keyboard starts with the current ones; the line replaces them
-responses['/api/tag/700'] = {'ok': True, 'tags': ['to read', 'later']}
+responses['/api/tag/700'] = {'ok': True, 'tags': ['to read', 'later'], 'tag_line': 'to read, later'}
 g.pending = L.table()
 tap_label('Tags')
 assert g.input_opts.value == 'to read', g.input_opts.value
@@ -474,6 +476,14 @@ fn = g.pending[1]; g.pending = L.table()
 fn(g.ctx, 'x'); g.flush()
 t = texts()
 assert 'Worker: tags need the CommaFeed password' in t and 'Tags: to read, later' in t, t
+# a row without tag_line (older Worker): its tags show, but they are not edited blindly
+tap_label('Next')
+t = texts()
+assert 'Old list row' in t and 'Tags: kept' in t, t
+g.pending = L.table(); n_req = len(requests)
+tap_label('Tags')
+assert len(g.pending) == 0 and len(requests) == n_req and 'Reload the list (and update the Worker) first' in texts(), texts()
+tap_label('Prev')
 # open it (marked read), mark it unread, open again from the offline copy: marked read again
 responses['/api/article/700'] = {'id': '700', 'title': 'Tagged story', 'feed': 'Feed A', 'date': '', 'text': 'Tagged text.'}
 tap_label('Open'); g.flush()

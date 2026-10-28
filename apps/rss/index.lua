@@ -146,8 +146,10 @@ local function note(s) status = tostring(s or '') end
 local function urlenc(s)
   return (tostring(s):gsub('[^%w%-%._~]', function(ch) return string.format('%%%02X', ch:byte()) end))
 end
--- an article's tags as one line ("a, b"), from the list item
+-- an article's tags as one line ("a, b"), from the list item. The Worker sends them as the
+-- string tag_line too: the reader's JSON decoder drops the tags array inside list items.
 local function tag_text(item)
+  if type(item.tag_line) == 'string' then return item.tag_line end
   local t = {}
   for _, name in ipairs(type(item.tags) == 'table' and item.tags or {}) do t[#t + 1] = tostring(name) end
   return table.concat(t, ', ')
@@ -1148,11 +1150,14 @@ end
 
 -- the firmware keyboard edits the tags as one line, comma-separated; the line replaces them
 local function edit_tags(item)
+  -- saving replaces every tag, so only edit tags the list really brought (an older Worker or an
+  -- offline copy of the list has no tag_line)
+  if type(item.tag_line) ~= 'string' then note('Reload the list (and update the Worker) first'); return end
   local ok, e = pcall(function()
     ctx.input:text({ title = 'Tags, separated by commas', value = tag_text(item) }, function(c, v)
       if type(v) ~= 'string' then refresh(); return end
       request('/api/tag/' .. urlenc(item.id) .. '?tags=' .. urlenc(v), function(data, err)
-        if data then item.tags = type(data.tags) == 'table' and data.tags or {} end
+        if data then item.tag_line = type(data.tag_line) == 'string' and data.tag_line or v end
         if err and tostring(err):find('HTTP 501', 1, true) then err = 'Worker: tags need the CommaFeed password' end
         after_change(item, data, 'tags saved', err)
       end, 'saving tags')
