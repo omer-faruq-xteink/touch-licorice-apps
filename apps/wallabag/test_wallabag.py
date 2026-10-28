@@ -3,7 +3,7 @@ answers like a wallabag server (OAuth token endpoint and API v2) and records eve
 Covers signing in from Settings (password grant), the refresh grant when the hour is up and the
 password again when the refresh token is gone, a 401 that signs in once more, the lists (unread,
 starred, archive, a tag) and paging, an article and its position kept on the reader, Star / unstar
-and Archive (PATCH), a long article that falls back to the plain-text export, the offline copies.
+and Archive (a POST taken as a PATCH: the reader never answers a PATCH), a long article that falls back to the plain-text export, the offline copies.
 
   python -I apps/wallabag/test_wallabag.py
 """
@@ -86,8 +86,6 @@ def fake_request(method, url, body, auth):
         return 200, 'Story 5\r\n\r\nFirst line of the long story.\r\nSecond line of it.\r\n'
     if path.startswith('/api/entries/') and path.endswith('.json'):
         i = int(path.split('/')[3].split('.')[0])
-        if method == 'PATCH' and state.get('patch_as_get'):
-            method = 'GET'                              # the reader's PATCH arrived as a plain read
         if method == 'POST' and parse_qs(body or '').get('_method') == ['PATCH'] and not state.get('no_override'):
             method = 'PATCH'                            # Symfony's method override
         elif method == 'POST':
@@ -134,6 +132,7 @@ ctx = {
   qr = M({ encode = function(t) return setmetatable({}, { __index = { width = 33, height = 33, release = function() end } }) end }),
   net = M({ keep_wifi = function() end, request = function(opts, fn)
     local st, body = py_request(opts.method, opts.url, opts.body, opts.headers and opts.headers['Authorization'])
+    if opts.method == 'PATCH' then return M({ cancel = function() end }) end   -- as on the reader: no answer, ever
     pending[#pending + 1] = function() fn(ctx, { status = st, body = body, headers = {} }) end
     return M({ cancel = function() end })
   end }),
@@ -219,18 +218,18 @@ assert len(calls) == n and has('cached') and has(f'3/{pages}'), texts()   # offl
 # Star, then unstar, on the last page
 for _ in range(pages): key('right')
 tap_label('Star')
-assert calls[-1][0] == 'PATCH' and calls[-1][1] == BASE + '/api/entries/1001.json' and calls[-1][2] == 'starred=1', calls[-1]
+assert calls[-1][0] == 'POST' and calls[-1][1] == BASE + '/api/entries/1001.json' and calls[-1][2] == '_method=PATCH&starred=1', calls[-1]
 tap_label('Starred')
-assert calls[-1][2] == 'starred=0' and 1001 not in starred
+assert calls[-1][2] == '_method=PATCH&starred=0' and 1001 not in starred
 tap_label('Star')
 key('back')
 
-# ---- Archive from the preview: PATCH archive=1, the story leaves Unread, its copy goes
+# ---- Archive from the preview: archive=1, the story leaves Unread, its copy goes
 assert 'a1001.txt' in store
 long_press(100, row_y(0))
 assert has('6 min read · Tags: Tech'), texts()
 tap_label('Archive')
-assert calls[-1][0] == 'PATCH' and calls[-1][2] == 'archive=1' and 1001 in archived
+assert calls[-1][0] == 'POST' and calls[-1][2] == '_method=PATCH&archive=1' and 1001 in archived
 key('back')
 assert 'Story 1' not in texts() and store['a1001.txt'] is None
 key('back')
@@ -297,27 +296,17 @@ t = texts()
 assert any('(offline)' in s for s in t) and 'Story 2' in t, t
 state['down'] = False
 
-# ---- a PATCH that arrives as a read: the server sends the entry unchanged, so the same goes as a
-# POST asking to be taken as a PATCH; when that fails too, the line says so and nothing moves
-state['patch_as_get'] = True
+# ---- a server that does not take the method override: the line says so and nothing moves
+state['no_override'] = True
 g = load()
-n0 = len(calls)
 tap(*MENU(0)); g.flush()
 n = len(calls)
 long_press(100, row_y(0))
 tap_label('Archive')
-assert [(c[0], c[2]) for c in calls[n:]] == [('PATCH', 'archive=1'), ('POST', '_method=PATCH&archive=1')], calls[n:]
-assert 1002 in archived, (calls[n:], sorted(archived))
+assert [(c[0], c[2]) for c in calls[n:]] == [('POST', '_method=PATCH&archive=1')] and 1002 not in archived, calls[n:]
 key('back')
-assert 'Story 2' not in texts()
-state['no_override'] = True
-n = len(calls)
-long_press(100, row_y(0))
-tap_label('Archive')
-assert [c[0] for c in calls[n:]] == ['PATCH', 'POST'] and 1003 not in archived
-key('back')
-assert 'Story 3' in texts() and any(s.startswith('archive: sign-in refused') or s.startswith('archive: HTTP 405') for s in texts()), texts()
-state['patch_as_get'] = state['no_override'] = False
+assert 'Story 2' in texts() and any(s.startswith('archive: HTTP 405') for s in texts()), texts()
+state['no_override'] = False
 key('back')
 
 # ---- a server that sends the texts with the list: asked 3 at a time
@@ -328,8 +317,8 @@ tap(*MENU(0)); g.flush()
 asked = [c[1] for c in calls[n:] if '/api/entries.json' in c[1]]
 assert 'perPage=12' in asked[0] and 'perPage=3' in asked[-1], asked
 t = texts()
-assert 'Story 3' in t and 'Story 5' in t and 'Story 6' not in t and any('1-3 / 3+' in s for s in t), t   # Story 2: archived above
+assert 'Story 2' in t and 'Story 4' in t and 'Story 5' not in t and any('1-3 / 3+' in s for s in t), t
 tap(*BAR(2)); g.flush()
-assert 'perPage=3&page=2' in calls[-1][1] and 'Story 6' in texts()
+assert 'perPage=3&page=2' in calls[-1][1] and 'Story 5' in texts()
 state['old'] = False
 print('wallabag tests passed')

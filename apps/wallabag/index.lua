@@ -932,19 +932,16 @@ local function remove_from_list(id)
   if list.top > #list.items and list.top > 1 then list.top = math.max(1, list.top - LIST_N) end
 end
 
--- Change an entry (PATCH /api/entries/<id>) and check the entry the server sends back: on the
--- reader a PATCH did not archive anything (it may not go out as a PATCH, and the server then
--- just answers with the entry). Then the same goes as a POST that asks to be taken as a PATCH
--- (_method, and the header; wallabag's Symfony honours them). done(ok, err)
+-- Change an entry: PATCH /api/entries/<id>. The reader's network never answers a PATCH (the
+-- request hangs until its timeout, probed on 26102401), so it goes as a POST that asks to be
+-- taken as a PATCH: _method=PATCH in the body and the X-HTTP-Method-Override header, which
+-- wallabag's Symfony honours. The entry the server sends back says whether it took the change.
+-- done(ok, err)
 local function patch_entry(id, fields, label, changed, done)
-  local path = '/api/entries/' .. id .. '.json'
-  request(path, function(data, err)
+  request('/api/entries/' .. id .. '.json', function(data, err)
     if data and changed(data) then done(true); return end
-    request(path, function(d2, err2)
-      if d2 and changed(d2) then done(true); return end
-      done(false, err2 or err or 'the server did not take the change')
-    end, label, 'POST', '_method=PATCH&' .. fields, false, { ['X-HTTP-Method-Override'] = 'PATCH' })
-  end, label, 'PATCH', fields)
+    done(false, err or 'the server did not take the change')
+  end, label, 'POST', '_method=PATCH&' .. fields, false, { ['X-HTTP-Method-Override'] = 'PATCH' })
 end
 
 local function bookmark_action(act, item)
