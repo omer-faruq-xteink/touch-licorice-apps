@@ -15,3 +15,8 @@ __pycache__/
 
 # local release staging (attach these files to the GitHub release)
 release/
+
+# the official XTApp docs: a local copy only (invite-only site); README and the script are kept
+docs/xtapp-api/*
+!docs/xtapp-api/README.md
+!docs/xtapp-api/extract_docs.py

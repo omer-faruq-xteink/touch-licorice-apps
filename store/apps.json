@@ -1,0 +1,292 @@
+{
+  "anki": {
+    "name": "Anki",
+    "app_id": "anki",
+    "listing_id": "u_fe86de11270e4d7fabc3c8169eddb3cc",
+    "project_id": "d5ba24db-e60d-4be6-a0d8-2ed2a7896d48",
+    "release_version": "0.1.1",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "calculator": {
+    "name": "Calculator",
+    "app_id": "calculator",
+    "listing_id": "u_ba855a9c35e048a893646fb501ed1dd4",
+    "project_id": "8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "calendar": {
+    "name": "Calendar",
+    "app_id": "calendar",
+    "listing_id": "u_b67d945db0ab44a997f49f7b59ac2d1b",
+    "project_id": "ac2744ef-3e9d-494c-8ee4-3a9ca918932f",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "chess": {
+    "name": "Chess puzzles",
+    "app_id": "chess",
+    "listing_id": "u_3d83a98143704c7a9ae504446dd50101",
+    "project_id": "835f1944-5c56-492c-a83d-f0348e3844cd",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "dict": {
+    "name": "Dictionary",
+    "app_id": "dict",
+    "listing_id": "u_a5c7f6860ecb4e05ac313fcf7fe9a0a3",
+    "project_id": "2f18566f-7cf9-46ee-80bc-bf455514b984",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "freecell": {
+    "name": "FreeCell",
+    "app_id": "freecell",
+    "listing_id": "u_81bf6c4f383b4c27a49ea5c074764420",
+    "project_id": "17ff4ea4-603c-461c-87f2-ce8d6ea38524",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "game2048": {
+    "name": "2048",
+    "app_id": "twentyfortyeight",
+    "listing_id": "u_9d11ac663d3a4bf9882f0845afbb5eec",
+    "project_id": "d2ef365a-0cbc-486a-9188-f2a3588bc7ca",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "hackernews": {
+    "name": "Hacker News",
+    "app_id": "hackernews",
+    "listing_id": "u_8b569131c8c94c05830297a26ec72254",
+    "project_id": "70abf652-40aa-4091-ac58-9dfa81e818a5",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "instapaper": {
+    "name": "Instapaper",
+    "app_id": "instapaper",
+    "listing_id": "u_ac3cdd4ad8b447159cc33fe6c138ddaa",
+    "project_id": "900b4ce0-352d-4960-98d6-2e8c46978cd9",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "klondike": {
+    "name": "Klondike",
+    "app_id": "klondike",
+    "listing_id": "u_42e7055cf9f84888b7a3d22490437d55",
+    "project_id": "cb0f7994-54d7-41a6-963d-fc1fd466c3d6",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "knightstour": {
+    "name": "Knight's Tour",
+    "app_id": "knightstour",
+    "listing_id": "u_9cd96770f048472fa650d97326b4744c",
+    "project_id": "34c4be95-b474-4ee7-8224-ead826489eb8",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "lightsout": {
+    "name": "Lights Out",
+    "app_id": "lightsout",
+    "listing_id": "u_15d1f187763445e6ab8709edb81c9ae4",
+    "project_id": "5cc3b0a4-112a-4124-8f3c-9799f92cf3eb",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "mahjong": {
+    "name": "Mahjong",
+    "app_id": "mahjong",
+    "listing_id": "u_001717b65daa4be59d6f3d169e4dd4c6",
+    "project_id": "3d8374a5-4b5a-403a-941f-caacaed40dd9",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "merchant": {
+    "name": "Merchant",
+    "app_id": "merchant",
+    "listing_id": "u_5b779b19bc9c487da42f92935bfe47c8",
+    "project_id": "42e7380e-eef7-40ee-aa93-1736c028bd0b",
+    "release_version": "2.0.2",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "minesweeper": {
+    "name": "Minesweeper",
+    "app_id": "minesweeper",
+    "listing_id": "u_30d50f4fcffb4070bc73b850e061db6d",
+    "project_id": "0f0322cf-6f46-4bbf-9ca1-01175a6614a7",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "nonogram": {
+    "name": "Nonograms",
+    "app_id": "nonogram",
+    "listing_id": "u_2d2aea09f8a14620a1519c7576624141",
+    "project_id": "9bf0893d-da29-41a1-9fb2-9c9be3fdd561",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "notes": {
+    "name": "Notes",
+    "app_id": "notes",
+    "listing_id": "u_87bf7fe523124e389f09d97a2956d993",
+    "project_id": "10ee478f-e339-4bc9-a0d1-370a22228ec1",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "pegsolitaire": {
+    "name": "Peg Solitaire",
+    "app_id": "pegsolitaire",
+    "listing_id": "u_72dc4dd393db4480bdbefe946d522803",
+    "project_id": "6870b261-a98d-4f66-af51-be27150a7c30",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "readwise": {
+    "name": "Readwise",
+    "app_id": "readwise",
+    "listing_id": "u_4ad5b5be8f5846c082535c2b806e2e67",
+    "project_id": "9f9f4778-901e-4a18-b863-033d9384a44c",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "rss": {
+    "name": "RSS",
+    "app_id": "rss",
+    "listing_id": "u_ab793ec31bec4a66affe7ec5ba71e9aa",
+    "project_id": "89ca4ab2-9fb9-4017-8d88-31973aa0cc7d",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "slidepuzzle": {
+    "name": "Slide Puzzle",
+    "app_id": "slidepuzzle",
+    "listing_id": "u_36d1a5f0a3d04075a2f8368e184435a9",
+    "project_id": "115c852b-a613-4070-adab-d4ec60954c63",
+    "release_version": "1.3.1",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "sokoban": {
+    "name": "Sokoban",
+    "app_id": "sokoban",
+    "listing_id": "u_ebc5d0c6bc664f2cb9b98d4304bdf7c1",
+    "project_id": "be00b928-97d8-49c6-b97c-7852606ef8d8",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "sudoku": {
+    "name": "Sudoku",
+    "app_id": "sudoku",
+    "listing_id": "u_d42fe31d32f64f9b8f91ec1241f25cf8",
+    "project_id": "9fdc3d51-738a-4331-a16f-e6509c7d2aeb",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "suguru": {
+    "name": "Suguru",
+    "app_id": "suguru",
+    "listing_id": "u_cf97c97f38304a9cb6fbdff2450fee46",
+    "project_id": "2901167c-5036-4bdd-b439-d5a7a7ffea8f",
+    "release_version": "0.1.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
+  "tasks": {
+    "name": "Tasks",
+    "app_id": "tasks",
+    "listing_id": "u_85cae7d4e8a84cbe902b72067623adaa",
+    "project_id": "547d9981-6d6c-43a4-878d-612452ce57f0",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "tbr": {
+    "name": "TBR Planner",
+    "app_id": "tbr",
+    "listing_id": "u_911458e9f03b405186a4b18814220627",
+    "project_id": "fa00e2a6-b3c6-4be5-8005-23255a6a91ea",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "wallabag": {
+    "name": "wallabag",
+    "app_id": "wallabag",
+    "listing_id": "u_a2c2addaabf84bd8bee91bd4b85c7c37",
+    "project_id": "e3ab6293-9ad8-4e80-a5b6-433447d65052",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "weather": {
+    "name": "Weather",
+    "app_id": "weather",
+    "listing_id": "u_4063da1ccd8d40aaa5d281008f635f3e",
+    "project_id": "7d246638-873f-49ee-918b-80b6151ef871",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  },
+  "wikipedia": {
+    "name": "Wikipedia",
+    "app_id": "wikipedia",
+    "listing_id": "u_bdbee3035e8547c2bf7234199df59cfa",
+    "project_id": "a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6",
+    "release_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.0",
+    "submitted": "2026-10-29"
+  }
+}

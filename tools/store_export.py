@@ -17,8 +17,10 @@ cloud and submitted from the Developer Center. The archive is Studio's own backu
 Each app has its own folder, which also gets <app>-store-icon-512.png for the publish form (the
 cover and screenshots for the listing go there too).
 
-store/ids.json maps an app to the app_id the store issued at its first submission ("u-xxxxxxxx");
-later exports use it, so a new version uploads as an update of the same store app.
+store/apps.json records what is in the store (tools/store_status.py turns it into
+store/STATUS.md). Its app_id is the one the package carries; the docs say a first submission
+issues "u-xxxxxxxx", but the live packages kept ours (Mahjong: "mahjong"), so an update exports
+with the same app_id and installs as an upgrade.
 """
 import datetime, io, json, os, re, sys, zipfile
 from PIL import Image
@@ -39,7 +41,7 @@ STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8'
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):
 # from a line "-- store: cut" through the next "-- store: end"
 STORE_CUT = re.compile(r'^[ \t]*-- store: cut.*?^[ \t]*-- store: end[^\n]*\n', re.M | re.S)
-IDS = os.path.join(HERE, 'store', 'ids.json')
+APPS = os.path.join(HERE, 'store', 'apps.json')
 # official 2.x manifest fields (Manifest JSON Schema); anything else is dropped
 FIELDS = ('api', 'app_id', 'display_name', 'display_names', 'version', 'author', 'description',
           'entry', 'display', 'requires', 'permissions', 'preload_assets', 'data_files', 'lockscreen')
@@ -95,7 +97,7 @@ def data_files(app, app_dir):
 def manifest_for(app, app_dir, ids):
     src = json.load(open(os.path.join(app_dir, 'manifest.json'), encoding='utf-8'))
     m = {k: src[k] for k in FIELDS if k in src}
-    m['app_id'] = ids.get(app, src['app_id'])
+    m['app_id'] = ids.get(app, {}).get('app_id', src['app_id'])
     m['api'] = STORE_API.get(app, m.get('api', '2.0'))
     m['app_icon_s'] = 'icon'
     # every app here is drawn for the X4 Pro's touch screen; the X4 Classic has only keys
@@ -163,6 +165,6 @@ def export(app, ids, out_dir):
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise SystemExit(__doc__)
-    ids = json.load(open(IDS, encoding='utf-8')) if os.path.isfile(IDS) else {}
+    ids = json.load(open(APPS, encoding='utf-8')) if os.path.isfile(APPS) else {}
     for a in sys.argv[1:]:
         export(a, ids, os.path.join(HERE, 'dist', 'store'))
