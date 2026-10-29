@@ -1,0 +1,80 @@
+0100	e	It was close upon 	one o'clock	 in the morning when Jimmie Dale stopped again - this time before a fashionable dwelling just off Central Park.	The Adventures of Jimmie Dale	Frank L. Packard
+0100	e	He parted from Mr. Dallas a little before 	one o'clock	 on the night of the murder in Madison Square and apparently continued up Fifth Avenue.	A master hand	Richard Dallas
+0100	e	Anybody who comes after 	one o'clock	 may be admitted; before that you will let in no soul save the Marchese Lamberto, in case he should come.	A Siren	Thomas Adolphus Trollope
+0101	n	It was close upon 	one o'clock	 in the morning when Jimmie Dale stopped again - this time before a fashionable dwelling just off Central Park.	The Adventures of Jimmie Dale	Frank L. Packard
+0102	n	It was close upon 	one o'clock	 in the morning when Jimmie Dale stopped again - this time before a fashionable dwelling just off Central Park.	The Adventures of Jimmie Dale	Frank L. Packard
+0103	n	It was close upon 	one o'clock	 in the morning when Jimmie Dale stopped again - this time before a fashionable dwelling just off Central Park.	The Adventures of Jimmie Dale	Frank L. Packard
+0104	n	It was close upon 	one o'clock	 in the morning when Jimmie Dale stopped again - this time before a fashionable dwelling just off Central Park.	The Adventures of Jimmie Dale	Frank L. Packard
+0105	e	It was just 	five minutes past one	 when I drove into our mews."	The Herapath Property	J. S. Fletcher
+0105	e	It was 	five minutes past one	 when, stealing silently along a black lane, and counting against the skyline the same number of buildings she had previously counted on the street from the corner, she entered an equally black yard, and reached the back door of Skarbolov's little store.	The White Moll	Frank L. Packard
+0106	n	It was just 	five minutes past one	 when I drove into our mews."	The Herapath Property	J. S. Fletcher
+0107	n	It was just 	five minutes past one	 when I drove into our mews."	The Herapath Property	J. S. Fletcher
+0108	n	It was just 	five minutes past one	 when I drove into our mews."	The Herapath Property	J. S. Fletcher
+0109	n	It was just 	five minutes past one	 when I drove into our mews."	The Herapath Property	J. S. Fletcher
+0110	e	However that might be, he gave their progress a good margin of space, for it was 	ten minutes past one	 when he turned out of the churchyard.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0110	e	"It is 	ten minutes after one	, and though he has many drawbacks, he has one virtue - punctuality."	The hand of power	Edgar Wallace
+0110	e	At 	ten minutes after one	 precisely Swift appeared upon the ground.	A Republic Without a President, and Other Stories	Herbert D. Ward
+0111	n	However that might be, he gave their progress a good margin of space, for it was 	ten minutes past one	 when he turned out of the churchyard.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0112	n	However that might be, he gave their progress a good margin of space, for it was 	ten minutes past one	 when he turned out of the churchyard.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0113	n	However that might be, he gave their progress a good margin of space, for it was 	ten minutes past one	 when he turned out of the churchyard.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0114	n	However that might be, he gave their progress a good margin of space, for it was 	ten minutes past one	 when he turned out of the churchyard.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0115	e	"On the night of the murder about 	a quarter past one	, I was in the Square gardens watching through the railings at the corner of John Street.	The Midnight Guest	Fred M. White
+0115	e	Away he went at 	quarter-past one	, nor did the volcano in him show any sign of subsidence when he reached the gloom and shadows of No.	The Late Tenant	Louis Tracy
+0115	e	Roland Yorke, taking French leave, had stayed a good hour and a quarter at his dinner, having departed for it at 	a quarter past one	.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0116	n	"On the night of the murder about 	a quarter past one	, I was in the Square gardens watching through the railings at the corner of John Street.	The Midnight Guest	Fred M. White
+0117	e	In 20° 7′ north latitude, and 41° 37′ west longitude, on the 12th of December, at 	seventeen minutes past one	 in the morning, the projectile of the Columbiad fell into the Pacific.	From the Earth to the moon; and, round the moon	Jules Verne
+0117	e	I recollect that it was 	seventeen minutes past one	 precisely when our forward "look-out" discerned the lights of the Diamond Ship upon a far horizon, and Captain Larry burst in upon me with his splendid news.	The Diamond Ship	Max Pemberton
+0118	n	In 20° 7′ north latitude, and 41° 37′ west longitude, on the 12th of December, at 	seventeen minutes past one	 in the morning, the projectile of the Columbiad fell into the Pacific.	From the Earth to the moon; and, round the moon	Jules Verne
+0119	n	In 20° 7′ north latitude, and 41° 37′ west longitude, on the 12th of December, at 	seventeen minutes past one	 in the morning, the projectile of the Columbiad fell into the Pacific.	From the Earth to the moon; and, round the moon	Jules Verne
+0120	e	But it seemed to her that never again would she be able to look at a watch or a clock and find that the hour was anything save 	twenty minutes past one	!	The house without a key	Earl Derr Biggers
+0120	e	It will take him time to arrive here - see, it is 	twenty minutes past one	 - and there are yet some times before he can hither come, be he never so quick.	Dracula	Bram Stoker
+0120	e	Sergeant Tuson, of the City Police, was somewhat surprised, therefore to see a gentleman with a carpet bag come down the steps at 	twenty minutes past one	.	The Memoirs of Sherlock Holmes	Arthur Conan Doyle
+0121	n	But it seemed to her that never again would she be able to look at a watch or a clock and find that the hour was anything save 	twenty minutes past one	!	The house without a key	Earl Derr Biggers
+0122	n	But it seemed to her that never again would she be able to look at a watch or a clock and find that the hour was anything save 	twenty minutes past one	!	The house without a key	Earl Derr Biggers
+0123	e	"It is now 	twenty-three minutes past one	 - - " and suddenly Hanaud was at his side with a curious air of alertness.	The House of the Arrow	A. E. W. Mason
+0124	n	"It is now 	twenty-three minutes past one	 - - " and suddenly Hanaud was at his side with a curious air of alertness.	The House of the Arrow	A. E. W. Mason
+0125	e	He glanced at the clock; the hands pointed to 	twenty-five minutes past one	.	The Secret House	Edgar Wallace
+0126	e	He looked at the clock and saw that the hands now reached 	twenty-six minutes past one	.	The House of the Arrow	A. E. W. Mason
+0127	n	He looked at the clock and saw that the hands now reached 	twenty-six minutes past one	.	The House of the Arrow	A. E. W. Mason
+0128	n	He looked at the clock and saw that the hands now reached 	twenty-six minutes past one	.	The House of the Arrow	A. E. W. Mason
+0129	n	He looked at the clock and saw that the hands now reached 	twenty-six minutes past one	.	The House of the Arrow	A. E. W. Mason
+0130	e	He and Ya-Bon lunched in the neighborhood, strolled along the avenue, without losing sight of the hospital, and called there at 	half-past one	.	The Golden Triangle	Maurice Leblanc
+0130	e	But there's t'other Sawbones, which lives down by the Middlesex Hospital, will meet us at 	half-past one	 at the back of Shoreditch church - - "	The Mysteries of London, v. 1/4	George W. M. Reynolds
+0130	e	And just as 	half-past one	 came, and Polke was wondering what Starmidge would do next, Jones came back and called him into the inner hall.	The Chestermarke Instinct	J. S. Fletcher
+0131	n	He and Ya-Bon lunched in the neighborhood, strolled along the avenue, without losing sight of the hospital, and called there at 	half-past one	.	The Golden Triangle	Maurice Leblanc
+0132	n	He and Ya-Bon lunched in the neighborhood, strolled along the avenue, without losing sight of the hospital, and called there at 	half-past one	.	The Golden Triangle	Maurice Leblanc
+0133	n	He and Ya-Bon lunched in the neighborhood, strolled along the avenue, without losing sight of the hospital, and called there at 	half-past one	.	The Golden Triangle	Maurice Leblanc
+0134	n	He and Ya-Bon lunched in the neighborhood, strolled along the avenue, without losing sight of the hospital, and called there at 	half-past one	.	The Golden Triangle	Maurice Leblanc
+0135	e	"I takes 'im back to Russell Street 'bout 	twenty-five minutes to two	, 'cause I looked at the clock on the Post Office, an' 'e gives me a sov.	The Mystery of a Hansom Cab	Fergus Hume
+0136	n	"I takes 'im back to Russell Street 'bout 	twenty-five minutes to two	, 'cause I looked at the clock on the Post Office, an' 'e gives me a sov.	The Mystery of a Hansom Cab	Fergus Hume
+0137	n	"I takes 'im back to Russell Street 'bout 	twenty-five minutes to two	, 'cause I looked at the clock on the Post Office, an' 'e gives me a sov.	The Mystery of a Hansom Cab	Fergus Hume
+0138	n	"I takes 'im back to Russell Street 'bout 	twenty-five minutes to two	, 'cause I looked at the clock on the Post Office, an' 'e gives me a sov.	The Mystery of a Hansom Cab	Fergus Hume
+0139	n	"I takes 'im back to Russell Street 'bout 	twenty-five minutes to two	, 'cause I looked at the clock on the Post Office, an' 'e gives me a sov.	The Mystery of a Hansom Cab	Fergus Hume
+0140	e	At the hour when the policeman had seen the two men outside Park Square together, Walter Hatherell was still sitting in the Harewood Club, which he never left until 	twenty minutes to two	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0140	e	I make it, by my silver watch that I won in a raffle, 	twenty minutes to two	.	The Mystery of M. Felix	B. L. Farjeon
+0140	e	Glancing at my watch, I found it was already 	twenty minutes to two	.	The Count's Chauffeur	William Le Queux
+0141	n	At the hour when the policeman had seen the two men outside Park Square together, Walter Hatherell was still sitting in the Harewood Club, which he never left until 	twenty minutes to two	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0142	n	At the hour when the policeman had seen the two men outside Park Square together, Walter Hatherell was still sitting in the Harewood Club, which he never left until 	twenty minutes to two	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0143	n	At the hour when the policeman had seen the two men outside Park Square together, Walter Hatherell was still sitting in the Harewood Club, which he never left until 	twenty minutes to two	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0144	n	At the hour when the policeman had seen the two men outside Park Square together, Walter Hatherell was still sitting in the Harewood Club, which he never left until 	twenty minutes to two	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0145	e	Well, it 'ud be just about 	a quarter to two	 this morning when a tall, well-built gentleman comes out of Orchard Street and made for my cab.	The Herapath Property	J. S. Fletcher
+0145	e	Indeed, I couldn't sleep, but sat up working, quite forgetful of the passing hours, till a glance at my watch startled me with the fact that it was 	a quarter of two	.	The Great K. & A. Robbery	Paul Leicester Ford
+0145	e	I called immediately with a note, to say I would call at 	a quarter to two	, and at that hour precisely I returned.	Willing to Die	Joseph Sheridan Le Fanu
+0146	n	Well, it 'ud be just about 	a quarter to two	 this morning when a tall, well-built gentleman comes out of Orchard Street and made for my cab.	The Herapath Property	J. S. Fletcher
+0147	n	Well, it 'ud be just about 	a quarter to two	 this morning when a tall, well-built gentleman comes out of Orchard Street and made for my cab.	The Herapath Property	J. S. Fletcher
+0148	e	I remember glancing at the clock in the hall as I passed through to mount the stairs: it showed 	twelve minutes to two	.	The man in the dark	J. A. Ferguson
+0149	n	I remember glancing at the clock in the hall as I passed through to mount the stairs: it showed 	twelve minutes to two	.	The man in the dark	J. A. Ferguson
+0150	e	"Walter Hatherell, after about ten minutes' absence, that is to say at 	ten minutes to two	, returned to the club room.	The Old Man in the Corner	Baroness Emmuska Orczy
+0150	e	We arrived a little before eight and caught the mail; arriving at Carlisle at 	ten minutes to two o'clock	.	The Mystery of the Sea	Bram Stoker
+0150	e	I looked at my watch, however, before doing this, and remember that the time was 	ten minutes to two	.	The room in the tower, and other stories	E. F. Benson
+0151	n	"Walter Hatherell, after about ten minutes' absence, that is to say at 	ten minutes to two	, returned to the club room.	The Old Man in the Corner	Baroness Emmuska Orczy
+0152	n	"Walter Hatherell, after about ten minutes' absence, that is to say at 	ten minutes to two	, returned to the club room.	The Old Man in the Corner	Baroness Emmuska Orczy
+0153	n	"Walter Hatherell, after about ten minutes' absence, that is to say at 	ten minutes to two	, returned to the club room.	The Old Man in the Corner	Baroness Emmuska Orczy
+0154	n	"Walter Hatherell, after about ten minutes' absence, that is to say at 	ten minutes to two	, returned to the club room.	The Old Man in the Corner	Baroness Emmuska Orczy
+0155	e	"	Five minutes to two o'clock	," replied Mrs. Sampson.	The Mystery of a Hansom Cab	Fergus Hume
+0155	e	It was an idle time, however, with the servants who loitered in the vestibules of Montford House, and they looked with curiosity upon this strange guest who arrived at 	five minutes to two	, limping a little, and holding his left arm in his right hand.	Peter Ruff and the Double Four	E. Phillips Oppenheim
+0155	e	Reuter's domicile, I was at least equally punctual in arriving there; I came the next day at 	five minutes before two	, and on reaching the schoolroom door, before I opened it, I heard a rapid, gabbling sound, which warned me that the "priere du midi" was not yet concluded.	The Professor	Charlotte Brontë
+0156	n	"	Five minutes to two o'clock	," replied Mrs. Sampson.	The Mystery of a Hansom Cab	Fergus Hume
+0157	n	"	Five minutes to two o'clock	," replied Mrs. Sampson.	The Mystery of a Hansom Cab	Fergus Hume
+0158	n	"	Five minutes to two o'clock	," replied Mrs. Sampson.	The Mystery of a Hansom Cab	Fergus Hume
+0159	n	"	Five minutes to two o'clock	," replied Mrs. Sampson.	The Mystery of a Hansom Cab	Fergus Hume

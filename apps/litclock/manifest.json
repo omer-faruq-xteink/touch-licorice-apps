@@ -1,0 +1,11 @@
+{
+  "app_id": "litclock",
+  "display_name": "Literary Clock",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "The time told by a sentence from a public-domain book: a new quote every minute, the time phrase in bold. Works as the lock screen.",
+  "entry": "index.lua",
+  "api": "2.9",
+  "permissions": [],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 60 }
+}

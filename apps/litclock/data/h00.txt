@@ -1,0 +1,85 @@
+0000	e	The next morning Mr. Blake did not start out as usual, and at 	noon	 I received intimation from Fanny that he was preparing to take a journey.	A Strange Disappearance	Anna Katharine Green
+0000	e	At 	noon	 the preparation of the dead was finished, and in the coffin lay the fair young form, beautiful, and in the sweet face a great peace.	The $30,000 Bequest, and Other Stories	Mark Twain
+0000	e	Now when it was hard on 	noon	, and they had lain long in that grassy place, Ralph rose up and stood upon his feet, and made as one listening.	The Well at the World's End	William Morris
+0001	e	And at 	one minute past twelve	 I seized my overcoat and cap and left the room.	The copper box	J. S. Fletcher
+0002	e		Two minutes after twelve	 - Hector still held the pistol against his forehead.	The Mystery of Orcival	Emile Gaboriau
+0003	e	"Mrs. Clemmens received the blow which led to her death at some time previously to 	three minutes past twelve o'clock	 on Tuesday, September 26th.	Hand and Ring	Anna Katharine Green
+0003	e	I knew that the only total eclipse of the sun in the first half of the sixth century occurred on the 21st of June, A.D. 528, O.S., and began at 	3 minutes after 12	 noon.	A Connecticut Yankee in King Arthur's Court	Mark Twain
+0004	e	Ask my friend - the vice-president of the telephone company - to find out for us whether Morphy or anybody else in the prison telephoned at 	four minutes past twelve	 this morning.	Whispering Wires	Henry Leverage
+0005	e	"Then they drove off, and there was no further incident to report until 	five minutes past twelve	, when the other two foreigners came downstairs.	The Albert Gate Mystery Being Further Adventures of Reginald Brett, Barrister Detective	Louis Tracy
+0005	e	The telephone call at 	five minutes past twelve	, and the howler put on soon afterward, checks up.	Whispering Wires	Henry Leverage
+0005	e	At 	five minutes after twelve	 a great car, covered with dust, came slowly along Whitehall.	The fourth plague	Edgar Wallace
+0006	n	"Then they drove off, and there was no further incident to report until 	five minutes past twelve	, when the other two foreigners came downstairs.	The Albert Gate Mystery Being Further Adventures of Reginald Brett, Barrister Detective	Louis Tracy
+0007	e	At forty-	seven minutes past twelve	 they reached the buoy; it was in perfect condition, and must have shifted but little.	From the Earth to the moon; and, round the moon	Jules Verne
+0008	e	Together our eyes fastened on the dial of his watch, where the hands now pointed to 	eight minutes after twelve o'clock	.	In Jeopardy	Van Tassel Sutphen
+0008	e	Today the sacrifice was to take place at about 	eight minutes past twelve	.	Allan Quatermain	H. Rider Haggard
+0009	n	Together our eyes fastened on the dial of his watch, where the hands now pointed to 	eight minutes after twelve o'clock	.	In Jeopardy	Van Tassel Sutphen
+0010	e	Sir Oswald Eversleigh's carriage was at the door of the "Star" at noon; and at 	ten minutes after twelve	 the baronet was on his way back to town.	Run to Earth	M. E. Braddon
+0010	e	And underneath an ill-formed straggling hand had added a superscription in ink that was now brown and wasted: "Martin born January 2, 1801, at 	ten minutes past twelve	, night."	The Nebuly Coat	John Meade Falkner
+0011	n	Sir Oswald Eversleigh's carriage was at the door of the "Star" at noon; and at 	ten minutes after twelve	 the baronet was on his way back to town.	Run to Earth	M. E. Braddon
+0012	n	Sir Oswald Eversleigh's carriage was at the door of the "Star" at noon; and at 	ten minutes after twelve	 the baronet was on his way back to town.	Run to Earth	M. E. Braddon
+0013	n	Sir Oswald Eversleigh's carriage was at the door of the "Star" at noon; and at 	ten minutes after twelve	 the baronet was on his way back to town.	Run to Earth	M. E. Braddon
+0014	n	Sir Oswald Eversleigh's carriage was at the door of the "Star" at noon; and at 	ten minutes after twelve	 the baronet was on his way back to town.	Run to Earth	M. E. Braddon
+0015	e	"Well, as I say, I ought to have been there at 	a quarter past twelve	, but I dare say it was half-past, or it might have been a quarter to one."	The Crow's Inn tragedy	Annie Haynes
+0015	e	It was 	a quarter past twelve	, and there was no train back to Leyland till half-past one - so much Colwyn remembered from his study of the local time-table.	The Shrieking Pit	Arthur J. Rees
+0015	e	She and her father reached home from the theatre about 	a quarter past twelve	, had a bit of supper in the dining-room and went up to bed before one o'clock.	Okewood of the Secret Service	Valentine Williams
+0016	n	"Well, as I say, I ought to have been there at 	a quarter past twelve	, but I dare say it was half-past, or it might have been a quarter to one."	The Crow's Inn tragedy	Annie Haynes
+0017	n	"Well, as I say, I ought to have been there at 	a quarter past twelve	, but I dare say it was half-past, or it might have been a quarter to one."	The Crow's Inn tragedy	Annie Haynes
+0018	n	"Well, as I say, I ought to have been there at 	a quarter past twelve	, but I dare say it was half-past, or it might have been a quarter to one."	The Crow's Inn tragedy	Annie Haynes
+0019	n	"Well, as I say, I ought to have been there at 	a quarter past twelve	, but I dare say it was half-past, or it might have been a quarter to one."	The Crow's Inn tragedy	Annie Haynes
+0020	e	"At 	twenty minutes past twelve	 she descended and crept cautiously into the dining-room, wishing not to disturb her husband if he should be sleeping.	Tempest-Driven	Richard Dowling
+0020	e	"Nothing there," he said, snapping back the case, "except that it stopped at 	twenty past twelve	 - presumably the hour of his death."	The dark eyes of London	Edgar Wallace
+0020	e	He said at about 	twenty minutes past twelve	, and that the prisoner entered his house accompanied by a lady, opening the street door with his latch-key.	The Nine of Hearts	B. L. Farjeon
+0021	n	"At 	twenty minutes past twelve	 she descended and crept cautiously into the dining-room, wishing not to disturb her husband if he should be sleeping.	Tempest-Driven	Richard Dowling
+0022	n	"At 	twenty minutes past twelve	 she descended and crept cautiously into the dining-room, wishing not to disturb her husband if he should be sleeping.	Tempest-Driven	Richard Dowling
+0023	e	A few hours later, at 	twenty-three minutes past twelve	, this same amethyst pendant is discovered clutched in the hand of another man.	The Golden Triangle	Maurice Leblanc
+0023	e	The time, now, was 	twenty-three minutes past twelve	.	The Moonstone	Wilkie Collins
+0024	n	A few hours later, at 	twenty-three minutes past twelve	, this same amethyst pendant is discovered clutched in the hand of another man.	The Golden Triangle	Maurice Leblanc
+0025	e	From the restaurant I drove to the museum, where I loitered, making a final inspection of my arrangements, until 	twenty-five minutes past twelve	.	The Uttermost Farthing	R. Austin Freeman
+0026	n	From the restaurant I drove to the museum, where I loitered, making a final inspection of my arrangements, until 	twenty-five minutes past twelve	.	The Uttermost Farthing	R. Austin Freeman
+0027	n	From the restaurant I drove to the museum, where I loitered, making a final inspection of my arrangements, until 	twenty-five minutes past twelve	.	The Uttermost Farthing	R. Austin Freeman
+0028	n	From the restaurant I drove to the museum, where I loitered, making a final inspection of my arrangements, until 	twenty-five minutes past twelve	.	The Uttermost Farthing	R. Austin Freeman
+0029	n	From the restaurant I drove to the museum, where I loitered, making a final inspection of my arrangements, until 	twenty-five minutes past twelve	.	The Uttermost Farthing	R. Austin Freeman
+0030	e	So, at 	half-past twelve	 to-night she will be at the little garden gate, and if I am promptly at hand, I shall have a reply from Marguerite."	The Count's Millions	Emile Gaboriau
+0030	e	"Between 	half-past twelve	 and one, mind, will be your time; you'll hear the clock strike," was Tod's parting injunction, given in a whisper.	Johnny Ludlow, Second Series	Mrs. Henry Wood
+0030	e	At 	half-past twelve	 Colonel Pironti, whom I knew as His Excellency's secretary, came up the stairs, and of course I allowed him to pass in.	Her Royal Highness	William Le Queux
+0031	n	So, at 	half-past twelve	 to-night she will be at the little garden gate, and if I am promptly at hand, I shall have a reply from Marguerite."	The Count's Millions	Emile Gaboriau
+0032	n	So, at 	half-past twelve	 to-night she will be at the little garden gate, and if I am promptly at hand, I shall have a reply from Marguerite."	The Count's Millions	Emile Gaboriau
+0033	n	So, at 	half-past twelve	 to-night she will be at the little garden gate, and if I am promptly at hand, I shall have a reply from Marguerite."	The Count's Millions	Emile Gaboriau
+0034	n	So, at 	half-past twelve	 to-night she will be at the little garden gate, and if I am promptly at hand, I shall have a reply from Marguerite."	The Count's Millions	Emile Gaboriau
+0035	e	"The same hour as every other civilised human being," snapped the General "at 	twenty-five minutes to one	.	The melody of death	Edgar Wallace
+0035	e	The hands of the clock marked 	twenty-five minutes before one	.	Mrs Peixada	Henry Harland
+0035	e	The hands I noticed pointed to 	twenty-five minutes to one	.	Visible and Invisible	E. F. Benson
+0036	n	"The same hour as every other civilised human being," snapped the General "at 	twenty-five minutes to one	.	The melody of death	Edgar Wallace
+0037	n	"The same hour as every other civilised human being," snapped the General "at 	twenty-five minutes to one	.	The melody of death	Edgar Wallace
+0038	n	"The same hour as every other civilised human being," snapped the General "at 	twenty-five minutes to one	.	The melody of death	Edgar Wallace
+0039	n	"The same hour as every other civilised human being," snapped the General "at 	twenty-five minutes to one	.	The melody of death	Edgar Wallace
+0040	e	It was 	twenty minutes to one	 when Victor Nevill mounted the stairs and opened his door, surprised to see that the gas was lighted in his rooms.	In Friendship's Guise	William Murray Graydon
+0040	e	She deposed that she was sitting up for her lodgers on the night in question, and that they reached home at 	twenty minutes to one	.	The Mysteries of London, v. 4/4	George W. M. Reynolds
+0040	e	When he came, at 	twenty minutes to one	, she was standing at the window, but she did not turn.	The Cost	David Graham Phillips
+0041	n	It was 	twenty minutes to one	 when Victor Nevill mounted the stairs and opened his door, surprised to see that the gas was lighted in his rooms.	In Friendship's Guise	William Murray Graydon
+0042	n	It was 	twenty minutes to one	 when Victor Nevill mounted the stairs and opened his door, surprised to see that the gas was lighted in his rooms.	In Friendship's Guise	William Murray Graydon
+0043	n	It was 	twenty minutes to one	 when Victor Nevill mounted the stairs and opened his door, surprised to see that the gas was lighted in his rooms.	In Friendship's Guise	William Murray Graydon
+0044	n	It was 	twenty minutes to one	 when Victor Nevill mounted the stairs and opened his door, surprised to see that the gas was lighted in his rooms.	In Friendship's Guise	William Murray Graydon
+0045	e	At 	a quarter to one	 he threw his cigarette end over the rail into the water, and turning, made his way to the hotel where Gilbert was staying.	Bernard Treves's Boots	Laurence Clarke
+0045	e	"Look here," he said, "Didn't you send me a note a few minutes ago, asking me to come out to lunch at 	a quarter to one	 and meet you at Lyons'?"	Havoc	E. Phillips Oppenheim
+0045	e	Bring him along and meet me in the room on the top floor where the telephone is at precisely 	fifteen minutes before one o'clock	 today."	The Leak	Jacques Futrelle
+0046	n	At 	a quarter to one	 he threw his cigarette end over the rail into the water, and turning, made his way to the hotel where Gilbert was staying.	Bernard Treves's Boots	Laurence Clarke
+0047	n	At 	a quarter to one	 he threw his cigarette end over the rail into the water, and turning, made his way to the hotel where Gilbert was staying.	Bernard Treves's Boots	Laurence Clarke
+0048	n	At 	a quarter to one	 he threw his cigarette end over the rail into the water, and turning, made his way to the hotel where Gilbert was staying.	Bernard Treves's Boots	Laurence Clarke
+0049	n	At 	a quarter to one	 he threw his cigarette end over the rail into the water, and turning, made his way to the hotel where Gilbert was staying.	Bernard Treves's Boots	Laurence Clarke
+0050	e	About five minutes later - that would be about 	ten minutes to one	 by rough reckoning - a light appeared in the Corinthian's Room - - "	The Dangerfield Talisman	J. J. Connington
+0050	e	"I'll sit here and smoke a pipe; and if you lie quiet till 	ten minutes to one	, you'll have earned the three bob."	The trail of the serpent	M. E. Braddon
+0050	e	But, as you will soon see, it was 	ten minutes to one	 before James Zabel knocked at Loton's door.	Agatha Webb	Anna Katharine Green
+0051	n	About five minutes later - that would be about 	ten minutes to one	 by rough reckoning - a light appeared in the Corinthian's Room - - "	The Dangerfield Talisman	J. J. Connington
+0052	n	About five minutes later - that would be about 	ten minutes to one	 by rough reckoning - a light appeared in the Corinthian's Room - - "	The Dangerfield Talisman	J. J. Connington
+0053	e	But at 	seven minutes to one o'clock	 in the morning a deafening whistling was heard, like that produced by a body of water rushing with great violence.	Twenty Thousand Leagues under the Sea	Jules Verne
+0054	e	At 	six minutes to one	, when the jollity was at its highest -	A Double Barrelled Detective Story	Mark Twain
+0055	e	It was 	five minutes to one	 when he looked first; by five minutes past that shop-window and the Strand itself knew Harry Ringrose no more.	Young Blood	E. W. Hornung
+0055	e	You left your office at 	five minutes of one	, took luncheon alone at the Savarin, and returned to your office at two o'clock.	The Diamond Master	Jacques Futrelle
+0055	e	For look you here - your secretary was talking to us in your room there at less than 	five minutes to one	, and we left her here when we went out on the stroke of one.	The Rayner-Slade Amalgamation	J. S. Fletcher
+0056	n	It was 	five minutes to one	 when he looked first; by five minutes past that shop-window and the Strand itself knew Harry Ringrose no more.	Young Blood	E. W. Hornung
+0057	e	At 	three minutes of one o'clock	 he handed a sheet of blank paper to the operator, and gave him final instructions.	The Leak	Jacques Futrelle
+0057	e	Promise to hold your tongue, and before that clock strikes - it wants 	three minutes of one	 - you're a free woman!'	Wuthering Heights	Emily Brontë
+0058	e	Suddenly, about 	two minutes to one o'clock	, a curious crackling noise was heard, a column of sparks burst high above the steep roof of No.	Number Seventeen	Louis Tracy
+0059	n	Suddenly, about 	two minutes to one o'clock	, a curious crackling noise was heard, a column of sparks burst high above the steep roof of No.	Number Seventeen	Louis Tracy

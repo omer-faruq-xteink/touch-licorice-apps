@@ -1,0 +1,87 @@
+2300	e	It was 	eleven o'clock	 of a bright, moonlight night, and, feeling in no degree sleepy, West seated himself at the window to finish his cigar.	The Case and the Girl	Randall Parrish
+2300	e		Eleven o'clock	 was just striking in the country; every one was naturally abed, and, moreover, the nearest farm-house was half a league away.	Monsieur Lecoq, v. 2	Emile Gaboriau
+2300	e	It was between ten and 	eleven o'clock	 when Mrs. Micawber rose to replace her cap in the whitey-brown paper parcel, and to put on her bonnet.	David Copperfield	Charles Dickens
+2301	n	It was 	eleven o'clock	 of a bright, moonlight night, and, feeling in no degree sleepy, West seated himself at the window to finish his cigar.	The Case and the Girl	Randall Parrish
+2302	n	It was 	eleven o'clock	 of a bright, moonlight night, and, feeling in no degree sleepy, West seated himself at the window to finish his cigar.	The Case and the Girl	Randall Parrish
+2303	n	It was 	eleven o'clock	 of a bright, moonlight night, and, feeling in no degree sleepy, West seated himself at the window to finish his cigar.	The Case and the Girl	Randall Parrish
+2304	n	It was 	eleven o'clock	 of a bright, moonlight night, and, feeling in no degree sleepy, West seated himself at the window to finish his cigar.	The Case and the Girl	Randall Parrish
+2305	e	On hearing my question, Mrs. Potts held up her candle to the face of the old case-clock in the entrance-hall, and called out that it was just 	five minutes past eleven	.	In the Dead of Night	T. W. Speight
+2305	e	At 	five minutes past eleven	, however, a pink-and-white Frenchman, neatly attired, unobtrusive both in manner and deportment, entered the café and seated himself quietly near the door.	The Albert Gate Mystery Being Further Adventures of Reginald Brett, Barrister Detective	Louis Tracy
+2305	e	"There is a train at 	five minutes past eleven	," remarked M. Desormeaux.	Other People's Money	Emile Gaboriau
+2306	n	On hearing my question, Mrs. Potts held up her candle to the face of the old case-clock in the entrance-hall, and called out that it was just 	five minutes past eleven	.	In the Dead of Night	T. W. Speight
+2307	e	"That car went up Hub Hill at 	seven minutes past eleven	 - that means Russell had plenty of time to kill the girl after the rain stopped and to get out on the road and slip on to that running board.	"No Clue!"	James Hay
+2308	n	"That car went up Hub Hill at 	seven minutes past eleven	 - that means Russell had plenty of time to kill the girl after the rain stopped and to get out on the road and slip on to that running board.	"No Clue!"	James Hay
+2309	n	"That car went up Hub Hill at 	seven minutes past eleven	 - that means Russell had plenty of time to kill the girl after the rain stopped and to get out on the road and slip on to that running board.	"No Clue!"	James Hay
+2310	e	I left her humming at the gate, and at 	ten minutes after eleven	 I went out to start her for the factory.	The White Room	Fergus Hume
+2310	e	A clock in a jeweler's window which she passed showed her that it was 	ten minutes after eleven	.	The White Moll	Frank L. Packard
+2310	e	A clock in the small jeweler's shop opposite showed the time - 	ten minutes past eleven	.	The King of Diamonds	Louis Tracy
+2311	n	I left her humming at the gate, and at 	ten minutes after eleven	 I went out to start her for the factory.	The White Room	Fergus Hume
+2312	n	I left her humming at the gate, and at 	ten minutes after eleven	 I went out to start her for the factory.	The White Room	Fergus Hume
+2313	n	I left her humming at the gate, and at 	ten minutes after eleven	 I went out to start her for the factory.	The White Room	Fergus Hume
+2314	n	I left her humming at the gate, and at 	ten minutes after eleven	 I went out to start her for the factory.	The White Room	Fergus Hume
+2315	e	You went down to Fletcherwood by the back road about 	a quarter after eleven	 the night of the robbery in the Greenes' little electric runabout.	The Silent Bullet	Arthur B. Reeve
+2315	e	"The confectioner had just put up his shutters," he replied: "consequently, it must have been between eleven and 	a quarter-past eleven	."	Other People's Money	Emile Gaboriau
+2315	e	At 	a quarter past eleven	 Mrs. Preedy, somewhat later than her wont, bustled out of her house for her nightly gossip with Mrs. Beale.	Great Porter Square	B. L. Farjeon
+2316	n	You went down to Fletcherwood by the back road about 	a quarter after eleven	 the night of the robbery in the Greenes' little electric runabout.	The Silent Bullet	Arthur B. Reeve
+2317	e	Clear of the crowded West End, the road was unhampered by traffic to any great extent, but it was 	seventeen minutes past eleven	 when the cab pulled up before Penge Station.	The river of stars	Edgar Wallace
+2318	e	And the car slowed up, where he rolled off the running board, at 	eighteen minutes past eleven	.	"No Clue!"	James Hay
+2319	n	And the car slowed up, where he rolled off the running board, at 	eighteen minutes past eleven	.	"No Clue!"	James Hay
+2320	e	It was then 	twenty minutes past eleven	 - late enough to make it quite easy for the Count to get rid of me by the excuse that he was in bed.	The Woman in White	Wilkie Collins
+2320	e	At 	twenty minutes past eleven	 the Bradys, who had held the table far beyond the limit by tipping their waiter, began to think it time to pull out.	The Bradys' Chinese Clew; Or, The Secret Dens of Pell Street	Francis Worcester Doughty
+2320	e	It seemed as many years; but it was only 	twenty minutes after eleven	, she had noticed, when she had left the subway on her return a few minutes ago.	The White Moll	Frank L. Packard
+2321	n	It was then 	twenty minutes past eleven	 - late enough to make it quite easy for the Count to get rid of me by the excuse that he was in bed.	The Woman in White	Wilkie Collins
+2322	n	It was then 	twenty minutes past eleven	 - late enough to make it quite easy for the Count to get rid of me by the excuse that he was in bed.	The Woman in White	Wilkie Collins
+2323	n	It was then 	twenty minutes past eleven	 - late enough to make it quite easy for the Count to get rid of me by the excuse that he was in bed.	The Woman in White	Wilkie Collins
+2324	n	It was then 	twenty minutes past eleven	 - late enough to make it quite easy for the Count to get rid of me by the excuse that he was in bed.	The Woman in White	Wilkie Collins
+2325	e	"Hearing a' illegal noise I went down the street at 	twenty-five minutes past eleven	 P.M. on the night of the fifth instinct, Hannah Dominy.	The Mayor of Casterbridge	Thomas Hardy
+2325	e	Colonel Grey came out of the library window at about 	twenty-five minutes past eleven	, after a distressing interview with Lady Loudwater, apparently in a very bad temper.	The Loudwater Mystery	Edgar Jepson
+2325	e	It stood at just 	twenty-five minutes after eleven	.	Three Thousand Dollars	Anna Katharine Green
+2326	n	"Hearing a' illegal noise I went down the street at 	twenty-five minutes past eleven	 P.M. on the night of the fifth instinct, Hannah Dominy.	The Mayor of Casterbridge	Thomas Hardy
+2327	n	"Hearing a' illegal noise I went down the street at 	twenty-five minutes past eleven	 P.M. on the night of the fifth instinct, Hannah Dominy.	The Mayor of Casterbridge	Thomas Hardy
+2328	n	"Hearing a' illegal noise I went down the street at 	twenty-five minutes past eleven	 P.M. on the night of the fifth instinct, Hannah Dominy.	The Mayor of Casterbridge	Thomas Hardy
+2329	n	"Hearing a' illegal noise I went down the street at 	twenty-five minutes past eleven	 P.M. on the night of the fifth instinct, Hannah Dominy.	The Mayor of Casterbridge	Thomas Hardy
+2330	e	They dined comfortably and discreetly, and it was somewhere about 	half-past eleven	 when they turned their faces in the direction of the City.	The Yellow Face	Fred M. White
+2330	e	I told Teague that in quitting the Hutt the previous night at 	half-past eleven	, I had seen Tuff in the lane, and he might have recognised me.	The Master of Greylands	Mrs. Henry Wood
+2330	e	I went into the hotel, had some supper, and at 	half-past eleven	 was back in the gloomy street, which I found was called the Neckarstrasse.	The Red Chancellor	Sir William Magnay
+2331	n	They dined comfortably and discreetly, and it was somewhere about 	half-past eleven	 when they turned their faces in the direction of the City.	The Yellow Face	Fred M. White
+2332	n	They dined comfortably and discreetly, and it was somewhere about 	half-past eleven	 when they turned their faces in the direction of the City.	The Yellow Face	Fred M. White
+2333	n	They dined comfortably and discreetly, and it was somewhere about 	half-past eleven	 when they turned their faces in the direction of the City.	The Yellow Face	Fred M. White
+2334	n	They dined comfortably and discreetly, and it was somewhere about 	half-past eleven	 when they turned their faces in the direction of the City.	The Yellow Face	Fred M. White
+2335	e	Then he reappeared in the concourse, and after further inquiries of various persons, found the gate for the 	11:35 P.M.	 train for New York ("Advanced" time).	The astounding crime on Torrington Road	William Gillette
+2335	e	It was 	twenty-five minutes to twelve	, and of course it was clear enough what was in the wind.	The Adventures of Sherlock Holmes	Arthur Conan Doyle
+2335	e	He even wondered, quakingly, if daylight would not overtake them at their work - when his startled eyes, chancing to fall on a nearby clock-dial, saw that the hour was only 	twenty-five minutes to twelve	.	The Wire Tappers	Arthur Stringer
+2336	n	Then he reappeared in the concourse, and after further inquiries of various persons, found the gate for the 	11:35 P.M.	 train for New York ("Advanced" time).	The astounding crime on Torrington Road	William Gillette
+2337	n	Then he reappeared in the concourse, and after further inquiries of various persons, found the gate for the 	11:35 P.M.	 train for New York ("Advanced" time).	The astounding crime on Torrington Road	William Gillette
+2338	n	Then he reappeared in the concourse, and after further inquiries of various persons, found the gate for the 	11:35 P.M.	 train for New York ("Advanced" time).	The astounding crime on Torrington Road	William Gillette
+2339	n	Then he reappeared in the concourse, and after further inquiries of various persons, found the gate for the 	11:35 P.M.	 train for New York ("Advanced" time).	The astounding crime on Torrington Road	William Gillette
+2340	e	I came in here at about 	twenty to twelve	 and sauntered about the room, pretending to look at the cases as if I'd never seen them before.	Tragedy at Ravensthorpe	J. J. Connington
+2340	e	And it was then 	twenty minutes to twelve	, and I sat out every one of them, waiting, watching the door, listening for a step in the corridor without.	The copper box	J. S. Fletcher
+2340	e	"Anyway," argued Heath, "Cleaver's statement about phoning Odell at 	twenty minutes to twelve	, and a man answering, is verified by Jessup's testimony.	The "Canary" murder case	S. S. Van Dine
+2341	n	I came in here at about 	twenty to twelve	 and sauntered about the room, pretending to look at the cases as if I'd never seen them before.	Tragedy at Ravensthorpe	J. J. Connington
+2342	n	I came in here at about 	twenty to twelve	 and sauntered about the room, pretending to look at the cases as if I'd never seen them before.	Tragedy at Ravensthorpe	J. J. Connington
+2343	e	By the light of his electric lamp he saw that it was 	seventeen minutes to twelve	.	The Teeth of the Tiger	Maurice Leblanc
+2344	n	By the light of his electric lamp he saw that it was 	seventeen minutes to twelve	.	The Teeth of the Tiger	Maurice Leblanc
+2345	e	"I'm told, Lady Loudwater, that you went out through the library window into the garden for a stroll about 	a quarter to twelve	 last night.	The Loudwater Mystery	Edgar Jepson
+2345	e	At 	a quarter to twelve	 I sallied forth to keep my appointment with Jack, having first effected the requisite alteration in my appearance.	The Betrayal of John Fordham	B. L. Farjeon
+2345	e	On the second night after Mr. Keeling's departure for London, about 	a quarter to twelve o'clock	, there was a cry of fire in the town of B - - .	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+2346	n	"I'm told, Lady Loudwater, that you went out through the library window into the garden for a stroll about 	a quarter to twelve	 last night.	The Loudwater Mystery	Edgar Jepson
+2347	n	"I'm told, Lady Loudwater, that you went out through the library window into the garden for a stroll about 	a quarter to twelve	 last night.	The Loudwater Mystery	Edgar Jepson
+2348	n	"I'm told, Lady Loudwater, that you went out through the library window into the garden for a stroll about 	a quarter to twelve	 last night.	The Loudwater Mystery	Edgar Jepson
+2349	n	"I'm told, Lady Loudwater, that you went out through the library window into the garden for a stroll about 	a quarter to twelve	 last night.	The Loudwater Mystery	Edgar Jepson
+2350	e	It was nearly 	ten to twelve	 when I got home, and I reckon it's about twenty minutes' walk from the Castle to the cottage here."	The Loudwater Mystery	Edgar Jepson
+2350	e	I suddenly remembered Alys La Fosse's statement that Cleaver had telephoned to her on Monday night at 	ten minutes to twelve	.	The "Canary" murder case	S. S. Van Dine
+2350	e	Now, what I propose to show is, that Mrs. Clemmens, however or whenever assailed, was still living and unhurt up to 	ten minutes before twelve	 on that same day.	Hand and Ring	Anna Katharine Green
+2351	n	It was nearly 	ten to twelve	 when I got home, and I reckon it's about twenty minutes' walk from the Castle to the cottage here."	The Loudwater Mystery	Edgar Jepson
+2352	n	It was nearly 	ten to twelve	 when I got home, and I reckon it's about twenty minutes' walk from the Castle to the cottage here."	The Loudwater Mystery	Edgar Jepson
+2353	n	It was nearly 	ten to twelve	 when I got home, and I reckon it's about twenty minutes' walk from the Castle to the cottage here."	The Loudwater Mystery	Edgar Jepson
+2354	n	It was nearly 	ten to twelve	 when I got home, and I reckon it's about twenty minutes' walk from the Castle to the cottage here."	The Loudwater Mystery	Edgar Jepson
+2355	e	If I could tell why Mansell fled from Widow Clemmens' house at 	five minutes to twelve	 I might be able to do so, but that fact stumps me.	Hand and Ring	Anna Katharine Green
+2355	e	"You were seen coming out of Miss Odell's apartment and leaving the house by the side door at 	five minutes to twelve	 on Monday night."	The "Canary" murder case	S. S. Van Dine
+2355	e	Janet had been reading to her ladyship, and when the clock pointed to 	five minutes to twelve	 she shut the book and rose to go.	Under Lock and Key	T. W. Speight
+2356	n	If I could tell why Mansell fled from Widow Clemmens' house at 	five minutes to twelve	 I might be able to do so, but that fact stumps me.	Hand and Ring	Anna Katharine Green
+2357	e	It wanted then about 	three minutes to twelve	; and Major Milroy seized the opportunity of explaining what the exhibition was to be, before the exhibition began.	Armadale	Wilkie Collins
+2357	e	At 	three minutes before twelve	 I was stealing down the broad stairway; a single light in the great hall was sufficient only to make the gloom in the corners more intense.	Silent guests	A. E. Forrest
+2358	e	At 	two minutes to twelve	, as the whistle boomed its warning to visitors to go ashore, Haggerty put his hard-palmed hand on Mason's shoulder.	The Voice in the Fog	Harold MacGrath
+2358	e	At 	two minutes before twelve	, then, you were still in this house.	Hand and Ring	Anna Katharine Green
+2358	e	McAllister, happy and sleepy, was blissfully unconscious of being an actor in a drama of vast import to the New York police, but as they reached Forty-third Street he saw by the illuminated clock upon the Grand Central Station that it was 	two minutes to twelve	.	McAllister and His Double	Arthur Cheney Train
+2359	n	At 	two minutes to twelve	, as the whistle boomed its warning to visitors to go ashore, Haggerty put his hard-palmed hand on Mason's shoulder.	The Voice in the Fog	Harold MacGrath

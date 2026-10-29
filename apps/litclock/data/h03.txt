@@ -1,0 +1,80 @@
+0300	e	It was 	three o'clock	 in the morning when the houses outside London did at last begin to exclude the country and to close us in with streets.	Bleak House	Charles Dickens
+0300	e	If you see one of the Hoffs leave the house, don't merely report to me that the old man or the young man left the house about 	three o'clock	.	The Apartment Next Door	William Johnston
+0300	e	There seemed no fog, only a heavy, threatening cloud of night fell suddenly upon the city, and at 	three o'clock	 it might have been midnight.	The Sign of Silence	William Le Queux
+0301	e	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+0302	n	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+0303	n	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+0304	e	The Paris express passes at 	four minutes past three	, and I must catch it.	The Count's Chauffeur	William Le Queux
+0305	e	So it came about that at 	five past three	 on the 16th day of January, with only the clothes we stood up in, Peter and I entered Constantinople.	Greenmantle	John Buchan
+0305	e	Thus disguised she had no fear of being recognised, and arrived at the rendezvous about 	five minutes past three o'clock	.	The Piccadilly Puzzle	Fergus Hume
+0305	e		Five minutes past three	 at the Paddington station, and all the bustle and confusion of a train just in.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+0306	e	Was it 	six minutes after three	 or eleven minutes after three?	The Apartment Next Door	William Johnston
+0307	e	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+0308	n	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+0309	n	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+0310	e	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+0310	e	"Would you mind very much if we didn't start until five or 	ten minutes past three	?"	Through the Wall	Cleveland Moffett
+0310	e	He was not quite sure, but it seemed to be 	ten minutes after three	.	The Four Stragglers	Frank L. Packard
+0311	n	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+0312	n	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+0313	n	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+0314	n	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+0315	e	"Mr. Guy, sir, was at my house, the Sceptre Inn, from five minutes to twelve on Monday night until 	a quarter-past three	 on Tuesday morning."	The Markenmore Mystery	J. S. Fletcher
+0315	e	"The testator had called for me at my office at 	a quarter past three	, and asked me to come with him to his house to meet Doctor Norbury.	The Vanishing Man	R. Austin Freeman
+0315	e	About 	a quarter past three	 Dr. Stern's little landaulet was halted at the same cross-road where a policeman had stopped it nearly three hours earlier.	The Strange Case of Mortimer Fenley	Louis Tracy
+0316	n	"Mr. Guy, sir, was at my house, the Sceptre Inn, from five minutes to twelve on Monday night until 	a quarter-past three	 on Tuesday morning."	The Markenmore Mystery	J. S. Fletcher
+0317	n	"Mr. Guy, sir, was at my house, the Sceptre Inn, from five minutes to twelve on Monday night until 	a quarter-past three	 on Tuesday morning."	The Markenmore Mystery	J. S. Fletcher
+0318	e	"She and friend Ernest went off in the car from the house at about 	eighteen minutes past three	.	Murder in the maze	J. J. Connington
+0319	n	"She and friend Ernest went off in the car from the house at about 	eighteen minutes past three	.	Murder in the maze	J. J. Connington
+0320	e	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+0320	e	It was 	twenty past three	 when we reached our terminus, and after a hasty luncheon at the buffet we pushed on at once to Scotland Yard.	The Memoirs of Sherlock Holmes	Arthur Conan Doyle
+0320	e	The time by my watch was 	twenty minutes past three	, and I suppose the shock to have lasted nearly a minute.	Speeches	Charles Dickens
+0321	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+0322	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+0323	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+0324	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+0325	e	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+0326	n	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+0327	n	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+0328	e	The message was given at 	twenty-eight minutes past three	.	Tracked by Wireless	William Le Queux
+0329	n	The message was given at 	twenty-eight minutes past three	.	Tracked by Wireless	William Le Queux
+0330	e	It was then nearly 	half-past three	 in the morning, and my only object in taking a room was to inform Rayne by telephone of my narrow escape.	The Golden Face	William Le Queux
+0330	e	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+0330	e	At 	half-past three	 Podgers was waiting for me, and opened the front door as I came up the steps, thus saving me the necessity of ringing.	The Triumphs of Eugène Valmont	Robert Barr
+0331	n	It was then nearly 	half-past three	 in the morning, and my only object in taking a room was to inform Rayne by telephone of my narrow escape.	The Golden Face	William Le Queux
+0332	n	It was then nearly 	half-past three	 in the morning, and my only object in taking a room was to inform Rayne by telephone of my narrow escape.	The Golden Face	William Le Queux
+0333	n	It was then nearly 	half-past three	 in the morning, and my only object in taking a room was to inform Rayne by telephone of my narrow escape.	The Golden Face	William Le Queux
+0334	n	It was then nearly 	half-past three	 in the morning, and my only object in taking a room was to inform Rayne by telephone of my narrow escape.	The Golden Face	William Le Queux
+0335	e	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+0336	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+0337	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+0338	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+0339	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+0340	e	It was 	twenty minutes of four	, and the jury were already getting restless, for the trial had developed into a humdrum, cut-and-dried affair.	By Advice of Counsel	Arthur Cheney Train
+0340	e	It is, if my watch tells me the truth, five and 	twenty minutes to four	.	The Vanished Messenger	E. Phillips Oppenheim
+0340	e	The hands of the clock stood at 	twenty minutes of four	.	A Prince to Order	Charles Stokes Wayne
+0341	n	It was 	twenty minutes of four	, and the jury were already getting restless, for the trial had developed into a humdrum, cut-and-dried affair.	By Advice of Counsel	Arthur Cheney Train
+0342	e	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+0343	n	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+0344	n	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+0345	e	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+0345	e	At about 	a quarter to four o'clock	, Laura emerged from her private apartment, and descended to her carriage which was waiting for her.	The Mysteries of London, v. 4/4	George W. M. Reynolds
+0345	e	The constable found him at the cottage, in the act of preparing his dinner, or rather his tea and dinner, at 	a quarter to four	.	The Loudwater Mystery	Edgar Jepson
+0346	n	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+0347	n	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+0348	n	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+0349	n	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+0350	e	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+0350	e	At 	ten minutes to four	 he was back again in Barnes and had left the suspicious-looking ash-stick against the front door, afterwards going to his rooms to snatch a few hours' sleep.	The Bomb-Makers Being Some Curious Records Concerning the Craft and Cunning of Theodore Drost, an Enemy Alien in London, Together with Certain Revelations Regarding His Daughter Ella	William Le Queux
+0350	e	It was at 	ten minutes to four	 that the district attorney electrified every one in the courtroom by calling to the stand a man whose name up to that moment had not been mentioned in the case.	Mrs. Balfame	Gertrude Franklin Horn Atherton
+0351	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+0352	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+0353	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+0354	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+0355	e	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu
+0355	e	It was 	five minutes to four	 as we drew up at the churchyard gate.	Grim Tales	E. Nesbit
+0355	e	There is a narrow and unfrequented path which leads out into the wider way towards the Serpentine, and as I walked, for it yet wanted 	five minutes to four	, the sky was grey and the chill wind caused a faint rustle in the leaves above, precursory of rain.	The looker-on	William Le Queux
+0356	n	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu
+0357	n	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu
+0358	n	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu
+0359	n	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu

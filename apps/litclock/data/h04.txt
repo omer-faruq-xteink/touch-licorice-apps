@@ -1,0 +1,82 @@
+0400	e	The journey to be taken by the waggons next day was a long one into Blackmoor Vale, and at 	four o'clock	 lanterns were moving about the yard.	The Mayor of Casterbridge	Thomas Hardy
+0400	e	It was about 	four o'clock	 in the morning, or nearly twelve hours after his frightful fall, that Marmaduke Heath first woke to consciousness.	Lost Sir Massingberd	James Payn
+0400	e	He got up at 	four o'clock	, and had nearly completed his toilet, when the servant brought the soda and brandy prescribed by Harcourt Lowther.	Only a clod	M. E. Braddon
+0401	n	The journey to be taken by the waggons next day was a long one into Blackmoor Vale, and at 	four o'clock	 lanterns were moving about the yard.	The Mayor of Casterbridge	Thomas Hardy
+0402	e	Varney read the announcement with a faint smile, glanced again at his watch, which stood at 	two minutes past four	, and dropped the letter into the box.	The shadow of the Wolf	R. Austin Freeman
+0403	n	Varney read the announcement with a faint smile, glanced again at his watch, which stood at 	two minutes past four	, and dropped the letter into the box.	The shadow of the Wolf	R. Austin Freeman
+0404	n	Varney read the announcement with a faint smile, glanced again at his watch, which stood at 	two minutes past four	, and dropped the letter into the box.	The shadow of the Wolf	R. Austin Freeman
+0405	e	They waited till 	five minutes past four	, but the party they wos egspectin' didn't turn up.	The Betrayal of John Fordham	B. L. Farjeon
+0405	e	"Then they left, at exactly thirty-	five minutes past four	.	Arsène Lupin intervenes	Maurice Leblanc
+0405	e	I got my cue at 	five minutes past four	 the next morning.	The Corbin necklace	Henry Kitchell Webster
+0406	n	They waited till 	five minutes past four	, but the party they wos egspectin' didn't turn up.	The Betrayal of John Fordham	B. L. Farjeon
+0407	n	They waited till 	five minutes past four	, but the party they wos egspectin' didn't turn up.	The Betrayal of John Fordham	B. L. Farjeon
+0408	n	They waited till 	five minutes past four	, but the party they wos egspectin' didn't turn up.	The Betrayal of John Fordham	B. L. Farjeon
+0409	n	They waited till 	five minutes past four	, but the party they wos egspectin' didn't turn up.	The Betrayal of John Fordham	B. L. Farjeon
+0410	e	At 	ten minutes past four	 she was saying good-by to a group of friends who were vainly urging her to remain longer.	Miss Billy's Decision	Eleanor H. Porter
+0410	e	At 	ten minutes past four	 Triffitt, who had just finished his work, lifted his head to see a messenger-boy fling open the door of the reporter's room and cast his eyes round.	The Herapath Property	J. S. Fletcher
+0410	e	"It's 	ten minutes past four	," remarked Malcolm Sage coolly, as he glanced at his wrist-watch.	Malcolm Sage, Detective	Herbert George Jenkins
+0411	e	The first train for Paris left Meulan at 	eleven minutes past four	 in the morning.	The Triumphs of Eugène Valmont	Robert Barr
+0412	n	The first train for Paris left Meulan at 	eleven minutes past four	 in the morning.	The Triumphs of Eugène Valmont	Robert Barr
+0413	n	The first train for Paris left Meulan at 	eleven minutes past four	 in the morning.	The Triumphs of Eugène Valmont	Robert Barr
+0414	n	The first train for Paris left Meulan at 	eleven minutes past four	 in the morning.	The Triumphs of Eugène Valmont	Robert Barr
+0415	e	At 	4:15 o'clock	 he called from a way station, saying that he had found the engine and would come back at once for the rest of the train.	Walker of the Secret Service	Melville Davisson Post
+0415	e	At precisely 	a quarter past four	, nothing having happened in the meantime but a steady rush of business, Laverick ordered a taxicab to be summoned.	Havoc	E. Phillips Oppenheim
+0415	e	"There were two witnesses swearing positively that old Brooks' will was in Mr. Wethered's keeping when that gentleman left the Fitzwilliam mansion at 	a quarter past four	.	The Old Man in the Corner	Baroness Emmuska Orczy
+0416	n	At 	4:15 o'clock	 he called from a way station, saying that he had found the engine and would come back at once for the rest of the train.	Walker of the Secret Service	Melville Davisson Post
+0417	n	At 	4:15 o'clock	 he called from a way station, saying that he had found the engine and would come back at once for the rest of the train.	Walker of the Secret Service	Melville Davisson Post
+0418	n	At 	4:15 o'clock	 he called from a way station, saying that he had found the engine and would come back at once for the rest of the train.	Walker of the Secret Service	Melville Davisson Post
+0419	n	At 	4:15 o'clock	 he called from a way station, saying that he had found the engine and would come back at once for the rest of the train.	Walker of the Secret Service	Melville Davisson Post
+0420	e	At 	twenty minutes after four	 two projectiles struck a house in the rue de Bac, and a moment later the first shell fell in the Latin Quarter.	The King in Yellow	Robert W. Chambers
+0420	e	But I should say that it was about four or five minutes before the boy got there - say about five-and-	twenty minutes past four	.	Cleek of Scotland Yard	Thomas W. Hanshew
+0420	e	All this, however, occupied but a few minutes, and at 	twenty minutes past four	 Mr. Daubeny was on his legs.	Phineas Redux	Anthony Trollope
+0421	n	At 	twenty minutes after four	 two projectiles struck a house in the rue de Bac, and a moment later the first shell fell in the Latin Quarter.	The King in Yellow	Robert W. Chambers
+0422	n	At 	twenty minutes after four	 two projectiles struck a house in the rue de Bac, and a moment later the first shell fell in the Latin Quarter.	The King in Yellow	Robert W. Chambers
+0423	n	At 	twenty minutes after four	 two projectiles struck a house in the rue de Bac, and a moment later the first shell fell in the Latin Quarter.	The King in Yellow	Robert W. Chambers
+0424	n	At 	twenty minutes after four	 two projectiles struck a house in the rue de Bac, and a moment later the first shell fell in the Latin Quarter.	The King in Yellow	Robert W. Chambers
+0425	e	So it chanced that when Doris led Mr. Siddle to the edge of the cliff about 	twenty-five minutes past four	, the first thing they saw was the local police-constable on the lawn of The Hollies putting down a gill of "best Sussex" at a draught.	The Postmaster's Daughter	Louis Tracy
+0426	n	So it chanced that when Doris led Mr. Siddle to the edge of the cliff about 	twenty-five minutes past four	, the first thing they saw was the local police-constable on the lawn of The Hollies putting down a gill of "best Sussex" at a draught.	The Postmaster's Daughter	Louis Tracy
+0427	n	So it chanced that when Doris led Mr. Siddle to the edge of the cliff about 	twenty-five minutes past four	, the first thing they saw was the local police-constable on the lawn of The Hollies putting down a gill of "best Sussex" at a draught.	The Postmaster's Daughter	Louis Tracy
+0428	n	So it chanced that when Doris led Mr. Siddle to the edge of the cliff about 	twenty-five minutes past four	, the first thing they saw was the local police-constable on the lawn of The Hollies putting down a gill of "best Sussex" at a draught.	The Postmaster's Daughter	Louis Tracy
+0429	e	At 	twenty-nine minutes past four	 Billy left her seat and walked down the train-shed platform to Track Number Fourteen.	Miss Billy's Decision	Eleanor H. Porter
+0430	e	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0430	e	We will motor down to Frampton Court - it's not far, little more than an hour by train - starting about 	half after four	, if you can be ready."	Red Masquerade	Louis Joseph Vance
+0430	e	At 	half-past four	, he turned into the deep-recessed doorway of his cell, and the yellow door closed on him with a metallic snap of a lock.	Room 13	Edgar Wallace
+0431	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0432	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0433	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0434	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0435	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0436	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0437	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0438	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0439	n	I got a note about 	half past four	 saying that Wake had crossed the river, but it was some weary hours after that before the fire slackened.	Mr. Standfast	John Buchan
+0440	e	It was 	twenty minutes to five	 when we drew up before the bank in Lombard Street.	The Moonstone	Wilkie Collins
+0440	e	At 	twenty minutes to five	 he left Mrs. Truslove and walked back to the Castle.	The Loudwater Mystery	Edgar Jepson
+0440	e	At length the rain ceased, and at 	twenty minutes of five	 he reached his home.	Conscience — Volume 2	Hector Malot
+0441	n	It was 	twenty minutes to five	 when we drew up before the bank in Lombard Street.	The Moonstone	Wilkie Collins
+0442	n	It was 	twenty minutes to five	 when we drew up before the bank in Lombard Street.	The Moonstone	Wilkie Collins
+0443	n	It was 	twenty minutes to five	 when we drew up before the bank in Lombard Street.	The Moonstone	Wilkie Collins
+0444	n	It was 	twenty minutes to five	 when we drew up before the bank in Lombard Street.	The Moonstone	Wilkie Collins
+0445	e	Old Grannis knew that at 	quarter of five	 precisely Miss Baker made a cup of tea over the oil stove on the stand between the bureau and the window.	McTeague	Frank Norris
+0445	e	At 	quarter to five	 she stepped into Elevator Number Four of the building which Cutty called his home, very well pleased with herself.	The Drums of Jeopardy	Harold MacGrath
+0445	e	She hesitated for a moment, glanced round to see if any one was near us, and then said, "Yes; to-morrow at 	a quarter to five	."	Lord Arthur Savile's Crime; The Portrait of Mr. W.H., and Other Stories	Oscar Wilde
+0446	n	Old Grannis knew that at 	quarter of five	 precisely Miss Baker made a cup of tea over the oil stove on the stand between the bureau and the window.	McTeague	Frank Norris
+0447	n	Old Grannis knew that at 	quarter of five	 precisely Miss Baker made a cup of tea over the oil stove on the stand between the bureau and the window.	McTeague	Frank Norris
+0448	n	Old Grannis knew that at 	quarter of five	 precisely Miss Baker made a cup of tea over the oil stove on the stand between the bureau and the window.	McTeague	Frank Norris
+0449	n	Old Grannis knew that at 	quarter of five	 precisely Miss Baker made a cup of tea over the oil stove on the stand between the bureau and the window.	McTeague	Frank Norris
+0450	e	About 	ten minutes to five	, we were collecting our scattered things, and putting our front-hair straight by the mirror in the ladies' compartment.	Recalled to Life	Grant Allen
+0450	e	If it's near dinner-time, the foreman takes out his watch when the jury has retired, and says, "Dear me, gentlemen, 	ten minutes to five	, I declare!	The Pickwick Papers	Charles Dickens
+0450	e	"Opposite to this house was a French restaurant, and about 	ten minutes to five	 I entered here and ordered supper, sitting at the window and yet far enough back not to be seen.	Joe Leslie's Wife; or, a Skeleton in the Closet	Alexander Robertson, M.D.
+0451	n	About 	ten minutes to five	, we were collecting our scattered things, and putting our front-hair straight by the mirror in the ladies' compartment.	Recalled to Life	Grant Allen
+0452	e	I forgot to notice how the time was passing till I caught sight of a clock in Madison Square pointing to 	eight minutes to five	.	The House Opposite	Elizabeth Kent
+0452	e	It was 	eight minutes to five	 and there was still eight minutes to wait; so Mr. Hepplewhite went on reading "Sainte-Beuve."	Tutt and Mr. Tutt	Arthur Cheney Train
+0453	n	I forgot to notice how the time was passing till I caught sight of a clock in Madison Square pointing to 	eight minutes to five	.	The House Opposite	Elizabeth Kent
+0454	n	I forgot to notice how the time was passing till I caught sight of a clock in Madison Square pointing to 	eight minutes to five	.	The House Opposite	Elizabeth Kent
+0455	e	The hands of the clock stood at 	five minutes to five	, though Violet scarcely noted it at the time, for Mrs. Zabriskie was passing her and had stopped to say:	The Golden Slipper, and Other Problems for Violet Strange	Anna Katharine Green
+0455	e	The hands pointed to 	five minutes to five	, that's to say, twenty minutes after the departure of the other players.	Arsène Lupin intervenes	Maurice Leblanc
+0455	e	'It's 	five minutes to five	,' said Mr. Malderton, looking at his watch: 'I hope he's not going to disappoint us.'	Sketches by Boz, Illustrative of Every-Day Life and Every-Day People	Charles Dickens
+0456	n	The hands of the clock stood at 	five minutes to five	, though Violet scarcely noted it at the time, for Mrs. Zabriskie was passing her and had stopped to say:	The Golden Slipper, and Other Problems for Violet Strange	Anna Katharine Green
+0457	e	But it is now 	three minutes to five	; and at five precisely I step into the Hackney omnibus at the Flower-Pot," added Mr. Styles, looking at his watch for the hundredth time during the last quarter of an hour.	The Mysteries of London, v. 4/4	George W. M. Reynolds
+0457	e	But then we had all seen that the hands stood at 	three minutes to five	.	That Affair Next Door	Anna Katharine Green
+0458	n	But it is now 	three minutes to five	; and at five precisely I step into the Hackney omnibus at the Flower-Pot," added Mr. Styles, looking at his watch for the hundredth time during the last quarter of an hour.	The Mysteries of London, v. 4/4	George W. M. Reynolds
+0459	e	"It lacked but 	one minute to five	 when Joe came down the street from the elevated station, walking very fast, and went in that house.	Joe Leslie's Wife; or, a Skeleton in the Closet	Alexander Robertson, M.D.

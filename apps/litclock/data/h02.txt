@@ -1,0 +1,81 @@
+0200	e	I walked in the streets of Brussels, and I walked in my own room from 	two o'clock	 till six; never once in that space of time did I sit down.	The Professor	Charlotte Brontë
+0200	e	It was now about 	two o'clock	, and feeling hungry, he sat down where a bank cut off the wind, and took out some food he had bought at Hawick.	Carmen's Messenger	Harold Bindloss
+0200	e	The Prime Minister will arrive in a motor car from the country at about 	two o'clock	, and the first thing he will ask for will be that paper.	Peter Ruff and the Double Four	E. Phillips Oppenheim
+0201	n	I walked in the streets of Brussels, and I walked in my own room from 	two o'clock	 till six; never once in that space of time did I sit down.	The Professor	Charlotte Brontë
+0202	n	I walked in the streets of Brussels, and I walked in my own room from 	two o'clock	 till six; never once in that space of time did I sit down.	The Professor	Charlotte Brontë
+0203	e	They waited there in silence for five minutes, and once Hartley, with his back toward the house, struck a match under his sheltering coat, looked to see what time it was, and found it was 	three minutes past two	.	Jason	Justus Miles Forman
+0204	e	He died last night at the very hour he said he would - 	four minutes after two	."	The Golden Slipper, and Other Problems for Violet Strange	Anna Katharine Green
+0205	e	It was 	five minutes past two	 in the morning when Marney, sitting in the drawing-room at the front of the house, heard the sound of an auto stop before the house.	Room 13	Edgar Wallace
+0205	e	"Then, how did you wake yourself up thoroughly enough to know that it was exactly 	five minutes past two	?"	The Winning Clue	James Hay
+0205	e	"He must have come in at 	five minutes past two	 - which makes it right."	The Mystery of a Hansom Cab	Fergus Hume
+0206	n	It was 	five minutes past two	 in the morning when Marney, sitting in the drawing-room at the front of the house, heard the sound of an auto stop before the house.	Room 13	Edgar Wallace
+0207	n	It was 	five minutes past two	 in the morning when Marney, sitting in the drawing-room at the front of the house, heard the sound of an auto stop before the house.	Room 13	Edgar Wallace
+0208	n	It was 	five minutes past two	 in the morning when Marney, sitting in the drawing-room at the front of the house, heard the sound of an auto stop before the house.	Room 13	Edgar Wallace
+0209	n	It was 	five minutes past two	 in the morning when Marney, sitting in the drawing-room at the front of the house, heard the sound of an auto stop before the house.	Room 13	Edgar Wallace
+0210	e	It was only 	ten minutes past two	 when Lady Audley came down-stairs, with her bonnet on and her hair still wet, but without the candle.	Lady Audley's Secret	M. E. Braddon
+0210	e	"It was 	ten minutes past two	 when your light went out," he said promptly, and she stared at him.	The Black Abbot	Edgar Wallace
+0210	e	"	Ten minutes past two	, sir," answered the man, looking at the clock and blinking.	The Picture of Dorian Gray	Oscar Wilde
+0211	n	It was only 	ten minutes past two	 when Lady Audley came down-stairs, with her bonnet on and her hair still wet, but without the candle.	Lady Audley's Secret	M. E. Braddon
+0212	n	It was only 	ten minutes past two	 when Lady Audley came down-stairs, with her bonnet on and her hair still wet, but without the candle.	Lady Audley's Secret	M. E. Braddon
+0213	e	I looked at my watch by the moonlight, and found that it was 	thirteen minutes after two	 a.	The adventure of the eleven cuff-buttons	James Francis Thierry
+0214	n	I looked at my watch by the moonlight, and found that it was 	thirteen minutes after two	 a.	The adventure of the eleven cuff-buttons	James Francis Thierry
+0215	e	The O. and M. express which connected with the train on the branch line to Sutherland would not leave until 	a quarter past two	.	Susan Lenox	David Graham Phillips
+0215	e	But he had not forgotten withal the bizarre appointment he was to keep with Mr. Marlin in the aquarium - at 	a quarter past two	.	The Four Stragglers	Frank L. Packard
+0215	e	He stayed an hour, kissed the boy without awaking him, and left Southampton by the mail that starts at 	a quarter-past two	."	Lady Audley's Secret	M. E. Braddon
+0216	n	The O. and M. express which connected with the train on the branch line to Sutherland would not leave until 	a quarter past two	.	Susan Lenox	David Graham Phillips
+0217	e	"I only know that she used to go every Tuesday and Thursday by the 	seventeen minutes past two	 train from Baker-St., and be back by six o'clock, so it couldn't have been very far.	The Late Tenant	Louis Tracy
+0217	e	At 	seventeen minutes past two	, J. T. Maston and his companions had reached the bottom of the Pacific; but they saw nothing but an arid desert, no longer animated by either fauna or flora.	From the Earth to the moon; and, round the moon	Jules Verne
+0218	n	"I only know that she used to go every Tuesday and Thursday by the 	seventeen minutes past two	 train from Baker-St., and be back by six o'clock, so it couldn't have been very far.	The Late Tenant	Louis Tracy
+0219	n	"I only know that she used to go every Tuesday and Thursday by the 	seventeen minutes past two	 train from Baker-St., and be back by six o'clock, so it couldn't have been very far.	The Late Tenant	Louis Tracy
+0220	e	"His watch has stopped at 	twenty minutes past two	," observed Dr. Spreckley, who was making this examination with Mr. Inspector Wade.	The Mysteries of Heron Dyke	T. W. Speight
+0220	e	Everything was in readiness by 	twenty minutes past two	, and she took up her position in a window from which she could see the front door of the house.	The Talleyrand Maxim	J. S. Fletcher
+0220	e	"He called the lawyer on the telephone at 	twenty minutes past two	 and said he would go at once to his office.	The Winning Clue	James Hay
+0221	n	"His watch has stopped at 	twenty minutes past two	," observed Dr. Spreckley, who was making this examination with Mr. Inspector Wade.	The Mysteries of Heron Dyke	T. W. Speight
+0222	n	"His watch has stopped at 	twenty minutes past two	," observed Dr. Spreckley, who was making this examination with Mr. Inspector Wade.	The Mysteries of Heron Dyke	T. W. Speight
+0223	n	"His watch has stopped at 	twenty minutes past two	," observed Dr. Spreckley, who was making this examination with Mr. Inspector Wade.	The Mysteries of Heron Dyke	T. W. Speight
+0224	e	If he had done so, he would have arrived there at 	twenty-four minutes past two	.	The Winning Clue	James Hay
+0225	e	Her watch said that it was 	twenty-five minutes after two o'clock	.	Jean of the Lazy A	B. M. Bower
+0226	n	Her watch said that it was 	twenty-five minutes after two o'clock	.	Jean of the Lazy A	B. M. Bower
+0227	n	Her watch said that it was 	twenty-five minutes after two o'clock	.	Jean of the Lazy A	B. M. Bower
+0228	n	Her watch said that it was 	twenty-five minutes after two o'clock	.	Jean of the Lazy A	B. M. Bower
+0229	n	Her watch said that it was 	twenty-five minutes after two o'clock	.	Jean of the Lazy A	B. M. Bower
+0230	e	Wilfrid closed his eyes just for a moment, or so it seemed to him, and when he looked again he saw the clock was pointing to 	half-past two	.	The Five Knots	Fred M. White
+0230	e	When you entered this room at 	half-past two	 this morning and sat down beside M. Fauville, was there nothing to tell you that he was dead?"	The Teeth of the Tiger	Maurice Leblanc
+0230	e	Why, - listen, - I happen to know that she was in Mr. Curran's room that night, - and that she came out of it at 	half-past two	 in the morning."	Feathers left around	Carolyn Wells
+0231	n	Wilfrid closed his eyes just for a moment, or so it seemed to him, and when he looked again he saw the clock was pointing to 	half-past two	.	The Five Knots	Fred M. White
+0232	n	Wilfrid closed his eyes just for a moment, or so it seemed to him, and when he looked again he saw the clock was pointing to 	half-past two	.	The Five Knots	Fred M. White
+0233	n	Wilfrid closed his eyes just for a moment, or so it seemed to him, and when he looked again he saw the clock was pointing to 	half-past two	.	The Five Knots	Fred M. White
+0234	n	Wilfrid closed his eyes just for a moment, or so it seemed to him, and when he looked again he saw the clock was pointing to 	half-past two	.	The Five Knots	Fred M. White
+0235	e	And at 	twenty-five minutes to three	, she was seen by one of your gardeners, Featherstone, in what was, of course, hiding, amongst the trees at the end of the north shrubbery.	The Talleyrand Maxim	J. S. Fletcher
+0236	n	And at 	twenty-five minutes to three	, she was seen by one of your gardeners, Featherstone, in what was, of course, hiding, amongst the trees at the end of the north shrubbery.	The Talleyrand Maxim	J. S. Fletcher
+0237	n	And at 	twenty-five minutes to three	, she was seen by one of your gardeners, Featherstone, in what was, of course, hiding, amongst the trees at the end of the north shrubbery.	The Talleyrand Maxim	J. S. Fletcher
+0238	n	And at 	twenty-five minutes to three	, she was seen by one of your gardeners, Featherstone, in what was, of course, hiding, amongst the trees at the end of the north shrubbery.	The Talleyrand Maxim	J. S. Fletcher
+0239	n	And at 	twenty-five minutes to three	, she was seen by one of your gardeners, Featherstone, in what was, of course, hiding, amongst the trees at the end of the north shrubbery.	The Talleyrand Maxim	J. S. Fletcher
+0240	e	Mr. Pappleworth did not appear till 	twenty to three	, and he often found his boy sitting beside Fanny, talking, or drawing, or singing with the girls.	Sons and Lovers	D. H. Lawrence
+0240	e	Freddie's evidence pointed to her coming back again at 	twenty minutes to three	 in the morning, and switching on her light as she re-entered her room.	The Dangerfield Talisman	J. J. Connington
+0240	e	Come round to-morrow at 	twenty to three	; don't be late, we must carry out our ambush to the minute."	Beasts and Super-Beasts	Saki
+0241	n	Mr. Pappleworth did not appear till 	twenty to three	, and he often found his boy sitting beside Fanny, talking, or drawing, or singing with the girls.	Sons and Lovers	D. H. Lawrence
+0242	n	Mr. Pappleworth did not appear till 	twenty to three	, and he often found his boy sitting beside Fanny, talking, or drawing, or singing with the girls.	Sons and Lovers	D. H. Lawrence
+0243	n	Mr. Pappleworth did not appear till 	twenty to three	, and he often found his boy sitting beside Fanny, talking, or drawing, or singing with the girls.	Sons and Lovers	D. H. Lawrence
+0244	n	Mr. Pappleworth did not appear till 	twenty to three	, and he often found his boy sitting beside Fanny, talking, or drawing, or singing with the girls.	Sons and Lovers	D. H. Lawrence
+0245	e	At 	a quarter to three	 the music of the bells began again and the big bell of the cathedral came droning round the angle of the cliffs.	Arsène Lupin, super-sleuth	Maurice Leblanc
+0245	e	She would waste a few minutes in making enquiries, then she probably left Hampstead for West Kensington, say, at 	a quarter to three	."	The Black Box	E. Phillips Oppenheim
+0245	e	"This morning, about 	a quarter to three	, a man - elderly man - was found dead in Middle Temple Lane, and there seems little doubt that he was murdered.	The Middle Temple Murder	J. S. Fletcher
+0246	n	At 	a quarter to three	 the music of the bells began again and the big bell of the cathedral came droning round the angle of the cliffs.	Arsène Lupin, super-sleuth	Maurice Leblanc
+0247	n	At 	a quarter to three	 the music of the bells began again and the big bell of the cathedral came droning round the angle of the cliffs.	Arsène Lupin, super-sleuth	Maurice Leblanc
+0248	n	At 	a quarter to three	 the music of the bells began again and the big bell of the cathedral came droning round the angle of the cliffs.	Arsène Lupin, super-sleuth	Maurice Leblanc
+0249	n	At 	a quarter to three	 the music of the bells began again and the big bell of the cathedral came droning round the angle of the cliffs.	Arsène Lupin, super-sleuth	Maurice Leblanc
+0250	e	"At about 	ten minutes to three	 I was in my room working at the key and had just brought a cup of coffee from the kitchen, when the front door bell rang and I answered it.	The clue of the new pin	Edgar Wallace
+0250	e	At 	ten minutes to three	 he pocketed his watch, opened the large blade of the pen-knife that had thoughtfully been provided him, and inched forward in his chair, eyes to the sky.	The Lone Wolf Returns	Louis Joseph Vance
+0250	e	Meanwhile, he looked at his watch again and discovered that it wanted but 	ten minutes to three	.	The Cinema Murder	E. Phillips Oppenheim
+0251	n	"At about 	ten minutes to three	 I was in my room working at the key and had just brought a cup of coffee from the kitchen, when the front door bell rang and I answered it.	The clue of the new pin	Edgar Wallace
+0252	n	"At about 	ten minutes to three	 I was in my room working at the key and had just brought a cup of coffee from the kitchen, when the front door bell rang and I answered it.	The clue of the new pin	Edgar Wallace
+0253	n	"At about 	ten minutes to three	 I was in my room working at the key and had just brought a cup of coffee from the kitchen, when the front door bell rang and I answered it.	The clue of the new pin	Edgar Wallace
+0254	n	"At about 	ten minutes to three	 I was in my room working at the key and had just brought a cup of coffee from the kitchen, when the front door bell rang and I answered it.	The clue of the new pin	Edgar Wallace
+0255	e	'	Five minutes to three	,' growled Newman; 'it can't want more by this time; and I had my breakfast at eight o'clock, and SUCH a breakfast!	Nicholas Nickleby	Charles Dickens
+0255	e	I was at the Oxford Street end of Great Portland Street at 	five minutes to three	, and it takes at least ten minutes to walk from where I was to the Ashton Club.'	The Old Man in the Corner	Baroness Emmuska Orczy
+0255	e	When I went down to the living-room, at 	five minutes before three	, Danny, John, Mrs. Ricker and Martha were all there.	The Desert Moon mystery	Kay Cleaver Strahan
+0256	n	'	Five minutes to three	,' growled Newman; 'it can't want more by this time; and I had my breakfast at eight o'clock, and SUCH a breakfast!	Nicholas Nickleby	Charles Dickens
+0257	e	As the clock from the tower of St. George's Church pointed to 	three minutes to three	, a blue spring waggon, picked out with red, and containing boughs and flowers, turned from the high road and halted on this side of the building.	Far from the Madding Crowd	Thomas Hardy
+0258	e	"Our friend Perenna spoke of three o'clock, not of 	two minutes to three	.	The Teeth of the Tiger	Maurice Leblanc
+0259	e	At 	one minute of three o'clock	 a clerk entered with a card, and handed it to Mr. Latham.	The Diamond Master	Jacques Futrelle

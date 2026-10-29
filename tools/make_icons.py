@@ -455,6 +455,20 @@ def readwise(p):
     p.line([(26, 48), (66, 48)], 3)
     p.white_rect((26, 47, 66, 49))
 
+def litclock(p):
+    # an open book with a clock face rising from its pages
+    p.poly([(6, 62), (46, 56), (46, 90), (6, 92)], fill=False, w=4)
+    p.poly([(90, 62), (50, 56), (50, 90), (90, 92)], fill=False, w=4)
+    for y in (68, 76):
+        p.line([(14, y), (38, y - 4)], 3)
+        p.line([(82, y), (58, y - 4)], 3)
+    p.white_ellipse((22, 4, 74, 56))
+    p.ellipse((26, 8, 70, 52), w=5)
+    p.line([(48, 30), (48, 16)], 4)
+    p.line([(48, 30), (59, 37)], 4)
+    p.ellipse((45, 27, 51, 33), fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -464,7 +478,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
-         'readwise': readwise}
+         'readwise': readwise, 'litclock': litclock}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

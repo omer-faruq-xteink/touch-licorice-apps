@@ -1,0 +1,80 @@
+1500	e	If you see one of the Hoffs leave the house, don't merely report to me that the old man or the young man left the house about 	three o'clock	.	The Apartment Next Door	William Johnston
+1500	e	There seemed no fog, only a heavy, threatening cloud of night fell suddenly upon the city, and at 	three o'clock	 it might have been midnight.	The Sign of Silence	William Le Queux
+1500	e	When he got to the bank, Mr. Isaac was out: would not be in till 	three o'clock	: and that put the finishing stroke to the pater's impatience.	Johnny Ludlow, Second Series	Mrs. Henry Wood
+1501	e	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+1502	n	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+1503	n	Exactly at 	one minute after three	 he said suddenly:	The Fellowship of the Frog	Edgar Wallace
+1504	e	The Paris express passes at 	four minutes past three	, and I must catch it.	The Count's Chauffeur	William Le Queux
+1505	e	So it came about that at 	five past three	 on the 16th day of January, with only the clothes we stood up in, Peter and I entered Constantinople.	Greenmantle	John Buchan
+1505	e	Thus disguised she had no fear of being recognised, and arrived at the rendezvous about 	five minutes past three o'clock	.	The Piccadilly Puzzle	Fergus Hume
+1505	e		Five minutes past three	 at the Paddington station, and all the bustle and confusion of a train just in.	Roland Yorke A Sequel to "The Channings"	Mrs. Henry Wood
+1506	e	Was it 	six minutes after three	 or eleven minutes after three?	The Apartment Next Door	William Johnston
+1507	e	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+1508	n	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+1509	n	"There is a train from Culoz which reaches Aix at 	seven minutes past three	.	At the Villa Rose	A. E. W. Mason
+1510	e	"At about 	ten minutes past three	 this afternoon, Roger Shandon sent one of the maids for me, and I came straight to this room.	Murder in the maze	J. J. Connington
+1510	e	It was 	ten minutes past three	, and the sun, still shining brightly, cast a long, straight, sharply defined shadow in the direction of the broad river and the high land of Greenlaw.	The Closed Book	William Le Queux
+1510	e	"Would you mind very much if we didn't start until five or 	ten minutes past three	?"	Through the Wall	Cleveland Moffett
+1511	n	"At about 	ten minutes past three	 this afternoon, Roger Shandon sent one of the maids for me, and I came straight to this room.	Murder in the maze	J. J. Connington
+1512	n	"At about 	ten minutes past three	 this afternoon, Roger Shandon sent one of the maids for me, and I came straight to this room.	Murder in the maze	J. J. Connington
+1513	n	"At about 	ten minutes past three	 this afternoon, Roger Shandon sent one of the maids for me, and I came straight to this room.	Murder in the maze	J. J. Connington
+1514	n	"At about 	ten minutes past three	 this afternoon, Roger Shandon sent one of the maids for me, and I came straight to this room.	Murder in the maze	J. J. Connington
+1515	e	"The testator had called for me at my office at 	a quarter past three	, and asked me to come with him to his house to meet Doctor Norbury.	The Vanishing Man	R. Austin Freeman
+1515	e	About 	a quarter past three	 Dr. Stern's little landaulet was halted at the same cross-road where a policeman had stopped it nearly three hours earlier.	The Strange Case of Mortimer Fenley	Louis Tracy
+1515	e	My messenger shall call on you this afternoon at 	a quarter-past three	, and I earnestly suggest that the first payment should then and there be given him.	The Countess of Lowndes Square, and Other Stories	E. F. Benson
+1516	n	"The testator had called for me at my office at 	a quarter past three	, and asked me to come with him to his house to meet Doctor Norbury.	The Vanishing Man	R. Austin Freeman
+1517	n	"The testator had called for me at my office at 	a quarter past three	, and asked me to come with him to his house to meet Doctor Norbury.	The Vanishing Man	R. Austin Freeman
+1518	e	"She and friend Ernest went off in the car from the house at about 	eighteen minutes past three	.	Murder in the maze	J. J. Connington
+1519	n	"She and friend Ernest went off in the car from the house at about 	eighteen minutes past three	.	Murder in the maze	J. J. Connington
+1520	e	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+1520	e	It was 	twenty past three	 when we reached our terminus, and after a hasty luncheon at the buffet we pushed on at once to Scotland Yard.	The Memoirs of Sherlock Holmes	Arthur Conan Doyle
+1520	e	The time by my watch was 	twenty minutes past three	, and I suppose the shock to have lasted nearly a minute.	Speeches	Charles Dickens
+1521	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+1522	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+1523	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+1524	n	"You doubtless recollect that when we were at Valfeuillu we found the hands of the clock in the bedroom stopped at 	twenty minutes past three	.	The Mystery of Orcival	Emile Gaboriau
+1525	e	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+1526	n	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+1527	n	That would be about 	twenty-five past three	, approximately.	Murder in the maze	J. J. Connington
+1528	e	The message was given at 	twenty-eight minutes past three	.	Tracked by Wireless	William Le Queux
+1529	n	The message was given at 	twenty-eight minutes past three	.	Tracked by Wireless	William Le Queux
+1530	e	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+1530	e	Yes, he said; he remembered a young man's coming into the office at 	half-past three o'clock	 in the afternoon, and paying his passage money.	Lady Audley's Secret	M. E. Braddon
+1530	e	At 	half-past three	 Podgers was waiting for me, and opened the front door as I came up the steps, thus saving me the necessity of ringing.	The Triumphs of Eugène Valmont	Robert Barr
+1531	n	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+1532	n	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+1533	n	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+1534	n	She went out at about 	half-past three	, and told me she was going to Spence's, in St. Paul's Churchyard, to try on her new tailor-made gown.	The Old Man in the Corner	Baroness Emmuska Orczy
+1535	e	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+1536	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+1537	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+1538	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+1539	n	When she felt that at least an hour had passed, she turned to look at the clock again - 	twenty-five minutes to four	.	The Cost	David Graham Phillips
+1540	e	It was 	twenty minutes of four	, and the jury were already getting restless, for the trial had developed into a humdrum, cut-and-dried affair.	By Advice of Counsel	Arthur Cheney Train
+1540	e	It is, if my watch tells me the truth, five and 	twenty minutes to four	.	The Vanished Messenger	E. Phillips Oppenheim
+1540	e	The hands of the clock stood at 	twenty minutes of four	.	A Prince to Order	Charles Stokes Wayne
+1541	n	It was 	twenty minutes of four	, and the jury were already getting restless, for the trial had developed into a humdrum, cut-and-dried affair.	By Advice of Counsel	Arthur Cheney Train
+1542	e	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+1543	n	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+1544	n	"M. Gerbois, it is now 	eighteen minutes to four	: I authorize you to leave this room at fourteen minutes to four....	The Blonde Lady Being a Record of the Duel of Wits between Arsène Lupin and the English Detective	Maurice Leblanc
+1545	e	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+1545	e	"He took to his bed, sir," said Mrs. Lemon, "at 	a quarter to four o'clock	 yesterday afternoon; and it's my opinion he'll never git up from it."	Devlin the Barber	B. L. Farjeon
+1545	e	At about 	a quarter to four o'clock	, Laura emerged from her private apartment, and descended to her carriage which was waiting for her.	The Mysteries of London, v. 4/4	George W. M. Reynolds
+1546	n	About 	a quarter to four	 the telephone bell rang, and Maselli informed him that Miss Garth's fiance had just arrived at Gloucester Mansions.	The Strange Case of Mortimer Fenley	Louis Tracy
+1547	e	One day, the 30th of September, at 	3:47 P.M.	, a telegram, transmitted by cable from Valentia (Ireland) to Newfoundland and the American Mainland, arrived at the address of President Barbicane.	From the Earth to the moon; and, round the moon	Jules Verne
+1548	n	One day, the 30th of September, at 	3:47 P.M.	, a telegram, transmitted by cable from Valentia (Ireland) to Newfoundland and the American Mainland, arrived at the address of President Barbicane.	From the Earth to the moon; and, round the moon	Jules Verne
+1549	n	One day, the 30th of September, at 	3:47 P.M.	, a telegram, transmitted by cable from Valentia (Ireland) to Newfoundland and the American Mainland, arrived at the address of President Barbicane.	From the Earth to the moon; and, round the moon	Jules Verne
+1550	e	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+1550	e	At 	ten minutes to four	 he was back again in Barnes and had left the suspicious-looking ash-stick against the front door, afterwards going to his rooms to snatch a few hours' sleep.	The Bomb-Makers Being Some Curious Records Concerning the Craft and Cunning of Theodore Drost, an Enemy Alien in London, Together with Certain Revelations Regarding His Daughter Ella	William Le Queux
+1550	e	It was at 	ten minutes to four	 that the district attorney electrified every one in the courtroom by calling to the stand a man whose name up to that moment had not been mentioned in the case.	Mrs. Balfame	Gertrude Franklin Horn Atherton
+1551	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+1552	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+1553	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+1554	n	Twenty-three votes were recorded by 	ten minutes to four	 by John Shufflebotham and his friends, without let or hindrance from Tory prizefighters, roughs, or any other men.	Secret Service; or, Recollections of a City Detective	Andrew Forrester
+1555	e	At 	five minutes to four	 that afternoon I entered the big Gambrinus Café, which was nearly opposite my hotel on the other side of the piazza, and I took a seat just inside the door.	The Stretton Street Affair	William Le Queux
+1555	e	It had 	five minutes to four	 when I came upstairs,' answered she, without interrupting her examination of a piece of darned lace which she was holding close to her eyes at the window.	Uncle Silas	Joseph Sheridan Le Fanu
+1555	e	It was 	five minutes to four	 as we drew up at the churchyard gate.	Grim Tales	E. Nesbit
+1556	n	At 	five minutes to four	 that afternoon I entered the big Gambrinus Café, which was nearly opposite my hotel on the other side of the piazza, and I took a seat just inside the door.	The Stretton Street Affair	William Le Queux
+1557	e	"That was Mr. Robert Hume-Fraser, who met him in the park, and walked with him there about 	three to four o'clock	 in the afternoon.	The Stowmarket Mystery; Or, A Legacy of Hate	Louis Tracy
+1558	e	At 	two minutes to four	 he left his stateroom, and as the first stroke of eight bells rang out - in one of the measured intervals between blasts of the whistle - ending the afternoon watch, he stepped out on deck, and paused for a survey of the weather conditions.	Alias the Lone Wolf	Louis Joseph Vance
+1559	n	At 	two minutes to four	 he left his stateroom, and as the first stroke of eight bells rang out - in one of the measured intervals between blasts of the whistle - ending the afternoon watch, he stepped out on deck, and paused for a survey of the weather conditions.	Alias the Lone Wolf	Louis Joseph Vance
