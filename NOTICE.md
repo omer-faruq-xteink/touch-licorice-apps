@@ -85,6 +85,19 @@ The opening sections of English Wikipedia's vital articles (level 4), from Wikip
 (https://en.wikipedia.org), CC BY-SA 4.0; made with `apps/wikipedia/wiki2pack.py`. Not in the
 git repository, only in releases.
 
+## Literary Clock quotes — `apps/litclock/data/`
+
+Sentences from public-domain novels on [Project Gutenberg](https://www.gutenberg.org) by authors
+who died before 1956, translations left out, so they are free in the US and in life+70 countries.
+Each quote names its book and author on screen.
+
+## Sky Tonight data — `apps/skytonight/data/`
+
+Stars from the Yale Bright Star Catalogue, 5th edition (NASA HEASARC `heasarc_bsc5p`), public
+domain. Constellation figures and names from [d3-celestial](https://github.com/ofrohn/d3-celestial),
+Copyright (c) 2015, Olaf Frohn, BSD 3-clause licence; the full notice is in
+`apps/skytonight/data/NOTICE.txt`, which is packed with the app.
+
 ## Not included
 
 Nothing from Xteink's firmware is in this repository. The packer embeds only the *public* half of

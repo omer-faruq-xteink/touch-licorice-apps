@@ -2,7 +2,9 @@
 
 Games and tools for the **Xteink X4 Pro** e-reader running its stock **XTOS Licorice** firmware,
 written in Lua for the firmware's built-in mini-app host. No custom firmware, no flashing: you
-copy a package to the SD card and install it from the reader's own file browser.
+copy a package to the SD card and install it from the reader's own file browser. Most of them are
+also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
+arrive by themselves.
 
 | app | what it is |
 |---|---|
@@ -21,7 +23,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Suguru** | also called Tectonic: fill each region with 1..n, touching cells never repeat; 800 puzzles from 5x5 to 8x8, all solvable by logic |
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
-| **Notes** | freehand drawing and typed text on eight pages; one page becomes the lock screen, with clock and battery |
+| **Notes** | freehand drawing, typed text and QR codes on eight pages; one page becomes the lock screen (an ID card with a contact QR), with clock and battery |
 | **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies |
@@ -35,6 +37,9 @@ copy a package to the SD card and install it from the reader's own file browser.
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen |
+| **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
+| **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
+| **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
@@ -165,9 +170,11 @@ Microcosmos, Minicosmos. Any XSB / `.sok` pack you have can be added with one co
 ### Notes
 
 **Draw** with a finger; **Text** places typed text where you tap, using the firmware's own keyboard
-(tap **Text** again for small / medium / large). **Undo**, **Page** (eight pages), **Clear**.
+(small / medium / large); **QR code** places a code a phone camera can scan, holding a link, a
+phone number, Wi-Fi details or a contact card. **Undo**, **Page** (eight pages), **Clear**.
 **Lock** makes the current page the device's lock screen — the firmware asks once — with or
-without the time and battery level (with them it is redrawn every minute). Pages live in the app's storage.
+without the time and battery level (with them it is redrawn every minute): your name and a
+contact-card QR code on a page make the lock screen an ID card. Pages live in the app's storage.
 [More](apps/notes/README.md)
 
 ### RSS
@@ -277,6 +284,31 @@ converted; for anything else run `apps/dict/stardict2shards.py`. It can be the l
 Word of the Day with its senses and examples, a new one each day. Never uninstall the app (the
 folder goes with it); install updates over it. [More](apps/dict/README.md)
 
+### Literary Clock
+
+Every minute a sentence from a novel that names that moment ("At five minutes to ten he went down
+to the station"), the time phrase in bold, then the book and its author; the digital time and date
+under it (can be switched off). 566 quotes from 1,400 public-domain novels on Project Gutenberg,
+mostly detective stories; a minute with no quote of its own keeps the nearest earlier one.
+**Another** shows the minute's other quotes. Best as the lock screen. [More](apps/litclock/README.md)
+
+### Word Clock
+
+The time in words on a grid of letters, the words of the time as black blocks with white letters
+and four dots for the minutes between: "IT IS HALF PAST TEN", "SAAT ONU YİRMİ GEÇİYOR",
+"ES IST FÜNF VOR HALB ELF". The language follows the system's and has a button. Best as the lock
+screen. [More](apps/wordclock/README.md)
+
+### Sky Tonight
+
+A round chart of the sky over your city as you see it looking up: stars to magnitude 4.5, the
+constellation figures and names, the moon in its phase, the planets. Under it the moon's phase and
+rise and set, sunset, dark and sunrise, and the planets that are up. At night it opens on now, by
+day on tonight; **-1 h** / **+1 h** step through the night. 76 cities or typed coordinates;
+English, Türkçe, Deutsch. Everything is computed on the reader (no network) and checked against
+the 2026 eclipses, planet oppositions and NOAA's sunrise times. It can be the lock screen,
+redrawn every 15 minutes. [More](apps/skytonight/README.md)
+
 ## Build from source
 
 Requirements: Python 3.10+ and one package.
@@ -331,6 +363,9 @@ python -I apps/rss/test_rss.py
 python -I apps/instapaper/test_instapaper.py
 python -I apps/merchant/test_merchant.py
 python -I apps/dict/test_dict.py
+python -I apps/litclock/test_litclock.py
+python -I apps/wordclock/test_wordclock.py
+python -I apps/skytonight/test_sky.py
 ```
 
 `build_all.py` also runs `tools/lualint55.py` over every Lua file: the device's Lua 5.5 rejects an
@@ -374,6 +409,10 @@ limits and gotchas are in [docs/firmware-notes.md](docs/firmware-notes.md).
 
 Each release attaches the `dist/*.xtapp` files and names the Licorice build they were tested on.
 To make one: `python build_all.py`, tag, upload `dist/`.
+
+The store builds come from `python -I tools/store_export.py APP` (an XTApp Studio project backup
+under `dist/store/APP/`); what is on the store and in which version is tracked in
+[store/STATUS.md](store/STATUS.md).
 
 ## Credits
 

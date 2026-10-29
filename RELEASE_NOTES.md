@@ -1,12 +1,14 @@
 # v0.15.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301** and **26102401**).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401** and **26102801** (beta)).
 
 ## Changed
 
+- **New: Sky Tonight** (`skytonight.xtapp`) — the night sky over your city, worked out on the reader with no network: a round chart of the sky looking up (stars to magnitude 4.5, constellation figures and names, the moon in its phase, the planets), the moon's phase and rise and set, sunset, dark and sunrise, and the planets that are up. By day it shows tonight; **-1 h** / **+1 h** step through the night. 76 cities or typed coordinates; English, Türkçe, Deutsch. Works as the lock screen (every 15 minutes, with the next new and full moon). Checked against the 2026 eclipses, planet oppositions and NOAA's sunrise times.
 - **New: Word Clock** (`wordclock.xtapp`) — the time in words on a grid of letters, in English ("IT IS HALF PAST TEN"), Türkçe ("SAAT ONU YİRMİ GEÇİYOR", "SAAT ONA ÇEYREK VAR", "SAAT YARIM") or Deutsch ("ES IST FÜNF VOR HALB ELF"): the words of the time as black blocks with white letters, four dots for the minutes between the five-minute steps. The language follows the system's and has a button; best as the lock screen, which wakes on every minute.
 - **New: Literary Clock** (`litclock.xtapp`) — the time told by a sentence from a public-domain book: every minute a quote that names the time, the time phrase in bold, then the book and author; the digital time and date under it (can be turned off). Best as the lock screen, which wakes on every minute; **Another** shows another quote of the same minute. 566 quotes from 1,400 public-domain novels (Project Gutenberg texts, authors who died before 1956), mostly detective stories; 450 minutes have their own quote, the others show the nearest earlier one with the exact time below it.
 - **New: Readwise** (`readwise.xtapp`) — your [Readwise Reader](https://readwise.io/read) library as text: Inbox, Later, Shortlist, Archive, Feed and Tags, the list, preview and article screens of Instapaper, offline copies, and the page you reached kept on the card. Reading needs only a Reader access token. **Archive**, **Later** / **Inbox**, **tags** and marking documents seen go through the rss-opds Worker with the same user and password as RSS (the reader cannot send PATCH, the only way Reader changes a document); update the Worker for its new `/readwise` relay. Without the Worker the app only reads.
+- **Notes: QR codes**: a new **QR code** row in the Tool list. Tap where it goes and type a link, a phone number, Wi-Fi details or a contact card (`MECARD:N:Surname,Name;TEL:…;;`); a 180 px code is placed there and saved with the page. Erase and Undo work on it, and the lock screen shows it too: write your name with Text, add a contact-card code, **Lock** the page, and the lock screen is an ID card a phone can scan.
 - **Hacker News**: the list is easier to read: a story's points / comments line follows its title right away (no gap after a one-line title) and a thicker rule separates stories. The status line ("Loading stories…", errors) is now under the buttons; above them it ran into the last story.
 - **Ready for the official XTApp API (2.17)**: the apps now call `ctx:invalidate()` as the API defines it (all games and Calculator, TBR, Anki, Wikipedia, Hacker News, Notes); Calendar, Notes and Tasks ask for up to 256 characters in their keyboard fields (the official default is 64, too short for a calendar address); Calendar frees memory with `ctx.gc:collect()` and unpacks gzip with `ctx.zlib:decompress()` only, and draws its white event boxes only when the reader can decode images. Nothing changes in use.
 - **Store builds**: `tools/store_export.py` turns an app into an XTApp Studio project backup for the Xteink store (Studio → ⋯ → Import backup): the official 2.x manifest, an 88 px icon and a 512 px store icon. Code only the sideloaded packages keep (Calendar's and Weather's lock screens fetching on their own) sits between `-- store: cut` and `-- store: end` and is left out of store builds.
@@ -24,12 +26,14 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `readwise.xtapp` | new: Readwise Reader |
+| `skytonight.xtapp` | new: Sky Tonight |
 | `litclock.xtapp` | new: Literary Clock |
 | `wordclock.xtapp` | new: Word Clock |
+| `notes.xtapp` | changed: QR codes on a page (and on the lock screen) |
 | `hackernews.xtapp` | changed: clearer list, status line under the buttons |
 | `dict.xtapp` | changed: Word of the Day picks a different word each day again; reads the user folder |
 | `game2048.xtapp`, `merchant.xtapp`, `slidepuzzle.xtapp`, `sokoban.xtapp`, `sudoku.xtapp`, `suguru.xtapp` | changed: official API calls for the store (Merchant: a plain dash for the em dash) |
-| `anki.xtapp`, `calculator.xtapp`, `calendar.xtapp`, `chess.xtapp`, `freecell.xtapp`, `klondike.xtapp`, `knightstour.xtapp`, `lightsout.xtapp`, `mahjong.xtapp`, `minesweeper.xtapp`, `nonogram.xtapp`, `notes.xtapp`, `pegsolitaire.xtapp`, `tasks.xtapp`, `tbr.xtapp`, `weather.xtapp`, `wikipedia.xtapp` | changed: official API calls (no change in use); Wikipedia and Anki also read files from the app's user folder |
+| `anki.xtapp`, `calculator.xtapp`, `calendar.xtapp`, `chess.xtapp`, `freecell.xtapp`, `klondike.xtapp`, `knightstour.xtapp`, `lightsout.xtapp`, `mahjong.xtapp`, `minesweeper.xtapp`, `nonogram.xtapp`, `pegsolitaire.xtapp`, `tasks.xtapp`, `tbr.xtapp`, `weather.xtapp`, `wikipedia.xtapp` | changed: official API calls (no change in use); Wikipedia and Anki also read files from the app's user folder |
 | `instapaper.xtapp`, `readwise.xtapp`, `rss.xtapp`, `wallabag.xtapp` | changed: official API calls (no change in use) |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
