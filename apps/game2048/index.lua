@@ -146,15 +146,15 @@ local function do_move(dr, dc)
   moves_since_full = moves_since_full + 1
   if moves_since_full >= FULL_EVERY then
     moves_since_full = 0
-    pcall(function() ctx.display:full_refresh() end)
+    pcall(function() ctx:invalidate('full') end)
   end
-  pcall(ctx.invalidate)
+  pcall(function() ctx:invalidate() end)
 end
 
 ------------------------------------------------------------------ drawing
 
 local function text_w(s)
-  local ok, w = pcall(function() return g:measure_text(s) end)
+  local ok, w = pcall(function() return ctx.fonts.medium:measure(s) end)   -- g:text's default font
   if ok and type(w) == 'number' and w > 0 then return w end
   return 13 * #s                                      -- the system font is about 13 px per glyph
 end
@@ -207,7 +207,9 @@ local function draw_confirm()
   g:rect(NO.x, NO.y, NO.w, NO.h);     ctext(NO.x + NO.w // 2, NO.y + NO.h // 2, 'No')
 end
 
-function on_draw()
+-- the canvas comes as on_draw's second argument (API 2.x); the helpers draw on g
+function on_draw(_, canvas)
+  if canvas then g = canvas end
   g:clear(0)                                          -- own the whole frame, white
   g:text(BX, 36, '2048')
   rtext(480 - BX, 36, 'Score ' .. tostring(S.score))
@@ -230,20 +232,33 @@ local function handle_tap(x, y)
     if inside(YES, x, y) then new_game()
     elseif inside(NO, x, y) then confirm = false
     else return end
-    pcall(function() ctx.display:full_refresh() end)
-    pcall(ctx.invalidate)
+    pcall(function() ctx:invalidate('full') end)
+    pcall(function() ctx:invalidate() end)
     return
   end
   if inside(BTN, x, y) then
     confirm = true
-    pcall(ctx.invalidate)
+    pcall(function() ctx:invalidate() end)
   end
+end
+
+-- API 2.x sends pointer events (down / move / hold / up, the gesture on up); the older host sent
+-- one touch event per gesture. Both become that touch event; nil for a pointer phase to skip
+local function as_touch(ev)
+  if ev.type ~= 'pointer' then return ev end
+  if ev.phase ~= 'up' then return nil end
+  local gs = ev.gesture
+  if gs == 'double_tap' then gs = 'tap' end            -- the second of two quick taps
+  return { type = 'touch', gesture = gs, x = ev.x, y = ev.y }
 end
 
 function on_input(_, ev)
   if type(ev) ~= 'table' then return false end
+  ev = as_touch(ev)
+  if not ev then return true end
   if ev.type == 'key' then
-    if ev.state ~= nil and ev.state ~= 'down' then return true end
+    local st = ev.phase or ev.state                    -- phase on API 2.x, state on the older host
+    if st ~= nil and st ~= 'down' then return true end
     if ev.key == 'up' then do_move(-1, 0) elseif ev.key == 'down' then do_move(1, 0) end
     return true
   end
@@ -263,7 +278,7 @@ end
 
 function on_load(c)
   c = c or ctx
-  pcall(function() math.randomseed(c.sys.millis() + c.sys.epoch_sec()) end)
+  pcall(function() math.randomseed(ctx.clock:millis() + ctx.clock:now().epoch_sec) end)
   if type(c.state) ~= 'table' then c.state = {} end
   adopt_state(c.state)
 end

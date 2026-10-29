@@ -1,4 +1,4 @@
--- merchant_l10n/tr.lua — Turkish. Keys must match the English source exactly.
+-- merchant_l10n/tr.lua - Turkish. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Tüccar",
@@ -54,13 +54,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "İpek Yolu kervanı",
     ["%1 silver"] = "%1 gümüş",
-    ["Bazaar — buy low, sell high:"] = "Çarşı — ucuza al, pahalıya sat:",
+    ["Bazaar - buy low, sell high:"] = "Çarşı - ucuza al, pahalıya sat:",
     ["Travel"] = "Yola çık",
     ["Set out for where?"] = "Nereye yola çıkalım?",
     ["Moneylender"] = "Tefeci",
-    ["Moneylender — you owe %1"] = "Tefeci — borcun %1",
+    ["Moneylender - you owe %1"] = "Tefeci - borcun %1",
     ["Guild bank"] = "Lonca kasası",
-    ["Guild bank — balance %1"] = "Lonca kasası — bakiye %1",
+    ["Guild bank - balance %1"] = "Lonca kasası - bakiye %1",
     ["Guards"] = "Muhafız",
     ["Load"] = "Yük",
     ["Saffron"] = "Safran",
@@ -92,8 +92,8 @@ return {
     ["You have no guards to fight them!"] = "Onlarla savaşacak muhafızın yok!",
     ["Your guards struck one down!"] = "Muhafızların birini devirdi!",
     ["Your guards missed!"] = "Muhafızların ıskaladı!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Eşkıyalar dağıldı — kamplarından %1 ele geçirdin!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Eşkıyalar dağıldı - kamplarından %1 ele geçirdin!",
     ["They fought back! Health -%1 (%2 left)."] = "Karşılık verdiler! Sağlık -%1 (%2 kaldı).",
     ["You escaped through a mountain pass!"] = "Bir dağ geçidinden kaçıp kurtuldun!",
     ["They caught up with you! Health -%1 (%2 left)."] = "Sana yetiştiler! Sağlık -%1 (%2 kaldı).",
@@ -102,13 +102,13 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Yıldız tüccarı",
     ["%1 cr"] = "%1 kr",
-    ["Trade terminal — buy low, sell high:"] = "Ticaret terminali — ucuza al, pahalıya sat:",
+    ["Trade terminal - buy low, sell high:"] = "Ticaret terminali - ucuza al, pahalıya sat:",
     ["Warp"] = "Sıçra",
     ["Warp to where?"] = "Nereye sıçrayalım?",
     ["The Syndicate"] = "Sendika",
-    ["The Syndicate — you owe %1"] = "Sendika — borcun %1",
+    ["The Syndicate - you owe %1"] = "Sendika - borcun %1",
     ["Galactic bank"] = "Galaktik banka",
-    ["Galactic bank — balance %1"] = "Galaktik banka — bakiye %1",
+    ["Galactic bank - balance %1"] = "Galaktik banka - bakiye %1",
     ["Turrets"] = "Taret",
     ["Cargo"] = "Kargo",
     ["Antimatter"] = "Antimadde",
@@ -123,8 +123,8 @@ return {
     ["Ceres Belt"] = "Ceres Kuşağı",
     ["Europa Dock"] = "Europa Rıhtımı",
     ["Titan Refinery"] = "Titan Rafinerisi",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Kolonide kıtlık — %1 fahiş fiyattan satılıyor!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Kolonide kıtlık - %1 fahiş fiyattan satılıyor!",
     ["A freighter dumped cheap %1 on the market!"] = "Bir yük gemisi piyasaya ucuz %1 boşalttı!",
     ["You salvaged a credit chip worth %1!"] = "%1 değerinde bir kredi çipi buldun!",
     ["A dock hustler scammed you! Lost %1."] = "Rıhtımda bir dolandırıcıya kandın! %1 kaybettin.",
@@ -140,9 +140,9 @@ return {
         = "Korsan gemileri (%1) yaklaşıyor!\nGövde %2 · Taret %3",
     ["Evade"] = "Kaçın",
     ["You have no turrets to fight with!"] = "Savaşacak taretin yok!",
-    ["Direct hit — one pirate is down!"] = "Tam isabet — bir korsan düştü!",
+    ["Direct hit - one pirate is down!"] = "Tam isabet - bir korsan düştü!",
     ["Your shots went wide!"] = "Atışların boşa gitti!",
-    ["The pirates are destroyed — you salvage %1!"] = "Korsanlar yok edildi — enkazdan %1 topladın!",
+    ["The pirates are destroyed - you salvage %1!"] = "Korsanlar yok edildi - enkazdan %1 topladın!",
     ["They returned fire! Hull -%1 (%2 left)."] = "Ateşe karşılık verdiler! Gövde -%1 (%2 kaldı).",
     ["You lost them in an asteroid field!"] = "Onları bir asteroit kuşağında atlattın!",
     ["They kept pace! Hull -%1 (%2 left)."] = "Peşini bırakmadılar! Gövde -%1 (%2 kaldı).",
@@ -150,11 +150,11 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Yelkenli kaptanı",
-    ["Harbor market — buy low, sell high:"] = "Liman pazarı — ucuza al, pahalıya sat:",
+    ["Harbor market - buy low, sell high:"] = "Liman pazarı - ucuza al, pahalıya sat:",
     ["Set sail"] = "Yelken aç",
     ["Set sail for where?"] = "Nereye yelken açalım?",
     ["Bank"] = "Banka",
-    ["Bank — balance %1"] = "Banka — bakiye %1",
+    ["Bank - balance %1"] = "Banka - bakiye %1",
     ["Cannons"] = "Top",
     ["Hold"] = "Ambar",
     ["Porcelain"] = "Porselen",
@@ -181,10 +181,10 @@ return {
     ["Pirate junks (%1) are bearing down on you!\nHull %2 · Cannons %3"]
         = "Korsan tekneleri (%1) üzerine geliyor!\nGövde %2 · Top %3",
     ["You have no cannons to fight with!"] = "Savaşacak topun yok!",
-    ["A broadside — one junk is sinking!"] = "Tam yaylım ateşi — bir tekne batıyor!",
+    ["A broadside - one junk is sinking!"] = "Tam yaylım ateşi - bir tekne batıyor!",
     ["Your broadside missed!"] = "Yaylım ateşin ıskaladı!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Korsanlar bayrak indirdi — %1 ganimet ele geçirdin!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Korsanlar bayrak indirdi - %1 ganimet ele geçirdin!",
     ["They raked your decks! Hull -%1 (%2 left)."] = "Güverteni ateşe tuttular! Gövde -%1 (%2 kaldı).",
     ["You slipped away into a fog bank!"] = "Bir sis kümesinin içinde gözden kayboldun!",
     ["They stayed on your tail! Hull -%1 (%2 left)."] = "Dümen suyundan ayrılmadılar! Gövde -%1 (%2 kaldı).",
@@ -192,11 +192,11 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antikacı",
-    ["Today's finds — buy low, sell high:"] = "Günün buluntuları — ucuza al, pahalıya sat:",
+    ["Today's finds - buy low, sell high:"] = "Günün buluntuları - ucuza al, pahalıya sat:",
     ["Move on"] = "Devam et",
     ["Head to which quarter?"] = "Hangi semte gidelim?",
     ["Pawnbroker"] = "Rehinci",
-    ["Pawnbroker — you owe %1"] = "Rehinci — borcun %1",
+    ["Pawnbroker - you owe %1"] = "Rehinci - borcun %1",
     ["Experts"] = "Eksper",
     ["Bag"] = "Çanta",
     ["Illuminated manuscripts"] = "Tezhipli el yazması",
@@ -231,8 +231,8 @@ return {
     ["You have no expert to spot the fakes!"] = "Sahteleri ayırt edecek eksperin yok!",
     ["Your expert exposed one of them!"] = "Eksperin birinin foyasını ortaya çıkardı!",
     ["Their forgery fooled your expert!"] = "Sahtekârlıkları eksperini kandırdı!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Sahteciler kaçtı — kalabalık seni %1 değerinde alışverişle ödüllendirdi!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Sahteciler kaçtı - kalabalık seni %1 değerinde alışverişle ödüllendirdi!",
     ["They rattled you badly! Nerve -%1 (%2 left)."] = "Seni fena sarstılar! Cesaret -%1 (%2 kaldı).",
     ["You slipped away into the crowd!"] = "Kalabalığın arasına karışıp kayboldun!",
     ["They followed you, jeering! Nerve -%1 (%2 left)."]

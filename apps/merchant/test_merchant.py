@@ -79,7 +79,7 @@ def num(s):
 MARKET_Y, ROW = 186, 72
 t = texts()
 assert 'Constantinople' in t and 'Day 1 / 30' in t and 'Cash 2,000 silver' in t, t
-assert 'Bazaar — buy low, sell high:' in t and 'Travel' in t and 'Moneylender' in t and 'Guild bank' in t, t
+assert 'Bazaar - buy low, sell high:' in t and 'Travel' in t and 'Moneylender' in t and 'Guild bank' in t, t
 assert 'game.txt' in g.store
 
 # buy the cheapest good there is a price for, as many as possible
@@ -186,10 +186,10 @@ assert 'Day 2 / 30' in texts()
 tap_label('Settings'); tap_label('Theme: Silk Road caravan')
 assert 'Theme: Star trader' in texts()
 tap_label('Close')
-assert 'Bazaar — buy low, sell high:' in texts()                  # the run keeps its theme
+assert 'Bazaar - buy low, sell high:' in texts()                  # the run keeps its theme
 tap_label('New game'); tap_label('New game')
 t = texts()
-assert 'Trade terminal — buy low, sell high:' in t and 'Terra Station' in t and 'Day 1 / 30' in t, t
+assert 'Trade terminal - buy low, sell high:' in t and 'Terra Station' in t and 'Day 1 / 30' in t, t
 
 # play to the end: 30 days, then the final score and a best score for the theme
 for _ in range(80):

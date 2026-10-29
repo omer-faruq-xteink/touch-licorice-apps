@@ -1,4 +1,4 @@
-"""Offline test of suguru/index.lua under Lua 5.4 (lupa), with the same ctx.data emulation as the
+"""Offline test of suguru/index.lua under Lua 5.4 (lupa), with the same ctx.package emulation as the
 Sudoku test (open_text -> reader with read_line / seek / tell / close), fed the exact files
 xtpack.collect_data_files() puts into the package. Also checks that bank puzzles have exactly one
 solution, with make_bank.py's solver.
@@ -26,7 +26,7 @@ g = setmetatable({}, {__index = function(_, k) return function(self, ...)
   if k == 'measure_text' then local s = ...; return 13 * #s, 24 end
 end end})
 ctx = { state = {}, invalidate = function() inval = inval + 1 end, display = { full_refresh = function() end },
-        sys = { millis = function() return 1 end, epoch_sec = function() return 2 end }, data = {} }
+        sys = { millis = function() return 1 end, epoch_sec = function() return 2 end }, package = {} }
 __TEST = {}
 '''
 
@@ -35,7 +35,7 @@ def make_rt(with_data=True):
     rt = L.LuaRuntime(unpack_returned_tuples=True)
     rt.execute(LUA_STUBS)
     store = FILES if with_data else {}
-    data = rt.eval('ctx.data')
+    data = rt.eval('ctx.package')
 
     def open_text(self, name, opts=None):
         if name not in store:

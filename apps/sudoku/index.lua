@@ -97,9 +97,9 @@ end
 
 ------------------------------------------------------------------ banks (data section + built-in)
 
--- API 2.9 calls the data section ctx.package (API 0.8: ctx.data)
+-- the package's data files (ctx.package, API 2.x)
 local function open_text(name)
-  local D = ctx.package or ctx.data
+  local D = ctx.package
   if not D then return nil, 'no data section' end
   local ok, r, err = pcall(function() return D:open_text(name) end)
   if ok and r ~= nil and type(r) ~= 'string' then return r end
@@ -396,7 +396,7 @@ function on_input(_, ev)
     return true
   end
   save_state()
-  pcall(function() ctx.invalidate() end)
+  pcall(function() ctx:invalidate() end)
   return true
 end
 

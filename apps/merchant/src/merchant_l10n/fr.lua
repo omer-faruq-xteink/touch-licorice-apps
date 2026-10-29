@@ -1,4 +1,4 @@
--- merchant_l10n/fr.lua — French. Keys must match the English source exactly.
+-- merchant_l10n/fr.lua - French. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Marchand",
@@ -56,13 +56,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Caravane de la route de la soie",
     ["%1 silver"] = "%1 pièces d'argent",
-    ["Bazaar — buy low, sell high:"] = "Bazar — achetez bas, vendez haut :",
+    ["Bazaar - buy low, sell high:"] = "Bazar - achetez bas, vendez haut :",
     ["Travel"] = "Voyager",
     ["Set out for where?"] = "Partir vers où ?",
     ["Moneylender"] = "Usurier",
-    ["Moneylender — you owe %1"] = "Usurier — vous devez %1",
+    ["Moneylender - you owe %1"] = "Usurier - vous devez %1",
     ["Guild bank"] = "Caisse de la guilde",
-    ["Guild bank — balance %1"] = "Caisse de la guilde — solde %1",
+    ["Guild bank - balance %1"] = "Caisse de la guilde - solde %1",
     ["Guards"] = "Gardes",
     ["Load"] = "Charge",
     ["Saffron"] = "Safran",
@@ -102,8 +102,8 @@ return {
         = "Vous n'avez pas de gardes pour les combattre !",
     ["Your guards struck one down!"] = "Vos gardes en ont abattu un !",
     ["Your guards missed!"] = "Vos gardes ont manqué leur coup !",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Les bandits se dispersent — vous saisissez %1 dans leur camp !",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Les bandits se dispersent - vous saisissez %1 dans leur camp !",
     ["They fought back! Health -%1 (%2 left)."]
         = "Ils ont riposté ! Santé -%1 (%2 restants).",
     ["You escaped through a mountain pass!"]
@@ -115,14 +115,14 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Marchand des étoiles",
     ["%1 cr"] = "%1 cr",
-    ["Trade terminal — buy low, sell high:"]
-        = "Terminal de commerce — achetez bas, vendez haut :",
+    ["Trade terminal - buy low, sell high:"]
+        = "Terminal de commerce - achetez bas, vendez haut :",
     ["Warp"] = "Saut",
     ["Warp to where?"] = "Sauter vers où ?",
     ["The Syndicate"] = "Le Syndicat",
-    ["The Syndicate — you owe %1"] = "Le Syndicat — vous devez %1",
+    ["The Syndicate - you owe %1"] = "Le Syndicat - vous devez %1",
     ["Galactic bank"] = "Banque galactique",
-    ["Galactic bank — balance %1"] = "Banque galactique — solde %1",
+    ["Galactic bank - balance %1"] = "Banque galactique - solde %1",
     ["Turrets"] = "Tourelles",
     ["Cargo"] = "Cargaison",
     ["Antimatter"] = "Antimatière",
@@ -137,8 +137,8 @@ return {
     ["Ceres Belt"] = "Ceinture de Cérès",
     ["Europa Dock"] = "Dock d'Europe",
     ["Titan Refinery"] = "Raffinerie de Titan",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Pénurie dans la colonie — %1 se vend à des prix fous !",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Pénurie dans la colonie - %1 se vend à des prix fous !",
     ["A freighter dumped cheap %1 on the market!"]
         = "Un cargo a déversé du %1 bon marché sur le marché !",
     ["You salvaged a credit chip worth %1!"]
@@ -159,10 +159,10 @@ return {
     ["Evade"] = "Esquiver",
     ["You have no turrets to fight with!"]
         = "Vous n'avez pas de tourelles pour combattre !",
-    ["Direct hit — one pirate is down!"] = "Coup au but — un pirate en moins !",
+    ["Direct hit - one pirate is down!"] = "Coup au but - un pirate en moins !",
     ["Your shots went wide!"] = "Vos tirs sont passés à côté !",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "Les pirates sont détruits — vous récupérez %1 !",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "Les pirates sont détruits - vous récupérez %1 !",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "Ils ont riposté ! Coque -%1 (%2 restants).",
     ["You lost them in an asteroid field!"]
@@ -174,12 +174,12 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Capitaine de clipper",
-    ["Harbor market — buy low, sell high:"]
-        = "Marché du port — achetez bas, vendez haut :",
+    ["Harbor market - buy low, sell high:"]
+        = "Marché du port - achetez bas, vendez haut :",
     ["Set sail"] = "Appareiller",
     ["Set sail for where?"] = "Appareiller vers où ?",
     ["Bank"] = "Banque",
-    ["Bank — balance %1"] = "Banque — solde %1",
+    ["Bank - balance %1"] = "Banque - solde %1",
     ["Cannons"] = "Canons",
     ["Hold"] = "Cale",
     ["Porcelain"] = "Porcelaine",
@@ -212,10 +212,10 @@ return {
         = "Des jonques pirates (%1) fondent sur vous !\nCoque %2 · Canons %3",
     ["You have no cannons to fight with!"]
         = "Vous n'avez pas de canons pour combattre !",
-    ["A broadside — one junk is sinking!"] = "Une bordée — une jonque coule !",
+    ["A broadside - one junk is sinking!"] = "Une bordée - une jonque coule !",
     ["Your broadside missed!"] = "Votre bordée a manqué sa cible !",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Les pirates amènent leur pavillon — vous saisissez %1 de butin !",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Les pirates amènent leur pavillon - vous saisissez %1 de butin !",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "Ils ont balayé votre pont ! Coque -%1 (%2 restants).",
     ["You slipped away into a fog bank!"]
@@ -226,12 +226,12 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antiquaire",
-    ["Today's finds — buy low, sell high:"]
-        = "Trouvailles du jour — achetez bas, vendez haut :",
+    ["Today's finds - buy low, sell high:"]
+        = "Trouvailles du jour - achetez bas, vendez haut :",
     ["Move on"] = "Continuer",
     ["Head to which quarter?"] = "Vers quel quartier ?",
     ["Pawnbroker"] = "Prêteur sur gages",
-    ["Pawnbroker — you owe %1"] = "Prêteur sur gages — vous devez %1",
+    ["Pawnbroker - you owe %1"] = "Prêteur sur gages - vous devez %1",
     ["Experts"] = "Experts",
     ["Bag"] = "Sacoche",
     ["Illuminated manuscripts"] = "Manuscrits enluminés",
@@ -271,8 +271,8 @@ return {
         = "Vous n'avez aucun expert pour repérer les faux !",
     ["Your expert exposed one of them!"] = "Votre expert en a démasqué un !",
     ["Their forgery fooled your expert!"] = "Leur faux a trompé votre expert !",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Les faussaires s'enfuient — la foule vous récompense de %1 en affaires !",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Les faussaires s'enfuient - la foule vous récompense de %1 en affaires !",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "Ils vous ont sérieusement ébranlé ! Sang-froid -%1 (%2 restants).",
     ["You slipped away into the crowd!"]

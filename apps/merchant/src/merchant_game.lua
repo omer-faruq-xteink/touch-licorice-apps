@@ -6,7 +6,7 @@
 -- strings to a `messages` list and/or sets `self.pending` to an interactive
 -- event the UI must resolve (an enemy encounter or a market offer).
 --
--- All flavour — goods, places, narration — comes from the theme table
+-- All flavour - goods, places, narration - comes from the theme table
 -- (see merchant_themes.lua); the rules below are the same for every theme.
 
 local Themes = require("merchant_themes")

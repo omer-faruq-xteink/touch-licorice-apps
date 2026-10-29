@@ -201,8 +201,11 @@ end
 
 ------------------------------------------------------------------ data section
 
+-- the package's data files (ctx.package, API 2.x)
+local function data() return ctx.package end
+
 local function read_text(name)
-  local ok, r = pcall(function() return ctx.data:open_text(name) end)
+  local ok, r = pcall(function() return data():open_text(name) end)
   if ok and r ~= nil and type(r) ~= 'string' then
     local parts = {}
     pcall(function()
@@ -215,7 +218,7 @@ local function read_text(name)
     pcall(function() r:close() end)
     if #parts > 0 then return table.concat(parts, '\n') .. '\n' end
   end
-  local ok2, s = pcall(function() return ctx.data:read_text(name) end)
+  local ok2, s = pcall(function() return ctx.package:read(name) end)
   if ok2 and type(s) == 'string' then return s end
   return nil
 end
@@ -273,7 +276,7 @@ local function get_level(set, n)
   if not set.idx and not load_index(set) then return nil end
   local e = set.idx[n]
   if not e then return nil end
-  local ok, r = pcall(function() return ctx.data:open_text(set.file) end)
+  local ok, r = pcall(function() return data():open_text(set.file) end)
   if not ok or r == nil or type(r) == 'string' then return nil end
   local rows = {}
   pcall(function()
@@ -388,7 +391,7 @@ local function start_level(set, idx, hist)
   confirm = false
   mode = 'play'
   moves_since_full = 0
-  pcall(function() ctx.display:full_refresh() end)
+  pcall(function() ctx:invalidate('full') end)
 end
 
 local function adopt_state(state)
@@ -419,7 +422,7 @@ local function do_move(dkey)
   moves_since_full = moves_since_full + 1
   if moves_since_full >= FULL_EVERY then
     moves_since_full = 0
-    pcall(function() ctx.display:full_refresh() end)
+    pcall(function() ctx:invalidate('full') end)
   end
 end
 
@@ -447,7 +450,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local function text_w(s)
-  local ok, w = pcall(function() return g:measure_text(s) end)
+  local ok, w = pcall(function() return ctx.fonts.medium:measure(s) end)   -- g:text's default font
   if ok and type(w) == 'number' and w > 0 then return w end
   return 13 * #s
 end
@@ -568,7 +571,7 @@ end
 local function tap(x, y)
   if mode == 'sets' then tap_sets(x, y); return end
   if confirm then
-    if inside(YES, x, y) then goto_level(0); pcall(function() ctx.display:full_refresh() end)
+    if inside(YES, x, y) then goto_level(0); pcall(function() ctx:invalidate('full') end)
     elseif inside(NO, x, y) then confirm = false end
     return
   end
@@ -596,16 +599,29 @@ local function tap(x, y)
   end
 end
 
+-- API 2.x sends pointer events (down / move / hold / up, the gesture on up); the older host sent
+-- one touch event per gesture. Both become that touch event; nil for a pointer phase to skip
+local function as_touch(ev)
+  if ev.type ~= 'pointer' then return ev end
+  if ev.phase ~= 'up' then return nil end
+  local gs = ev.gesture
+  if gs == 'double_tap' then gs = 'tap' end            -- the second of two quick taps
+  return { type = 'touch', gesture = gs, x = ev.x, y = ev.y }
+end
+
 local function input_impl(ev)
   if type(ev) ~= 'table' then return false end
+  ev = as_touch(ev)
+  if not ev then return true end
   if ev.type == 'key' then
-    if ev.state ~= nil and ev.state ~= 'down' then return true end
+    local st = ev.phase or ev.state                    -- phase on API 2.x, state on the older host
+    if st ~= nil and st ~= 'down' then return true end
     if mode == 'sets' then
       if ev.key == 'up' then page = math.max(1, page - 1) elseif ev.key == 'down' then page = math.min(pages(), page + 1) end
     elseif L and L.solved and ev.key == 'down' then goto_level(1)
     elseif ev.key == 'up' then do_move('u')
     elseif ev.key == 'down' then do_move('d') end
-    pcall(ctx.invalidate)
+    pcall(function() ctx:invalidate() end)
     return true
   end
   if ev.type == 'touch' then
@@ -618,7 +634,7 @@ local function input_impl(ev)
       elseif gs == 'swipe_up' then do_move('u')
       elseif gs == 'swipe_down' then do_move('d') end
     end
-    pcall(ctx.invalidate)
+    pcall(function() ctx:invalidate() end)
     return true
   end
   return false
@@ -656,7 +672,9 @@ function on_load(c)
   if not ok then show_error('on_load', err) end
 end
 
-function on_draw()
+-- the canvas comes as on_draw's second argument (API 2.x); the helpers draw on g
+function on_draw(_, canvas)
+  if canvas then g = canvas end
   if ERR then draw_error(); return end
   local ok, err = pcall(draw_impl)
   if not ok then show_error('on_draw', err); pcall(draw_error) end
@@ -665,7 +683,7 @@ end
 function on_input(_, ev)
   if ERR then return true end
   local ok, res = pcall(input_impl, ev)
-  if not ok then show_error('on_input', res); pcall(ctx.invalidate); return true end
+  if not ok then show_error('on_input', res); pcall(function() ctx:invalidate() end); return true end
   return res
 end
 

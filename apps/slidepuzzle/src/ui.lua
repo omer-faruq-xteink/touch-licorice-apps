@@ -33,7 +33,7 @@ local ERR = nil
 local new_or_resume      -- defined with on_load
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 local function now_ms() local ok, t = pcall(function() return ctx.clock:millis() end); return ok and tonumber(t) or nil end
 
 local function fmt_time(total)
@@ -87,7 +87,7 @@ end
 local function load_game(n)
   local t = kv(read('game' .. n .. '.txt'))
   if not t.grid or settings.always_new then
-    local g = Game:new(n); g:shuffle(); return g
+    local fresh = Game:new(n); fresh:shuffle(); return fresh
   end
   local grid = {}
   for row in (t.grid .. ';'):gmatch('([^;]*);') do
@@ -95,10 +95,10 @@ local function load_game(n)
     for v in (row .. ','):gmatch('([^,]*),') do cells[#cells + 1] = tonumber(v) end
     grid[#grid + 1] = cells
   end
-  local g = Game.deserialize({ size = n, grid = grid, moves = tonumber(t.moves), elapsed = tonumber(t.elapsed),
-                               started = t.started == '1' }, n)
-  if g:isWon() then g:shuffle() end                  -- a finished puzzle: start a new one
-  return g
+  local saved = Game.deserialize({ size = n, grid = grid, moves = tonumber(t.moves), elapsed = tonumber(t.elapsed),
+                                   started = t.started == '1' }, n)
+  if saved:isWon() then saved:shuffle() end          -- a finished puzzle: start a new one
+  return saved
 end
 
 ------------------------------------------------------------------ text

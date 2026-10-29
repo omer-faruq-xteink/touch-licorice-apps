@@ -34,7 +34,8 @@ STORE_ICON_PX = 512
 # the API version a store build declares: Studio checks every call against it (the sideloaded
 # packages keep "2.0", which the X4 Pro's host runs as 2.9); 2.1 zlib, image decode; 2.4
 # net:keep_wifi; 2.8 lockscreen:clear_default; 2.2 ctx.state; 2.9 ctx.files
-STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.4', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9'}
+STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.4', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9',
+             'game2048': '2.2', 'sokoban': '2.2', 'sudoku': '2.2', 'suguru': '2.2'}
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):
 # from a line "-- store: cut" through the next "-- store: end"
 STORE_CUT = re.compile(r'^[ \t]*-- store: cut.*?^[ \t]*-- store: end[^\n]*\n', re.M | re.S)
@@ -79,14 +80,15 @@ DATA_NAME = re.compile(r'^[A-Za-z0-9._-]{1,64}$')
 
 
 def data_files(app, app_dir):
-    """{name: bytes} of apps/<app>/data/ (the official packager's rules for names and formats)."""
-    d = os.path.join(app_dir, 'data')
+    """{name: bytes}: apps/<app>/data/ as the sideloaded packages carry it (xtpack: normalised
+    files and the generated banks.tsv the games read), checked against the official packager's
+    rules for names and formats."""
     out = {}
-    for fn in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+    for fn, blob in xtpack.collect_data_files(app_dir):
         ext = fn.rsplit('.', 1)[-1]
         if not DATA_NAME.match(fn) or ext not in DATA_FORMATS:
             raise SystemExit(f'{app}: data/{fn}: a data file name is [A-Za-z0-9._-], at most 64 bytes, .txt .tsv or .json')
-        out[fn] = open(os.path.join(d, fn), 'rb').read()
+        out[fn] = blob
     return out
 
 
@@ -94,11 +96,13 @@ def manifest_for(app, app_dir, ids):
     src = json.load(open(os.path.join(app_dir, 'manifest.json'), encoding='utf-8'))
     m = {k: src[k] for k in FIELDS if k in src}
     m['app_id'] = ids.get(app, src['app_id'])
-    m['api'] = STORE_API.get(app, m['api'])
+    m['api'] = STORE_API.get(app, m.get('api', '2.0'))
     m['app_icon_s'] = 'icon'
     # every app here is drawn for the X4 Pro's touch screen; the X4 Classic has only keys
     m['requires'] = sorted(set(m.get('requires', [])) | {'pointer'})
-    if not m.get('permissions'):
+    # only the official names (an unknown one refuses the install); the older host's sys.* go
+    m['permissions'] = [x for x in m.get('permissions', []) if x in ('net', 'reader')]
+    if not m['permissions']:
         m.pop('permissions', None)
     lock = m.get('lockscreen')
     if lock:

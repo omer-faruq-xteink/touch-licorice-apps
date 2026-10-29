@@ -43,7 +43,7 @@ local function short(s, n)
   while #t > n - 1 or (#t > 0 and t:sub(-1):byte() >= 128 and not utf8.len(t)) do t = drop_last(t) end
   return t .. '~'
 end
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 local function fmt(n) return MerchantGame.format(n) end
 
 ------------------------------------------------------------------ storage
@@ -138,12 +138,12 @@ local function switch_language(lang)
   save_settings()
   __unload('merchant_')
   load_modules()
-  local g = MerchantGame:new(Themes.get(settings.theme))
+  local ng = MerchantGame:new(Themes.get(settings.theme))
   if st then
     st.location = Themes.get(st.theme).locations[loc_i]
-    g:load(st)
+    ng:load(st)
   end
-  game = g
+  game = ng
   save()
 end
 

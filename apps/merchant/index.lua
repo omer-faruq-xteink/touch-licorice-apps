@@ -57,7 +57,7 @@ __mods['merchant_l10n'] = function()
 end
 
 __mods['merchant_l10n/de'] = function()
--- merchant_l10n/de.lua — German. Keys must match the English source exactly.
+-- merchant_l10n/de.lua - German. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Händler",
@@ -115,13 +115,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Seidenstraßen-Karawane",
     ["%1 silver"] = "%1 Silber",
-    ["Bazaar — buy low, sell high:"] = "Basar — billig kaufen, teuer verkaufen:",
+    ["Bazaar - buy low, sell high:"] = "Basar - billig kaufen, teuer verkaufen:",
     ["Travel"] = "Reisen",
     ["Set out for where?"] = "Wohin aufbrechen?",
     ["Moneylender"] = "Geldverleiher",
-    ["Moneylender — you owe %1"] = "Geldverleiher — du schuldest %1",
+    ["Moneylender - you owe %1"] = "Geldverleiher - du schuldest %1",
     ["Guild bank"] = "Gildenkasse",
-    ["Guild bank — balance %1"] = "Gildenkasse — Guthaben %1",
+    ["Guild bank - balance %1"] = "Gildenkasse - Guthaben %1",
     ["Guards"] = "Wachen",
     ["Load"] = "Last",
     ["Saffron"] = "Safran",
@@ -155,8 +155,8 @@ return {
     ["You have no guards to fight them!"] = "Du hast keine Wachen, um zu kämpfen!",
     ["Your guards struck one down!"] = "Deine Wachen haben einen niedergestreckt!",
     ["Your guards missed!"] = "Deine Wachen haben verfehlt!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Die Banditen zerstreuen sich — du erbeutest %1 aus ihrem Lager!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Die Banditen zerstreuen sich - du erbeutest %1 aus ihrem Lager!",
     ["They fought back! Health -%1 (%2 left)."]
         = "Sie haben sich gewehrt! Gesundheit -%1 (%2 übrig).",
     ["You escaped through a mountain pass!"] = "Du bist über einen Gebirgspass entkommen!",
@@ -167,13 +167,13 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Sternenhändler",
     ["%1 cr"] = "%1 Cr",
-    ["Trade terminal — buy low, sell high:"] = "Handelsterminal — billig kaufen, teuer verkaufen:",
+    ["Trade terminal - buy low, sell high:"] = "Handelsterminal - billig kaufen, teuer verkaufen:",
     ["Warp"] = "Sprung",
     ["Warp to where?"] = "Wohin springen?",
     ["The Syndicate"] = "Das Syndikat",
-    ["The Syndicate — you owe %1"] = "Das Syndikat — du schuldest %1",
+    ["The Syndicate - you owe %1"] = "Das Syndikat - du schuldest %1",
     ["Galactic bank"] = "Galaktische Bank",
-    ["Galactic bank — balance %1"] = "Galaktische Bank — Guthaben %1",
+    ["Galactic bank - balance %1"] = "Galaktische Bank - Guthaben %1",
     ["Turrets"] = "Geschütze",
     ["Cargo"] = "Fracht",
     ["Antimatter"] = "Antimaterie",
@@ -188,8 +188,8 @@ return {
     ["Ceres Belt"] = "Ceres-Gürtel",
     ["Europa Dock"] = "Europa-Dock",
     ["Titan Refinery"] = "Titan-Raffinerie",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Engpass in der Kolonie — %1 erzielt Wucherpreise!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Engpass in der Kolonie - %1 erzielt Wucherpreise!",
     ["A freighter dumped cheap %1 on the market!"]
         = "Ein Frachter hat billiges %1 auf den Markt geworfen!",
     ["You salvaged a credit chip worth %1!"] = "Du hast einen Kreditchip im Wert von %1 geborgen!",
@@ -208,10 +208,10 @@ return {
         = "Piratenschiffe (%1) nähern sich!\nHülle %2 · Geschütze %3",
     ["Evade"] = "Ausweichen",
     ["You have no turrets to fight with!"] = "Du hast keine Geschütze zum Kämpfen!",
-    ["Direct hit — one pirate is down!"] = "Volltreffer — ein Pirat ist erledigt!",
+    ["Direct hit - one pirate is down!"] = "Volltreffer - ein Pirat ist erledigt!",
     ["Your shots went wide!"] = "Deine Schüsse gingen daneben!",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "Die Piraten sind vernichtet — du birgst %1!",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "Die Piraten sind vernichtet - du birgst %1!",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "Sie haben das Feuer erwidert! Hülle -%1 (%2 übrig).",
     ["You lost them in an asteroid field!"] = "Du hast sie in einem Asteroidenfeld abgehängt!",
@@ -220,11 +220,11 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Klipper-Kapitän",
-    ["Harbor market — buy low, sell high:"] = "Hafenmarkt — billig kaufen, teuer verkaufen:",
+    ["Harbor market - buy low, sell high:"] = "Hafenmarkt - billig kaufen, teuer verkaufen:",
     ["Set sail"] = "Segel setzen",
     ["Set sail for where?"] = "Wohin segeln?",
     ["Bank"] = "Bank",
-    ["Bank — balance %1"] = "Bank — Guthaben %1",
+    ["Bank - balance %1"] = "Bank - Guthaben %1",
     ["Cannons"] = "Kanonen",
     ["Hold"] = "Laderaum",
     ["Porcelain"] = "Porzellan",
@@ -253,10 +253,10 @@ return {
     ["Pirate junks (%1) are bearing down on you!\nHull %2 · Cannons %3"]
         = "Piratendschunken (%1) halten auf dich zu!\nRumpf %2 · Kanonen %3",
     ["You have no cannons to fight with!"] = "Du hast keine Kanonen zum Kämpfen!",
-    ["A broadside — one junk is sinking!"] = "Eine Breitseite — eine Dschunke sinkt!",
+    ["A broadside - one junk is sinking!"] = "Eine Breitseite - eine Dschunke sinkt!",
     ["Your broadside missed!"] = "Deine Breitseite ging daneben!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Die Piraten streichen die Flagge — du machst %1 Beute!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Die Piraten streichen die Flagge - du machst %1 Beute!",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "Sie haben dein Deck beharkt! Rumpf -%1 (%2 übrig).",
     ["You slipped away into a fog bank!"] = "Du bist in einer Nebelbank entwischt!",
@@ -266,11 +266,11 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antiquitätenhändler",
-    ["Today's finds — buy low, sell high:"] = "Funde des Tages — billig kaufen, teuer verkaufen:",
+    ["Today's finds - buy low, sell high:"] = "Funde des Tages - billig kaufen, teuer verkaufen:",
     ["Move on"] = "Weiterziehen",
     ["Head to which quarter?"] = "In welches Viertel?",
     ["Pawnbroker"] = "Pfandleiher",
-    ["Pawnbroker — you owe %1"] = "Pfandleiher — du schuldest %1",
+    ["Pawnbroker - you owe %1"] = "Pfandleiher - du schuldest %1",
     ["Experts"] = "Experten",
     ["Bag"] = "Tasche",
     ["Illuminated manuscripts"] = "Prachthandschriften",
@@ -308,8 +308,8 @@ return {
         = "Du hast keinen Experten, der die Fälschungen erkennt!",
     ["Your expert exposed one of them!"] = "Dein Experte hat einen von ihnen entlarvt!",
     ["Their forgery fooled your expert!"] = "Ihre Fälschung hat deinen Experten getäuscht!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Die Fälscher fliehen — die Menge belohnt dich mit Geschäften im Wert von %1!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Die Fälscher fliehen - die Menge belohnt dich mit Geschäften im Wert von %1!",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "Sie haben dich schwer verunsichert! Nerven -%1 (%2 übrig).",
     ["You slipped away into the crowd!"] = "Du bist in der Menge untergetaucht!",
@@ -321,7 +321,7 @@ return {
 end
 
 __mods['merchant_l10n/es'] = function()
--- merchant_l10n/es.lua — Spanish. Keys must match the English source exactly.
+-- merchant_l10n/es.lua - Spanish. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Mercader",
@@ -379,13 +379,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Caravana de la Ruta de la Seda",
     ["%1 silver"] = "%1 de plata",
-    ["Bazaar — buy low, sell high:"] = "Bazar — compra barato, vende caro:",
+    ["Bazaar - buy low, sell high:"] = "Bazar - compra barato, vende caro:",
     ["Travel"] = "Viajar",
     ["Set out for where?"] = "¿Hacia dónde partimos?",
     ["Moneylender"] = "Prestamista",
-    ["Moneylender — you owe %1"] = "Prestamista — debes %1",
+    ["Moneylender - you owe %1"] = "Prestamista - debes %1",
     ["Guild bank"] = "Banca del gremio",
-    ["Guild bank — balance %1"] = "Banca del gremio — saldo %1",
+    ["Guild bank - balance %1"] = "Banca del gremio - saldo %1",
     ["Guards"] = "Guardias",
     ["Load"] = "Carga",
     ["Saffron"] = "Azafrán",
@@ -421,8 +421,8 @@ return {
     ["You have no guards to fight them!"] = "¡No tienes guardias para luchar!",
     ["Your guards struck one down!"] = "¡Tus guardias derribaron a uno!",
     ["Your guards missed!"] = "¡Tus guardias fallaron!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Los bandidos se dispersan — ¡te llevas %1 de su campamento!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Los bandidos se dispersan - ¡te llevas %1 de su campamento!",
     ["They fought back! Health -%1 (%2 left)."]
         = "¡Contraatacaron! Salud -%1 (quedan %2).",
     ["You escaped through a mountain pass!"] = "¡Escapaste por un paso de montaña!",
@@ -433,14 +433,14 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Comerciante estelar",
     ["%1 cr"] = "%1 cr",
-    ["Trade terminal — buy low, sell high:"]
-        = "Terminal comercial — compra barato, vende caro:",
+    ["Trade terminal - buy low, sell high:"]
+        = "Terminal comercial - compra barato, vende caro:",
     ["Warp"] = "Saltar",
     ["Warp to where?"] = "¿Saltar adónde?",
     ["The Syndicate"] = "El Sindicato",
-    ["The Syndicate — you owe %1"] = "El Sindicato — debes %1",
+    ["The Syndicate - you owe %1"] = "El Sindicato - debes %1",
     ["Galactic bank"] = "Banco galáctico",
-    ["Galactic bank — balance %1"] = "Banco galáctico — saldo %1",
+    ["Galactic bank - balance %1"] = "Banco galáctico - saldo %1",
     ["Turrets"] = "Torretas",
     ["Cargo"] = "Carga",
     ["Antimatter"] = "Antimateria",
@@ -455,8 +455,8 @@ return {
     ["Ceres Belt"] = "Cinturón de Ceres",
     ["Europa Dock"] = "Muelle de Europa",
     ["Titan Refinery"] = "Refinería de Titán",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Escasez en la colonia — ¡%1 se vende a precios desorbitados!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Escasez en la colonia - ¡%1 se vende a precios desorbitados!",
     ["A freighter dumped cheap %1 on the market!"]
         = "¡Un carguero soltó %1 barato en el mercado!",
     ["You salvaged a credit chip worth %1!"]
@@ -476,10 +476,10 @@ return {
         = "¡Naves piratas (%1) se acercan!\nCasco %2 · Torretas %3",
     ["Evade"] = "Evadir",
     ["You have no turrets to fight with!"] = "¡No tienes torretas para luchar!",
-    ["Direct hit — one pirate is down!"] = "Impacto directo — ¡un pirata menos!",
+    ["Direct hit - one pirate is down!"] = "Impacto directo - ¡un pirata menos!",
     ["Your shots went wide!"] = "¡Tus disparos se desviaron!",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "Los piratas han sido destruidos — ¡recuperas %1!",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "Los piratas han sido destruidos - ¡recuperas %1!",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "¡Devolvieron el fuego! Casco -%1 (queda %2).",
     ["You lost them in an asteroid field!"]
@@ -490,12 +490,12 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Capitán de clíper",
-    ["Harbor market — buy low, sell high:"]
-        = "Mercado del puerto — compra barato, vende caro:",
+    ["Harbor market - buy low, sell high:"]
+        = "Mercado del puerto - compra barato, vende caro:",
     ["Set sail"] = "Zarpar",
     ["Set sail for where?"] = "¿Zarpar hacia dónde?",
     ["Bank"] = "Banco",
-    ["Bank — balance %1"] = "Banco — saldo %1",
+    ["Bank - balance %1"] = "Banco - saldo %1",
     ["Cannons"] = "Cañones",
     ["Hold"] = "Bodega",
     ["Porcelain"] = "Porcelana",
@@ -526,10 +526,10 @@ return {
     ["Pirate junks (%1) are bearing down on you!\nHull %2 · Cannons %3"]
         = "¡Juncos piratas (%1) se te echan encima!\nCasco %2 · Cañones %3",
     ["You have no cannons to fight with!"] = "¡No tienes cañones para luchar!",
-    ["A broadside — one junk is sinking!"] = "Una andanada — ¡un junco se hunde!",
+    ["A broadside - one junk is sinking!"] = "Una andanada - ¡un junco se hunde!",
     ["Your broadside missed!"] = "¡Tu andanada falló!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Los piratas arrían la bandera — ¡te llevas %1 de botín!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Los piratas arrían la bandera - ¡te llevas %1 de botín!",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "¡Barrieron tu cubierta! Casco -%1 (queda %2).",
     ["You slipped away into a fog bank!"] = "¡Te escabulliste en un banco de niebla!",
@@ -539,12 +539,12 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Anticuario",
-    ["Today's finds — buy low, sell high:"]
-        = "Hallazgos del día — compra barato, vende caro:",
+    ["Today's finds - buy low, sell high:"]
+        = "Hallazgos del día - compra barato, vende caro:",
     ["Move on"] = "Seguir",
     ["Head to which quarter?"] = "¿A qué barrio vamos?",
     ["Pawnbroker"] = "Prestamista de empeños",
-    ["Pawnbroker — you owe %1"] = "Prestamista de empeños — debes %1",
+    ["Pawnbroker - you owe %1"] = "Prestamista de empeños - debes %1",
     ["Experts"] = "Expertos",
     ["Bag"] = "Bolsa",
     ["Illuminated manuscripts"] = "Manuscritos iluminados",
@@ -584,8 +584,8 @@ return {
         = "¡No tienes ningún experto que detecte las falsificaciones!",
     ["Your expert exposed one of them!"] = "¡Tu experto desenmascaró a uno de ellos!",
     ["Their forgery fooled your expert!"] = "¡Su falsificación engañó a tu experto!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Los falsificadores huyen — ¡la multitud te recompensa con %1 en tratos!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Los falsificadores huyen - ¡la multitud te recompensa con %1 en tratos!",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "¡Te desconcertaron de lo lindo! Temple -%1 (queda %2).",
     ["You slipped away into the crowd!"] = "¡Te escabulliste entre la multitud!",
@@ -597,7 +597,7 @@ return {
 end
 
 __mods['merchant_l10n/fr'] = function()
--- merchant_l10n/fr.lua — French. Keys must match the English source exactly.
+-- merchant_l10n/fr.lua - French. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Marchand",
@@ -655,13 +655,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Caravane de la route de la soie",
     ["%1 silver"] = "%1 pièces d'argent",
-    ["Bazaar — buy low, sell high:"] = "Bazar — achetez bas, vendez haut :",
+    ["Bazaar - buy low, sell high:"] = "Bazar - achetez bas, vendez haut :",
     ["Travel"] = "Voyager",
     ["Set out for where?"] = "Partir vers où ?",
     ["Moneylender"] = "Usurier",
-    ["Moneylender — you owe %1"] = "Usurier — vous devez %1",
+    ["Moneylender - you owe %1"] = "Usurier - vous devez %1",
     ["Guild bank"] = "Caisse de la guilde",
-    ["Guild bank — balance %1"] = "Caisse de la guilde — solde %1",
+    ["Guild bank - balance %1"] = "Caisse de la guilde - solde %1",
     ["Guards"] = "Gardes",
     ["Load"] = "Charge",
     ["Saffron"] = "Safran",
@@ -701,8 +701,8 @@ return {
         = "Vous n'avez pas de gardes pour les combattre !",
     ["Your guards struck one down!"] = "Vos gardes en ont abattu un !",
     ["Your guards missed!"] = "Vos gardes ont manqué leur coup !",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Les bandits se dispersent — vous saisissez %1 dans leur camp !",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Les bandits se dispersent - vous saisissez %1 dans leur camp !",
     ["They fought back! Health -%1 (%2 left)."]
         = "Ils ont riposté ! Santé -%1 (%2 restants).",
     ["You escaped through a mountain pass!"]
@@ -714,14 +714,14 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Marchand des étoiles",
     ["%1 cr"] = "%1 cr",
-    ["Trade terminal — buy low, sell high:"]
-        = "Terminal de commerce — achetez bas, vendez haut :",
+    ["Trade terminal - buy low, sell high:"]
+        = "Terminal de commerce - achetez bas, vendez haut :",
     ["Warp"] = "Saut",
     ["Warp to where?"] = "Sauter vers où ?",
     ["The Syndicate"] = "Le Syndicat",
-    ["The Syndicate — you owe %1"] = "Le Syndicat — vous devez %1",
+    ["The Syndicate - you owe %1"] = "Le Syndicat - vous devez %1",
     ["Galactic bank"] = "Banque galactique",
-    ["Galactic bank — balance %1"] = "Banque galactique — solde %1",
+    ["Galactic bank - balance %1"] = "Banque galactique - solde %1",
     ["Turrets"] = "Tourelles",
     ["Cargo"] = "Cargaison",
     ["Antimatter"] = "Antimatière",
@@ -736,8 +736,8 @@ return {
     ["Ceres Belt"] = "Ceinture de Cérès",
     ["Europa Dock"] = "Dock d'Europe",
     ["Titan Refinery"] = "Raffinerie de Titan",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Pénurie dans la colonie — %1 se vend à des prix fous !",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Pénurie dans la colonie - %1 se vend à des prix fous !",
     ["A freighter dumped cheap %1 on the market!"]
         = "Un cargo a déversé du %1 bon marché sur le marché !",
     ["You salvaged a credit chip worth %1!"]
@@ -758,10 +758,10 @@ return {
     ["Evade"] = "Esquiver",
     ["You have no turrets to fight with!"]
         = "Vous n'avez pas de tourelles pour combattre !",
-    ["Direct hit — one pirate is down!"] = "Coup au but — un pirate en moins !",
+    ["Direct hit - one pirate is down!"] = "Coup au but - un pirate en moins !",
     ["Your shots went wide!"] = "Vos tirs sont passés à côté !",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "Les pirates sont détruits — vous récupérez %1 !",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "Les pirates sont détruits - vous récupérez %1 !",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "Ils ont riposté ! Coque -%1 (%2 restants).",
     ["You lost them in an asteroid field!"]
@@ -773,12 +773,12 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Capitaine de clipper",
-    ["Harbor market — buy low, sell high:"]
-        = "Marché du port — achetez bas, vendez haut :",
+    ["Harbor market - buy low, sell high:"]
+        = "Marché du port - achetez bas, vendez haut :",
     ["Set sail"] = "Appareiller",
     ["Set sail for where?"] = "Appareiller vers où ?",
     ["Bank"] = "Banque",
-    ["Bank — balance %1"] = "Banque — solde %1",
+    ["Bank - balance %1"] = "Banque - solde %1",
     ["Cannons"] = "Canons",
     ["Hold"] = "Cale",
     ["Porcelain"] = "Porcelaine",
@@ -811,10 +811,10 @@ return {
         = "Des jonques pirates (%1) fondent sur vous !\nCoque %2 · Canons %3",
     ["You have no cannons to fight with!"]
         = "Vous n'avez pas de canons pour combattre !",
-    ["A broadside — one junk is sinking!"] = "Une bordée — une jonque coule !",
+    ["A broadside - one junk is sinking!"] = "Une bordée - une jonque coule !",
     ["Your broadside missed!"] = "Votre bordée a manqué sa cible !",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Les pirates amènent leur pavillon — vous saisissez %1 de butin !",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Les pirates amènent leur pavillon - vous saisissez %1 de butin !",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "Ils ont balayé votre pont ! Coque -%1 (%2 restants).",
     ["You slipped away into a fog bank!"]
@@ -825,12 +825,12 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antiquaire",
-    ["Today's finds — buy low, sell high:"]
-        = "Trouvailles du jour — achetez bas, vendez haut :",
+    ["Today's finds - buy low, sell high:"]
+        = "Trouvailles du jour - achetez bas, vendez haut :",
     ["Move on"] = "Continuer",
     ["Head to which quarter?"] = "Vers quel quartier ?",
     ["Pawnbroker"] = "Prêteur sur gages",
-    ["Pawnbroker — you owe %1"] = "Prêteur sur gages — vous devez %1",
+    ["Pawnbroker - you owe %1"] = "Prêteur sur gages - vous devez %1",
     ["Experts"] = "Experts",
     ["Bag"] = "Sacoche",
     ["Illuminated manuscripts"] = "Manuscrits enluminés",
@@ -870,8 +870,8 @@ return {
         = "Vous n'avez aucun expert pour repérer les faux !",
     ["Your expert exposed one of them!"] = "Votre expert en a démasqué un !",
     ["Their forgery fooled your expert!"] = "Leur faux a trompé votre expert !",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Les faussaires s'enfuient — la foule vous récompense de %1 en affaires !",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Les faussaires s'enfuient - la foule vous récompense de %1 en affaires !",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "Ils vous ont sérieusement ébranlé ! Sang-froid -%1 (%2 restants).",
     ["You slipped away into the crowd!"]
@@ -884,7 +884,7 @@ return {
 end
 
 __mods['merchant_l10n/it'] = function()
--- merchant_l10n/it.lua — Italian. Keys must match the English source exactly.
+-- merchant_l10n/it.lua - Italian. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Mercante",
@@ -943,13 +943,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Carovana della Via della Seta",
     ["%1 silver"] = "%1 d'argento",
-    ["Bazaar — buy low, sell high:"] = "Bazar — compra basso, vendi alto:",
+    ["Bazaar - buy low, sell high:"] = "Bazar - compra basso, vendi alto:",
     ["Travel"] = "Viaggia",
     ["Set out for where?"] = "Verso dove partiamo?",
     ["Moneylender"] = "Usuraio",
-    ["Moneylender — you owe %1"] = "Usuraio — devi %1",
+    ["Moneylender - you owe %1"] = "Usuraio - devi %1",
     ["Guild bank"] = "Cassa della gilda",
-    ["Guild bank — balance %1"] = "Cassa della gilda — saldo %1",
+    ["Guild bank - balance %1"] = "Cassa della gilda - saldo %1",
     ["Guards"] = "Guardie",
     ["Load"] = "Carico",
     ["Saffron"] = "Zafferano",
@@ -988,8 +988,8 @@ return {
         = "Non hai guardie per combatterli!",
     ["Your guards struck one down!"] = "Le tue guardie ne hanno abbattuto uno!",
     ["Your guards missed!"] = "Le tue guardie hanno mancato il colpo!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "I banditi si disperdono — ti impossessi di %1 dal loro accampamento!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "I banditi si disperdono - ti impossessi di %1 dal loro accampamento!",
     ["They fought back! Health -%1 (%2 left)."]
         = "Hanno reagito! Salute -%1 (%2 rimasti).",
     ["You escaped through a mountain pass!"]
@@ -1002,14 +1002,14 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Mercante stellare",
     ["%1 cr"] = "%1 cr",
-    ["Trade terminal — buy low, sell high:"]
-        = "Terminale commerciale — compra basso, vendi alto:",
+    ["Trade terminal - buy low, sell high:"]
+        = "Terminale commerciale - compra basso, vendi alto:",
     ["Warp"] = "Salta",
     ["Warp to where?"] = "Saltare verso dove?",
     ["The Syndicate"] = "Il Sindacato",
-    ["The Syndicate — you owe %1"] = "Il Sindacato — devi %1",
+    ["The Syndicate - you owe %1"] = "Il Sindacato - devi %1",
     ["Galactic bank"] = "Banca galattica",
-    ["Galactic bank — balance %1"] = "Banca galattica — saldo %1",
+    ["Galactic bank - balance %1"] = "Banca galattica - saldo %1",
     ["Turrets"] = "Torrette",
     ["Cargo"] = "Stiva",
     ["Antimatter"] = "Antimateria",
@@ -1024,8 +1024,8 @@ return {
     ["Ceres Belt"] = "Fascia di Cerere",
     ["Europa Dock"] = "Molo di Europa",
     ["Titan Refinery"] = "Raffineria di Titano",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Carestia nella colonia — %1 si vende a prezzi folli!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Carestia nella colonia - %1 si vende a prezzi folli!",
     ["A freighter dumped cheap %1 on the market!"]
         = "Un cargo ha scaricato %1 a buon mercato sul mercato!",
     ["You salvaged a credit chip worth %1!"]
@@ -1046,10 +1046,10 @@ return {
     ["Evade"] = "Schiva",
     ["You have no turrets to fight with!"]
         = "Non hai torrette per combattere!",
-    ["Direct hit — one pirate is down!"] = "Colpo diretto — un pirata in meno!",
+    ["Direct hit - one pirate is down!"] = "Colpo diretto - un pirata in meno!",
     ["Your shots went wide!"] = "I tuoi colpi sono andati a vuoto!",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "I pirati sono distrutti — recuperi %1!",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "I pirati sono distrutti - recuperi %1!",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "Hanno risposto al fuoco! Scafo -%1 (%2 rimasti).",
     ["You lost them in an asteroid field!"]
@@ -1061,12 +1061,12 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Capitano di clipper",
-    ["Harbor market — buy low, sell high:"]
-        = "Mercato del porto — compra basso, vendi alto:",
+    ["Harbor market - buy low, sell high:"]
+        = "Mercato del porto - compra basso, vendi alto:",
     ["Set sail"] = "Salpa",
     ["Set sail for where?"] = "Salpare verso dove?",
     ["Bank"] = "Banca",
-    ["Bank — balance %1"] = "Banca — saldo %1",
+    ["Bank - balance %1"] = "Banca - saldo %1",
     ["Cannons"] = "Cannoni",
     ["Hold"] = "Stiva",
     ["Porcelain"] = "Porcellana",
@@ -1099,11 +1099,11 @@ return {
         = "Giunche pirata (%1) ti puntano addosso!\nScafo %2 · Cannoni %3",
     ["You have no cannons to fight with!"]
         = "Non hai cannoni per combattere!",
-    ["A broadside — one junk is sinking!"]
-        = "Una bordata — una giunca sta affondando!",
+    ["A broadside - one junk is sinking!"]
+        = "Una bordata - una giunca sta affondando!",
     ["Your broadside missed!"] = "La tua bordata ha mancato il bersaglio!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "I pirati ammainano la bandiera — ti impossessi di %1 di bottino!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "I pirati ammainano la bandiera - ti impossessi di %1 di bottino!",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "Hanno spazzato il tuo ponte! Scafo -%1 (%2 rimasti).",
     ["You slipped away into a fog bank!"]
@@ -1115,12 +1115,12 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antiquario",
-    ["Today's finds — buy low, sell high:"]
-        = "Le scoperte di oggi — compra basso, vendi alto:",
+    ["Today's finds - buy low, sell high:"]
+        = "Le scoperte di oggi - compra basso, vendi alto:",
     ["Move on"] = "Prosegui",
     ["Head to which quarter?"] = "In quale quartiere andiamo?",
     ["Pawnbroker"] = "Banco dei pegni",
-    ["Pawnbroker — you owe %1"] = "Banco dei pegni — devi %1",
+    ["Pawnbroker - you owe %1"] = "Banco dei pegni - devi %1",
     ["Experts"] = "Esperti",
     ["Bag"] = "Borsa",
     ["Illuminated manuscripts"] = "Manoscritti miniati",
@@ -1161,8 +1161,8 @@ return {
     ["Your expert exposed one of them!"] = "Il tuo esperto ne ha smascherato uno!",
     ["Their forgery fooled your expert!"]
         = "Il loro falso ha ingannato il tuo esperto!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "I falsari fuggono — la folla ti ricompensa con %1 in affari!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "I falsari fuggono - la folla ti ricompensa con %1 in affari!",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "Ti hanno scosso parecchio! Sangue freddo -%1 (%2 rimasti).",
     ["You slipped away into the crowd!"]
@@ -1175,7 +1175,7 @@ return {
 end
 
 __mods['merchant_l10n/pt'] = function()
--- merchant_l10n/pt.lua — Portuguese. Keys must match the English source exactly.
+-- merchant_l10n/pt.lua - Portuguese. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Mercador",
@@ -1234,13 +1234,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "Caravana da Rota da Seda",
     ["%1 silver"] = "%1 de prata",
-    ["Bazaar — buy low, sell high:"] = "Bazar — compre barato, venda caro:",
+    ["Bazaar - buy low, sell high:"] = "Bazar - compre barato, venda caro:",
     ["Travel"] = "Viajar",
     ["Set out for where?"] = "Partir para onde?",
     ["Moneylender"] = "Agiota",
-    ["Moneylender — you owe %1"] = "Agiota — você deve %1",
+    ["Moneylender - you owe %1"] = "Agiota - você deve %1",
     ["Guild bank"] = "Caixa da guilda",
-    ["Guild bank — balance %1"] = "Caixa da guilda — saldo %1",
+    ["Guild bank - balance %1"] = "Caixa da guilda - saldo %1",
     ["Guards"] = "Guardas",
     ["Load"] = "Carga",
     ["Saffron"] = "Açafrão",
@@ -1281,8 +1281,8 @@ return {
         = "Você não tem guardas para lutar!",
     ["Your guards struck one down!"] = "Seus guardas derrubaram um!",
     ["Your guards missed!"] = "Seus guardas erraram!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Os bandidos se dispersam — você toma %1 do acampamento deles!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Os bandidos se dispersam - você toma %1 do acampamento deles!",
     ["They fought back! Health -%1 (%2 left)."]
         = "Eles revidaram! Saúde -%1 (restam %2).",
     ["You escaped through a mountain pass!"]
@@ -1295,14 +1295,14 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Mercador estelar",
     ["%1 cr"] = "%1 cr",
-    ["Trade terminal — buy low, sell high:"]
-        = "Terminal de comércio — compre barato, venda caro:",
+    ["Trade terminal - buy low, sell high:"]
+        = "Terminal de comércio - compre barato, venda caro:",
     ["Warp"] = "Saltar",
     ["Warp to where?"] = "Saltar para onde?",
     ["The Syndicate"] = "O Sindicato",
-    ["The Syndicate — you owe %1"] = "O Sindicato — você deve %1",
+    ["The Syndicate - you owe %1"] = "O Sindicato - você deve %1",
     ["Galactic bank"] = "Banco galáctico",
-    ["Galactic bank — balance %1"] = "Banco galáctico — saldo %1",
+    ["Galactic bank - balance %1"] = "Banco galáctico - saldo %1",
     ["Turrets"] = "Torretas",
     ["Cargo"] = "Carga",
     ["Antimatter"] = "Antimatéria",
@@ -1317,8 +1317,8 @@ return {
     ["Ceres Belt"] = "Cinturão de Ceres",
     ["Europa Dock"] = "Doca de Europa",
     ["Titan Refinery"] = "Refinaria de Titã",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Escassez na colônia — %1 é vendido a preços absurdos!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Escassez na colônia - %1 é vendido a preços absurdos!",
     ["A freighter dumped cheap %1 on the market!"]
         = "Um cargueiro despejou %1 barato no mercado!",
     ["You salvaged a credit chip worth %1!"]
@@ -1339,10 +1339,10 @@ return {
     ["Evade"] = "Desviar",
     ["You have no turrets to fight with!"]
         = "Você não tem torretas para lutar!",
-    ["Direct hit — one pirate is down!"] = "Acerto direto — um pirata a menos!",
+    ["Direct hit - one pirate is down!"] = "Acerto direto - um pirata a menos!",
     ["Your shots went wide!"] = "Seus tiros passaram longe!",
-    ["The pirates are destroyed — you salvage %1!"]
-        = "Os piratas foram destruídos — você recupera %1!",
+    ["The pirates are destroyed - you salvage %1!"]
+        = "Os piratas foram destruídos - você recupera %1!",
     ["They returned fire! Hull -%1 (%2 left)."]
         = "Eles revidaram o fogo! Casco -%1 (restam %2).",
     ["You lost them in an asteroid field!"]
@@ -1354,12 +1354,12 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Capitão de clíper",
-    ["Harbor market — buy low, sell high:"]
-        = "Mercado do porto — compre barato, venda caro:",
+    ["Harbor market - buy low, sell high:"]
+        = "Mercado do porto - compre barato, venda caro:",
     ["Set sail"] = "Zarpar",
     ["Set sail for where?"] = "Zarpar para onde?",
     ["Bank"] = "Banco",
-    ["Bank — balance %1"] = "Banco — saldo %1",
+    ["Bank - balance %1"] = "Banco - saldo %1",
     ["Cannons"] = "Canhões",
     ["Hold"] = "Porão",
     ["Porcelain"] = "Porcelana",
@@ -1392,11 +1392,11 @@ return {
         = "Juncos piratas (%1) avançam sobre você!\nCasco %2 · Canhões %3",
     ["You have no cannons to fight with!"]
         = "Você não tem canhões para lutar!",
-    ["A broadside — one junk is sinking!"]
-        = "Uma salva de canhões — um junco está afundando!",
+    ["A broadside - one junk is sinking!"]
+        = "Uma salva de canhões - um junco está afundando!",
     ["Your broadside missed!"] = "Sua salva errou o alvo!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Os piratas arriam a bandeira — você toma %1 em espólio!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Os piratas arriam a bandeira - você toma %1 em espólio!",
     ["They raked your decks! Hull -%1 (%2 left)."]
         = "Eles varreram seu convés! Casco -%1 (restam %2).",
     ["You slipped away into a fog bank!"]
@@ -1408,12 +1408,12 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antiquário",
-    ["Today's finds — buy low, sell high:"]
-        = "Achados do dia — compre barato, venda caro:",
+    ["Today's finds - buy low, sell high:"]
+        = "Achados do dia - compre barato, venda caro:",
     ["Move on"] = "Seguir em frente",
     ["Head to which quarter?"] = "Para qual bairro?",
     ["Pawnbroker"] = "Penhorista",
-    ["Pawnbroker — you owe %1"] = "Penhorista — você deve %1",
+    ["Pawnbroker - you owe %1"] = "Penhorista - você deve %1",
     ["Experts"] = "Peritos",
     ["Bag"] = "Bolsa",
     ["Illuminated manuscripts"] = "Manuscritos iluminados",
@@ -1454,8 +1454,8 @@ return {
     ["Your expert exposed one of them!"] = "Seu perito desmascarou um deles!",
     ["Their forgery fooled your expert!"]
         = "A falsificação deles enganou seu perito!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Os falsários fogem — a multidão recompensa você com %1 em negócios!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Os falsários fogem - a multidão recompensa você com %1 em negócios!",
     ["They rattled you badly! Nerve -%1 (%2 left)."]
         = "Eles abalaram você! Sangue-frio -%1 (restam %2).",
     ["You slipped away into the crowd!"]
@@ -1468,7 +1468,7 @@ return {
 end
 
 __mods['merchant_l10n/tr'] = function()
--- merchant_l10n/tr.lua — Turkish. Keys must match the English source exactly.
+-- merchant_l10n/tr.lua - Turkish. Keys must match the English source exactly.
 return {
     -- Menu / general UI
     ["Merchant"] = "Tüccar",
@@ -1524,13 +1524,13 @@ return {
     -- Theme: Silk Road caravan
     ["Silk Road caravan"] = "İpek Yolu kervanı",
     ["%1 silver"] = "%1 gümüş",
-    ["Bazaar — buy low, sell high:"] = "Çarşı — ucuza al, pahalıya sat:",
+    ["Bazaar - buy low, sell high:"] = "Çarşı - ucuza al, pahalıya sat:",
     ["Travel"] = "Yola çık",
     ["Set out for where?"] = "Nereye yola çıkalım?",
     ["Moneylender"] = "Tefeci",
-    ["Moneylender — you owe %1"] = "Tefeci — borcun %1",
+    ["Moneylender - you owe %1"] = "Tefeci - borcun %1",
     ["Guild bank"] = "Lonca kasası",
-    ["Guild bank — balance %1"] = "Lonca kasası — bakiye %1",
+    ["Guild bank - balance %1"] = "Lonca kasası - bakiye %1",
     ["Guards"] = "Muhafız",
     ["Load"] = "Yük",
     ["Saffron"] = "Safran",
@@ -1562,8 +1562,8 @@ return {
     ["You have no guards to fight them!"] = "Onlarla savaşacak muhafızın yok!",
     ["Your guards struck one down!"] = "Muhafızların birini devirdi!",
     ["Your guards missed!"] = "Muhafızların ıskaladı!",
-    ["The bandits scatter — you seize %1 from their camp!"]
-        = "Eşkıyalar dağıldı — kamplarından %1 ele geçirdin!",
+    ["The bandits scatter - you seize %1 from their camp!"]
+        = "Eşkıyalar dağıldı - kamplarından %1 ele geçirdin!",
     ["They fought back! Health -%1 (%2 left)."] = "Karşılık verdiler! Sağlık -%1 (%2 kaldı).",
     ["You escaped through a mountain pass!"] = "Bir dağ geçidinden kaçıp kurtuldun!",
     ["They caught up with you! Health -%1 (%2 left)."] = "Sana yetiştiler! Sağlık -%1 (%2 kaldı).",
@@ -1572,13 +1572,13 @@ return {
     -- Theme: Star trader
     ["Star trader"] = "Yıldız tüccarı",
     ["%1 cr"] = "%1 kr",
-    ["Trade terminal — buy low, sell high:"] = "Ticaret terminali — ucuza al, pahalıya sat:",
+    ["Trade terminal - buy low, sell high:"] = "Ticaret terminali - ucuza al, pahalıya sat:",
     ["Warp"] = "Sıçra",
     ["Warp to where?"] = "Nereye sıçrayalım?",
     ["The Syndicate"] = "Sendika",
-    ["The Syndicate — you owe %1"] = "Sendika — borcun %1",
+    ["The Syndicate - you owe %1"] = "Sendika - borcun %1",
     ["Galactic bank"] = "Galaktik banka",
-    ["Galactic bank — balance %1"] = "Galaktik banka — bakiye %1",
+    ["Galactic bank - balance %1"] = "Galaktik banka - bakiye %1",
     ["Turrets"] = "Taret",
     ["Cargo"] = "Kargo",
     ["Antimatter"] = "Antimadde",
@@ -1593,8 +1593,8 @@ return {
     ["Ceres Belt"] = "Ceres Kuşağı",
     ["Europa Dock"] = "Europa Rıhtımı",
     ["Titan Refinery"] = "Titan Rafinerisi",
-    ["A colony shortage — %1 sells at outrageous prices!"]
-        = "Kolonide kıtlık — %1 fahiş fiyattan satılıyor!",
+    ["A colony shortage - %1 sells at outrageous prices!"]
+        = "Kolonide kıtlık - %1 fahiş fiyattan satılıyor!",
     ["A freighter dumped cheap %1 on the market!"] = "Bir yük gemisi piyasaya ucuz %1 boşalttı!",
     ["You salvaged a credit chip worth %1!"] = "%1 değerinde bir kredi çipi buldun!",
     ["A dock hustler scammed you! Lost %1."] = "Rıhtımda bir dolandırıcıya kandın! %1 kaybettin.",
@@ -1610,9 +1610,9 @@ return {
         = "Korsan gemileri (%1) yaklaşıyor!\nGövde %2 · Taret %3",
     ["Evade"] = "Kaçın",
     ["You have no turrets to fight with!"] = "Savaşacak taretin yok!",
-    ["Direct hit — one pirate is down!"] = "Tam isabet — bir korsan düştü!",
+    ["Direct hit - one pirate is down!"] = "Tam isabet - bir korsan düştü!",
     ["Your shots went wide!"] = "Atışların boşa gitti!",
-    ["The pirates are destroyed — you salvage %1!"] = "Korsanlar yok edildi — enkazdan %1 topladın!",
+    ["The pirates are destroyed - you salvage %1!"] = "Korsanlar yok edildi - enkazdan %1 topladın!",
     ["They returned fire! Hull -%1 (%2 left)."] = "Ateşe karşılık verdiler! Gövde -%1 (%2 kaldı).",
     ["You lost them in an asteroid field!"] = "Onları bir asteroit kuşağında atlattın!",
     ["They kept pace! Hull -%1 (%2 left)."] = "Peşini bırakmadılar! Gövde -%1 (%2 kaldı).",
@@ -1620,11 +1620,11 @@ return {
 
     -- Theme: Clipper captain
     ["Clipper captain"] = "Yelkenli kaptanı",
-    ["Harbor market — buy low, sell high:"] = "Liman pazarı — ucuza al, pahalıya sat:",
+    ["Harbor market - buy low, sell high:"] = "Liman pazarı - ucuza al, pahalıya sat:",
     ["Set sail"] = "Yelken aç",
     ["Set sail for where?"] = "Nereye yelken açalım?",
     ["Bank"] = "Banka",
-    ["Bank — balance %1"] = "Banka — bakiye %1",
+    ["Bank - balance %1"] = "Banka - bakiye %1",
     ["Cannons"] = "Top",
     ["Hold"] = "Ambar",
     ["Porcelain"] = "Porselen",
@@ -1651,10 +1651,10 @@ return {
     ["Pirate junks (%1) are bearing down on you!\nHull %2 · Cannons %3"]
         = "Korsan tekneleri (%1) üzerine geliyor!\nGövde %2 · Top %3",
     ["You have no cannons to fight with!"] = "Savaşacak topun yok!",
-    ["A broadside — one junk is sinking!"] = "Tam yaylım ateşi — bir tekne batıyor!",
+    ["A broadside - one junk is sinking!"] = "Tam yaylım ateşi - bir tekne batıyor!",
     ["Your broadside missed!"] = "Yaylım ateşin ıskaladı!",
-    ["The pirates strike their colors — you seize %1 in booty!"]
-        = "Korsanlar bayrak indirdi — %1 ganimet ele geçirdin!",
+    ["The pirates strike their colors - you seize %1 in booty!"]
+        = "Korsanlar bayrak indirdi - %1 ganimet ele geçirdin!",
     ["They raked your decks! Hull -%1 (%2 left)."] = "Güverteni ateşe tuttular! Gövde -%1 (%2 kaldı).",
     ["You slipped away into a fog bank!"] = "Bir sis kümesinin içinde gözden kayboldun!",
     ["They stayed on your tail! Hull -%1 (%2 left)."] = "Dümen suyundan ayrılmadılar! Gövde -%1 (%2 kaldı).",
@@ -1662,11 +1662,11 @@ return {
 
     -- Theme: Antique dealer
     ["Antique dealer"] = "Antikacı",
-    ["Today's finds — buy low, sell high:"] = "Günün buluntuları — ucuza al, pahalıya sat:",
+    ["Today's finds - buy low, sell high:"] = "Günün buluntuları - ucuza al, pahalıya sat:",
     ["Move on"] = "Devam et",
     ["Head to which quarter?"] = "Hangi semte gidelim?",
     ["Pawnbroker"] = "Rehinci",
-    ["Pawnbroker — you owe %1"] = "Rehinci — borcun %1",
+    ["Pawnbroker - you owe %1"] = "Rehinci - borcun %1",
     ["Experts"] = "Eksper",
     ["Bag"] = "Çanta",
     ["Illuminated manuscripts"] = "Tezhipli el yazması",
@@ -1701,8 +1701,8 @@ return {
     ["You have no expert to spot the fakes!"] = "Sahteleri ayırt edecek eksperin yok!",
     ["Your expert exposed one of them!"] = "Eksperin birinin foyasını ortaya çıkardı!",
     ["Their forgery fooled your expert!"] = "Sahtekârlıkları eksperini kandırdı!",
-    ["The forgers flee — the crowd rewards you with %1 in trade!"]
-        = "Sahteciler kaçtı — kalabalık seni %1 değerinde alışverişle ödüllendirdi!",
+    ["The forgers flee - the crowd rewards you with %1 in trade!"]
+        = "Sahteciler kaçtı - kalabalık seni %1 değerinde alışverişle ödüllendirdi!",
     ["They rattled you badly! Nerve -%1 (%2 left)."] = "Seni fena sarstılar! Cesaret -%1 (%2 kaldı).",
     ["You slipped away into the crowd!"] = "Kalabalığın arasına karışıp kayboldun!",
     ["They followed you, jeering! Nerve -%1 (%2 left)."]
@@ -1717,7 +1717,7 @@ __mods['merchant_themes'] = function()
 --
 -- A theme is pure flavour: the goods on the market, the places you travel
 -- between, and every piece of narration the game shows. The rules in
--- merchant_game.lua never change — only the words and numbers' labels do.
+-- merchant_game.lua never change - only the words and numbers' labels do.
 -- Every theme uses the same six price bands so the game balance is identical
 -- no matter which one is selected.
 --
@@ -1731,13 +1731,13 @@ local themes = {
         id = "silkroad",
         name = _("Silk Road caravan"),
         money = _("%1 silver"), -- %1 = formatted amount
-        market_title = _("Bazaar — buy low, sell high:"),
+        market_title = _("Bazaar - buy low, sell high:"),
         travel_label = _("Travel"),
         travel_prompt = _("Set out for where?"),
         lender_label = _("Moneylender"),
-        lender_title = _("Moneylender — you owe %1"), -- %1 = money
+        lender_title = _("Moneylender - you owe %1"), -- %1 = money
         bank_label = _("Guild bank"),
-        bank_title = _("Guild bank — balance %1"), -- %1 = money
+        bank_title = _("Guild bank - balance %1"), -- %1 = money
         weapon_label = _("Guards"),
         capacity_label = _("Load"),
         goods = {
@@ -1772,7 +1772,7 @@ local themes = {
         no_weapon_msg = _("You have no guards to fight them!"),
         hit_msg = _("Your guards struck one down!"),
         miss_msg = _("Your guards missed!"),
-        win_msg = _("The bandits scatter — you seize %1 from their camp!"), -- %1 = money
+        win_msg = _("The bandits scatter - you seize %1 from their camp!"), -- %1 = money
         hurt_msg = _("They fought back! Health -%1 (%2 left)."), -- %1 = damage, %2 = health
         flee_ok_msg = _("You escaped through a mountain pass!"),
         flee_fail_msg = _("They caught up with you! Health -%1 (%2 left)."), -- %1 = damage, %2 = health
@@ -1782,13 +1782,13 @@ local themes = {
         id = "space",
         name = _("Star trader"),
         money = _("%1 cr"),
-        market_title = _("Trade terminal — buy low, sell high:"),
+        market_title = _("Trade terminal - buy low, sell high:"),
         travel_label = _("Warp"),
         travel_prompt = _("Warp to where?"),
         lender_label = _("The Syndicate"),
-        lender_title = _("The Syndicate — you owe %1"),
+        lender_title = _("The Syndicate - you owe %1"),
         bank_label = _("Galactic bank"),
-        bank_title = _("Galactic bank — balance %1"),
+        bank_title = _("Galactic bank - balance %1"),
         weapon_label = _("Turrets"),
         capacity_label = _("Cargo"),
         goods = {
@@ -1807,7 +1807,7 @@ local themes = {
             _("Europa Dock"),
             _("Titan Refinery"),
         },
-        surge_msg = _("A colony shortage — %1 sells at outrageous prices!"),
+        surge_msg = _("A colony shortage - %1 sells at outrageous prices!"),
         glut_msg = _("A freighter dumped cheap %1 on the market!"),
         found_money_msg = _("You salvaged a credit chip worth %1!"),
         robbed_msg = _("A dock hustler scammed you! Lost %1."),
@@ -1821,9 +1821,9 @@ local themes = {
         fight_label = _("Fight"),
         flee_label = _("Evade"),
         no_weapon_msg = _("You have no turrets to fight with!"),
-        hit_msg = _("Direct hit — one pirate is down!"),
+        hit_msg = _("Direct hit - one pirate is down!"),
         miss_msg = _("Your shots went wide!"),
-        win_msg = _("The pirates are destroyed — you salvage %1!"),
+        win_msg = _("The pirates are destroyed - you salvage %1!"),
         hurt_msg = _("They returned fire! Hull -%1 (%2 left)."),
         flee_ok_msg = _("You lost them in an asteroid field!"),
         flee_fail_msg = _("They kept pace! Hull -%1 (%2 left)."),
@@ -1833,13 +1833,13 @@ local themes = {
         id = "sea",
         name = _("Clipper captain"),
         money = _("$%1"),
-        market_title = _("Harbor market — buy low, sell high:"),
+        market_title = _("Harbor market - buy low, sell high:"),
         travel_label = _("Set sail"),
         travel_prompt = _("Set sail for where?"),
         lender_label = _("Moneylender"),
-        lender_title = _("Moneylender — you owe %1"),
+        lender_title = _("Moneylender - you owe %1"),
         bank_label = _("Bank"),
-        bank_title = _("Bank — balance %1"),
+        bank_title = _("Bank - balance %1"),
         weapon_label = _("Cannons"),
         capacity_label = _("Hold"),
         goods = {
@@ -1872,9 +1872,9 @@ local themes = {
         fight_label = _("Fight"),
         flee_label = _("Flee"),
         no_weapon_msg = _("You have no cannons to fight with!"),
-        hit_msg = _("A broadside — one junk is sinking!"),
+        hit_msg = _("A broadside - one junk is sinking!"),
         miss_msg = _("Your broadside missed!"),
-        win_msg = _("The pirates strike their colors — you seize %1 in booty!"),
+        win_msg = _("The pirates strike their colors - you seize %1 in booty!"),
         hurt_msg = _("They raked your decks! Hull -%1 (%2 left)."),
         flee_ok_msg = _("You slipped away into a fog bank!"),
         flee_fail_msg = _("They stayed on your tail! Hull -%1 (%2 left)."),
@@ -1884,13 +1884,13 @@ local themes = {
         id = "antiques",
         name = _("Antique dealer"),
         money = _("$%1"),
-        market_title = _("Today's finds — buy low, sell high:"),
+        market_title = _("Today's finds - buy low, sell high:"),
         travel_label = _("Move on"),
         travel_prompt = _("Head to which quarter?"),
         lender_label = _("Pawnbroker"),
-        lender_title = _("Pawnbroker — you owe %1"),
+        lender_title = _("Pawnbroker - you owe %1"),
         bank_label = _("Bank"),
-        bank_title = _("Bank — balance %1"),
+        bank_title = _("Bank - balance %1"),
         weapon_label = _("Experts"),
         capacity_label = _("Bag"),
         goods = {
@@ -1925,7 +1925,7 @@ local themes = {
         no_weapon_msg = _("You have no expert to spot the fakes!"),
         hit_msg = _("Your expert exposed one of them!"),
         miss_msg = _("Their forgery fooled your expert!"),
-        win_msg = _("The forgers flee — the crowd rewards you with %1 in trade!"),
+        win_msg = _("The forgers flee - the crowd rewards you with %1 in trade!"),
         hurt_msg = _("They rattled you badly! Nerve -%1 (%2 left)."),
         flee_ok_msg = _("You slipped away into the crowd!"),
         flee_fail_msg = _("They followed you, jeering! Nerve -%1 (%2 left)."),
@@ -1960,7 +1960,7 @@ __mods['merchant_game'] = function()
 -- strings to a `messages` list and/or sets `self.pending` to an interactive
 -- event the UI must resolve (an enemy encounter or a market offer).
 --
--- All flavour — goods, places, narration — comes from the theme table
+-- All flavour - goods, places, narration - comes from the theme table
 -- (see merchant_themes.lua); the rules below are the same for every theme.
 
 local Themes = require("merchant_themes")
@@ -2441,7 +2441,7 @@ local function short(s, n)
   while #t > n - 1 or (#t > 0 and t:sub(-1):byte() >= 128 and not utf8.len(t)) do t = drop_last(t) end
   return t .. '~'
 end
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 local function fmt(n) return MerchantGame.format(n) end
 
 ------------------------------------------------------------------ storage
@@ -2536,12 +2536,12 @@ local function switch_language(lang)
   save_settings()
   __unload('merchant_')
   load_modules()
-  local g = MerchantGame:new(Themes.get(settings.theme))
+  local ng = MerchantGame:new(Themes.get(settings.theme))
   if st then
     st.location = Themes.get(st.theme).locations[loc_i]
-    g:load(st)
+    ng:load(st)
   end
-  game = g
+  game = ng
   save()
 end
 

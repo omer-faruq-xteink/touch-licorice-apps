@@ -49,7 +49,7 @@ local function lower(s) return (s:gsub('%u', string.lower)) end   -- ASCII fold;
 -- Two places the converted dictionary can live:
 --   storage: files copied over USB into XTApps/dict/files/ (whole-file reads, ctx.storage)
 --   package: the data section of this .xtapp (built by build_dict.py), read line by line through
---            ctx.package:open_text, the seekable reader API 0.8 knows as ctx.data
+--            ctx.package:open_text, the package's seekable line reader
 
 -- a file from the app's user folder (ctx.files, API 2.9: AppFiles/<app_id>, where the user
 -- copies dictionaries), read 64 KB at a time; a host that hands back the whole file is fine too

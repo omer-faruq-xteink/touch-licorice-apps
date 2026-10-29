@@ -1,4 +1,4 @@
-"""Offline test of sokoban/index.lua under Lua 5.4 (lupa) with a ctx.data emulation written from the
+"""Offline test of sokoban/index.lua under Lua 5.4 (lupa) with a ctx.package emulation written from the
 firmware's reader code (read_text; open_text -> read_line / seek / tell / close over bytes), fed the
 exact files xtpack.collect_data_files() packs: the packs and their .idx.tsv indexes.
 
@@ -26,7 +26,7 @@ g = setmetatable({}, {__index = function(_, k) return function(self, ...)
   if k == 'measure_text' then local s = ...; return 13 * #s, 24 end
 end end})
 ctx = { state = {}, invalidate = function() end, display = { full_refresh = function() end },
-        sys = { millis = function() return 1 end, epoch_sec = function() return 2 end }, data = {} }
+        sys = { millis = function() return 1 end, epoch_sec = function() return 2 end }, package = {} }
 __TEST = {}
 '''
 
@@ -35,7 +35,7 @@ def make_rt(with_data=True, reads=None):
     rt = L.LuaRuntime(unpack_returned_tuples=True)
     rt.execute(LUA_STUBS)
     store = FILES if with_data else {}
-    data = rt.eval('ctx.data')
+    data = rt.eval('ctx.package')
 
     def read_text(self, name, opts=None):
         if reads is not None: reads.append(('read_text', name))

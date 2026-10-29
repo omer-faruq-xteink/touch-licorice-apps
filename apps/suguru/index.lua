@@ -57,8 +57,11 @@ end
 
 ------------------------------------------------------------------ banks (data section + built-in)
 
+-- the package's data files (ctx.package, API 2.x)
 local function open_text(name)
-  local ok, r, err = pcall(function() return ctx.data:open_text(name) end)
+  local D = ctx.package
+  if not D then return nil, 'no data section' end
+  local ok, r, err = pcall(function() return D:open_text(name) end)
   if ok and r ~= nil and type(r) ~= 'string' then return r end
   return nil, (ok and err) or r
 end
@@ -185,7 +188,7 @@ local function set_cell(i, d)
   entries_since_full = entries_since_full + 1
   if entries_since_full >= FULL_EVERY then
     entries_since_full = 0
-    pcall(function() ctx.display:full_refresh() end)
+    pcall(function() ctx:invalidate('full') end)
   end
   if is_solved(S.n, S.regions, S.cells) then S.solved = true; msg = 'Solved!  Next for another' end
 end
@@ -204,7 +207,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local function text_w(s)
-  local ok, w = pcall(function() return g:measure_text(s) end)
+  local ok, w = pcall(function() return ctx.fonts.medium:measure(s) end)   -- g:text's default font
   if ok and type(w) == 'number' and w > 0 then return w end
   return 13 * #s
 end
@@ -269,7 +272,9 @@ end
 
 local function box(x, y, w, h) g:rect(x, y, w, h); g:rect(x + 1, y + 1, w - 2, h - 2) end
 
-function on_draw()
+-- the canvas comes as on_draw's second argument (API 2.x); the helpers draw on g
+function on_draw(_, canvas)
+  if canvas then g = canvas end
   g:clear(0)
   local bank = bank_by_name(S.bank)
   btext(GX + text_w('Suguru') // 2, 42, 'Suguru')
@@ -319,16 +324,29 @@ local function tap(x, y)
   end
 end
 
+-- API 2.x sends pointer events (down / move / hold / up, the gesture on up); the older host sent
+-- one touch event per gesture. Both become that touch event; nil for a pointer phase to skip
+local function as_touch(ev)
+  if ev.type ~= 'pointer' then return ev end
+  if ev.phase ~= 'up' then return nil end
+  local gs = ev.gesture
+  if gs == 'double_tap' then gs = 'tap' end            -- the second of two quick taps
+  return { type = 'touch', gesture = gs, x = ev.x, y = ev.y }
+end
+
 function on_input(_, ev)
   if type(ev) ~= 'table' then return false end
+  ev = as_touch(ev)
+  if not ev then return true end
   if ev.type == 'key' then
-    if ev.state ~= nil and ev.state ~= 'down' then return true end
+    local st = ev.phase or ev.state                    -- phase on API 2.x, state on the older host
+    if st ~= nil and st ~= 'down' then return true end
     if ev.key == 'up' then step_puzzle(-1) elseif ev.key == 'down' then step_puzzle(1) end
-    pcall(ctx.invalidate)
+    pcall(function() ctx:invalidate() end)
     return true
   end
   if ev.type == 'touch' then
-    if ev.gesture == 'tap' then tap(ev.x or 0, ev.y or 0); pcall(ctx.invalidate) end
+    if ev.gesture == 'tap' then tap(ev.x or 0, ev.y or 0); pcall(function() ctx:invalidate() end) end
     return true
   end
   return false

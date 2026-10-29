@@ -409,9 +409,9 @@ end
 local function load_grid()
   cells = {}
   for line in (kit.read('grid' .. size .. '.txt') or ''):gmatch('[^\n]+') do
-    local q, g = line:match('^(%d+):([#x%.]+)$')
-    if tonumber(q) == idx[size] and #g == size * size then
-      for i = 1, #g do cells[i] = g:sub(i, i) end
+    local q, saved = line:match('^(%d+):([#x%.]+)$')
+    if tonumber(q) == idx[size] and #saved == size * size then
+      for i = 1, #saved do cells[i] = saved:sub(i, i) end
     end
   end
   if #cells ~= size * size then
