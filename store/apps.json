@@ -119,6 +119,16 @@
     "live_version": null,
     "submitted": "2026-10-29"
   },
+  "litclock": {
+    "name": "Literary Clock",
+    "app_id": "litclock",
+    "listing_id": "",
+    "project_id": "d30ca88a-e863-448d-9b29-94c7e7676b0c",
+    "release_version": "0.1.0",
+    "status": "draft",
+    "live_version": null,
+    "submitted": null
+  },
   "mahjong": {
     "name": "Mahjong",
     "app_id": "mahjong",

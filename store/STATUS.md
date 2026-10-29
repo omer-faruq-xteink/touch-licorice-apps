@@ -41,6 +41,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `klondike` | Klondike | `klondike` | 0.1.0 | in review | - | 2026-10-29 | `cb0f7994-54d7-41a6-963d-fc1fd466c3d6` |
 | `knightstour` | Knight's Tour | `knightstour` | 0.1.0 | in review | - | 2026-10-29 | `34c4be95-b474-4ee7-8224-ead826489eb8` |
 | `lightsout` | Lights Out | `lightsout` | 0.1.0 | in review | - | 2026-10-29 | `5cc3b0a4-112a-4124-8f3c-9799f92cf3eb` |
+| `litclock` | Literary Clock | `litclock` | 0.1.0 | draft | - | - | `d30ca88a-e863-448d-9b29-94c7e7676b0c` |
 | `merchant` | Merchant | `merchant` | 2.0.2 | in review | - | 2026-10-29 | `42e7380e-eef7-40ee-aa93-1736c028bd0b` |
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | in review | - | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | in review | - | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
@@ -50,4 +51,4 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | in review | - | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
 | `suguru` | Suguru | `suguru` | 0.1.0 | in review | - | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
 
-13 published, 16 in review or draft, 29 in all.
+13 published, 17 in review or draft, 30 in all.
