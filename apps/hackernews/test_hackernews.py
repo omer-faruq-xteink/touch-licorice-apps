@@ -120,7 +120,7 @@ def decode(self, s):
 ctx = L.globals().ctx
 ctx.net = L.table_from({'request': request, 'keep_wifi': lambda self, ms: None})
 ctx.json = L.table_from({'decode': decode})
-L.execute("decoded, released = 0, 0; ctx.image = { decode = function(self, b) decoded = decoded + 1; "
+L.execute("decoded, released = 0, 0; ctx.capabilities = { image_decode = true }; ctx.image = { decode = function(self, b) decoded = decoded + 1; "
           "return { width = 456, release = function() released = released + 1 end } end }")
 L.execute(f"ctx.clock.now = function(self) return {{ epoch_sec = {NOW}, hour = 12, minute = 0, second = 0 }} end")
 answer_one = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r); return true end return false end')

@@ -91,7 +91,7 @@ ctx = {
                    list = function() local t = {} for k in pairs(store) do t[#t + 1] = k end return t end }),
   fonts = { small = font('small', 20), medium = font('medium', 24), large = font('large', 30) },
   input = M({ text = function(opts, fn) inputs[#inputs + 1] = fn end }),
-  clock = M({ millis = function() return fake_ms end, epoch = function() return 1761400000 end }),
+  clock = M({ millis = function() return fake_ms end, epoch = function() return 1761400000 end, now = function() return { epoch_sec = 1761400000 } end }),
   qr = M({ encode = function(t) return setmetatable({}, { __index = { width = 33, height = 33, release = function() end } }) end }),
   net = M({ keep_wifi = function() end, request = function(opts, fn)
     local st, body = py_request(opts.method, opts.url, opts.body, opts.headers and opts.headers['Authorization'])
@@ -99,6 +99,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  capabilities = { image_decode = true },
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 304, release = function() end } }) end }),
 }
 function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end
@@ -336,7 +337,7 @@ m, url, body, _ = calls[-1]
 assert m == 'POST' and url.endswith('/bookmarks/1002') and '"timestamp":1761400000' in body, calls[-1]
 assert '"percentage":' + saved.split()[1] in body, (body, saved)
 assert str(g.store['progress.txt']) == '', g.store['progress.txt']          # sent: nothing left
-L.execute("ctx.clock = { millis = function() return fake_ms end, epoch = function() return 1761400000 end }")
+L.execute("ctx.clock = { millis = function() return fake_ms end, epoch = function() return 1761400000 end, now = function() return { epoch_sec = 1761400000 } end }")
 L.execute("for k, f in pairs(ctx.clock) do local fn = f; ctx.clock[k] = function(self, ...) return fn(...) end end")
 
 # a request that fails on Back keeps the position for the next start

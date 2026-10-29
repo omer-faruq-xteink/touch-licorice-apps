@@ -74,6 +74,7 @@ ctx = {
     return M({ cancel = function() cancelled = (cancelled or 0) + 1 end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  capabilities = { image_decode = true },
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 300, release = function() released = (released or 0) + 1 end } }) end }),
   qr = M({ encode = function(t) if qr_fail then error('qr too long') end; qr_made = t; return setmetatable({}, { __index = { width = 33, height = 33, release = function() qr_released = (qr_released or 0) + 1 end } }) end }),
   base64 = M({ encode = function(s) return 'B64(' .. s .. ')' end }),

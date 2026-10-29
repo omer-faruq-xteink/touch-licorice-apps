@@ -236,5 +236,44 @@ g.tap(100, 64 + 8 + 10)
 assert A().source() is None and any('wikipedia.org' in x for x in g.texts())
 g.restart()
 assert str(A().screen()) == 'home' and A().source() is None
+# the pack in the user folder (ctx.files, AppFiles/<app_id>) instead of the private files: read
+# in 64 KB pieces, so a file over 64 KB comes back whole
+user = {}
+for k in [k for k in list(g.store.keys()) if str(k).startswith('wen_')]:
+    user[str(k)] = g.store[k]
+    g.store[k] = None
+long_text = 'x' * 70000
+user['wen_a000.txt'] = f'Aardvark\tAardvark {long_text}\\nend.\n' + user['wen_a000.txt']
+user['wen_shards.tsv'] = user['wen_shards.tsv'].replace('wen_a000.txt\t', 'wen_a000.txt\tAardvark\t', 1)
+user['wen_shards.tsv'] = '\n'.join(l if not l.startswith('wen_a000.txt\tAardvark\t') else
+                                  '\t'.join([l.split('\t')[0], 'Aardvark'] + l.split('\t')[3:]) for l in user['wen_shards.tsv'].split('\n'))
+reads = []
+def f_read(self, name, off=0, ln=65536):
+    reads.append((str(name), off, ln))
+    t = user.get(str(name))
+    return None if t is None else t.encode('utf-8')[off:off + min(ln, 65536)].decode('utf-8', 'ignore')
+g.L.globals().ctx.files = g.L.table_from({'exists': lambda self, n: str(n) in user, 'read': f_read,
+                                          'list': lambda self: g.L.table_from([g.L.table_from({'name': n, 'size': len(t)}) for n, t in user.items()]),
+                          'path': '/AppFiles/u-1234abcd'})
+g.store['source.txt'] = None
+g.restart()
+assert str(A().screen()) == 'sources' and 'Test pack' in g.texts(), g.texts()
+g.tap(100, 64 + 8 + 76 + 10)
+g.tap_label('Search'); type_text('aardvark')
+assert [str(r.title) for r in A().results().values()] == ['Aardvark'], list(A().results().values())
+assert any(n == 'wen_a000.txt' and off == 65536 for n, off, _l in reads), reads[-4:]      # read in two pieces
+g.tap(100, 64 + 8 + 10)
+assert str(A().screen()) == 'article' and 'Aardvark' in g.texts(), g.texts()[:3]   # 70 KB, whole
+bar(1); bar(1)
+g.tap_label('Search'); type_text('article 10')
+assert [str(r.title) for r in A().results().values()][:2] == ['Article 100', 'Article 101']
+bar(1)
+# no packs anywhere: the home screen says where they go
+user.clear()
+g.L.execute("source_name = nil")
+g.store['source.txt'] = None
+g.restart()
+t = g.texts()
+assert 'Offline packs (wiki2pack.py) go in' in t and '/AppFiles/u-1234abcd' in t, t
 g.no_err()
 print('wikipedia tests passed')

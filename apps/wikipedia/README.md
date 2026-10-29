@@ -24,7 +24,7 @@ the app opens on a list of **sources**: Online and each pack (the last one chose
 time; **Online and other packs** goes back to the list).
 
 - **Ready-made:** the release's `wikipedia-en-vital.zip`, English Wikipedia's 10 000 "vital
-  articles" (level 4): 7 MB zipped, 18 MB unzipped. Unzip it into `XTApps/wikipedia/files/` (USB mode).
+  articles" (level 4): 7 MB zipped, 18 MB unzipped. Unzip it into `XTApps/wikipedia/files/` (USB mode), the app's own folder; with no pack yet, the start screen shows that folder's path (`ctx.files.path`; a store install has its own).
 - **Search** finds titles starting with what you type (letters in either case); **Random** and
   **Read before** work as online.
 - **Make your own** on a computer: `python wiki2pack.py out` (the English vital articles), or

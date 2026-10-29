@@ -586,6 +586,11 @@ load_pics = function()
   end
   release_pics(on_page)
   if not todo then return end
+  -- image_decode is an optional capability: without it the pictures stay boxes, nothing is fetched
+  if not (ctx.capabilities and ctx.capabilities.image_decode) then
+    for src in pairs(on_page) do pics[src] = pics[src] or { failed = true } end
+    return
+  end
   for _src, p in pairs(pics) do if p.job then return end end   -- one at a time
   local story, slot = S, {}
   pics[todo.src] = slot
@@ -897,7 +902,7 @@ end
 ------------------------------------------------------------------ input
 
 local function ask(title, value, fn)
-  ctx.input:text({ title = title, text = value or '' }, function(c, s)
+  ctx.input:text({ title = title, text = value or '', max_bytes = 256 }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
     kit.refresh()

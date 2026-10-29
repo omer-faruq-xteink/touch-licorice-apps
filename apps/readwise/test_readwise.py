@@ -120,6 +120,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  capabilities = { image_decode = true },
   image = M({ decode = function(b) return setmetatable({}, { __index = { width = 456, height = 304, release = function() end } }) end }),
 }
 function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end

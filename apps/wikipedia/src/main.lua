@@ -116,6 +116,40 @@ local function sread(name)
   local ok, t = pcall(function() return ctx.storage:read(name) end)
   return (ok and type(t) == 'string') and t or nil
 end
+-- a pack file from the app's user folder (ctx.files, API 2.9: AppFiles/<app_id>, where the user
+-- copies packs), read 64 KB at a time; a host that hands back the whole file at once is fine too
+local function fread(name)
+  local F = ctx.files
+  if not F then return nil end
+  local ok, t = pcall(function()
+    if not F:exists(name) then return nil end
+    local parts, off = {}, 0
+    for _i = 1, 64 do
+      local piece = F:read(name, off, 65536)
+      if type(piece) ~= 'string' or piece == '' then break end
+      parts[#parts + 1] = piece
+      off = off + #piece
+      if #piece ~= 65536 then break end
+    end
+    return table.concat(parts)
+  end)
+  return (ok and type(t) == 'string' and t ~= '') and t or nil
+end
+-- packs live in the user folder; older ones copied into the private files still work
+local function pread(name) return fread(name) or sread(name) end
+local function pack_names()
+  local seen, out = {}, {}
+  local okf, files = pcall(function() return ctx.files:list() end)
+  for _k, f in ipairs((okf and type(files) == 'table') and files or {}) do
+    local n = type(f) == 'table' and f.name or f
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  local oks, names = pcall(function() return ctx.storage:list() end)
+  for _k, n in ipairs((oks and type(names) == 'table') and names or {}) do
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  return out
+end
 local function unesc(t)
   return (t:gsub('\\(.)', function(ch) if ch == 'n' then return '\n' elseif ch == 't' then return '\t' end return ch end))
 end
@@ -123,15 +157,14 @@ local function fold(t) return (t:gsub('%u', string.lower)) end   -- ASCII letter
 
 local function find_packs()
   packs = {}
-  local ok, names = pcall(function() return ctx.storage:list() end)
-  if not ok or type(names) ~= 'table' then return end
+  local names = pack_names()
   table.sort(names)
   for _k, n in ipairs(names) do
     local pre = n:match('^(%a+)_shards%.tsv$')
     if pre then
-      local info = kit.kv(sread(pre .. '_info.txt'))
+      local info = kit.kv(pread(pre .. '_info.txt'))
       local pack = { key = pre, name = info.name or pre, articles = tonumber(info.articles) or 0, shards = {} }
-      for line in ((sread(n) or '') .. '\n'):gmatch('([^\n]*)\n') do
+      for line in ((pread(n) or '') .. '\n'):gmatch('([^\n]*)\n') do
         local file, lo, hi, cnt = line:match('^([^\t]+)\t([^\t]*)\t([^\t]*)\t(%d+)$')
         if file then pack.shards[#pack.shards + 1] = { file = file, lo = fold(unesc(lo)), hi = fold(unesc(hi)), count = tonumber(cnt) } end
       end
@@ -146,7 +179,7 @@ local shard_cache = { file = nil, text = nil }
 local function shard_text(file)
   if shard_cache.file ~= file then
     shard_cache.file, shard_cache.text = nil, nil
-    shard_cache.text = sread(file)
+    shard_cache.text = pread(file)
     shard_cache.file = shard_cache.text and file or nil
   end
   return shard_cache.text
@@ -492,7 +525,7 @@ end
 
 local function ask_search()
   local where = source and ('titles in ' .. source.name) or ('Wikipedia, ' .. cfg.lang)
-  ctx.input:text({ title = 'Search ' .. where, text = results_q }, function(c, s)
+  ctx.input:text({ title = 'Search ' .. where, text = results_q, max_bytes = 256 }, function(c, s)
     if s and s:match('%S') then search(s) end
     refresh()
   end)
@@ -619,6 +652,14 @@ local function draw_home(gg)
   for k, b in ipairs(HOME) do
     local x, y, w, h = home_rect(k)
     kit.button(gg, x, y, w, h, b[1](), { font = 'medium' })
+  end
+  -- where offline packs go (the folder the host shows the user)
+  if #packs == 0 and not source then
+    local okp, path = pcall(function() return ctx.files.path end)
+    if okp and type(path) == 'string' and path ~= '' then
+      gg:text(24, 610, 'Offline packs (wiki2pack.py) go in', { font = kit.font('small') })
+      gg:text(24, 636, short(path, 44), { font = kit.font('small') })
+    end
   end
 end
 

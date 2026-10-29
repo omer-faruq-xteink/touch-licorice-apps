@@ -47,7 +47,7 @@ local function net_finish(job, resp, err)
   if not net_active and #net_queue == 0 then loading = nil end
   job.on_result(resp, err)
   net_pump()
-  pcall(function() ctx.invalidate() end)
+  pcall(function() ctx:invalidate() end)
 end
 
 net_pump = function()
@@ -155,7 +155,7 @@ local function tag_text(item)
   return table.concat(t, ', ')
 end
 
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 
 -- A side button arrives as more than one key event on API 2.9 (press and release, or a repeat),
 -- which turned one press into two pages. Ignore release events and the same key again within
@@ -636,6 +636,8 @@ end
 
 local function decode(n, bytes)
   if type(bytes) ~= 'string' or bytes:sub(1, 2) ~= '\255\216' then img_mem[n] = { failed = true }; return end
+  -- image_decode is an optional capability: without it the picture stays a box
+  if not (ctx.capabilities and ctx.capabilities.image_decode) then img_mem[n] = { failed = true }; return end
   local ok, img = pcall(function() return ctx.image:decode(bytes) end)
   if ok and img then img_mem[n] = { img = img } else img_mem[n] = { failed = true } end
 end
@@ -945,7 +947,7 @@ local function edit_setting(i)
     return
   end
   local ok, err = pcall(function()
-    ctx.input:text({ title = s[2], text = cfg[s[1]] }, function(c, v)
+    ctx.input:text({ title = s[2], text = cfg[s[1]], max_bytes = 256 }, function(c, v)
       if type(v) == 'string' then cfg[s[1]] = v:gsub('^%s+', ''):gsub('%s+$', ''); save_cfg() end
       refresh()
     end)
@@ -1170,7 +1172,7 @@ local function edit_tags(item)
   -- offline copy of the list has no tag_line)
   if type(item.tag_line) ~= 'string' then note('Reload the list (and update the Worker) first'); return end
   local ok, e = pcall(function()
-    ctx.input:text({ title = 'Tags, separated by commas', text = tag_text(item) }, function(c, v)
+    ctx.input:text({ title = 'Tags, separated by commas', text = tag_text(item), max_bytes = 256 }, function(c, v)
       if type(v) ~= 'string' then refresh(); return end
       request('/api/tag/' .. urlenc(item.id) .. '?tags=' .. urlenc(v), function(data, err)
         if data then item.tag_line = type(data.tag_line) == 'string' and data.tag_line or v end

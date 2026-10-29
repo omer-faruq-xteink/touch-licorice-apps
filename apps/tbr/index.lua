@@ -578,7 +578,7 @@ end
 local function month_of(day) local y, m = T.civil(day); return T.days(y, m, 1) end
 
 local function ask_text(title, value, fn)
-  ctx.input:text({ title = title, text = value or '', max_chars = 200 }, function(c, s)
+  ctx.input:text({ title = title, text = value or '', max_chars = 200, max_bytes = 256 }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
     kit.refresh()
@@ -1102,9 +1102,13 @@ local WHITE_JPG = ('ffd8ffe000104a46494600010100000100010000ffdb0043000101010101
 local white = nil
 local function white_image()
   if white == nil then
-    local ok, img = pcall(function()
-      return ctx.image:decode((WHITE_JPG:gsub('..', function(h) return string.char(tonumber(h, 16)) end)))
-    end)
+    -- image_decode is an optional capability: without it the box stays transparent
+    local ok, img = false, nil
+    if ctx.capabilities and ctx.capabilities.image_decode then
+      ok, img = pcall(function()
+        return ctx.image:decode((WHITE_JPG:gsub('..', function(h) return string.char(tonumber(h, 16)) end)))
+      end)
+    end
     white = (ok and img) or false
   end
   return white
