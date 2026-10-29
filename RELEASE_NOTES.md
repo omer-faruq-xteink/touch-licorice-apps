@@ -4,6 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **New: Word Clock** (`wordclock.xtapp`) — the time in words on a grid of letters, in English ("IT IS HALF PAST TEN"), Türkçe ("SAAT ONU YİRMİ GEÇİYOR", "SAAT ONA ÇEYREK VAR", "SAAT YARIM") or Deutsch ("ES IST FÜNF VOR HALB ELF"): the words of the time as black blocks with white letters, four dots for the minutes between the five-minute steps. The language follows the system's and has a button; best as the lock screen, which wakes on every minute.
 - **New: Literary Clock** (`litclock.xtapp`) — the time told by a sentence from a public-domain book: every minute a quote that names the time, the time phrase in bold, then the book and author; the digital time and date under it (can be turned off). Best as the lock screen, which wakes on every minute; **Another** shows another quote of the same minute. 566 quotes from 1,400 public-domain novels (Project Gutenberg texts, authors who died before 1956), mostly detective stories; 450 minutes have their own quote, the others show the nearest earlier one with the exact time below it.
 - **New: Readwise** (`readwise.xtapp`) — your [Readwise Reader](https://readwise.io/read) library as text: Inbox, Later, Shortlist, Archive, Feed and Tags, the list, preview and article screens of Instapaper, offline copies, and the page you reached kept on the card. Reading needs only a Reader access token. **Archive**, **Later** / **Inbox**, **tags** and marking documents seen go through the rss-opds Worker with the same user and password as RSS (the reader cannot send PATCH, the only way Reader changes a document); update the Worker for its new `/readwise` relay. Without the Worker the app only reads.
 - **Hacker News**: the list is easier to read: a story's points / comments line follows its title right away (no gap after a one-line title) and a thicker rule separates stories. The status line ("Loading stories…", errors) is now under the buttons; above them it ran into the last story.
@@ -24,6 +25,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `readwise.xtapp` | new: Readwise Reader |
 | `litclock.xtapp` | new: Literary Clock |
+| `wordclock.xtapp` | new: Word Clock |
 | `hackernews.xtapp` | changed: clearer list, status line under the buttons |
 | `dict.xtapp` | changed: Word of the Day picks a different word each day again; reads the user folder |
 | `game2048.xtapp`, `merchant.xtapp`, `slidepuzzle.xtapp`, `sokoban.xtapp`, `sudoku.xtapp`, `suguru.xtapp` | changed: official API calls for the store (Merchant: a plain dash for the em dash) |

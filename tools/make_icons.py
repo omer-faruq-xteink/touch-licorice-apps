@@ -469,6 +469,21 @@ def litclock(p):
     p.ellipse((45, 27, 51, 33), fill=True)
 
 
+def wordclock(p):
+    # a grid of letters, two words lit as black bars with white letters
+    f = font('arialbd.ttf', 15)
+    for r in range(4):
+        for c in range(4):
+            if (r, c) in ((0, 0), (0, 1), (2, 1), (2, 2), (2, 3)):
+                continue
+            p.ellipse((18 + c * 20 - 2, 20 + r * 19 - 2, 18 + c * 20 + 2, 20 + r * 19 + 2), fill=True)
+    p.rect((10, 11, 44, 29), fill=True, r=5)
+    p.text((27, 20), 'IT', f, white=True)
+    p.rect((30, 49, 86, 67), fill=True, r=5)
+    p.text((58, 58), 'TEN', f, white=True)
+    p.rect((2, 2, 94, 94), w=3, r=10)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -478,7 +493,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'chess': chess, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
-         'readwise': readwise, 'litclock': litclock}
+         'readwise': readwise, 'litclock': litclock,
+         'wordclock': wordclock}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:
