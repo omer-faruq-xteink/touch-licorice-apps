@@ -122,12 +122,12 @@
   "litclock": {
     "name": "Literary Clock",
     "app_id": "litclock",
-    "listing_id": "",
+    "listing_id": "u_6b9cef50aede434eafd456bb3358cf37",
     "project_id": "d30ca88a-e863-448d-9b29-94c7e7676b0c",
     "release_version": "0.1.0",
-    "status": "draft",
+    "status": "in review",
     "live_version": null,
-    "submitted": null
+    "submitted": "2026-10-29"
   },
   "mahjong": {
     "name": "Mahjong",
