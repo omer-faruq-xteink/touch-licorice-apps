@@ -180,6 +180,31 @@ assert front() == 'cat'
 g.tap(240, 300); rate(4)
 assert front() == 'dog' and 'tvocab_p000.txt' in g.store
 
+# the same decks in the user folder (ctx.files, API 2.9, read 64 KB at a time) instead of the private files
+user = g.L.eval('{}')
+for k in [k for k in g.store if str(k).startswith('greek_') and not str(k).startswith('greek_p') and str(k) != 'greek_st.txt' or str(k) == 'vocab.tsv']:
+    user[k] = g.store[k]; g.store[k] = None
+g.g.user = user
+g.L.execute('''ctx.files = {
+  path = '/AppFiles/u-1234abcd',
+  exists = function(self, n) return user[n] ~= nil end,
+  read = function(self, n, off, len) local t = user[n]; if not t then return nil end return t:sub(off + 1, off + math.min(len, 65536)) end,
+  list = function(self) local t = {} for k, v in pairs(user) do t[#t + 1] = { name = k, size = #v } end return t end,
+}''')
+g.restart()
+t = g.texts()
+assert 'Greek letters' in t and 'vocab' in t, t
+g.tap(*deck_row('vocab'))
+assert front() == 'dog', front()                                               # progress kept in the private files
+g.tap(400, 30); g.tap_label('Decks')
+g.tap(400, 30); g.tap_label('Help')
+assert any('/AppFiles/u-1234abcd' in x for x in g.texts()), g.texts()
+g.tap_label('Close')
+for k, v in list(user.items()):
+    g.store[k] = v
+g.L.execute('ctx.files = nil')
+g.restart()
+
 # the scheduler: FSRS 4.5 with its default parameters, against a separate Python version
 import math
 FW = [0.4872, 1.4003, 3.7145, 13.8206, 5.1618, 1.2298, 0.8975, 0.031, 1.6474, 0.1367, 1.0461,

@@ -152,6 +152,34 @@ assert any('not found' in x for x in texts())
 last().opts.on_change(g.ctx, '')
 t = texts()
 assert 'recent' in t and t[t.index('recent') + 1] == 'zoo', t
+# user folder (ctx.files, AppFiles/<app_id>): the same files there instead of the private files
+user = {}
+for k in [k for k in list(store) if str(k) not in ('history.txt', 'lock_dict.txt', 'wotd_every.txt') and not str(k).startswith('pkg:')]:
+    user[str(k)] = store.pop(k)
+reads = []
+def f_read(self, name, off=0, ln=65536):
+    reads.append((str(name), off))
+    t = user.get(str(name))
+    return None if t is None else t.encode('utf-8')[off:off + min(ln, 65536)].decode('utf-8', 'ignore')
+g.ctx.files = L.table_from({'exists': lambda self, n: str(n) in user, 'read': f_read,
+                            'list': lambda self: L.table_from([L.table_from({'name': n, 'size': len(t)}) for n, t in user.items()]),
+                            'path': '/AppFiles/u-1234abcd'})
+L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+g = L.globals(); g.on_load(g.ctx)
+assert '9 words (storage)' in texts() and reads, (texts(), reads[:3])
+tap(30, 20)
+last().opts.on_end(g.ctx, 'abandon', 'enter')
+assert 'verb terk etmek' in texts(), texts()
+# nothing anywhere: the empty screen names the user folder
+saved = dict(user); user.clear()
+L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+g = L.globals(); g.on_load(g.ctx)
+assert '  /AppFiles/u-1234abcd' in texts(), texts()
+for k, v in saved.items():
+    store[k] = v
+g.ctx.files = None
+L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
+g = L.globals(); g.on_load(g.ctx)
 # package backend: move the files behind the package reader
 for k in [k for k in store if k != 'history.txt' and not k.startswith('pkg:')]:
     store['pkg:' + k] = store.pop(k)

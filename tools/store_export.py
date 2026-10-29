@@ -5,7 +5,9 @@ cloud and submitted from the Developer Center. The archive is Studio's own backu
 
     xtapp-studio/project.json  name, device, manifest, asset list, source list
     project-files/<path>       manifest.json, index.lua and every other .lua of the app
-                               (not src/ or data/: bundle.py builds index.lua)
+                               (not src/: bundle.py builds index.lua)
+    project-files/data/<name>  the app's data files, listed in the manifest's data_files
+                               (read with ctx.package)
     assets/xic/icon.xic        the icon drawn again at 88x88 (the store's icon tile), 1 bpp
     assets/raw/icon.png        the same as PNG
     presentation/store_icon.png  the icon at 512x512 for the store listing and the project card
@@ -16,9 +18,7 @@ Each app has its own folder, which also gets <app>-store-icon-512.png for the pu
 cover and screenshots for the listing go there too).
 
 store/ids.json maps an app to the app_id the store issued at its first submission ("u-xxxxxxxx");
-later exports use it, so a new version uploads as an update of the same store app. Apps with
-data files are refused for now: they read them through ctx.data, and the store host has
-ctx.package instead.
+later exports use it, so a new version uploads as an update of the same store app.
 """
 import datetime, io, json, os, re, sys, zipfile
 from PIL import Image
@@ -34,7 +34,7 @@ STORE_ICON_PX = 512
 # the API version a store build declares: Studio checks every call against it (the sideloaded
 # packages keep "2.0", which the X4 Pro's host runs as 2.9); 2.1 zlib, image decode; 2.4
 # net:keep_wifi; 2.8 lockscreen:clear_default; 2.2 ctx.state; 2.9 ctx.files
-STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.4', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4'}
+STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.4', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9'}
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):
 # from a line "-- store: cut" through the next "-- store: end"
 STORE_CUT = re.compile(r'^[ \t]*-- store: cut.*?^[ \t]*-- store: end[^\n]*\n', re.M | re.S)
@@ -74,6 +74,22 @@ def png_bytes(img):
     return buf.getvalue()
 
 
+DATA_FORMATS = ('txt', 'tsv', 'json')
+DATA_NAME = re.compile(r'^[A-Za-z0-9._-]{1,64}$')
+
+
+def data_files(app, app_dir):
+    """{name: bytes} of apps/<app>/data/ (the official packager's rules for names and formats)."""
+    d = os.path.join(app_dir, 'data')
+    out = {}
+    for fn in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        ext = fn.rsplit('.', 1)[-1]
+        if not DATA_NAME.match(fn) or ext not in DATA_FORMATS:
+            raise SystemExit(f'{app}: data/{fn}: a data file name is [A-Za-z0-9._-], at most 64 bytes, .txt .tsv or .json')
+        out[fn] = open(os.path.join(d, fn), 'rb').read()
+    return out
+
+
 def manifest_for(app, app_dir, ids):
     src = json.load(open(os.path.join(app_dir, 'manifest.json'), encoding='utf-8'))
     m = {k: src[k] for k in FIELDS if k in src}
@@ -87,6 +103,11 @@ def manifest_for(app, app_dir, ids):
     lock = m.get('lockscreen')
     if lock:
         m['lockscreen'] = {k: lock[k] for k in ('entry', 'interval_sec') if k in lock}
+    data = data_files(app, app_dir)
+    if data:
+        # each file's own size, rounded up to 4 KB, as its limit
+        m['data_files'] = [{'name': n, 'format': n.rsplit('.', 1)[-1], 'max_bytes': -(-len(b) // 4096) * 4096}
+                           for n, b in data.items()]
     return m
 
 
@@ -94,9 +115,8 @@ def export(app, ids, out_dir):
     app_dir = os.path.join(HERE, 'apps', app)
     if not os.path.isfile(os.path.join(app_dir, 'manifest.json')):
         raise SystemExit(f'{app}: no apps/{app}/manifest.json')
-    if os.path.isdir(os.path.join(app_dir, 'data')):
-        raise SystemExit(f'{app}: has data files (ctx.data); the store host reads them with ctx.package, not supported yet')
     manifest = manifest_for(app, app_dir, ids)
+    data = data_files(app, app_dir)
     sources = {'manifest.json': json.dumps(manifest, indent=2, ensure_ascii=False) + '\n'}
     for root, dirs, fns in os.walk(app_dir):
         dirs[:] = [d for d in dirs if d not in ('src', 'data', '__pycache__') and not d.startswith('.')]
@@ -117,13 +137,14 @@ def export(app, ids, out_dir):
                                          'storeIcon': {'key': 'store_icon', 'mime': 'image/png',
                                                        'width': STORE_ICON_PX, 'height': STORE_ICON_PX,
                                                        'path': 'presentation/store_icon.png'}}},
-            'sourceFiles': sorted(sources), 'assets': [asset],
+            'sourceFiles': sorted(list(sources) + ['data/' + n for n in data]), 'assets': [asset],
             'exportedAt': datetime.datetime.now(datetime.timezone.utc).isoformat()}
     files = {'xtapp-studio/project.json': (json.dumps(meta, indent=2, ensure_ascii=False) + '\n').encode('utf-8'),
              'assets/xic/icon.xic': xtpack.build_xic_1bpp(icon),
              'assets/raw/icon.png': png_bytes(icon),
              'presentation/store_icon.png': store_png}
     files.update({'project-files/' + p: s.encode('utf-8') for p, s in sources.items()})
+    files.update({'project-files/data/' + n: b for n, b in data.items()})
     out_dir = os.path.join(out_dir, app)
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, app + '-store-icon-512.png'), 'wb') as f:

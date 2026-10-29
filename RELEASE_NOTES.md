@@ -9,6 +9,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 - **Ready for the official XTApp API (2.17)**: the apps now call `ctx:invalidate()` as the API defines it (all games and Calculator, TBR, Anki, Wikipedia, Hacker News, Notes); Calendar, Notes and Tasks ask for up to 256 characters in their keyboard fields (the official default is 64, too short for a calendar address); Calendar frees memory with `ctx.gc:collect()` and unpacks gzip with `ctx.zlib:decompress()` only, and draws its white event boxes only when the reader can decode images. Nothing changes in use.
 - **Store builds**: `tools/store_export.py` turns an app into an XTApp Studio project backup for the Xteink store (Studio → ⋯ → Import backup): the official 2.x manifest, an 88 px icon and a 512 px store icon. Code only the sideloaded packages keep (Calendar's and Weather's lock screens fetching on their own) sits between `-- store: cut` and `-- store: end` and is left out of store builds.
 - **More apps ready for the store**: Hacker News, Instapaper, Readwise, RSS, TBR Planner, wallabag and Wikipedia use the official API calls too: keyboard fields take up to 256 characters (tokens, server addresses), pictures are decoded only when the reader can decode images, and Instapaper and wallabag read the time from `ctx.clock:now()`. **Wikipedia** now finds offline packs in the app's user folder (`ctx.files`, read 64 KB at a time) as well as where they were before, and with no pack its start screen shows that folder's path.
+- **Dictionary**: **Word of the Day** picks a different word again: on the reader it always showed the first word of the dictionary ("aalii"), because the reader's numbers are 32-bit and the pick's arithmetic overflowed. A long definition's "..." no longer runs into the dictionary's name at the bottom. Dictionary and **Anki** also find copied dictionaries and decks in the app's user folder (`ctx.files`), as the store versions will need; Anki's built-in deck ships as declared data files.
 
 ## Update
 
@@ -21,7 +22,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `readwise.xtapp` | new: Readwise Reader |
 | `hackernews.xtapp` | changed: clearer list, status line under the buttons |
-| `anki.xtapp`, `calculator.xtapp`, `calendar.xtapp`, `chess.xtapp`, `freecell.xtapp`, `klondike.xtapp`, `knightstour.xtapp`, `lightsout.xtapp`, `mahjong.xtapp`, `minesweeper.xtapp`, `nonogram.xtapp`, `notes.xtapp`, `pegsolitaire.xtapp`, `tasks.xtapp`, `tbr.xtapp`, `weather.xtapp`, `wikipedia.xtapp` | changed: official API calls (no change in use); Wikipedia also reads packs from the app's user folder |
+| `dict.xtapp` | changed: Word of the Day picks a different word each day again; reads the user folder |
+| `anki.xtapp`, `calculator.xtapp`, `calendar.xtapp`, `chess.xtapp`, `freecell.xtapp`, `klondike.xtapp`, `knightstour.xtapp`, `lightsout.xtapp`, `mahjong.xtapp`, `minesweeper.xtapp`, `nonogram.xtapp`, `notes.xtapp`, `pegsolitaire.xtapp`, `tasks.xtapp`, `tbr.xtapp`, `weather.xtapp`, `wikipedia.xtapp` | changed: official API calls (no change in use); Wikipedia and Anki also read files from the app's user folder |
 | `instapaper.xtapp`, `readwise.xtapp`, `rss.xtapp`, `wallabag.xtapp` | changed: official API calls (no change in use) |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

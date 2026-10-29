@@ -158,8 +158,8 @@ end)()
 -- Anki flashcards for XTOS Licorice, API 2.9 (uses tools/gamekit).
 --
 -- Decks: the built-in English deck (this package's data section: en_info.txt, en_c000.txt ...),
--- "My cards", and every deck converted on a computer with apkg2cards.py and copied into
--- XTApps/anki/files/ (<prefix>_info.txt, <prefix>_c000.txt ...); a plain "front<TAB>back" .tsv
+-- "My cards", and every deck converted on a computer with apkg2cards.py and copied into the
+-- app's user folder (ctx.files, API 2.9) or XTApps/anki/files/ (<prefix>_info.txt, <prefix>_c000.txt ...); a plain "front<TAB>back" .tsv
 -- list copied there is a deck too. A card file line is "id<TAB>front<TAB>back" ("\n" for a line
 -- break); every card file of a deck holds `per` cards, so a card is known by its place:
 -- shard s, line l.
@@ -214,6 +214,46 @@ local function sremove(name) pcall(function() ctx.storage:remove(name) end) end
 local function slist()
   local ok, t = pcall(function() return ctx.storage:list() end)
   return (ok and type(t) == 'table') and t or {}
+end
+-- a file from the app's user folder (ctx.files, API 2.9: AppFiles/<app_id>, where the user
+-- copies decks), read 64 KB at a time; a host that hands back the whole file is fine too
+local function files_read(name)
+  local F = ctx.files
+  if not F then return nil end
+  local ok, t = pcall(function()
+    if not F:exists(name) then return nil end
+    local parts, off = {}, 0
+    for _i = 1, 64 do
+      local piece = F:read(name, off, 65536)
+      if type(piece) ~= 'string' or piece == '' then break end
+      parts[#parts + 1] = piece
+      off = off + #piece
+      if #piece ~= 65536 then break end
+    end
+    return table.concat(parts)
+  end)
+  return (ok and type(t) == 'string' and t ~= '') and t or nil
+end
+-- names in the user folder and in the private files (decks copied the older way)
+local function copied_names()
+  local seen, out = {}, {}
+  local okf, files = pcall(function() return ctx.files:list() end)
+  for _, f in ipairs((okf and type(files) == 'table') and files or {}) do
+    local n = type(f) == 'table' and f.name or f
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  local oks, names = pcall(function() return ctx.storage:list() end)
+  for _, n in ipairs((oks and type(names) == 'table') and names or {}) do
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  return out
+end
+-- a copied deck file: the user folder first, then the private files
+local function uread(name) return files_read(name) or sread(name) end
+-- where copied decks go, for the help text
+local function deck_folder()
+  local F = ctx.files
+  return (F and type(F.path) == 'string' and F.path ~= '') and F.path or 'XTApps/anki/files/'
 end
 
 -- a data-section file as one string (the package reader goes line by line)
@@ -285,18 +325,18 @@ local function discover()
                           cards = tonumber(t.cards) or 0, per = tonumber(t.per) or 200, shards = tonumber(t.shards) or 0 }
   end
   decks[#decks + 1] = { key = 'my', name = 'My cards', source = 'own', cards = 0, per = 1, shards = 0 }
-  local names = slist()
+  local names = copied_names()
   table.sort(names)
   for _k, n in ipairs(names) do
     local pre = n:match('^([%w]+)_info%.txt$')
     if pre and pre ~= 'en' and pre ~= 'my' then
-      local t = kv(sread(n))
+      local t = kv(uread(n))
       decks[#decks + 1] = { key = pre, name = t.name or pre, source = 'storage',
                             cards = tonumber(t.cards) or 0, per = tonumber(t.per) or 100, shards = tonumber(t.shards) or 0 }
     end
     local tsv = n:match('^([%w%-]+)%.tsv$')
     if tsv then
-      local text, count = sread(n) or '', 0
+      local text, count = uread(n) or '', 0
       for l in lines(text) do if l ~= '' and l:sub(1, 1) ~= '#' then count = count + 1 end end
       decks[#decks + 1] = { key = 't' .. tsv:gsub('%-', ''), name = tsv, source = 'tsv', file = n, cards = count, per = 1000000, shards = 1 }
     end
@@ -311,9 +351,9 @@ local function shard(d, s)
   cache.key, cache.rows = nil, nil
   local text
   if d.source == 'package' then text = pread(string.format('%s_c%03d.txt', d.key, s))
-  elseif d.source == 'storage' then text = sread(string.format('%s_c%03d.txt', d.key, s))
+  elseif d.source == 'storage' then text = uread(string.format('%s_c%03d.txt', d.key, s))
   elseif d.source == 'tsv' then
-    text = sread(d.file)
+    text = uread(d.file)
     if text and #text > MAX_TSV then msg = d.file .. ' is too big: convert it with apkg2cards.py.'; text = nil end
   end
   local rows = {}
@@ -728,7 +768,7 @@ end
 
 local function add_card(d)
   local function ask(title, value, fn)
-    ctx.input:text({ title = title, text = value or '' }, function(c, s) pcall(fn, s) ; kit.refresh() end)
+    ctx.input:text({ title = title, text = value or '', max_bytes = 256 }, function(c, s) pcall(fn, s) ; kit.refresh() end)
   end
   ask('New card: front', '', function(front)
     if not front or front == '' then return end
@@ -849,7 +889,7 @@ local DECK_BUTTONS = {
   { function() return 'Help' end, function()
       kit.show({ title = 'Anki',
                  lines = { 'Tap a deck to study it; long-press it to add a card.',
-                           'More decks: convert an Anki .apkg (e.g. from ankiweb.net/shared/decks) on a computer with apkg2cards.py and copy the files into XTApps/anki/files/ in USB mode. A "front<TAB>back" .tsv list there works too.',
+                           'More decks: convert an Anki .apkg (e.g. from ankiweb.net/shared/decks) on a computer with apkg2cards.py and copy the files into ' .. deck_folder() .. ' on the SD card in USB mode. A "front<TAB>back" .tsv list there works too.',
                            'While studying, Menu has Undo, Add card and Delete card.' },
                  rows = { { { 'Close', kit.close } } }, cancel = kit.close })
     end },

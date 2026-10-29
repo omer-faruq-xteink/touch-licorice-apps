@@ -20,7 +20,7 @@ text shards of about 200 KB; a lookup reads one shard. The conversion runs once,
      ```bash
      python apps/dict/stardict2shards.py "path/to/stardict-en-tr" out --prefix entr
      ```
-     then copy everything in `out/` into `XTApps/dict/files/`. Use a different `--prefix`
+     then copy everything in `out/` into `XTApps/dict/files/` (with no dictionary yet the app shows its folder's path, `ctx.files.path`; a store install has its own). Use a different `--prefix`
      for each dictionary; the app's storage holds 512 files, so keep the total under ~500.
 3. Leave USB mode and open **Dictionary**.
 

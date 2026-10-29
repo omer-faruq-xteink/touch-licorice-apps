@@ -47,6 +47,8 @@ Speer, word frequencies, CC BY-SA 4.0) and **WordNet 3.0** (Princeton University
    `pip install zstandard` once.
 3. Put the reader in USB mode and copy the files from `out` into `XTApps/anki/files/` on the SD
    card (the folder appears after the app's first start). The deck shows up in the list.
+   The app from the Xteink store reads its own folder instead: Menu → Help shows the path
+   (`AppFiles/<app id>`).
 
 Only text is kept: pictures and sounds are left out (the reader has no sound), which is why a deck
 of 200 MB usually becomes a few hundred kilobytes. To update a deck you study, convert the new

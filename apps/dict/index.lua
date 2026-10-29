@@ -24,7 +24,7 @@ local measure_cache = {}
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
 local function note(s) status = tostring(s or '') end
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 
 -- A side button arrives as more than one key event on API 2.9 (press and release, or a repeat),
 -- which turned one press into two pages. Ignore release events and the same key again within
@@ -51,7 +51,42 @@ local function lower(s) return (s:gsub('%u', string.lower)) end   -- ASCII fold;
 --   package: the data section of this .xtapp (built by build_dict.py), read line by line through
 --            ctx.package:open_text, the seekable reader API 0.8 knows as ctx.data
 
+-- a file from the app's user folder (ctx.files, API 2.9: AppFiles/<app_id>, where the user
+-- copies dictionaries), read 64 KB at a time; a host that hands back the whole file is fine too
+local function files_read(name)
+  local F = ctx.files
+  if not F then return nil end
+  local ok, t = pcall(function()
+    if not F:exists(name) then return nil end
+    local parts, off = {}, 0
+    for _i = 1, 64 do
+      local piece = F:read(name, off, 65536)
+      if type(piece) ~= 'string' or piece == '' then break end
+      parts[#parts + 1] = piece
+      off = off + #piece
+      if #piece ~= 65536 then break end
+    end
+    return table.concat(parts)
+  end)
+  return (ok and type(t) == 'string' and t ~= '') and t or nil
+end
+-- names in the user folder and in the private files (dictionaries copied the older way)
+local function copied_names()
+  local seen, out = {}, {}
+  local okf, files = pcall(function() return ctx.files:list() end)
+  for _, f in ipairs((okf and type(files) == 'table') and files or {}) do
+    local n = type(f) == 'table' and f.name or f
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  local oks, names = pcall(function() return ctx.storage:list() end)
+  for _, n in ipairs((oks and type(names) == 'table') and names or {}) do
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  return out
+end
 local function storage_read(name)
+  local f = files_read(name)
+  if f then return f end
   local ok, s = pcall(function() return ctx.storage:read(name) end)
   if ok and type(s) == 'string' then return s end
   return nil
@@ -104,8 +139,8 @@ local set_index = 1
 
 local function discover_sets()
   sets = {}
-  local ok, names = pcall(function() return ctx.storage:list() end)
-  if ok and type(names) == 'table' then
+  local names = copied_names()
+  if #names > 0 then
     table.sort(names)
     for _, n in ipairs(names) do
       local pre = n:match('^(.*)shards%.tsv$')
@@ -470,10 +505,9 @@ local function draw_nodata(gg)
     'Put the reader in USB mode and copy a converted',
     'dictionary (a ready-made zip from the release, or',
     '  python stardict2shards.py <StarDict folder> out/ --prefix xx)',
-    'into the SD card folder',
-    '  XTApps/' .. (ctx.files and tostring(ctx.files.path or ''):match('([^/]+)$') or 'dict') .. '/files/',
+    'into the app\'s folder on the SD card:',
+    '  ' .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'XTApps/dict/files'),
     'then leave USB mode and open this app again.',
-    'Do not uninstall the app: that deletes the folder.',
     '',
     'Tap to re-check.',
   }

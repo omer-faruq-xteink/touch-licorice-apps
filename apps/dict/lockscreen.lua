@@ -9,7 +9,42 @@ local W, H = 480, 800
 local DAY = 86400
 local M = 20                         -- side margin
 
+-- a file from the app's user folder (ctx.files, API 2.9: AppFiles/<app_id>, where the user
+-- copies dictionaries), read 64 KB at a time; a host that hands back the whole file is fine too
+local function files_read(name)
+  local F = ctx.files
+  if not F then return nil end
+  local ok, t = pcall(function()
+    if not F:exists(name) then return nil end
+    local parts, off = {}, 0
+    for _i = 1, 64 do
+      local piece = F:read(name, off, 65536)
+      if type(piece) ~= 'string' or piece == '' then break end
+      parts[#parts + 1] = piece
+      off = off + #piece
+      if #piece ~= 65536 then break end
+    end
+    return table.concat(parts)
+  end)
+  return (ok and type(t) == 'string' and t ~= '') and t or nil
+end
+-- names in the user folder and in the private files (dictionaries copied the older way)
+local function copied_names()
+  local seen, out = {}, {}
+  local okf, files = pcall(function() return ctx.files:list() end)
+  for _, f in ipairs((okf and type(files) == 'table') and files or {}) do
+    local n = type(f) == 'table' and f.name or f
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  local oks, names = pcall(function() return ctx.storage:list() end)
+  for _, n in ipairs((oks and type(names) == 'table') and names or {}) do
+    if type(n) == 'string' and not seen[n] then seen[n] = true; out[#out + 1] = n end
+  end
+  return out
+end
 local function read(name)
+  local f = files_read(name)
+  if f then return f end
   local ok, s = pcall(function() return ctx.storage:read(name) end)
   return (ok and type(s) == 'string') and s or nil
 end
@@ -59,8 +94,8 @@ local WDAY = { 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday', 
 local function dict_prefix()
   local want = (read('lock_dict.txt') or ''):match('^([^\n]*)')
   if want and read(want .. 'shards.tsv') then return want end
-  local ok, names = pcall(function() return ctx.storage:list() end)
-  if not ok or type(names) ~= 'table' then return nil end
+  local names = copied_names()
+  if #names == 0 then return nil end
   table.sort(names)
   for _, n in ipairs(names) do
     local pre = n:match('^(.*)shards%.tsv$')
@@ -78,7 +113,10 @@ local function pick(pre, seed)
   local files = {}
   for f in (read(pre .. 'shards.tsv') or ''):gmatch('([^\t\n]+)\t[^\n]*\n?') do files[#files + 1] = f end
   if #files == 0 then return nil end
-  local h = (seed * 2654435761 + 12345) % 4294967296
+  -- 31 bits, the same on the reader and a computer: the reader's integers are 32-bit (they wrap,
+  -- keeping the low bits) and its floats single precision; 2654435761 and a 2^32 modulus made the
+  -- hash a float there, which always picked the first shard ("aalii")
+  local h = (seed * 1103515245 + 12345) & 0x7fffffff
   for k = 0, 2 do                                   -- a shard without a plain word: the next one
     local text = read(files[(h + k) % #files + 1])
     if text and #text > 0 then
@@ -180,7 +218,8 @@ function on_draw(c, gg)
       return
     end
     gg:text(M, 116, word, { font = font('large') })
-    local top, bottom = 116 + lh('large') + 16, H - 48
+    -- the text stops a small line above the footer, room for the "..." of a cut definition
+    local top, bottom = 116 + lh('large') + 16, H - 48 - lh('small')
     local yy = top
     for _, p in ipairs(paragraphs(def)) do
       local f, fh = font(p[2]), lh(p[2])
