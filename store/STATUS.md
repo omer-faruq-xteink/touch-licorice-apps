@@ -25,7 +25,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `hackernews` | Hacker News | `hackernews` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `instapaper` | Instapaper | `instapaper` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `mahjong` | Mahjong | `mahjong` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `3d8374a5-4b5a-403a-941f-caacaed40dd9` |
-| `notes` | Notes | `notes` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `readwise` | Readwise | `readwise` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tasks` | Tasks | `tasks` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
@@ -45,6 +44,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `merchant` | Merchant | `merchant` | 2.0.2 | in review | - | 2026-10-29 | `42e7380e-eef7-40ee-aa93-1736c028bd0b` |
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | in review | - | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | in review | - | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
+| `notes` | Notes | `notes` | 1.1.0 | in review | 1.0.0 | 2026-10-30 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | in review | - | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.0 | in review | - | 2026-10-29 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | in review | - | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
@@ -53,4 +53,4 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `suguru` | Suguru | `suguru` | 0.1.0 | in review | - | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | in review | - | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 
-13 published, 19 in review or draft, 32 in all.
+12 published, 20 in review or draft, 32 in all.

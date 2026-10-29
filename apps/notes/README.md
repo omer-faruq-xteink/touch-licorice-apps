@@ -1,12 +1,12 @@
 # Notes — XTOS Licorice mini app (API 2.9)
 
-Freehand drawing and typed text on up to eight pages, kept on the device, with one page shown as
-the lock screen together with the clock and battery level.
+Freehand drawing, typed text and QR codes on up to eight pages, kept on the device, with one page
+shown as the lock screen together with the clock and battery level.
 
 ## Using it
 
 The toolbar: **Tool** · **Undo** · **Page** · **Lock** · **Clear**. **Tool** shows the current tool
-and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / L**.
+and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / L**, **QR code**.
 
 - **Draw S / M / L**: draw with a finger with a thin, medium or thick pen (thin keeps e-ink
   ghosting lowest). The lock screen shows the same widths.
@@ -14,7 +14,13 @@ and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / 
   follows the finger) passes and the rest stays; a text it touches is removed whole.
 - **Text S / M / L**: tap the page where the text should start; the firmware's own keyboard opens;
   **OK** places it in the chosen size.
-- **Undo** removes the last stroke or text, or brings back what the last erase took. **Page** cycles through the eight pages. **Clear**
+- **QR code**: tap the page where the code should go and type what it holds; a 180 px code is
+  placed centred on the tap. A phone camera reads a link (`https://…`), a phone number
+  (`tel:+905551112233`), plain text, Wi-Fi details (`WIFI:S:name;T:WPA;P:password;;`) or a contact
+  card (`MECARD:N:Surname,Name;TEL:+90…;EMAIL:…;;`). Up to 256 characters. **Erase** removes a
+  code it touches. An ID card: your name and title with Text, a contact card QR under it, then
+  **Lock** that page.
+- **Undo** removes the last stroke, text or code, or brings back what the last erase took. **Page** cycles through the eight pages. **Clear**
   asks (**Erase** / **Cancel**), then empties the page.
 - **Lock**: the app asks **With clock**, **No clock** or **Cancel**; the first time the firmware
   then asks **Set as lock screen**. From then on the chosen page is drawn whenever the device
@@ -24,14 +30,15 @@ and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / 
   **Default** (the lock-screen app route; the "Custom" image slot is a different mechanism).
 
 Pages are files in the app's storage (`page1.txt` … `page8.txt`; strokes as `S x,y x,y …`, text
-as `T x y size text`), written after every change; `lock.txt` names the lock page.
+as `T x y size text`, QR codes as `Q x y text`), written after every change; `lock.txt` names the lock page.
 
 ## How it is built
 
 API 2.9 (`"api": "2.0"` in the manifest, no permissions needed): pointer events with
 `phase = down / move / up` give the strokes; each stroke is drawn with one `g:polyline` per
 60-point chunk, so even a busy page stays far below the frame's command budget; text uses
-`ctx.input:text(opts, fn)`; the lock entry `lockscreen.lua` reads the same storage files and adds
+`ctx.input:text(opts, fn)`; QR codes come from the host's `ctx.qr:encode` (2.1), one image per
+code kept between frames and let go when the page changes (a session holds at most eight); the lock entry `lockscreen.lua` reads the same storage files and adds
 `ctx.clock:now()` and `ctx.device:battery()`.
 
 ```bash

@@ -8,12 +8,14 @@ from lupa import lua54
 HERE = os.path.dirname(os.path.abspath(__file__))
 L = lua54.LuaRuntime(unpack_returned_tuples=True)
 L.execute(r'''
-drawn, cmds, store = {}, 0, {}
+drawn, cmds, store, images = {}, 0, {}, {}
+qr_live, qr_made = 0, 0
 local gmt = {}
 gmt.__index = function(_, k)
   return function(_, ...)
     cmds = cmds + 1
     if k == 'text' then drawn[#drawn + 1] = select(3, ...) end
+    if k == 'image' then images[#images + 1] = { img = select(1, ...), x = select(2, ...), y = select(3, ...), o = select(4, ...) } end
     if k == 'polyline' then
       local pts = select(1, ...)
       assert(type(pts) == 'table' and type(pts[1]) == 'number', 'flat polyline expected')
@@ -31,7 +33,7 @@ local function M(t)
 end
 pending = {}
 ctx = {
-  invalidate = function() end, state = {},
+  invalidate = function() end, state = {}, api = { major = 2, minor = 17 },
   storage = M({ write = function(n, d) store[n] = d; return true end, read = function(n) if store[n] then return store[n] end return nil, 'not_found' end }),
   fonts = { small = M({ measure = function(s) return #s * 8 end }), medium = M({ measure = function(s) return #s * 10 end }), large = M({ measure = function(s) return #s * 14 end }) },
   input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
@@ -40,17 +42,25 @@ ctx = {
                    is_default = function() return is_def == true end,
                    set_interval = function(n) intervals = (intervals or '') .. n .. ' ' end }),
   clock = M({ now = function() return { hour = 9, minute = 5 } end }),
-  device = M({ battery = function() return { percent = 77 } end }),
+  device = M({ battery = function() return { percent = 77 } end, }),
+  qr = M({ encode = function(text, opts)
+    if #text > 200 then return nil, 'limit_exceeded' end
+    assert(qr_live < 8, 'more than 8 runtime images at once')
+    qr_live, qr_made = qr_live + 1, qr_made + 1
+    local img = { width = 174, height = 174, text = text }
+    img.release = function(self) assert(self == img); if not img.gone then img.gone = true; qr_live = qr_live - 1 end; return true end
+    return img
+  end }),
 }
 ''')
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
 g = L.globals()
 ev = L.eval("function(ph, x, y) on_input(ctx, {type='pointer', phase=ph, x=x, y=y}) end")
 tap = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
-draw = L.eval("function() drawn = {}; cmds = 0; on_draw(ctx, gg); return cmds end")
+draw = L.eval("function() drawn = {}; images = {}; cmds = 0; on_draw(ctx, gg); return cmds end")
 
 B = lambda i: (4 + i * 94 + 5, 20)     # toolbar: Tool Undo Page Lock Clear
-TOOL_ROWS = ['Draw S', 'Draw M', 'Draw L', 'Erase', 'Text S', 'Text M', 'Text L']
+TOOL_ROWS = ['Draw S', 'Draw M', 'Draw L', 'Erase', 'Text S', 'Text M', 'Text L', 'QR code']
 def pick(name):                          # Tool opens the list; a row picks the tool and closes it
     tap(*B(0))
     i = TOOL_ROWS.index(name)
@@ -190,6 +200,48 @@ assert sum(1 for x in strokes() if x.startswith('S3 ')) == 2, strokes()
 draw()
 assert not any('ERR' in str(s) for s in g.drawn.values()), list(g.drawn.values())
 
+# QR code: the tool asks for the text, puts the code centred on the tap and saves it as "Q x y text"
+g.store['page1.txt'] = ''
+g.on_load(g.ctx); g.pending = L.table()
+pick('QR code')
+assert 'QR code' in labels()
+tap(240, 400)
+g.pending[1](g.ctx, 'https://example.com/omer')
+assert g.store['page1.txt'] == 'Q 150 310 https://example.com/omer', g.store['page1.txt']
+draw()
+assert len(g.images) == 1 and g.images[1].x == 150 and g.images[1].y == 310
+# near the edge it stays on the page; a cancelled keyboard adds nothing
+g.pending = L.table(); tap(470, 790); g.pending[1](g.ctx, 'tel:+905551112233')
+assert 'Q 300 620 tel:+905551112233' in g.store['page1.txt'], g.store['page1.txt']
+g.pending = L.table(); tap(100, 200); g.pending[1](g.ctx, None)
+assert g.store['page1.txt'].count('Q ') == 2
+# the image is made once per text and kept between frames
+draw()
+made = g.qr_made
+draw(); draw()
+assert g.qr_made == made and len(g.images) == 2, (g.qr_made, made)
+# a text too long for a code shows a framed placeholder instead of failing
+g.store['page1.txt'] = 'Q 10 100 ' + 'x' * 250
+g.on_load(g.ctx); draw()
+assert len(g.images) == 0 and any(str(t).startswith('QR: ') for t in g.drawn.values()), list(g.drawn.values())
+# never more than 8 images alive: many codes over pages, page changes let them go
+for pg in range(1, 4):
+    g.store[f'page{pg}.txt'] = chr(10).join(f'Q {10 + 20 * i} {100 + 60 * i} code {pg} {i}' for i in range(4))
+g.on_load(g.ctx)
+for _ in range(8):                                        # all the way round, back to page 1
+    draw(); tap(*B(2))
+assert g.qr_live <= 8, g.qr_live
+g.on_load(g.ctx)
+# the eraser removes a code it touches, Undo brings it back
+g.store['page1.txt'] = 'Q 100 300 hello' + chr(10) + 'T 20 700 2 keep'
+g.on_load(g.ctx); pick('Erase')
+tap(190, 390)
+assert 'hello' not in g.store['page1.txt'] and 'keep' in g.store['page1.txt'], g.store['page1.txt']
+tap(*B(1))
+assert 'Q 100 300 hello' in g.store['page1.txt']
+draw()
+assert not any('ERR' in str(t) for t in g.drawn.values()), list(g.drawn.values())
+
 # lock screen entry draws the chosen page with a clock
 g.store['page1.txt'] = 'S 10,100 50,140 90,100\nT 20 200 3 good morning'
 g.store['lock.txt'] = '1\nclock'
@@ -211,4 +263,9 @@ assert 'good morning' in texts and '09:05' not in texts and '77%' not in texts, 
 n_thin = draw()
 g.store['page1.txt'] = 'S3 10,100 50,140 90,100' + chr(10) + 'T 20 200 3 good morning'
 assert draw() == n_thin + 12, (n_thin, g.cmds)
+# a QR code on the lock screen: an ID card page
+g.store['page1.txt'] = 'T 20 120 3 Omer Faruk' + chr(10) + 'Q 150 300 MECARD:N:Faruk,Omer;TEL:+905551112233;;'
+g.store['lock.txt'] = '1\nnoclock'
+draw()
+assert 'Omer Faruk' in list(g.drawn.values()) and len(g.images) == 1 and g.images[1].x == 150, list(g.drawn.values())
 print('notes29 tests passed')

@@ -1,10 +1,11 @@
--- Notes for XTOS Licorice, API 2.9. Freehand drawing and typed text on up to 8 pages, kept in
+-- Notes for XTOS Licorice, API 2.9. Freehand drawing, typed text and QR codes on up to 8 pages, kept in
 -- ctx.storage; the chosen page becomes the lock screen (lockscreen.lua draws it with a clock).
 --
--- Toolbar: Tool (shows the current one; opens Draw / Erase / Text S / Text M / Text L) | Undo |
--- Page | Lock | Clear
--- Erase cuts strokes where the finger passes (the rest stays) and removes text it touches;
--- Undo after an erase brings back what it took.
+-- Toolbar: Tool (shows the current one; opens Draw / Erase / Text S / Text M / Text L / QR code)
+-- | Undo | Page | Lock | Clear
+-- QR code: tap where it goes and type a link, a phone number, a contact card or Wi-Fi details.
+-- Erase cuts strokes where the finger passes (the rest stays) and removes text and QR codes it
+-- touches; Undo after an erase brings back what it took.
 -- Pointer phases down/move/up give the strokes; each stroke is one g:polyline per 60-point chunk.
 -- Every ctx.* function is a method on this API: call them colon-style.
 
@@ -15,7 +16,7 @@ local ERASE_R = 14        -- eraser radius in px
 
 local G, ERR = nil, nil
 local page = 1
-local items = {}          -- current page: {k='s', pts={x1,y1,...}} | {k='t', x=,y=,f=,text=}
+local items = {}          -- current page: {k='s', pts={x1,y1,...}} | {k='t', x=,y=,f=,text=} | {k='q', x=,y=,text=}
 local cur = nil           -- stroke being drawn
 local tool = 'draw'
 local fsize = 2           -- 1 small 2 medium 3 large
@@ -44,6 +45,9 @@ local function serialize(list)
     elseif it.k == 't' then
       local clean = it.text:gsub('[\r\n]', ' ')
       out[#out + 1] = 'T ' .. it.x .. ' ' .. it.y .. ' ' .. it.f .. ' ' .. clean
+    elseif it.k == 'q' then
+      local clean = it.text:gsub('[\r\n]', ' ')
+      out[#out + 1] = 'Q ' .. it.x .. ' ' .. it.y .. ' ' .. clean
     end
   end
   return table.concat(out, '\n')
@@ -62,6 +66,9 @@ local function parse(s)
     elseif kind == 'T' then
       local x, y, f, text = line:match('^T (%-?%d+) (%-?%d+) (%d) (.*)$')
       if x then list[#list + 1] = { k = 't', x = tonumber(x), y = tonumber(y), f = tonumber(f), text = text } end
+    elseif kind == 'Q' then
+      local x, y, text = line:match('^Q (%-?%d+) (%-?%d+) (.+)$')
+      if x then list[#list + 1] = { k = 'q', x = tonumber(x), y = tonumber(y), text = text } end
     end
   end
   return list
@@ -72,7 +79,10 @@ local function save_page()
   if not ok then note('save ! ' .. short(err, 30)) end
 end
 
+local qr_release_all
+
 local function load_page(p)
+  if qr_release_all then qr_release_all() end
   page = p
   items = {}
   erase_undo, erase_snap = {}, nil
@@ -82,6 +92,43 @@ local function load_page(p)
 end
 
 ------------------------------------------------------------------ drawing
+
+-- QR codes: the host makes the image (ctx.qr:encode, API 2.1) with its white margin; a session
+-- holds at most 8 such images, so they are kept per text and let go when the page changes. In
+-- dark mode the host inverts the frame, code included: phone cameras read an inverted code too
+-- (detecting dark mode needs API 2.12, more than this app asks for).
+local QR_SIZE = 180
+local qr_cache, qr_count = {}, 0
+
+function qr_release_all()
+  for _, img in pairs(qr_cache) do
+    if img ~= false then pcall(function() img:release() end) end
+  end
+  qr_cache, qr_count = {}, 0
+end
+
+local function qr_image(text)
+  local img = qr_cache[text]
+  if img ~= nil then return img or nil end
+  if qr_count >= 6 then qr_release_all() end
+  local ok, res = pcall(function() return ctx.qr:encode(text, { size = QR_SIZE }) end)
+  img = (ok and res) or false
+  qr_cache[text] = img
+  if img then qr_count = qr_count + 1 end
+  return img or nil
+end
+
+local function draw_qr(gg, it, fonts)
+  local img = qr_image(it.text)
+  if img then
+    gg:image(img, it.x, it.y)
+  else
+    -- no QR from the host, or the text is too long for one
+    gg:rect(it.x, it.y, QR_SIZE, QR_SIZE)
+    -- xtapp-ignore: font-small
+    gg:text(it.x + 10, it.y + QR_SIZE // 2 - 10, 'QR: ' .. it.text:sub(1, 12), { font = fonts and fonts.small })
+  end
+end
 
 -- pens: thin (1 px), medium (~3 px), thick (~5 px), drawn as the same line shifted by these offsets
 local PEN_OFFSETS = {
@@ -115,6 +162,7 @@ local function draw_items(gg, list, fonts)
     elseif it.k == 't' then
       local f = fonts and fonts[FNAMES[it.f] or 'medium']
       if f then gg:text(it.x, it.y, it.text, { font = f }) else gg:text(it.x, it.y, it.text) end
+    elseif it.k == 'q' then draw_qr(gg, it, fonts)
     end
   end
 end
@@ -124,11 +172,12 @@ local BW = 93
 
 -- the Tool button opens this list under the toolbar: { label, tool, text size }
 local TOOLS = { { 'Draw S', 'draw', 1 }, { 'Draw M', 'draw', 2 }, { 'Draw L', 'draw', 3 }, { 'Erase', 'erase' },
-                { 'Text S', 'text', 1 }, { 'Text M', 'text', 2 }, { 'Text L', 'text', 3 } }
+                { 'Text S', 'text', 1 }, { 'Text M', 'text', 2 }, { 'Text L', 'text', 3 }, { 'QR code', 'qr' } }
 local tool_menu = false
 local MENU_X, MENU_Y, MENU_W, MENU_ROW = 4, TOP + 16, 220, 60
 local function tool_label()
-  if tool == 'erase' then return 'Erase' elseif tool == 'text' then return 'Text ' .. SIZE_TAG[fsize] end
+  if tool == 'erase' then return 'Erase' elseif tool == 'qr' then return 'QR code'
+  elseif tool == 'text' then return 'Text ' .. SIZE_TAG[fsize] end
   return 'Draw ' .. SIZE_TAG[pen]
 end
 local function tool_is(t)
@@ -159,6 +208,7 @@ local function draw_modal(gg, F)
   gg:rect(MODAL_X + 3, MODAL_Y + 3, MODAL_W - 6, h - 6)
   gg:text(MODAL_X + 20, MODAL_Y + 18, modal.title, { font = F and F.large })
   for i, line in ipairs(modal.lines) do
+    -- xtapp-ignore: font-small
     gg:text(MODAL_X + 20, MODAL_Y + 60 + (i - 1) * 26, line, { font = F and F.small })
   end
   for _, b in ipairs(btns) do
@@ -180,6 +230,7 @@ end
 local function draw_impl(gg)
   gg:clear(0)
   local F = ctx.fonts
+  -- xtapp-ignore: font-small
   local small = F and F.small
   for i, name in ipairs(BTNS) do
     local x = 4 + (i - 1) * (BW + 1)
@@ -226,6 +277,22 @@ local function add_text_at(x, y)
   if not ok then note('text ! ' .. short(err, 30)) end
 end
 
+-- a QR code centred where the finger lifted, kept on the page
+local function add_qr_at(x, y)
+  local ok, err = pcall(function()
+    ctx.input:text({ title = 'QR code: link, phone, text', text = '', max_bytes = 256 }, function(c, s)
+      if type(s) == 'string' and #s > 0 then
+        local qx = math.max(0, math.min(W - QR_SIZE, x - QR_SIZE // 2))
+        local qy = math.max(TOP + 10, math.min(H - QR_SIZE, y - QR_SIZE // 2))
+        items[#items + 1] = { k = 'q', x = qx, y = qy, text = s }
+        save_page()
+      end
+      refresh()
+    end)
+  end)
+  if not ok then note('qr ! ' .. short(err, 30)) end
+end
+
 -- eraser: strokes are cut where they pass within ERASE_R of (x, y), points and segments alike;
 -- pieces of a single point are dropped. Text touched inside its box is removed whole.
 local function text_box(it)
@@ -250,7 +317,10 @@ local function erase_at(x, y)
   local r2 = ERASE_R * ERASE_R
   local out, changed = {}, false
   for _, it in ipairs(items) do
-    if it.k == 't' then
+    if it.k == 'q' then
+      if x >= it.x and x <= it.x + QR_SIZE and y >= it.y and y <= it.y + QR_SIZE then changed = true
+      else out[#out + 1] = it end
+    elseif it.k == 't' then
       local bx, by, bw, bh = text_box(it)
       if x >= bx - 4 and x <= bx + bw + 4 and y >= by - 4 and y <= by + bh + 4 then changed = true
       else out[#out + 1] = it end
@@ -414,6 +484,8 @@ function on_input(c, ev)
         if i >= 1 and i <= #BTNS then button(i) end
       elseif y > TOP + 8 and tool == 'text' then
         add_text_at(x, y)
+      elseif y > TOP + 8 and tool == 'qr' then
+        add_qr_at(x, y)
       end
     end
   end)

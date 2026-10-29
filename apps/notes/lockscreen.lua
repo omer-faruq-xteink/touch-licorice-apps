@@ -1,5 +1,6 @@
 -- Lock-screen entry for Notes (API 2.9). Draws the page chosen with the Lock button, read back
--- from ctx.storage, plus a clock and the battery level when the user asked for them.
+-- from ctx.storage (strokes, text and QR codes), plus a clock and the battery level when the user
+-- asked for them.
 local FNAMES = { 'small', 'medium', 'large' }
 local MAXPTS = 60
 
@@ -16,6 +17,9 @@ local function parse(s)
     elseif kind == 'T' then
       local x, y, f, text = line:match('^T (%-?%d+) (%-?%d+) (%d) (.*)$')
       if x then list[#list + 1] = { k = 't', x = tonumber(x), y = tonumber(y), f = tonumber(f), text = text } end
+    elseif kind == 'Q' then
+      local x, y, text = line:match('^Q (%-?%d+) (%-?%d+) (.+)$')
+      if x then list[#list + 1] = { k = 'q', x = tonumber(x), y = tonumber(y), text = text } end
     end
   end
   return list
@@ -47,6 +51,43 @@ local function draw_stroke(gg, pts, w)
   end
 end
 
+-- QR codes: the host makes the image (ctx.qr:encode, API 2.1) with its white margin; a session
+-- holds at most 8 such images, so they are kept per text and let go when the page changes. In
+-- dark mode the host inverts the frame, code included: phone cameras read an inverted code too
+-- (detecting dark mode needs API 2.12, more than this app asks for).
+local QR_SIZE = 180
+local qr_cache, qr_count = {}, 0
+
+local function qr_release_all()
+  for _, img in pairs(qr_cache) do
+    if img ~= false then pcall(function() img:release() end) end
+  end
+  qr_cache, qr_count = {}, 0
+end
+
+local function qr_image(text)
+  local img = qr_cache[text]
+  if img ~= nil then return img or nil end
+  if qr_count >= 6 then qr_release_all() end
+  local ok, res = pcall(function() return ctx.qr:encode(text, { size = QR_SIZE }) end)
+  img = (ok and res) or false
+  qr_cache[text] = img
+  if img then qr_count = qr_count + 1 end
+  return img or nil
+end
+
+local function draw_qr(gg, it, fonts)
+  local img = qr_image(it.text)
+  if img then
+    gg:image(img, it.x, it.y)
+  else
+    -- no QR from the host, or the text is too long for one
+    gg:rect(it.x, it.y, QR_SIZE, QR_SIZE)
+    -- xtapp-ignore: font-small
+    gg:text(it.x + 10, it.y + QR_SIZE // 2 - 10, 'QR: ' .. it.text:sub(1, 12), { font = fonts and fonts.small })
+  end
+end
+
 local function read(name)
   local ok, s = pcall(function() return ctx.storage:read(name) end)
   if ok and type(s) == 'string' then return s end
@@ -65,6 +106,7 @@ function on_draw(c, gg)
     if data then
       for _, it in ipairs(parse(data)) do
         if it.k == 's' then draw_stroke(gg, it.pts, it.w)
+        elseif it.k == 'q' then draw_qr(gg, it, F)
         else
           local f = F and F[FNAMES[it.f] or 'medium']
           if f then gg:text(it.x, it.y, it.text, { font = f }) else gg:text(it.x, it.y, it.text) end
@@ -82,6 +124,7 @@ function on_draw(c, gg)
       local w = #when * 14
       if f then local okm, m = pcall(function() return f:measure(when) end); if okm and type(m) == 'number' then w = m end end
       gg:text(480 - 16 - w, 12, when, { font = f })
+      -- xtapp-ignore: font-small
       gg:text(16, 16, bat, { font = F and F.small })
     end
   end)
