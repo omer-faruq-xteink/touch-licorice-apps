@@ -298,5 +298,15 @@
     "status": "published",
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
+  },
+  "wordclock": {
+    "name": "Word Clock",
+    "app_id": "wordclock",
+    "listing_id": "",
+    "project_id": "cbe64711-6b8e-455e-8394-4a12e4435fbe",
+    "release_version": "0.1.0",
+    "status": "draft",
+    "live_version": null,
+    "submitted": null
   }
 }

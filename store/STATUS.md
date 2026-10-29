@@ -50,5 +50,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | in review | - | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | in review | - | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
 | `suguru` | Suguru | `suguru` | 0.1.0 | in review | - | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
+| `wordclock` | Word Clock | `wordclock` | 0.1.0 | draft | - | - | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 
-13 published, 17 in review or draft, 30 in all.
+13 published, 18 in review or draft, 31 in all.
