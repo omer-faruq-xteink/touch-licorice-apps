@@ -129,11 +129,26 @@ A.eval('on_load')(A.eval('ctx'))
 draw = lambda: (A.eval('on_draw')(A.eval('ctx'), A.eval('gg')), texts(A))[1]
 tap = lambda x, y: A.eval('on_input')(A.eval('ctx'), A.table_from({'type': 'pointer', 'phase': 'up', 'x': x, 'y': y, 'gesture': 'tap'}))
 first = ' '.join(s for _, _, s, _ in draw())
-assert 'Another' in first and 'Time: on' in first and 'Lock screen' in first, first
-if len(lines['0900']) > 1:
+n = len(lines['0900'])
+assert n > 1 and f'Another 1/{n}' in first and 'Time: on' in first and 'Lock screen' in first, first
+seen = [first]
+for k in range(2, n + 1):                         # every quote once, counted 2/n ... n/n
     tap(80, 760)
-    assert ' '.join(s for _, _, s, _ in draw()) != first
-    tap(240, 300)                                # a tap on the quote: another too
+    now_ = ' '.join(s for _, _, s, _ in draw())
+    assert f'Another {k}/{n}' in now_ and now_ not in seen, now_
+    seen.append(now_)
+tap(240, 300)                                     # a tap on the quote: another too, back to the first
+assert ' '.join(s for _, _, s, _ in draw()) == first
+# a minute with a single quote: "(only one)", and a tap changes nothing
+one = next(k for k, v in lines.items() if len(v) == 1)
+B = runtime('index.lua')
+B.execute(f'clock.hour = {int(one[:2])}; clock.minute = {int(one[2:])}')
+B.eval('on_load')(B.eval('ctx'))
+B.eval('on_draw')(B.eval('ctx'), B.eval('gg')); before = texts(B)
+assert '(only one)' in [s for _, _, s, _ in before], before
+B.eval('on_input')(B.eval('ctx'), B.table_from({'type': 'pointer', 'phase': 'up', 'x': 80, 'y': 760, 'gesture': 'tap'}))
+B.eval('on_draw')(B.eval('ctx'), B.eval('gg'))
+assert texts(B) == before
 tap(240, 760)
 assert 'Time: off' in ' '.join(s for _, _, s, _ in draw()) and A.eval("store['settings.txt']") == 'timeline=0\n'
 tap(400, 760)

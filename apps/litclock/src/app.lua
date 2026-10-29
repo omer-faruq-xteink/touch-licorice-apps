@@ -1,6 +1,6 @@
--- The app: the quote for the current minute, updated on each minute while open. Tap the quote
--- for another one of the same minute; the buttons turn the digital time on or off and make
--- (or stop making) the Literary Clock the lock screen.
+-- The app: the quote for the current minute, updated on each minute while open. Another (or a tap
+-- on the quote) steps through the minute's quotes, 1/3 2/3 3/3 and round; the buttons turn the
+-- digital time on or off and make (or stop making) the Literary Clock the lock screen.
 
 local BTN_Y, BTN_H = H - 64, 50
 local settings = { timeline = true }
@@ -33,9 +33,22 @@ local function schedule()
   timer = ok and tm or nil
 end
 
+-- "Another 2/3": which of the minute's quotes is shown, counted from the one shown first;
+-- "(only one)" when the minute has a single quote, so a tap that changes nothing is expected
+local function another_label()
+  if #list < 2 then return '(only one)' end
+  return 'Another ' .. (shift % #list + 1) .. '/' .. #list
+end
+
+local function next_quote()
+  if #list < 2 then return end
+  shift = shift + 1
+  quote = pick(list, t, shift)
+end
+
 local function buttons()
   return {
-    { 'Another', function() shift = shift + 1; quote = pick(list, t, shift) end },
+    { another_label(), next_quote },
     { settings.timeline and 'Time: on' or 'Time: off', function()
         settings.timeline = not settings.timeline; save_settings(settings) end },
     { is_lock() and 'Lock: on' or 'Lock screen', function()
@@ -93,11 +106,13 @@ function on_input(c, ev)
         pcall(b[2]); refresh(); return true
       end
     end
-    if y < BTN_Y - 10 then shift = shift + 1; quote = pick(list, t, shift); refresh() end
+    if y < BTN_Y - 10 then next_quote(); refresh() end
     return true
   elseif ev.type == 'key' and ev.phase ~= 'up' and (ev.key == 'down' or ev.key == 'right' or ev.key == 'up' or ev.key == 'left') then
-    shift = shift + ((ev.key == 'up' or ev.key == 'left') and -1 or 1)
-    quote = pick(list, t, shift); refresh()
+    if #list >= 2 then
+      shift = shift + ((ev.key == 'up' or ev.key == 'left') and -1 or 1)
+      quote = pick(list, t, shift); refresh()
+    end
     return true
   end
   return false
