@@ -95,6 +95,8 @@ local function font_px(px)
   if font_cache[px] then return font_cache[px] end
   local ok, f = pcall(function() return ctx.fonts:size(px) end)
   if not ok or not f then
+    -- only on a host without fonts:size (before 2.3); the quotes are English, so no CJK switch
+    -- xtapp-ignore: font-small
     f = (px >= 34 and ctx.fonts.large) or (px >= 24 and ctx.fonts.medium) or ctx.fonts.small
   end
   font_cache[px] = f
