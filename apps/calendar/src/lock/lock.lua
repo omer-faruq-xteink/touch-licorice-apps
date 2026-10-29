@@ -8,7 +8,9 @@ local C = require('cal')
 local V = require('views')
 local W, H = 480, 800
 local DAY = 86400
+-- store: cut (the store's API gives a lock screen no network; tools/store_export.py drops this)
 local asked_at = nil
+-- store: end
 
 local function read(name)
   local ok, s = pcall(function() return ctx.storage:read(name) end)
@@ -25,6 +27,7 @@ local function kv(s)
   return t
 end
 
+-- store: cut
 local function try_refresh(cals, every, e, t)
   if asked_at and e - asked_at < 3600 then return end
   local q = {}
@@ -36,7 +39,7 @@ local function try_refresh(cals, every, e, t)
   local function nxt()
     local c = table.remove(q, 1)
     if not c then
-      pcall(function() ctx.invalidate() end)
+      pcall(function() ctx:invalidate() end)
       return
     end
     local ok = pcall(function()
@@ -57,6 +60,7 @@ local function try_refresh(cals, every, e, t)
   end
   nxt()
 end
+-- store: end
 
 function on_draw(c, gg)
   if not gg then return end
@@ -89,7 +93,9 @@ function on_draw(c, gg)
       gg:text(24, 380, 'Calendar: open the app to add one.', { font = font('medium') })
       return
     end
+    -- store: cut
     if oldest then try_refresh(cals, (tonumber(t.every) or 6) * 3600, e, t) end
+    -- store: end
 
     local top, bh = 104, H - 104 - 40
     local first, n = V.window(mode, today, ws)

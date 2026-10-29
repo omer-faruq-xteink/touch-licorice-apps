@@ -209,13 +209,13 @@ function on_draw(c, gg)
   if not ok then pcall(function() G:text(6, H - 60, short('draw ERR ' .. tostring(e), 46)) end) end   -- this frame only
 end
 
-local function refresh() pcall(function() ctx.invalidate() end) end
+local function refresh() pcall(function() ctx:invalidate() end) end
 
 ------------------------------------------------------------------ actions
 
 local function add_text_at(x, y)
   local ok, err = pcall(function()
-    ctx.input:text({ title = 'Text for page ' .. page, text = '' }, function(c, s)
+    ctx.input:text({ title = 'Text for page ' .. page, text = '', max_bytes = 256 }, function(c, s)
       if type(s) == 'string' and #s > 0 then
         items[#items + 1] = { k = 't', x = x, y = y, f = fsize, text = s }
         save_page()

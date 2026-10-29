@@ -5,7 +5,9 @@
 
 local W, H = 480, 800
 local STALE_S = 60 * 60
+-- store: cut (the store's API gives a lock screen no network; tools/store_export.py drops this)
 local asked_at = nil
+-- store: end
 
 local function read(name)
   local ok, s = pcall(function() return ctx.storage:read(name) end)
@@ -17,6 +19,7 @@ local function now_sec()
   return (ok and type(t) == 'table' and tonumber(t.epoch_sec)) and math.floor(tonumber(t.epoch_sec)) or 0
 end
 
+-- store: cut
 local function try_refresh(fc)
   local t = {}
   for k, v in (read('settings.txt') or ''):gmatch('([%w_]+)=([^\n]*)') do t[k] = v end
@@ -30,11 +33,12 @@ local function try_refresh(fc)
         local d = ctx.json:decode(resp.body)
         if type(d) ~= 'table' then return end
         ctx.storage:write('forecast.txt', X.cache_text(d, t.name or fc.place, t.unit == 'F' and 'F' or 'C', now_sec()))
-        pcall(function() ctx.invalidate() end)
+        pcall(function() ctx:invalidate() end)
       end)
     end)
   end)
 end
+-- store: end
 
 function on_draw(c, gg)
   if not gg then return end
@@ -46,7 +50,9 @@ function on_draw(c, gg)
       return
     end
     local age = now_sec() - (fc.updated or 0)
+    -- store: cut
     if age > STALE_S then try_refresh(fc) end
+    -- store: end
     gg:text(24, 24, fc.place, { font = font('large') })
     local kind, text = X.kind(fc.now_code)
     local temp = fc.now_t and tostring(fc.now_t) or '-'

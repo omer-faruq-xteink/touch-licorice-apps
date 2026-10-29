@@ -64,7 +64,7 @@ function kit.kv(s)
 end
 
 function kit.now_ms() local ok, t = pcall(function() return ctx.clock:millis() end); return ok and tonumber(t) or nil end
-function kit.refresh() pcall(function() ctx.invalidate() end) end
+function kit.refresh() pcall(function() ctx:invalidate() end) end
 
 -- e-ink full refresh: API 0.8 had ctx.display:full_refresh(); API 2.9 only offers
 -- ctx:defer_full_refresh(n), which on the device (26102401) did not trigger one, and which by its

@@ -83,7 +83,7 @@ end
 ------------------------------------------------------------------ actions
 
 local function ask(title, value, fn)
-  ctx.input:text({ title = title, text = value or '' }, function(c, s)
+  ctx.input:text({ title = title, text = value or '', max_bytes = 256 }, function(c, s)
     s = (s or ''):gsub('^%s+', ''):gsub('%s+$', ''):gsub('\n', ' ')
     if s ~= '' then pcall(fn, s); save() end
     kit.refresh()

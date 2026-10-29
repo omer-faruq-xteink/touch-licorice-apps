@@ -173,30 +173,16 @@ end
 -- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
 -- too long is closed without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
--- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
-local FREE = { function() ctx.gc:collect() end, function() ctx.gc('collect') end, function() ctx.gc:full() end,
-               function() ctx.gc:step() end, function() ctx.gc.collect() end }
-local free_k = nil                    -- the call that worked; false: none does
-function C.free()
-  if free_k == false then return end
-  if free_k then pcall(FREE[free_k]); return end
-  for k, f in ipairs(FREE) do
-    if pcall(f) then free_k = k; return end
-  end
-  free_k = false
-end
+-- give memory back now (the host has no collectgarbage; ctx.gc:collect() is the API's call)
+function C.free() pcall(function() ctx.gc:collect() end) end
 
--- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
+-- gzip -> text with the firmware's zlib (API 2.1: decompress, format auto or gzip)
 function C.gunzip(b, log)
   local z = ctx.zlib
   if not z then return nil end
   local tries = {
     function() return z:decompress(b) end,
-    function() return z:decompress(b, 'gzip') end,
     function() return z:decompress(b, { format = 'gzip' }) end,
-    function() return z:decompress(b, { gzip = true }) end,
-    function() return z:gunzip(b) end,
-    function() return z:inflate(b) end,
   }
   for k, f in ipairs(tries) do
     if log then C.step('unpack ' .. k .. ', ' .. (#b // 1024) .. ' KB packed') end

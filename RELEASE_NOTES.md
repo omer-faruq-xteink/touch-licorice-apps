@@ -6,6 +6,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **New: Readwise** (`readwise.xtapp`) — your [Readwise Reader](https://readwise.io/read) library as text: Inbox, Later, Shortlist, Archive, Feed and Tags, the list, preview and article screens of Instapaper, offline copies, and the page you reached kept on the card. Reading needs only a Reader access token. **Archive**, **Later** / **Inbox**, **tags** and marking documents seen go through the rss-opds Worker with the same user and password as RSS (the reader cannot send PATCH, the only way Reader changes a document); update the Worker for its new `/readwise` relay. Without the Worker the app only reads.
 - **Hacker News**: the list is easier to read: a story's points / comments line follows its title right away (no gap after a one-line title) and a thicker rule separates stories. The status line ("Loading stories…", errors) is now under the buttons; above them it ran into the last story.
+- **Ready for the official XTApp API (2.17)**: the apps now call `ctx:invalidate()` as the API defines it (all games and Calculator, TBR, Anki, Wikipedia, Hacker News, Notes); Calendar, Notes and Tasks ask for up to 256 characters in their keyboard fields (the official default is 64, too short for a calendar address); Calendar frees memory with `ctx.gc:collect()` and unpacks gzip with `ctx.zlib:decompress()` only, and draws its white event boxes only when the reader can decode images. Nothing changes in use.
+- **Store builds**: `tools/store_export.py` turns an app into an XTApp Studio project backup for the Xteink store (Studio → ⋯ → Import backup): the official 2.x manifest, an 88 px icon and a 512 px store icon. Code only the sideloaded packages keep (Calendar's and Weather's lock screens fetching on their own) sits between `-- store: cut` and `-- store: end` and is left out of store builds.
 
 ## Update
 
@@ -18,6 +20,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `readwise.xtapp` | new: Readwise Reader |
 | `hackernews.xtapp` | changed: clearer list, status line under the buttons |
+| `anki.xtapp`, `calculator.xtapp`, `calendar.xtapp`, `chess.xtapp`, `freecell.xtapp`, `klondike.xtapp`, `knightstour.xtapp`, `lightsout.xtapp`, `mahjong.xtapp`, `minesweeper.xtapp`, `nonogram.xtapp`, `notes.xtapp`, `pegsolitaire.xtapp`, `tasks.xtapp`, `tbr.xtapp`, `weather.xtapp`, `wikipedia.xtapp` | changed: official API calls (no change in use) |
 | all other `.xtapp` packages, `apkg2cards.py` | unchanged since v0.14.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |

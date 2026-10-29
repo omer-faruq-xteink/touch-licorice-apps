@@ -67,7 +67,7 @@ function kit.kv(s)
 end
 
 function kit.now_ms() local ok, t = pcall(function() return ctx.clock:millis() end); return ok and tonumber(t) or nil end
-function kit.refresh() pcall(function() ctx.invalidate() end) end
+function kit.refresh() pcall(function() ctx:invalidate() end) end
 
 -- e-ink full refresh: API 0.8 had ctx.display:full_refresh(); API 2.9 only offers
 -- ctx:defer_full_refresh(n), which on the device (26102401) did not trigger one, and which by its
@@ -343,30 +343,16 @@ end
 -- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
 -- too long is closed without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
--- give memory back now (the host has no collectgarbage; ctx.gc's calls are not documented)
-local FREE = { function() ctx.gc:collect() end, function() ctx.gc('collect') end, function() ctx.gc:full() end,
-               function() ctx.gc:step() end, function() ctx.gc.collect() end }
-local free_k = nil                    -- the call that worked; false: none does
-function C.free()
-  if free_k == false then return end
-  if free_k then pcall(FREE[free_k]); return end
-  for k, f in ipairs(FREE) do
-    if pcall(f) then free_k = k; return end
-  end
-  free_k = false
-end
+-- give memory back now (the host has no collectgarbage; ctx.gc:collect() is the API's call)
+function C.free() pcall(function() ctx.gc:collect() end) end
 
--- gzip -> text with the firmware's zlib (which call it takes is not documented: each is tried)
+-- gzip -> text with the firmware's zlib (API 2.1: decompress, format auto or gzip)
 function C.gunzip(b, log)
   local z = ctx.zlib
   if not z then return nil end
   local tries = {
     function() return z:decompress(b) end,
-    function() return z:decompress(b, 'gzip') end,
     function() return z:decompress(b, { format = 'gzip' }) end,
-    function() return z:decompress(b, { gzip = true }) end,
-    function() return z:gunzip(b) end,
-    function() return z:inflate(b) end,
   }
   for k, f in ipairs(tries) do
     if log then C.step('unpack ' .. k .. ', ' .. (#b // 1024) .. ' KB packed') end
@@ -1542,7 +1528,7 @@ end
 local function host_of(url) return url:match('^%a+://([^/]+)') or url end
 
 local function ask_text(title, value, fn)
-  ctx.input:text({ title = title, text = value or '', max_chars = 400 }, function(c, s)
+  ctx.input:text({ title = title, text = value or '', max_chars = 400, max_bytes = 256 }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
     kit.refresh()
@@ -1722,9 +1708,14 @@ local white = nil                    -- the decoded image; false when the reader
 
 local function white_image()
   if white == nil then
-    local ok, img = pcall(function()
-      return ctx.image:decode((WHITE_JPG:gsub('..', function(h) return string.char(tonumber(h, 16)) end)))
-    end)
+    -- image_decode is an optional capability: without it the box stays transparent
+    local can = ctx.capabilities and ctx.capabilities.image_decode
+    local ok, img = false, nil
+    if can then
+      ok, img = pcall(function()
+        return ctx.image:decode((WHITE_JPG:gsub('..', function(h) return string.char(tonumber(h, 16)) end)))
+      end)
+    end
     white = (ok and img) or false
   end
   return white
