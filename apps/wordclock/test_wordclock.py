@@ -14,6 +14,7 @@ subprocess.run([sys.executable, '-I', os.path.join(HERE, 'bundle.py')], check=Tr
 
 STUBS = r'''
 __TEST = {}
+samples = {}
 store = {}
 drawn, rects, circles = {}, {}, {}
 clock = { valid = true, hour = 22, minute = 30, second = 5 }
@@ -23,7 +24,7 @@ local function font(px) return { px = px, line_height = math.floor(px * 1.3) } e
 ctx = {
   clock = { now = function(self) return clock end },
   storage = { read = function(self, n) return store[n] end, write = function(self, n, s) store[n] = s end },
-  fonts = { size = function(self, px) return font(px) end, small = font(20), medium = font(24), large = font(32) },
+  fonts = { size = function(self, px, sample) samples[#samples + 1] = sample or ''; return font(px) end, small = font(20), medium = font(24), large = font(32) },
   i18n = { locale = 'en' },
   lockscreen = { is_default = function(self) return lock_default end,
                  set_default = function(self) lock_default = true end,
@@ -115,6 +116,9 @@ for lang, rows, cols in (('en', 10, 11), ('de', 10, 11), ('tr', 14, 12)):
         assert 0 < x < 480 and 0 < y < 790, (lang, x, y, s)
     blocks = L.eval('rects')
     assert len(blocks) == len(said(lang, 22, 32).split(' ')), (lang, len(blocks))
+    smp = list(L.eval('samples').values())
+    want = {'en': '', 'de': 'ÜÖ', 'tr': 'İÜÇÖŞ'}[lang]
+    assert any(sorted(x) == sorted(want) for x in smp), (lang, smp[-3:])
     dots = L.eval('circles')
     assert [dots[i].fill for i in range(1, 5)] == [True, True, False, False]
 

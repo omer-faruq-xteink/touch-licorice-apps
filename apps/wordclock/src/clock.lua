@@ -83,17 +83,35 @@ end
 
 ------------------------------------------------------------------ drawing
 
+-- a font of px pixels that has every letter of `sample` (2.3.1): the user's font may lack İ or Ş
+-- (MiSans does), and the host then picks one that has them
 local font_cache = {}
-local function font_px(px)
-  if font_cache[px] then return font_cache[px] end
-  local ok, f = pcall(function() return ctx.fonts:size(px) end)
+local function font_px(px, sample)
+  local key = px .. ':' .. (sample or '')
+  if font_cache[key] then return font_cache[key] end
+  local ok, f = pcall(function() return ctx.fonts:size(px, sample) end)
+  if not ok or not f then ok, f = pcall(function() return ctx.fonts:size(px) end) end
   if not ok or not f then
     -- only on a host without fonts:size (before 2.3)
     -- xtapp-ignore: font-small
     f = (px >= 30 and ctx.fonts.large) or (px >= 22 and ctx.fonts.medium) or ctx.fonts.small
   end
-  font_cache[px] = f
+  font_cache[key] = f
   return f
+end
+
+-- the grid's letters outside ASCII ("İŞÇÖÜ"), once per language
+local sample_cache = {}
+local function grid_sample(lang)
+  if sample_cache[lang] then return sample_cache[lang] end
+  local seen, out = {}, {}
+  for _, row in ipairs(GRIDS[lang].rows) do
+    for _, ch in ipairs(row) do
+      if #ch > 1 and not seen[ch] then seen[ch] = true; out[#out + 1] = ch end
+    end
+  end
+  sample_cache[lang] = table.concat(out)
+  return sample_cache[lang]
 end
 
 -- the grid between y0 and y1 with the words of hh:mm lit; the minute dots below it
@@ -112,8 +130,9 @@ local function draw_clock(g, lang, hh, mm, y0, y1)
       g:rect(gx + (w[2] - 1) * cw + 1, gy + (w[1] - 1) * ch + 3, w[3] * cw - 2, ch - 6, { fill = true, radius = 6 })
     end
   end
-  local small = font_px(math.max(16, math.floor(cw * 0.48)))
-  local big = font_px(math.max(18, math.floor(cw * 0.7)))
+  local sample = grid_sample(lang)
+  local small = font_px(math.max(16, math.floor(cw * 0.48)), sample)
+  local big = font_px(math.max(18, math.floor(cw * 0.7)), sample)
   for r = 1, rows do
     for c = 1, cols do
       local x, y = gx + (c - 1) * cw + cw // 2, gy + (r - 1) * ch + ch // 2
