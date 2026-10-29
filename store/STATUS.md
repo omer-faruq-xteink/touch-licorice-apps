@@ -46,10 +46,11 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | in review | - | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | in review | - | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | in review | - | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
+| `skytonight` | Sky Tonight | `skytonight` | 1.0.0 | in review | - | 2026-10-29 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | in review | - | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | in review | - | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | in review | - | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
 | `suguru` | Suguru | `suguru` | 0.1.0 | in review | - | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
-| `wordclock` | Word Clock | `wordclock` | 0.1.0 | draft | - | - | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
+| `wordclock` | Word Clock | `wordclock` | 0.1.0 | in review | - | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 
-13 published, 18 in review or draft, 31 in all.
+13 published, 19 in review or draft, 32 in all.

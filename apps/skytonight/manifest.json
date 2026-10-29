@@ -1,0 +1,11 @@
+{
+  "app_id": "skytonight",
+  "display_name": "Sky Tonight",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "The night sky over your city, worked out on the device: stars, constellations, the moon and the planets on a round chart, with the moon's phase, sunset, dark and sunrise. Step through the night an hour at a time. Works as the lock screen.",
+  "entry": "index.lua",
+  "api": "2.9",
+  "permissions": [],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 900 }
+}

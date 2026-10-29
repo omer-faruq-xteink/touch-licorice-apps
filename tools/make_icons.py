@@ -119,6 +119,9 @@ class Pen:
     def white_ellipse(self, box):
         self.d.ellipse(self._b(box), fill=255)
 
+    def white_line(self, pts, w):
+        self.d.line([v * S for p in pts for v in p], fill=255, width=int(w * S), joint='curve')
+
     def svg(self, path, box):
         """an SVG file's filled paths, their outline fitted into box (icon pixels, centred, the
         shape kept); holes by the even-odd rule"""
@@ -484,6 +487,20 @@ def wordclock(p):
     p.rect((2, 2, 94, 94), w=3, r=10)
 
 
+def skytonight(p):
+    # a round night sky: a black disc, white stars joined like a constellation, a crescent moon
+    p.ellipse((4, 4, 92, 92), fill=True)
+    stars = [(26, 34), (40, 26), (56, 32), (66, 48), (54, 62), (36, 58)]
+    for a, b in zip(stars, stars[1:]):
+        p.white_line([a, b], 2)
+    for x, y in stars:
+        p.white_ellipse((x - 3, y - 3, x + 3, y + 3))
+    for x, y in ((20, 56), (74, 28), (46, 78), (70, 70)):
+        p.white_ellipse((x - 1.5, y - 1.5, x + 1.5, y + 1.5))
+    p.white_ellipse((60, 10, 82, 32))
+    p.ellipse((66, 8, 88, 30), fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -494,7 +511,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
-         'wordclock': wordclock}
+         'wordclock': wordclock, 'skytonight': skytonight}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

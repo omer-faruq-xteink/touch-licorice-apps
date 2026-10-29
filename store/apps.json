@@ -209,6 +209,16 @@
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
   },
+  "skytonight": {
+    "name": "Sky Tonight",
+    "app_id": "skytonight",
+    "listing_id": "u_90031091d2a54d9689580ee8e0a4466e",
+    "project_id": "f17ef4eb-59be-469b-9ad7-796b984cab58",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-29"
+  },
   "slidepuzzle": {
     "name": "Slide Puzzle",
     "app_id": "slidepuzzle",
@@ -302,11 +312,11 @@
   "wordclock": {
     "name": "Word Clock",
     "app_id": "wordclock",
-    "listing_id": "",
+    "listing_id": "u_e3feab598fd14f6cbccf29e174f70b2a",
     "project_id": "cbe64711-6b8e-455e-8394-4a12e4435fbe",
     "release_version": "0.1.0",
-    "status": "draft",
+    "status": "in review",
     "live_version": null,
-    "submitted": null
+    "submitted": "2026-10-29"
   }
 }

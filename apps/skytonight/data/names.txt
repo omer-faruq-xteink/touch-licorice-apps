@@ -1,0 +1,89 @@
+0.75 43.00 1 Andromeda|Andromeda|Andromeda
+156.00 -36.00 3 Air Pump|Pompa|Luftpumpe
+240.00 -74.00 3 Bird of Paradise|Cennetkuşu|Paradiesvogel
+337.50 -5.00 2 Aquarius|Kova|Wassermann
+291.00 8.00 1 Eagle|Kartal|Adler
+258.00 -56.00 3 Altar|Sunak|Altar
+42.00 22.00 1 Ram|Koç|Widder
+82.50 37.00 1 Charioteer|Arabacı|Fuhrmann
+223.50 35.00 1 Herdsman|Çoban|Bärenhüter
+73.50 -42.00 3 Graving tool|Çelikkalem|Grabstichel
+84.00 72.00 2 Giraffe|Zürafa|Giraffe
+128.25 27.00 2 Crab|Yengeç|Krebs
+192.00 43.00 2 Hunting Dogs|Av Köpekleri|Jagdhunde
+97.50 -26.00 1 Great Dog|Büyük Köpek|Großer Hund
+109.50 5.00 2 Little Dog|Küçük Köpek|Kleiner Hund
+315.00 -22.00 2 Capricorn|Oğlak|Steinbock
+144.00 -66.00 1 Keel|Karina|Kiel des Schiffs
+354.00 55.50 1 Cassiopeia|Koltuk|Kassiopeia
+199.50 -40.00 1 Centaur|Erboğa|Zentaur
+337.50 71.00 2 Cepheus|Kral|Kepheus
+28.50 -5.00 1 Whale|Balina|Walfisch
+189.00 -81.00 3 Chamaeleon|Bukalemun|Chamäleon
+217.50 -67.00 3 Compass|Pergel|Zirkel
+85.50 -39.00 3 Dove|Güvercin|Taube
+193.50 24.00 3 Berenice's Hair|Berenis'in Saçı|Haar der Berenike
+282.00 -40.00 3 Southern Crown|Güneytacı|Südliche Krone
+238.50 32.00 2 Northern Crown|Kuzeytacı|Nördliche Krone
+186.00 -19.50 3 Crow|Karga|Rabe
+174.75 -15.00 3 Cup|Kupa|Becher
+193.50 -62.00 2 Cross|Haç|Kreuz des Südens
+307.50 50.00 1 Swan|Kuğu|Schwan
+309.00 6.00 3 Dolphin|Yunus|Delphin
+76.50 -64.00 3 Goldfish|Kılıçbalığı|Goldfisch
+268.50 64.00 2 Dragon|Ejderha|Drache
+320.25 11.50 3 Colt|Tay|Füllen
+52.50 -18.00 1 Eridanus|Irmak|Eridanus
+40.50 -28.00 3 Furnace|Ocak|Chemischer Ofen
+107.25 23.50 1 Twins|İkizler|Zwillinge
+342.00 -41.50 3 Crane|Turna|Kranich
+253.50 35.00 2 Hercules|Herkül|Herkules
+51.00 -52.00 3 Clock|Saat|Pendeluhr
+150.00 -22.00 2 Sea Serpent|Suyılanı|Wasserschlange
+34.50 -72.00 3 Hydrus|Küçük suyılanı|Kleine Männliche Wasserschlange
+318.00 -55.50 3 Indian|Hintli|Inder
+342.00 47.00 3 Lizard|Kertenkele|Eidechse
+159.00 15.00 1 Lion|Aslan|Löwe
+157.50 30.00 3 Little Lion|Küçük Aslan|Kleiner Löwe
+88.50 -25.00 3 Hare|Tavşan|Hase
+231.00 -26.00 2 Balance|Terazi|Waage
+228.75 -35.00 3 Wolf|Kurt|Wolf
+121.50 49.00 3 Lynx|Vaşak|Luchs
+279.00 30.00 2 Lyre|Çalgı|Leier
+82.50 -80.00 3 Mensa|Masa|Tafelberg
+316.50 -37.00 3 Microscope|Mikroskop|Mikroskop
+114.75 -6.00 2 Unicorn|Tekboynuz|Einhorn
+195.00 -73.00 3 Fly|Sinek|Fliege
+243.00 -52.00 3 Level|Cetvel|Winkelmaß
+300.00 -80.00 3 Octant|Sekizlik|Oktant
+258.00 3.00 2 Ophiuchus|Yılancı|Schlangenträger
+84.00 13.00 1 Orion|Avcı|Orion
+297.00 -62.00 2 Peacock|Tavus|Pfau
+334.50 16.00 1 Pegasus|Kanatlıat|Pegasus
+66.00 45.00 1 Perseus|Kahraman|Perseus
+16.50 -43.00 2 Phoenix|Anka|Phoenix
+82.50 -50.00 3 Painter|Ressam|Maler
+19.50 15.00 2 Fishes|Balık|Fische
+333.00 -29.00 2 Southern Fish|Güneybalığı|Südlicher Fisch
+111.00 -46.00 2 Poop Deck|Pupa|Achterdeck
+132.00 -24.00 3 Compass|Kumpas|Schiffskompass
+55.50 -61.00 3 Net|Ağcık|Netz
+291.00 18.00 3 Arrow|Okçuk|Pfeil
+292.50 -34.00 1 Archer|Yay|Schütze
+249.00 -38.00 1 Scorpion|Akrep|Skorpion
+1.50 -33.00 3 Sculptor|Heykeltraş|Bildhauer
+282.00 -12.50 3 Shield|Kalkan|Schild
+232.50 5.00 3 Serpent|Yılan|Schlange
+280.50 3.00 3 Serpent|Yılan|Schlange
+157.50 -7.00 3 Sextant|Altılık|Sextant
+54.00 15.00 1 Bull|Boğa|Stier
+277.50 -54.00 3 Telescope|Dürbün|Teleskop
+27.00 34.00 3 Triangle|Üçgen|Dreieck
+240.00 -67.50 2 Southern Triangle|Güney Üçgeni|Südliches Dreieck
+348.00 -64.00 3 Toucan|Tukan|Tukan
+165.00 48.00 1 Big Dipper|Büyük Ayı|Großer Bär
+226.50 68.00 2 Little Dipper|Küçük Ayı|Kleiner Bär
+143.25 -46.00 2 Sails|Yelken|Segel
+199.50 -4.00 1 Virgin|Başak|Jungfrau
+111.00 -73.00 3 Flying Fish|Uçanbalık|Fliegender Fisch
+295.50 21.00 3 Little Fox|Tilkicik|Fuchs
