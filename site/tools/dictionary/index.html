@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarDict dictionaries</title>
+<meta name="description" content="Convert StarDict dictionaries for the Dictionary app on the Xteink X4 Pro.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>StarDict dictionaries</h1>
+  <p class="lead">The Dictionary app reads small sorted files, one per lookup, so a StarDict dictionary is cut into
+    pieces once, here. The same conversion as <code>stardict2shards.py</code>, without installing anything.</p>
+
+  <ol class="steps">
+    <li>
+      <p>Add the dictionary: its <code>.ifo</code>, <code>.idx</code> and <code>.dict</code> or
+        <code>.dict.dz</code> files together, or the archive they came in (<code>.zip</code>, <code>.tar.gz</code>,
+        <code>.tgz</code>, <code>.tar.zst</code>, <code>.tar</code>).</p>
+      <div class="drop" tabindex="0" id="drop">
+        <strong>Drop the files or the archive here, or click to choose</strong>
+        <span>.ifo + .idx + .dict(.dz), or an archive</span>
+        <input type="file" multiple accept=".ifo,.idx,.dict,.dz,.gz,.zip,.tgz,.tar,.zst">
+      </div>
+      <div class="msg" id="loadmsg"></div>
+    </li>
+    <li id="step2" hidden>
+      <div class="panel">
+        <div class="row">
+          <label class="field">Dictionary <select id="dict"></select></label>
+          <label class="field">File prefix <input type="text" id="prefix" size="12" pattern="[A-Za-z0-9]*"></label>
+        </div>
+        <div class="row">
+          <label class="field">Piece size (KB) <input type="number" id="kb" value="200" min="20" max="1000" step="10"></label>
+          <label class="field">Longest entry (characters) <input type="number" id="maxdef" value="1500" min="200" max="20000" step="100"></label>
+        </div>
+        <p class="note">Give each dictionary its own prefix (letters and digits, such as <code>entr</code>) so
+          several can share the app's folder. The folder holds 512 files: keep the total under about 500 (a larger
+          piece size makes fewer files).</p>
+        <div class="row"><button id="go">Convert and download</button></div>
+        <div class="msg" id="result"></div>
+        <div class="log" id="log"></div>
+      </div>
+    </li>
+    <li>
+      <p>Unzip the download and copy the files into <code>AppFiles/dict/</code> on the reader's SD card (USB mode).
+        A copy of Dictionary installed by hand from <code>dict.xtapp</code> reads <code>XTApps/dict/files/</code>;
+        with no dictionary yet, the app shows its folder.</p>
+    </li>
+  </ol>
+  <p class="note">HTML dictionaries are reduced to text; dictd-style plain text is unwrapped with one sense per
+    line; pictures and sounds inside entries are left out. <code>.tar.zst</code> archives load
+    <a href="https://github.com/101arrowz/fzstd">fzstd</a> from a public CDN; your files stay in this browser.</p>
+</main>
+<script type="module">
+  import { chrome, dropZone, downloadZip, message, logger } from '../../assets/site.js';
+  import { gatherFiles, findDictionaries, shard } from './stardict.js';
+  chrome('dictionary');
+
+  const FZSTD = 'https://cdn.jsdelivr.net/npm/fzstd@0.1.1/esm/index.mjs';
+  const $ = (id) => document.getElementById(id);
+  const log = logger($('log'));
+  let set = null, dicts = [];
+
+  dropZone($('drop'), async (files) => {
+    $('step2').hidden = true;
+    message($('loadmsg'), 'Reading …');
+    try {
+      set = await gatherFiles(files, async (b) => (await import(FZSTD)).decompress(b));
+      dicts = findDictionaries(set);
+      if (!dicts.length) throw new Error('no .ifo file among these: add the .ifo, .idx and .dict(.dz) files together');
+      $('dict').innerHTML = dicts.map((d, k) => `<option value="${k}">${(d.info.bookname || d.base).replace(/</g, '&lt;')} (${d.info.wordcount || '?'} words)</option>`).join('');
+      message($('loadmsg'), `${dicts.length} dictionar${dicts.length > 1 ? 'ies' : 'y'} found.`, 'ok');
+      $('step2').hidden = false;
+      message($('result'), '');
+      log.clear();
+    } catch (e) {
+      message($('loadmsg'), e.message, 'err');
+    }
+  });
+
+  $('go').addEventListener('click', async () => {
+    const d = dicts[+$('dict').value];
+    $('go').disabled = true;
+    log.clear();
+    message($('result'), 'Converting …');
+    try {
+      const prefix = $('prefix').value.trim();
+      const r = await shard(d, set, { prefix, shardKb: +$('kb').value || 200, maxDef: +$('maxdef').value || 1500 }, (s) => log.line(s));
+      await downloadZip(`${prefix || 'dictionary'}-dict.zip`, r.files);
+      message($('result'), `${r.words} entries in ${r.shards} pieces (${r.files.length} files).` +
+        (r.files.length > 500 ? ' That is more than the app\'s folder holds: raise the piece size.' : ''), r.files.length > 500 ? 'warn' : 'ok');
+    } catch (e) {
+      message($('result'), e.message, 'err');
+    }
+    $('go').disabled = false;
+  });
+</script>
+</body>
+</html>

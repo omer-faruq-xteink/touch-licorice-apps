@@ -1,0 +1,24 @@
+:: StoryTitle
+Sugar Test
+
+:: StoryData
+{"ifid": "Y", "format": "SugarCube", "format-version": "2.36.1", "start": "Begin"}
+
+:: StoryInit
+<<set $hp to 10>><<set $name to "Ann">>
+
+:: Begin [tag]
+Hello $name, you have <<print $hp>> hp.
+<<if $hp gt 5>>You feel strong.<<elseif $hp gt 0>>You feel weak.<<else>>You are dead.<</if>>
+[[Fight|Fight][$hp -= 4]]
+<<link "Rest" "Begin">><<set $hp to $hp + 1>><</link>>
+<<if $hp lte 3>>[[Run away->End]]<</if>>
+
+:: Fight
+You fight. HP: $hp.
+<<if $hp lte 0>><<goto "End">><</if>>
+[[Again->Fight][$hp -= 4]]
+[[Stop|Begin]]
+
+:: End
+The end.

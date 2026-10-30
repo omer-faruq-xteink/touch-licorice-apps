@@ -4,7 +4,9 @@ Games and tools for the **Xteink X4 Pro** e-reader running its stock **XTOS Lico
 written in Lua for the firmware's built-in mini-app host. No custom firmware, no flashing: you
 copy a package to the SD card and install it from the reader's own file browser. Most of them are
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
-arrive by themselves.
+arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)
+converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser and walks through
+the RSS Worker setup.
 
 | app | what it is |
 |---|---|
@@ -40,6 +42,7 @@ arrive by themselves.
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
 | **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |
+| **Gamebook** | choose-your-own-adventure stories: one built in, a pack of more, and Twine or Ink stories converted on the tools site |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
@@ -272,15 +275,18 @@ brackets and Ans; the last results stay above the display. [More](apps/calculato
 Flashcards with spaced repetition (Again / Hard / Good / Easy, scheduled with FSRS, as in
 Anki). Ships with 1438 English words (B2-C1) with example sentences; add and delete your own
 cards on the reader. Any Anki deck (`.apkg`, e.g. from [AnkiWeb's shared decks](https://ankiweb.net/shared/decks))
-converts on a computer with `apps/anki/apkg2cards.py` into small text files for
-`XTApps/anki/files/`: only the text is kept, so even large decks fit. [More](apps/anki/README.md)
+converts into small text files for the app's folder on the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) or with
+`apps/anki/apkg2cards.py`: only the text is kept, so even large decks fit. [More](apps/anki/README.md)
 
 ### Dictionary
 
 Type with the firmware keyboard, pick a suggestion, read the entry; several dictionaries side by
 side. Dictionaries are StarDict files converted once on a computer into text shards and copied
 over USB into `XTApps/dict/files/` on the SD card — the release ships **WordNet** (English–English)
-converted; for anything else run `apps/dict/stardict2shards.py`. It can be the lock screen: a
+converted; anything else converts on the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/dictionary/) or with
+`apps/dict/stardict2shards.py`. It can be the lock screen: a
 Word of the Day with its senses and examples, a new one each day. Never uninstall the app (the
 folder goes with it); install updates over it. [More](apps/dict/README.md)
 
@@ -308,6 +314,24 @@ day on tonight; **-1 h** / **+1 h** step through the night. 76 cities or typed c
 English, Türkçe, Deutsch. Everything is computed on the reader (no network) and checked against
 the 2026 eclipses, planet oppositions and NOAA's sunrise times. It can be the lock screen,
 redrawn every 15 minutes. [More](apps/skytonight/README.md)
+
+### Gamebook
+
+Choose-your-own-adventure stories: read a page, pick one of the choices under it. One story is
+built in (*The Dark Lighthouse*); the story pack on the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/gamebook/) has five more
+in English and three in Turkish, and the site converts stories written in Twine (Harlowe, SugarCube) or Ink.
+Copy `.story` files into `AppFiles/gamebook/`. Undo, three text sizes, progress kept per story. The
+`.story` format is plain text and easy to write by hand: [FORMAT.md](apps/gamebook/FORMAT.md).
+[More](apps/gamebook/README.md)
+
+## Tools site
+
+`site/` is a static site published to GitHub Pages by `.github/workflows/pages.yml`
+(`python -I tools/build_site.py` builds it into `dist/site`, with the story pack). Its converters
+are JavaScript ports of `apkg2cards.py` and `stardict2shards.py` that give the same files
+(`python -I site/test/test_converters.py`), plus the Gamebook converter and the RSS Worker guide. A
+new tool is a folder under `site/tools/` and a line in `site/assets/site.js`.
 
 ## Build from source
 
@@ -366,6 +390,8 @@ python -I apps/dict/test_dict.py
 python -I apps/litclock/test_litclock.py
 python -I apps/wordclock/test_wordclock.py
 python -I apps/skytonight/test_sky.py
+python -I apps/gamebook/test_gamebook.py
+python -I site/test/test_converters.py
 ```
 
 `build_all.py` also runs `tools/lualint55.py` over every Lua file: the device's Lua 5.5 rejects an

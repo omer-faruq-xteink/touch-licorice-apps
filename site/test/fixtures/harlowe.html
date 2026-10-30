@@ -1,0 +1,23 @@
+<html><head><title>Cave</title></head><body>
+<tw-storydata name="The Cave &amp; the Key" startnode="1" creator="Twine" creator-version="2.6.2" format="Harlowe" format-version="3.3.8" ifid="X" options="" hidden>
+<style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style>
+<script role="script" id="twine-user-script" type="text/twine-javascript"></script>
+<tw-passagedata pid="1" name="Start" tags="" position="0,0" size="100,100">''You'' stand at the mouth of a cave.
+You have $gold coins.
+
+[[Go in->Dark Hall]]
+[[Buy a torch|Shop]]
+(if: $gold &gt; 5)[[[Bribe the guard->Guard]]]</tw-passagedata>
+<tw-passagedata pid="2" name="Shop" tags="" position="0,0" size="100,100">(if: $gold &gt;= 2)[(set: $gold to it - 2)(set: $torch to true)You buy a torch.](else:)[You cannot afford it.]
+[[Back->Start]]</tw-passagedata>
+<tw-passagedata pid="3" name="Dark Hall" tags="" position="0,0" size="100,100">(if: $torch)[Your torch shows a door.
+(link-goto: "Open the door", "Treasure")](else:)[It is too dark. You go back.
+(link-goto: "Out", "Start")]
+(if: (history:) contains "Shop")[You remember the shop.]</tw-passagedata>
+<tw-passagedata pid="4" name="Treasure" tags="" position="0,0" size="100,100">//Gold everywhere!// (print: $gold + 100) coins.
+(link: "Take it")[(set: $gold to $gold + 100)(goto: "Rich")]</tw-passagedata>
+<tw-passagedata pid="5" name="Rich" tags="" position="0,0" size="100,100">You leave with $gold coins. The end.</tw-passagedata>
+<tw-passagedata pid="6" name="Guard" tags="" position="0,0" size="100,100">(display: "Rich")
+[[Missing->Nowhere]]</tw-passagedata>
+<tw-passagedata pid="7" name="Init" tags="startup" position="0,0" size="100,100">(set: $gold to 3)(set: $torch to false)</tw-passagedata>
+</tw-storydata></body></html>

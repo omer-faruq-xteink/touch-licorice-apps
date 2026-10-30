@@ -1,0 +1,120 @@
+title: The Dark Lighthouse
+author: omer-faruq
+language: en
+licence: CC BY 4.0
+about: A storm, a dark tower and a ship heading for the rocks. About ten minutes.
+start: jetty
+var: moves = 0
+var: lantern = false
+var: matches = false
+var: key = false
+var: oil = 0
+var: bruises = 0
+
+== jetty
+The boat that brought you turns back into the rain before you have both feet on the jetty. You are the new relief keeper of Gull Rock, and you are a day early.
+The lighthouse above you should be turning its beam over the sea. It is dark.
+* [once] Look out to sea ~ moves += 1 -> sea
+* Walk up to the keeper's cottage ~ moves += 1 -> cottage
+* Go straight to the tower ~ moves += 1 -> tower_door
+
+== sea
+Far to the south, two small lights rise and fall: a ship, and it is coming this way. Between it and the rock lies the reef the lighthouse is there to warn about.
+Someone has to light the lamp, and soon.
+-> jetty
+
+== cottage
+{cottage == 1: The cottage door is open and bangs in the wind. Inside, a fire has burned down to grey ash. Nobody answers when you call.|The cottage is as cold and empty as before.}
+{lantern: Your lantern lights the room.|A storm lantern hangs by the door, still warm.}
+* {not lantern} Take the lantern ~ lantern = true -> cottage
+* [once] Read the note on the table -> note
+* [once] Search the dresser drawers ~ moves += 1 -> drawers
+* [once] Look on the mantelpiece -> mantel
+* Go to the tower ~ moves += 1 -> tower_door
+
+== note
+The note is in a large, careful hand:
+"Gone down to see to the fog bell. Back by six. Tom."
+The clock on the wall says ten past ten.
+-> cottage
+
+== drawers
+String, candle ends, a tin of buttons. In the bottom drawer, under a folded flag, a heavy iron key.
+~ key = true
+-> cottage
+
+== mantel
+Behind a photograph of a man with a white beard and a dog, you find a box of matches. It rattles: plenty left.
+~ matches = true
+-> cottage
+
+== tower_door
+The tower door is iron, painted white, and locked.
+{key: The key from the dresser is heavy in your pocket.}
+* {key} Unlock the door ~ moves += 1 -> stairs
+* {not key} Break the little window beside it ~ moves += 2; bruises += 1 -> window
+* Go back to the cottage ~ moves += 1 -> cottage
+
+== window
+The glass gives way at the third blow, and so does the skin on your knuckles. You climb in, slowly and carefully.
+-> stairs
+
+== stairs
+{lantern: The lantern throws your shadow huge up the walls.|It is pitch dark. You feel for each step with your foot.}
+{not lantern: {~You bang your shin on the rail.|You miss a step and land hard on your hands.}}
+~ {not lantern} bruises += 1
+~ moves += 1
+* Climb on to the lamp room -> lamp_check
+* [once] Try the door to the store room -> store
+* {bruises >= 3} Sit down for a moment -> rest
+
+== rest
+You sit on the cold step and count your bruises: {bruises} of them. Your hands are shaking. The wind howls round the tower.
+~ moves += 2
+-> stairs
+
+== store
+Drums of paraffin stand along the wall. You fill the small can by the door.
+~ oil = 3
+~ moves += 1
+-> stairs
+
+== lamp_check
+-> {moves > 12} too_late
+-> lamp_room
+
+== lamp_room
+The lamp room is all glass and brass. In the middle sits the great lens, and inside it the burner, cold.
+{oil > 0: The can of paraffin sloshes at your side.|You tap the burner's tank. It rings hollow: empty.}
+* {oil > 0 and matches} Fill the tank and light the burner -> lit
+* {oil > 0 and not matches} Look for something to light it with -> no_flame
+* {oil == 0} Go down for paraffin ~ moves += 1 -> stairs
+
+== no_flame
+There is nothing here to strike a flame with. You think of the box of matches in the cottage, a long way down and across the yard.
+* Run for the matches ~ moves += 3; matches = true -> lamp_check
+
+== lit
+The wick catches. The lens gathers the small flame into a beam as thick as a tree, and the machinery starts its slow turn.
+Out at sea, the two lights of the ship stop. Then, slowly, they swing away from the reef.
+* Look for Tom at the fog bell -> bell
+* Stay with the lamp until morning -> morning
+
+== bell
+Down at the fog bell, at the bottom of the rocks, a lantern lies on its side. Beside it, Tom is sitting against the wall with his ankle twisted under him, soaked and furious.
+"Two hours I've been shouting," he says. "Who in the world are you?"
+You help him up the path, one step at a time, while the beam goes round above you.
+-> best_end
+
+== best_end
+By morning the storm has blown out. Tom drinks his tea with his foot up on a chair and tells the coastguard on the radio that the new keeper will do.
+-> END
+
+== morning
+You keep the lamp burning until the sky goes grey. When the morning boat comes, they find Tom down by the fog bell with a twisted ankle, cold but alive.
+The ship got home. You never stopped watching the lamp.
+-> END
+
+== too_late
+You reach the lamp room in time to see it happen: the ship's lights stop, tilt, and go out on the reef.
+The lifeboat finds the crew in the morning, clinging to the rocks. Nobody died. But nobody on Gull Rock will forget the night the light was dark.

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gamebook stories</title>
+<meta name="description" content="Convert Twine and Ink stories into .story files for the Gamebook app on the Xteink X4 Pro.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Gamebook stories</h1>
+  <p class="lead">Choose-your-own-adventure stories for the Gamebook app. Download the story pack, or turn a
+    story you wrote in <a href="https://twinery.org">Twine</a> or <a href="https://www.inklestudios.com/ink/">Ink</a>
+    into a <code>.story</code> file.</p>
+
+  <h2>The story pack</h2>
+  <p>Original stories, free to read and share (CC BY 4.0): five in English (a train mystery, a snowbound hut, a clock
+    puzzle, a polar station, a fairy-tale market) and three in Turkish.
+    <a class="button" href="../../downloads/gamebook-stories.zip" download>Download the pack (zip)</a></p>
+  <p class="note">Unzip it. Its <code>EN</code> and <code>TR</code> folders hold the stories in each language: copy the
+    <code>.story</code> files you want (not the folder) into <code>AppFiles/gamebook/</code> on the SD card.</p>
+
+  <h2>Convert a story</h2>
+  <ol class="steps">
+    <li>
+      <p>Add the story file:</p>
+      <ul>
+        <li><b>Twine 2</b>: <i>Build → Publish to File</i> gives an <code>.html</code> file; a Twee file
+          (<code>.twee</code>, <code>.tw</code>) works too. Harlowe and SugarCube stories keep their variables and
+          conditions; Chapbook and Snowman stories keep their text and links.</li>
+        <li><b>Ink</b>: the <code>.ink</code> source file you write in Inky (not the compiled <code>.json</code>).</li>
+        <li>A <code>.story</code> file you wrote by hand: it is checked for broken links.</li>
+      </ul>
+      <div class="drop" tabindex="0" id="drop">
+        <strong>Drop a story file here, or click to choose one</strong>
+        <span>.html, .twee, .tw, .ink, .story</span>
+        <input type="file" accept=".html,.htm,.twee,.tw,.ink,.story,.txt">
+      </div>
+    </li>
+    <li>
+      <p>Check the result and download it.</p>
+      <div class="panel" id="result" hidden>
+        <div class="msg" id="summary"></div>
+        <ul class="warnings" id="warnings"></ul>
+        <div class="row">
+          <label class="field">File name <input type="text" id="fname" size="32"></label>
+          <button id="save">Download .story</button>
+        </div>
+        <details>
+          <summary>Show the .story text</summary>
+          <textarea id="text" spellcheck="false" readonly></textarea>
+        </details>
+      </div>
+    </li>
+    <li>
+      <p>Copy the <code>.story</code> file into <code>AppFiles/gamebook/</code> on the reader's SD card (USB mode).
+        It is in the app's list the next time you open Gamebook.</p>
+    </li>
+  </ol>
+
+  <h2>What converts</h2>
+  <p>Passages, links and choices, variables (numbers, true / false, text) with <code>(set:)</code> /
+    <code>&lt;&lt;set&gt;&gt;</code> / <code>~</code>, conditions (<code>(if:)</code>, <code>(else-if:)</code>,
+    <code>(else:)</code>, <code>&lt;&lt;if&gt;&gt;</code>, Ink's <code>{…}</code>), printed variables,
+    <code>(link-goto:)</code>, <code>(goto:)</code>, links that set variables, random numbers; Ink's knots, stitches,
+    once-only and sticky choices, gathers and nested choices, diverts, glue and sequences.</p>
+  <p>Left out, with a warning naming the passage: pictures and sound, styling, Harlowe's
+    <code>(display:)</code>, <code>(click:)</code> and other interactive hooks, SugarCube widgets and JavaScript,
+    Ink tunnels, threads, lists and functions. The rest of the story still plays.</p>
+  <p>Writing a story by hand? The format is plain text:
+    <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps/blob/main/apps/gamebook/FORMAT.md">the .story format</a>.</p>
+</main>
+<script type="module">
+  import { chrome, dropZone, download, message, esc } from '../../assets/site.js';
+  import { convert } from './convert.js';
+  chrome('gamebook');
+
+  const $ = (id) => document.getElementById(id);
+  let story = '';
+  dropZone($('drop'), ([f]) => {
+    $('result').hidden = false;
+    $('warnings').innerHTML = '';
+    try {
+      const text = new TextDecoder('utf-8').decode(f.bytes);
+      const r = convert(f.name, text);
+      story = r.story;
+      const title = (story.match(/^title:\s*(.+)$/m) || [])[1] || f.name.replace(/\.[^.]+$/, '');
+      $('fname').value = title.replace(/[\\/:*?"<>|~]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 60) + '.story';
+      $('text').value = story;
+      $('warnings').innerHTML = r.warnings.slice(0, 200).map((w) => `<li>${esc(w)}</li>`).join('') +
+        (r.warnings.length > 200 ? `<li>… and ${r.warnings.length - 200} more</li>` : '');
+      message($('summary'), `${r.info.format}: ${r.info.passages} passages` +
+        (r.warnings.length ? `, ${r.warnings.length} things to look at` : ', no problems'), r.warnings.length ? 'warn' : 'ok');
+      $('save').disabled = false;
+    } catch (e) {
+      story = '';
+      message($('summary'), e.message, 'err');
+      $('text').value = '';
+      $('save').disabled = true;
+    }
+  });
+  $('save').addEventListener('click', () => {
+    let name = $('fname').value.trim() || 'story.story';
+    if (!/\.story$/i.test(name)) name += '.story';
+    download(name, story, 'text/plain;charset=utf-8');
+  });
+</script>
+</body>
+</html>

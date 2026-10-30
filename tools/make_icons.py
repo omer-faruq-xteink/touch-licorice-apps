@@ -501,6 +501,17 @@ def skytonight(p):
     p.ellipse((66, 8, 88, 30), fill=True)
 
 
+def gamebook(p):
+    # an open book with a path coming out of it that forks into two arrows
+    p.poly([(8, 56), (46, 64), (46, 90), (8, 82)], fill=False, w=4)
+    p.poly([(88, 56), (50, 64), (50, 90), (88, 82)], fill=False, w=4)
+    p.line([(48, 62), (48, 42)], 6)
+    p.line([(48, 44), (26, 20)], 6)
+    p.line([(48, 44), (70, 20)], 6)
+    p.poly([(16, 10), (34, 14), (20, 28)], fill=True)
+    p.poly([(80, 10), (62, 14), (76, 28)], fill=True)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -511,7 +522,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
-         'wordclock': wordclock, 'skytonight': skytonight}
+         'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

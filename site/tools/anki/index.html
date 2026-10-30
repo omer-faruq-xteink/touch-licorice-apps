@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anki decks</title>
+<meta name="description" content="Convert Anki decks (.apkg) and word lists into cards for the Anki app on the Xteink X4 Pro.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Anki decks</h1>
+  <p class="lead">Turn an Anki deck or a simple word list into the card files the Anki app on the reader studies.
+    The same conversion as <code>apkg2cards.py</code>, without installing anything.</p>
+
+  <ol class="steps">
+    <li>
+      <p>Add a deck: an <code>.apkg</code> exported from Anki (desktop or mobile) or downloaded from
+        <a href="https://ankiweb.net/shared/decks">AnkiWeb's shared decks</a>; or a list with one card per line,
+        front and back separated by a tab (<code>.tsv</code>, <code>.txt</code>) or a comma (<code>.csv</code>).</p>
+      <div class="drop" tabindex="0" id="drop">
+        <strong>Drop a deck here, or click to choose one</strong>
+        <span>.apkg, .tsv, .csv, .txt</span>
+        <input type="file" accept=".apkg,.tsv,.csv,.txt">
+      </div>
+      <div class="msg" id="loadmsg"></div>
+    </li>
+    <li id="step2" hidden>
+      <p>Choose what goes on each side. The defaults are the deck's first field with text on the front and the
+        others on the back.</p>
+      <div class="table-scroll"><table id="fields"></table></div>
+      <div class="panel">
+        <div class="row">
+          <label class="field">Front <select id="front"></select></label>
+          <label class="field">Back <select id="back" multiple size="4"></select></label>
+        </div>
+        <div class="row">
+          <label class="field">Deck name on the reader <input type="text" id="name" size="28"></label>
+          <label class="field">File prefix <input type="text" id="prefix" size="16" pattern="[A-Za-z0-9]{1,24}"></label>
+          <label class="field">Longest side (characters) <input type="number" id="maxc" value="800" min="50" max="4000" step="50"></label>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="reverse"> Also back-to-front cards</label>
+        </div>
+        <details>
+          <summary>Updating a deck you already study?</summary>
+          <p class="note">Add the files of the earlier conversion (the zip from this page, or the
+            <code>prefix_info.txt</code> and <code>prefix_c000.txt …</code> files from the reader). Cards keep their
+            places, so your progress is kept; removed cards are blanked and new ones go at the end.</p>
+          <div class="drop" tabindex="0" id="olddrop">
+            <strong>Drop the earlier files or their zip</strong>
+            <span id="oldinfo">none added</span>
+            <input type="file" multiple accept=".zip,.txt">
+          </div>
+        </details>
+        <div class="row"><button id="go">Convert and download</button></div>
+        <div class="msg" id="result"></div>
+      </div>
+    </li>
+    <li>
+      <p>Unzip the download and copy the files into <code>AppFiles/anki/</code> on the reader's SD card (USB mode).
+        The deck shows up in Anki's list. A copy of Anki installed by hand from <code>anki.xtapp</code> reads
+        <code>XTApps/anki/files/</code>; Anki's Menu → Help shows the folder.</p>
+    </li>
+  </ol>
+  <p class="note">Only text is kept: pictures and sounds are left out (the reader has no sound), which is why a
+    200 MB deck usually becomes a few hundred kilobytes. Cloze cards show [...] on the front and the full text on
+    the back. Reading <code>.apkg</code> files loads <a href="https://github.com/sql-js/sql.js">sql.js</a> (and, for
+    newer exports, <a href="https://github.com/101arrowz/fzstd">fzstd</a>) from a public CDN; your deck stays in
+    this browser.</p>
+</main>
+<script type="module">
+  import { chrome, dropZone, downloadZip, message, esc, loadScript } from '../../assets/site.js';
+  import { readZip } from '../../assets/zip.js';
+  import { readDeck, fieldsSummary, makeFiles, deckNames, isList } from './anki.js';
+  chrome('anki');
+
+  const SQLJS = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/';
+  const FZSTD = 'https://cdn.jsdelivr.net/npm/fzstd@0.1.1/esm/index.mjs';
+  const $ = (id) => document.getElementById(id);
+  let deckFile = null, notes = null, old = new Map();
+
+  async function env() {
+    await loadScript(SQLJS + 'sql-wasm.js');
+    const SQL = await window.initSqlJs({ locateFile: (f) => SQLJS + f });
+    return {
+      openDb: (bytes) => {
+        const db = new SQL.Database(bytes);
+        return { all: (sql) => { const r = db.exec(sql); return r.length ? r[0].values : []; }, close: () => db.close() };
+      },
+      zstd: async (b) => (await import(FZSTD)).decompress(b),
+    };
+  }
+
+  dropZone($('drop'), async ([f]) => {
+    $('step2').hidden = true;
+    message($('loadmsg'), `Reading ${f.name} …`);
+    try {
+      notes = await readDeck(f.name, f.bytes, isList(f.name) ? {} : await env());
+      deckFile = f.name;
+      if (!notes.length) throw new Error('no notes in this file');
+      const sum = fieldsSummary(notes);
+      $('fields').innerHTML = '<tr><th>Note type</th><th>Field</th><th>Default</th><th>Example</th></tr>' +
+        sum.map((m) => m.fields.map((x, k) => `<tr><td>${k ? '' : esc(m.model) + ` (${m.notes})`}</td><td>${esc(x.name)}</td>` +
+          `<td>${x.role}</td><td>${esc(x.sample)}</td></tr>`).join('')).join('');
+      const names = [...new Set(sum.flatMap((m) => m.fields.map((x) => x.name)))];
+      $('front').innerHTML = '<option value="">(default)</option>' + names.map((n) => `<option>${esc(n)}</option>`).join('');
+      $('back').innerHTML = names.map((n) => `<option>${esc(n)}</option>`).join('');
+      const d = deckNames(f.name);
+      $('name').value = d.name;
+      $('prefix').value = d.prefix;
+      message($('loadmsg'), `${notes.length} notes in ${sum.length} note type${sum.length > 1 ? 's' : ''}.`, 'ok');
+      $('step2').hidden = false;
+      message($('result'), '');
+    } catch (e) {
+      message($('loadmsg'), e.message, 'err');
+    }
+  });
+  $('name').addEventListener('input', () => {
+    try { $('prefix').value = deckNames(deckFile || 'deck', { name: $('name').value }).prefix; } catch { /* keep */ }
+  });
+
+  dropZone($('olddrop'), async (files) => {
+    old = new Map();
+    for (const f of files) {
+      const list = f.name.toLowerCase().endsWith('.zip') ? await readZip(f.bytes) : [f];
+      for (const x of list) old.set(x.name.replace(/^.*[\\/]/, ''), new TextDecoder().decode(x.bytes));
+    }
+    $('oldinfo').textContent = `${old.size} file${old.size === 1 ? '' : 's'} added`;
+  });
+
+  $('go').addEventListener('click', async () => {
+    try {
+      const back = [...$('back').selectedOptions].map((o) => o.value).join(',');
+      const r = makeFiles(deckFile, notes, {
+        name: $('name').value.trim(), prefix: $('prefix').value.trim(), front: $('front').value || undefined,
+        back: back || undefined, reverse: $('reverse').checked, maxChars: parseInt($('maxc').value, 10) || 800,
+        update: old.size > 0,
+      }, old);
+      await downloadZip(`${r.prefix}-cards.zip`, r.files);
+      const u = r.update ? ` ${r.update.kept} cards kept their places, ${r.update.removed} removed, ${r.update.added} new.` : '';
+      message($('result'), `${r.name}: ${r.cards} cards in ${r.shards} file${r.shards > 1 ? 's' : ''}, prefix ${r.prefix}.${u}`, 'ok');
+    } catch (e) {
+      message($('result'), e.message, 'err');
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch Licorice tools</title>
+<meta name="description" content="Converters and setup helpers for the touch-licorice-apps mini apps on the Xteink X4 Pro.">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Tools for the reader's mini apps</h1>
+  <p class="lead">Converters and setup helpers for the
+    <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps">touch-licorice-apps</a> mini apps on the
+    Xteink X4 Pro. They run in this browser: nothing you add here is uploaded.</p>
+  <div class="cards" id="tools"></div>
+
+  <h2>Getting files onto the reader</h2>
+  <p>Each app has its own folder on the SD card, <code>AppFiles/&lt;app&gt;/</code>, for example
+    <code>AppFiles/gamebook/</code>. Connect the reader by USB (USB mode), copy the files there, and open the
+    app. Each app's help screen shows its folder (Anki and Dictionary copies installed by hand from a
+    <code>.xtapp</code> file also read <code>XTApps/&lt;app&gt;/files/</code>).</p>
+</main>
+<script type="module">
+  import { TOOLS, chrome, esc } from './assets/site.js';
+  chrome(null);
+  document.getElementById('tools').innerHTML = TOOLS.map((t) =>
+    `<a class="card" href="tools/${t.id}/"><div class="app">${esc(t.app)}</div><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p></a>`).join('');
+</script>
+</body>
+</html>

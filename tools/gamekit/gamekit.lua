@@ -126,6 +126,8 @@ end
 
 function kit.draw_modal(gg)
   local lines, btns, y, h = layout(modal)
+  -- paper first, so the page under the box does not show through it
+  gg:rect(BOX_X, y, BOX_W, h, { fill = true, color = 0 })
   gg:rect(BOX_X, y, BOX_W, h)
   gg:rect(BOX_X + 3, y + 3, BOX_W - 6, h - 6)
   local ty = y + 20

@@ -1,0 +1,10 @@
+{
+  "app_id": "gamebook",
+  "display_name": "Gamebook",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Choose-your-own-adventure stories: read a page, pick what happens next. One story built in; more as .story files on the SD card, converted from Twine or Ink on the tools site.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
