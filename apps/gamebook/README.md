@@ -23,9 +23,13 @@ more are `.story` files on the SD card.
 
 - the **story pack**: original stories (CC BY 4.0) as a zip, five in `EN/` and three in `TR/`; copy
   the `.story` files, not the folder (the app does not look inside folders);
-- a **converter** for stories written in [Twine](https://twinery.org) (Harlowe, SugarCube; text
-  and links of Chapbook and Snowman) or [Ink](https://www.inklestudios.com/ink/) (the `.ink`
-  source), running in the browser.
+- a **converter**, running in the browser, for stories made with [Twine](https://twinery.org)
+  (Harlowe, SugarCube; text and links of Chapbook and Snowman) or
+  [Ink](https://www.inklestudios.com/ink/) (the `.ink` source), and for
+  [Project Aon](https://www.projectaon.org) gamebooks such as Lone Wolf (the book's `.epub`: each
+  section a page, each "turn to" a choice, the Random Number Table built in, the rules first);
+- **where to find stories**: shared Twine and Ink games (the IF Archive, IFDB, inkle's *The
+  Intercept*) and Project Aon's books, which are free for your own use but may not be shared.
 
 Copy `.story` files into `AppFiles/gamebook/` on the SD card (USB mode). On the command line the
 same converter is `node site/tools/gamebook/cli.mjs STORY_FILE OUT.story`.

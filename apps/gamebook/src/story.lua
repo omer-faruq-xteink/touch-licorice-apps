@@ -513,7 +513,7 @@ function S.enter(story, st, name)
     local choices = {}
     for ci, c in ipairs(P.choices) do
       if (not c.once or not st.once[name .. '#' .. ci]) and (not c.cond or truthy(S.eval(story, st, c.cond))) then
-        choices[#choices + 1] = { label = render(story, st, c.label), k = ci }
+        choices[#choices + 1] = { label = render(story, st, c.label), k = ci, target = c.target }
       end
     end
     local cont

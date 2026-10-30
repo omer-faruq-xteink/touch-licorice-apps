@@ -4,15 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gamebook stories</title>
-<meta name="description" content="Convert Twine and Ink stories into .story files for the Gamebook app on the Xteink X4 Pro.">
+<meta name="description" content="Convert Twine and Ink stories and Project Aon gamebooks into .story files for the Gamebook app on the Xteink X4 Pro.">
 <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body>
 <main class="wrap">
   <h1>Gamebook stories</h1>
-  <p class="lead">Choose-your-own-adventure stories for the Gamebook app. Download the story pack, or turn a
-    story you wrote in <a href="https://twinery.org">Twine</a> or <a href="https://www.inklestudios.com/ink/">Ink</a>
-    into a <code>.story</code> file.</p>
+  <p class="lead">Choose-your-own-adventure stories for the Gamebook app. Download the story pack, or turn a story made
+    with <a href="https://twinery.org">Twine</a> or <a href="https://www.inklestudios.com/ink/">Ink</a>, or a
+    <a href="https://www.projectaon.org">Project Aon</a> gamebook, into a <code>.story</code> file: yours, or one of the
+    many shared online (see <a href="#find">where to find stories</a>).</p>
 
   <h2>The story pack</h2>
   <p>Original stories, free to read and share (CC BY 4.0): five in English (a train mystery, a snowbound hut, a clock
@@ -30,12 +31,15 @@
           (<code>.twee</code>, <code>.tw</code>) works too. Harlowe and SugarCube stories keep their variables and
           conditions; Chapbook and Snowman stories keep their text and links.</li>
         <li><b>Ink</b>: the <code>.ink</code> source file you write in Inky (not the compiled <code>.json</code>).</li>
+        <li><b>Project Aon</b> gamebooks (Lone Wolf, Grey Star, Freeway Warrior): the book's <code>.epub</code> from its
+          page on projectaon.org.</li>
+        <li>A <code>.zip</code> holding one of these, or a Twine project's <code>.twee</code> files.</li>
         <li>A <code>.story</code> file you wrote by hand: it is checked for broken links.</li>
       </ul>
       <div class="drop" tabindex="0" id="drop">
         <strong>Drop a story file here, or click to choose one</strong>
-        <span>.html, .twee, .tw, .ink, .story</span>
-        <input type="file" accept=".html,.htm,.twee,.tw,.ink,.story,.txt">
+        <span>.html, .twee, .tw, .ink, .epub, .zip, .story</span>
+        <input type="file" accept=".html,.htm,.twee,.tw,.ink,.epub,.zip,.story,.txt">
       </div>
     </li>
     <li>
@@ -59,31 +63,55 @@
     </li>
   </ol>
 
+  <h2 id="find">Where to find stories</h2>
+  <p>Stories others have shared, ready for the converter. Each comes with its own licence: read it before sharing a
+    converted file with anyone.</p>
+  <ul>
+    <li><a href="https://ifarchive.org/indexes/if-archive/games/source/twine/">The IF Archive's Twine sources</a>: the
+      published <code>.html</code> files and Twee sources of Twine games, a few with open licences (Isolda's Eyes is
+      CC BY 4.0, One King to Loot them All CC BY-NC-SA 4.0). The <a href="https://ifarchive.org/indexes/if-archive/games/twine/">Twine
+      games section</a> has many more as playable <code>.html</code>.</li>
+    <li><a href="https://ifdb.org/search?searchfor=system%3ATwine">IFDB</a>, the Interactive Fiction Database:
+      thousands of Twine and Ink games with reviews; many link a downloadable <code>.html</code>.</li>
+    <li><a href="https://github.com/inkle/the-intercept">The Intercept</a> by inkle, the makers of Ink (MIT licence):
+      a wartime interrogation with many endings; its story is <code>Assets/Ink/TheIntercept.ink</code>.</li>
+    <li><a href="https://www.projectaon.org/en/Main/Books">Project Aon</a>: Joe Dever's <b>Lone Wolf</b> series and more,
+      free to download for your own use. On a book's page take the <b>EPUB</b>. The converted book opens on its rules;
+      keep your Action Chart on paper as in the book, and the Combat Results Table from the book's PDF at hand. The
+      Random Number Table is built in: the page shows a number whenever the book asks you to pick one. Project Aon's
+      licence does not allow sharing the files, so convert your own copy.</li>
+  </ul>
+  <p class="note">What converts well: stories of text, links, variables and conditions. Games built on scripts (RPG
+    combat systems, inventories written in JavaScript, timers) keep their text and links but lose those parts, and
+    the converter lists what it left out.</p>
+
   <h2>What converts</h2>
   <p>Passages, links and choices, variables (numbers, true / false, text) with <code>(set:)</code> /
     <code>&lt;&lt;set&gt;&gt;</code> / <code>~</code>, conditions (<code>(if:)</code>, <code>(else-if:)</code>,
     <code>(else:)</code>, <code>&lt;&lt;if&gt;&gt;</code>, Ink's <code>{…}</code>), printed variables,
     <code>(link-goto:)</code>, <code>(goto:)</code>, links that set variables, random numbers; Ink's knots, stitches,
     once-only and sticky choices, gathers and nested choices, diverts, glue and sequences.</p>
-  <p>Left out, with a warning naming the passage: pictures and sound, styling, Harlowe's
-    <code>(display:)</code>, <code>(click:)</code> and other interactive hooks, SugarCube widgets and JavaScript,
-    Ink tunnels, threads, lists and functions. The rest of the story still plays.</p>
+  <p>Also: <code>(display:)</code> and <code>&lt;&lt;include&gt;&gt;</code> (the passage's text in place),
+    <code>&lt;&lt;switch&gt;&gt;</code>, back links (<code>&lt;&lt;back&gt;&gt;</code>, <code>(link-undo:)</code>),
+    links to web pages (as text with the address), Ink functions that only change variables.</p>
+  <p>Left out, with a warning naming the passage: pictures and sound, styling, timers, <code>(click:)</code> and
+    other interactive hooks (their text is shown at once), SugarCube widgets and JavaScript, Ink tunnels, threads and
+    lists. The rest of the story still plays.</p>
   <p>Writing a story by hand? The format is plain text:
     <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps/blob/main/apps/gamebook/FORMAT.md">the .story format</a>.</p>
 </main>
 <script type="module">
   import { chrome, dropZone, download, message, esc } from '../../assets/site.js';
-  import { convert } from './convert.js';
+  import { convertFile } from './convert.js';
   chrome('gamebook');
 
   const $ = (id) => document.getElementById(id);
   let story = '';
-  dropZone($('drop'), ([f]) => {
+  dropZone($('drop'), async ([f]) => {
     $('result').hidden = false;
     $('warnings').innerHTML = '';
     try {
-      const text = new TextDecoder('utf-8').decode(f.bytes);
-      const r = convert(f.name, text);
+      const r = await convertFile(f.name, f.bytes);
       story = r.story;
       const title = (story.match(/^title:\s*(.+)$/m) || [])[1] || f.name.replace(/\.[^.]+$/, '');
       $('fname').value = title.replace(/[\\/:*?"<>|~]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 60) + '.story';

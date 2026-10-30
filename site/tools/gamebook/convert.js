@@ -1,6 +1,7 @@
 // Twine (Harlowe, SugarCube; links only for Chapbook and Snowman) and Ink stories -> the .story
 // format of the Gamebook app (apps/gamebook/FORMAT.md). Runs in the browser and in Node.
 //
+//   convertFile(fileName, bytes) -> { story, warnings, info } any of the files below
 //   convert(fileName, text) -> { story, warnings, info }     story: the .story text
 //   check(storyText)        -> { passages, errors, warnings } a .story file's links and names
 //
@@ -8,6 +9,23 @@
 // and functions, ...) is left out with a warning naming the passage, so the rest still plays.
 
 import { unescapeHtml } from '../../assets/unescape.js';
+import { readZip } from '../../assets/zip.js';
+import { isAonEpub, fromAonEpub } from './aon.js';
+
+// a file as added on the page: a text file, a Project Aon EPUB, or a zip of Twee files (a Tweego
+// project, joined in name order)
+export async function convertFile(name, bytes) {
+  const zip = bytes.length > 4 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+  if (!zip) return convert(name, new TextDecoder('utf-8').decode(bytes));
+  const files = await readZip(bytes);
+  if (isAonEpub(files)) return fromAonEpub(files);
+  const twee = files.filter((f) => /\.(twee|tw)$/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name));
+  if (twee.length) return convert(name.replace(/\.zip$/i, '.twee'), twee.map((f) => new TextDecoder('utf-8').decode(f.bytes)).join('\n\n'));
+  const one = files.filter((f) => /\.(html?|ink|story)$/i.test(f.name));
+  if (one.length === 1) return convert(one[0].name, new TextDecoder('utf-8').decode(one[0].bytes));
+  if (/\.epub$/i.test(name)) throw new Error('This EPUB is not a Project Aon gamebook; other EPUBs are books, not stories with choices.');
+  throw new Error('No story in this zip: it should hold a Twine .html, Twee files or an Ink .ink file.');
+}
 
 export function detect(name, text) {
   const n = (name || '').toLowerCase();
@@ -131,7 +149,7 @@ export function parseTwee(text) {
       passages.push(cur);
     } else if (cur) cur.lines.push(raw);
   }
-  const out = { title: null, format: 'Harlowe', start: null, passages: [] };
+  const out = { title: null, format: null, start: null, passages: [] };
   for (const p of passages) {
     const body = p.lines.join('\n').replace(/\s+$/, '');
     if (p.name === 'StoryTitle') { out.title = body.trim(); continue; }
@@ -142,6 +160,12 @@ export function parseTwee(text) {
     out.passages.push({ name: p.name, tags: p.tags, text: body });
   }
   if (!out.start) out.start = (out.passages.find((p) => p.name === 'Start') || out.passages[0] || {}).name;
+  if (!out.format) {
+    // no StoryData (Twee 1 / Tweego projects name the format on the command line): from the macros
+    const all = out.passages.map((p) => p.text).join('\n');
+    const sugar = (all.match(/<<[A-Za-z=]/g) || []).length, harlowe = (all.match(/\([a-z][\w-]*:/g) || []).length;
+    out.format = sugar > harlowe ? 'SugarCube' : 'Harlowe';
+  }
   return out;
 }
 
@@ -183,6 +207,7 @@ function twExpr(s, ctx, it) {
     if ((m = rest.match(/^it(?![\w])/))) { out.push(it || '0'); i += m[0].length; continue; }
     if ((m = rest.match(/^(true|false)(?![\w])/))) { out.push(m[1]); i += m[0].length; continue; }
     if ((m = rest.match(/^\d+(\.\d+)?/))) { out.push(m[0]); i += m[0].length; continue; }
+    if ((m = rest.match(/^=(?!=)/))) { out.push('=='); i += 1; continue; }     // "<<if $a = 1>>" means a comparison
     if ((m = rest.match(/^[-+*/%<>(),]/))) { out.push(m[0]); i += 1; continue; }
     if ((m = rest.match(/^(contains|is in|matches|\w+)/))) {
       ctx.warn(`"${m[0]}" in an expression is not supported: ${s}`);
@@ -307,6 +332,8 @@ function harloweNodes(src, ctx) {
         continue;
       }
       if (c === '\n') { flush(); out.push({ t: 'br' }); i++; continue; }
+      // { ... } collapses whitespace in Harlowe: the braces themselves are not text
+      if (c === '{' || c === '}') { i++; continue; }
       m = src.slice(i).match(/^\$([A-Za-z_]\w*)/);
       if (m) { flush(); out.push({ t: 'print', expr: '$' + m[1] }); i += m[0].length; continue; }
       text += c; i++;
@@ -338,7 +365,10 @@ function sugarNodes(src, ctx) {
       flush();
       const body = src.slice(i + 2, j).trim();
       const m = body.match(/^(\/?)([=\w-]+)\s*([\s\S]*)$/);
-      if (m) toks.push(m[1] ? { t: 'close', name: m[2].toLowerCase() } : { t: 'm', name: m[2].toLowerCase(), args: m[3] });
+      // SugarCube 1 closes with <<endif>>, <<endnobr>> ... as well as <</if>>
+      const old = m && !m[1] && /^end(if|nobr|silently|click|button|link|switch|for|widget|timed|repeat|span|div)$/i.exec(m[2]);
+      if (old) toks.push({ t: 'close', name: old[1].toLowerCase() });
+      else if (m) toks.push(m[1] ? { t: 'close', name: m[2].toLowerCase() } : { t: 'm', name: m[2].toLowerCase(), args: m[3] });
       i = j + 2;
       continue;
     }
@@ -370,11 +400,26 @@ function sugarNodes(src, ctx) {
         const nodes = /^\s*\[\[/.test(tk.args) ? [] : seq(['/' + tk.name]);
         if (!/^\s*\[\[/.test(tk.args)) p++;
         out.push({ t: 'block', name: 'link', branches: [{ name: 'link', args: tk.args, nodes }] });
-      } else if (tk.t === 'm' && ['nobr', 'silently', 'span', 'div', 'type', 'linkappend', 'linkreplace', 'linkprepend', 'switch', 'for', 'repeat', 'timed', 'widget', 'script', 'done'].includes(tk.name)) {
+      } else if (tk.t === 'm' && tk.name === 'switch') {
+        // <<switch $x>><<case 1 2>>..<<default>>..<</switch>> -> an <<if>> chain
+        seq(['case', 'default', '/switch']);
+        const branches = [];
+        while (p < toks.length && toks[p].t === 'm' && (toks[p].name === 'case' || toks[p].name === 'default')) {
+          const b = toks[p++];
+          const vals = b.args.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s,]+/g) || [];
+          const args = b.name === 'default' ? '' : vals.map((v) => `(${tk.args}) == ${v}`).join(' or ');
+          branches.push({ name: b.name === 'default' ? 'else' : branches.length ? 'elseif' : 'if', args, nodes: seq(['case', 'default', '/switch']) });
+        }
+        p++;
+        if (branches.length) out.push({ t: 'block', name: 'if', branches });
+      } else if (tk.t === 'm' && ['nobr', 'silently', 'span', 'div', 'type', 'linkappend', 'linkreplace', 'linkprepend', 'for', 'repeat', 'timed', 'widget', 'script', 'done', 'click'].includes(tk.name)) {
         const inner = seq(['/' + tk.name]);
         p++;
-        if (!['nobr', 'silently', 'span', 'div', 'type'].includes(tk.name)) ctx.warn(`<<${tk.name}>> is not supported; its contents are kept as text`);
-        out.push(...inner);
+        if (['for', 'repeat', 'widget', 'script', 'done'].includes(tk.name)) ctx.warn(`<<${tk.name}>> is not supported; its contents are kept as text`);
+        // <<timed>> shows its parts one after the other: all of them at once here
+        // a jump inside <<timed>> waits for a timer, which means nothing on the reader: left out
+        if (tk.name === 'timed' && inner.some((x) => x.t === 'm' && x.name === 'goto')) ctx.warn('a timed <<goto>> is left out (no timers on the reader)');
+        out.push(...inner.filter((x) => !(x.t === 'm' && (x.name === 'next' || (tk.name === 'timed' && x.name === 'goto')))));
       } else if (tk.t === 'close') {
         // a closing tag with no opener: ignore
       } else out.push(tk);
@@ -395,8 +440,18 @@ function fromTwine(tw) {
   const special = new Set(['StoryInit', 'StoryCaption', 'StoryMenu', 'StoryBanner', 'StorySubtitle', 'StoryAuthor',
     'PassageReady', 'PassageDone', 'PassageHeader', 'PassageFooter', 'StoryShare', 'StoryInterface', 'StoryTitle', 'StoryData']);
   const skipTags = new Set(['header', 'footer', 'debug-header', 'debug-footer', 'debug-startup', 'widget', 'script', 'stylesheet', 'Twine.image']);
-  const byName = new Map(tw.passages.map((p) => [p.name, p]));
-  const play = tw.passages.filter((p) => !special.has(p.name) && !p.tags.some((t) => skipTags.has(t) || t === 'startup'));
+  // a second passage of the same name is left out (Twine itself shows only one)
+  const byName = new Map();
+  for (const p of tw.passages) {
+    if (byName.has(p.name)) warnings.push(`story: a second passage called "${p.name}" is left out`);
+    else byName.set(p.name, p);
+  }
+  // links name passages exactly, but stories often differ from the name by spaces or case
+  // (" Over Minnesota" vs "Over Minnesota"): those still find it
+  const loose = new Map();
+  for (const n of byName.keys()) for (const k of [n.trim(), n.trim().toLowerCase()]) if (!loose.has(k)) loose.set(k, n);
+  const find = (name) => (byName.has(name) ? name : loose.get(name.trim()) ?? loose.get(name.trim().toLowerCase()) ?? null);
+  const play = [...byName.values()].filter((p) => !special.has(p.name) && !p.tags.some((t) => skipTags.has(t) || t === 'startup'));
   const init = tw.passages.filter((p) => p.name === 'StoryInit' || p.tags.includes('startup'));
   for (const p of play) namer.id(p.name);
   const varNames = new Map();
@@ -413,14 +468,25 @@ function fromTwine(tw) {
       return varNames.get(n);
     },
     passageRef: (name) => {
-      if (!byName.has(name)) { ctx.warn(`refers to a passage "${name}" that does not exist`); return '0'; }
-      return namer.id(name);
+      const n = find(name);
+      if (n === null) { ctx.warn(`refers to a passage "${name}" that does not exist`); return '0'; }
+      return namer.id(n);
     },
     noteSet: () => {},
+    // (display:) / <<include>>: the passage's nodes, to be written in place (4 levels at most)
+    depth: 0,
+    include: (name) => {
+      const n = find(name);
+      if (n === null) { ctx.warn(`includes a passage "${name}" that does not exist`); return []; }
+      if (ctx.depth >= 4) { ctx.warn(`includes "${name}" too deeply; left out`); return []; }
+      const t = passageText(byName.get(n));
+      return isSugar ? sugarNodes(t, ctx) : harloweNodes(t, ctx);
+    },
     get here() { return here ? namer.id(here) : '0'; },
   };
   const target = (name) => {
-    if (byName.has(name) && !special.has(name)) return namer.id(name);
+    const n = find(name);
+    if (n !== null && !special.has(n)) return namer.id(n);
     ctx.warn(`links to "${name}", which is not a passage; the link ends the story`);
     return 'END';
   };
@@ -445,16 +511,19 @@ function fromTwine(tw) {
   const passages = [];
   for (const p of play) {
     here = p.name;
-    const nodes = isSugar ? sugarNodes(p.text, ctx) : harloweNodes(p.text, ctx);
+    const nodes = isSugar ? sugarNodes(passageText(p), ctx) : harloweNodes(passageText(p), ctx);
     if (!isSugar && !isHarlowe && /<%|\{[a-z]/.test(p.text)) ctx.warn(`${tw.format}: only text and links are converted`);
     passages.push({ id: namer.id(p.name), lines: twineLines(nodes, ctx, target, isSugar) });
   }
   here = null;
-  const meta = { title: tw.title || 'Untitled', start: tw.start && byName.has(tw.start) ? namer.id(tw.start) : passages[0]?.id };
+  const meta = { title: tw.title || 'Untitled', start: tw.start && find(tw.start) !== null ? namer.id(find(tw.start)) : passages[0]?.id };
   const startIdx = passages.findIndex((p) => p.id === meta.start);
   if (startIdx > 0) passages.unshift(...passages.splice(startIdx, 1));
   return { story: serialize(meta, vars, passages), warnings, info: { format: `Twine (${tw.format || 'Harlowe'})`, passages: passages.length } };
 }
+
+// a passage's text without the style sheets and scripts some stories put inside passages
+const passageText = (p) => p.text.replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, '');
 
 function stripMarkup(s) {
   return s.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
@@ -499,7 +568,11 @@ function twineLines(nodes, ctx, target, isSugar) {
       if (n.t === 'text') addText(n.s, cond);
       else if (n.t === 'br') endLine();
       else if (n.t === 'print') { lineHasText = true; line.push(`{${cond ? `${cond}: {${twExpr(n.expr, ctx)}}` : twExpr(n.expr, ctx)}}`); }
-      else if (n.t === 'link') {
+      else if (n.t === 'link' && /^(https?:|mailto:)/i.test(n.target)) {
+        // a link to a web page: its words and the address, as text
+        lineHasText = true;
+        line.push(wrapCond(cond, escText(stripMarkup(n.label === n.target ? n.target : `${n.label} (${n.target})`))));
+      } else if (n.t === 'link') {
         const tgt = target(n.target);
         line.push(wrapCond(cond, escText(stripMarkup(n.label))));
         choice(n.label, tgt, cond, n.setter ? twSet(n.setter, ctx) : null);
@@ -527,6 +600,10 @@ function twineLines(nodes, ctx, target, isSugar) {
             k = j - 1;
             break;
           }
+          case 'linkundo': {
+            choice(unquote(splitTop(a, [','])[0]) ?? 'Back', 'BACK', cond, null);
+            break;
+          }
           case 'linkgoto': case 'linkreveal goto': {
             const args = splitTop(a, [',']).map(unquote);
             const label = args[0] ?? '', tgt = args[1] ?? args[0] ?? '';
@@ -547,11 +624,21 @@ function twineLines(nodes, ctx, target, isSugar) {
             const sets = inner.filter((x) => x.t === 'macro' && (x.name === 'set' || x.name === 'put'))
               .map((x) => twSet(x.args, ctx, x.name === 'put')).filter(Boolean);
             if (go) choice(label, target(unquote(go.args) ?? ''), cond, sets.join('; ') || null);
-            else ctx.warn(`(link: "${label}") without a (goto:) inside is not supported; left out`);
+            else {
+              // a link that shows more text in place: the text is shown at once (its (set:)s run
+              // when the passage opens)
+              if (n.name === 'linkreveal') addText(label, cond);
+              walk(inner, cond);
+            }
             break;
           }
           case 'print': line.push(`{${cond ? `${cond}: {${twExpr(a, ctx)}}` : twExpr(a, ctx)}}`); break;
-          case 'display': case 'include': ctx.warn(`(${n.name}:) is not supported; left out`); break;
+          case 'display': case 'include': {
+            const name = unquote(a);
+            if (name === null) { ctx.warn(`(${n.name}: ${a}) needs a passage name in quotes; left out`); break; }
+            ctx.depth++; walk(ctx.include(name), cond); ctx.depth--;
+            break;
+          }
           case 'hook': if (n.hook) walk(n.hook, cond); break;
           case 'textstyle': case 'font': case 'textcolour': case 'textcolor': case 'colour': case 'color': case 'background':
           case 'align': case 'css': case 'transition': case 't8n': case 'transitiontime': case 'textsize': case 'b4r':
@@ -580,8 +667,17 @@ function twineLines(nodes, ctx, target, isSugar) {
             while ((m = re.exec(n.args))) { const l = twLink(m[1]); choice(l.label, target(l.target), cond, l.setter ? twSet(l.setter, ctx) : null); }
             break;
           }
-          case 'back': case 'return': ctx.warn(`<<${n.name}>> is not supported (use Undo in the app); left out`); break;
-          case 'include': case 'display': ctx.warn(`<<${n.name}>> is not supported; left out`); break;
+          case 'back': case 'return': {
+            // a link to the page before: "-> BACK"
+            const label = unquote(n.args.trim()) ?? (n.args.trim().match(/^\[\[(.*?)(\|.*)?\]\]$/) || [])[1] ?? (n.name === 'back' ? 'Back' : 'Return');
+            choice(label, 'BACK', cond, null);
+            break;
+          }
+          case 'include': case 'display': {
+            const name = unquote(n.args.trim().split(/\s+(?=\S+$)/)[0]) ?? unquote(n.args) ?? n.args.replace(/^\[\[|\]\]$/g, '').trim();
+            ctx.depth++; walk(ctx.include(name), cond); ctx.depth--;
+            break;
+          }
           default: ctx.warn(`<<${n.name}>> is not supported; left out`);
         }
       } else if (n.t === 'block' && n.name === 'if') {
@@ -665,11 +761,18 @@ export function fromInk(src, fileName) {
 
   // knots: [{ name, lines }] ("" = the top before the first knot); stitches become knots "k.s"
   const knots = [{ name: '', lines: [] }];
+  const funcs = new Map();         // name -> { params, lines }: functions that only change variables
   let knot = '';
   for (const l of raw) {
     let m;
     if ((m = l.match(/^\s*={2,}\s*(function\s+)?([A-Za-z_]\w*)\s*(\(([^)]*)\))?\s*=*\s*$/))) {
-      if (m[1]) { warn(`function ${m[2]} is not supported; left out`); knots.push({ name: null, lines: [] }); knot = null; continue; }
+      if (m[1]) {
+        const f = { params: (m[4] || '').split(',').map((x) => x.trim().replace(/^ref\s+/, '')).filter(Boolean), lines: [] };
+        funcs.set(m[2], f);
+        knots.push({ name: null, lines: f.lines, func: m[2] });
+        knot = null;
+        continue;
+      }
       if (m[3] && m[4].trim()) warn(`knot ${m[2]} takes parameters, which are not supported`);
       knot = m[2];
       knots.push({ name: knot, lines: [] });
@@ -689,6 +792,13 @@ export function fromInk(src, fileName) {
     if (/^\s*(INCLUDE|EXTERNAL)\s/.test(l)) { warn(`${l.trim().split(/\s/)[0]} is not supported; left out`); continue; }
     knots[knots.length - 1].lines.push(l);
   }
+  for (const [n, f] of [...funcs]) {
+    const body = f.lines.map((x) => x.trim()).filter(Boolean);
+    if (!body.length || !body.every((x) => /^~\s*[A-Za-z_]\w*\s*(=|\+=|-=|\+\+|--)/.test(x))) {
+      warn(`function ${n} is not supported (only functions that change variables are); left out`);
+      funcs.delete(n);
+    } else f.stmts = body.map((x) => x.replace(/^~\s*/, ''));
+  }
   const live = knots.filter((k) => k.name !== null);
   // a knot whose content is only its first stitch flows into it
   const names = new Set(live.map((k) => k.name).filter(Boolean));
@@ -706,7 +816,8 @@ export function fromInk(src, fileName) {
     if (bl && bl.has(ref)) return bl.get(ref);
     if (names.has(ref)) return ref;
     if (ref.includes('.')) {
-      const [a, b] = ref.split('.');
+      const cut = ref.lastIndexOf('.');
+      const a = ref.slice(0, cut), b = ref.slice(cut + 1);
       if (labelsOf.get(a)?.has(b)) return labelsOf.get(a).get(b);
       if (names.has(ref)) return ref;
     }
@@ -807,10 +918,12 @@ export function fromInk(src, fileName) {
           top.prev.push(c);
         }
         if (m[2]) lines.splice(idx + 1, 0, m[2]);
+        out.push({ t: 'brk', ml: mlStack.length });
         continue;
       }
-      if (mlStack.length && l === '}') { mlStack.pop(); condStack.pop(); continue; }
+      if (mlStack.length && l === '}') { out.push({ t: 'brk', ml: mlStack.length }); mlStack.pop(); condStack.pop(); continue; }
       if (mlStack.length && /^else\s*:/.test(l)) {
+        out.push({ t: 'brk', ml: mlStack.length });
         const top = mlStack[mlStack.length - 1];
         condStack[condStack.length - 1] = top.prev.reduce((acc, x) => andCond(acc, `not (${x})`), null) || 'true';
         const rest = l.replace(/^else\s*:\s*/, ''); if (rest) lines.splice(idx + 1, 0, rest);
@@ -833,7 +946,7 @@ export function fromInk(src, fileName) {
         let label, outText;
         const br = rest.match(/^(.*?)\[(.*?)\](.*)$/);
         if (br) { label = br[1] + br[2]; outText = br[1] + br[3]; } else { label = outText = rest; }
-        out.push({ t: 'choice', depth, sticky, name, cond: andCond(cond(), c), label: label.trim(), out: outText.trim(), divert, k });
+        out.push({ t: 'choice', depth, sticky, name, cond: andCond(cond(), c), label: label.trim(), out: outText.trim(), divert, k, ml: mlStack.length });
         continue;
       }
       // gathers: - (several for nesting), optional (label)
@@ -850,6 +963,20 @@ export function fromInk(src, fileName) {
         let s = m[1].trim();
         if (/^temp\s+/.test(s)) { s = s.replace(/^temp\s+/, ''); const n = s.match(/^([A-Za-z_]\w*)/); if (n) { temps.add(n[1]); if (!vars.has(n[1])) vars.set(n[1], 0); } }
         if ((m = s.match(/^([A-Za-z_]\w*)\s*(\+\+|--)$/))) s = `${m[1]} ${m[2] === '++' ? '+=' : '-='} 1`;
+        const call = s.match(/^([A-Za-z_]\w*)\s*\((.*)\)$/);
+        if (call && funcs.has(call[1])) {
+          // a function that only changes variables: its statements, with the arguments in place
+          const f = funcs.get(call[1]);
+          const args = splitTop(call[2], [',']).map((x) => x.trim());
+          for (let st of f.stmts) {
+            f.params.forEach((pn, j) => { st = st.replace(new RegExp(`\\b${pn}\\b`, 'g'), args[j] ?? '0'); });
+            const inc = st.match(/^([A-Za-z_]\w*)\s*(\+\+|--)$/);
+            if (inc) st = `${inc[1]} ${inc[2] === '++' ? '+=' : '-='} 1`;
+            const b = st.match(/^([A-Za-z_]\w*)\s*(=|\+=|-=)\s*(.+)$/);
+            if (b) out.push({ t: 'eff', s: `${b[1]} ${b[2]} ${expr(b[3], k)}`, cond: cond() });
+          }
+          continue;
+        }
         const a = s.match(/^([A-Za-z_]\w*)\s*(=|\+=|-=)\s*(.+)$/);
         if (a) out.push({ t: 'eff', s: `${a[1]} ${a[2]} ${expr(a[3], k)}`, cond: cond() });
         else warn(`"~ ${s}" is not supported; left out`);
@@ -896,6 +1023,7 @@ export function fromInk(src, fileName) {
       let i = 0;
       while (i < list.length) {
         const it = list[i];
+        if (it.t === 'brk') { i++; continue; }
         if (it.t === 'text') { textLine(p, it); i++; continue; }
         if (it.t === 'eff') { p.lines.push(`~ ${it.cond ? `{${it.cond}} ` : ''}${it.s}`); i++; continue; }
         if (it.t === 'divert') {
@@ -905,8 +1033,15 @@ export function fromInk(src, fileName) {
           if (!it.cond) p.diverted = true;
           i++; continue;
         }
-        if (it.t === 'gather' && it.depth <= depth) return { p, rest: list.slice(i) };
-        if (it.t === 'gather') { i++; continue; }
+        if (it.t === 'gather' && it.depth < depth) return { p, rest: list.slice(i) };
+        if (it.t === 'gather') {
+          // a gather with no choices before it at this depth (often a labelled point to divert
+          // to): the flow goes on in a passage of its own
+          const gid = it.name ? labelsOf.get(k).get(it.name) : mk('g' + (++counter));
+          if (!p.diverted && !p.choices) { p.lines.push(`-> ${gid}`); p.diverted = true; }
+          p = newPassage(gid);
+          i++; continue;
+        }
         if (it.t === 'choice' && it.depth < depth) return { p, rest: list.slice(i) };
         if (it.t === 'choice') {
           // the group: choices at this depth until a gather of depth <= this one
@@ -915,6 +1050,8 @@ export function fromInk(src, fileName) {
             const c = list[i];
             if (c.t === 'gather' && c.depth <= it.depth) break;
             if (c.t === 'choice' && c.depth < it.depth) break;
+            // the end of a branch of a { cond: ... - else: ... } the choices stand in ends them
+            if (c.t === 'brk' && c.ml <= it.ml) break;
             if (c.t === 'choice' && c.depth === it.depth) { group.push({ c, body: [] }); i++; continue; }
             group[group.length - 1].body.push(c); i++;
           }
@@ -938,7 +1075,7 @@ export function fromInk(src, fileName) {
               continue;
             }
             const label = inline(c.label, k).replace(/->/g, '-\\>').replace(/(^|\s)~/g, '$1\\~');
-            const target = (!body.length && !c.out && c.divert) ? (resolve(c.divert, k) || 'END') : cid;
+            const target = (!body.length && !c.out && c.divert && !c.name) ? (resolve(c.divert, k) || 'END') : cid;
             p.lines.push(`* ${c.sticky ? '' : '[once] '}${c.cond ? `{${c.cond}} ` : ''}${label} -> ${target}`);
             p.choices++;
             if (target === cid) writeChoice(cid, c, body, it.depth, loose);
@@ -950,6 +1087,8 @@ export function fromInk(src, fileName) {
             return { p: g, rest: r.rest, done: true };
           }
           if (gatherItem && gatherItem.depth < it.depth) return { p, rest: list.slice(i), done: true };
+          // the branch of a conditional ended: the flow goes on here, after the choices
+          if (i < list.length && list[i].t === 'brk') { i++; continue; }
           // no gather: what follows (more text) cannot be reached in ink either
           return { p, rest: [], done: true };
         }
@@ -1050,7 +1189,7 @@ export function check(text) {
     } else if (l.startsWith('*')) warnings.push(`line ${lineNo} (${cur}): a choice without "-> passage" ends the story`);
   }
   for (const [t, ln, from] of targets) {
-    if (t !== 'END' && t !== 'DONE' && !names.has(t)) errors.push(`line ${ln} (${from}): no passage called ${t}`);
+    if (t !== 'END' && t !== 'DONE' && t !== 'BACK' && !names.has(t)) errors.push(`line ${ln} (${from}): no passage called ${t}`);
   }
   for (const [p, s] of shape) {
     if (s.always && s.divert) warnings.push(`line ${s.divert} (${p}): this "->" is never used, because the passage always shows a choice (put the check in a passage of its own, with no text)`);

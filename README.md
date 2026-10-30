@@ -322,7 +322,8 @@ redrawn every 15 minutes. [More](apps/skytonight/README.md)
 Choose-your-own-adventure stories: read a page, pick one of the choices under it. One story is
 built in (*The Dark Lighthouse*); the story pack on the
 [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/gamebook/) has five more
-in English and three in Turkish, and the site converts stories written in Twine (Harlowe, SugarCube) or Ink.
+in English and three in Turkish, and the site converts stories made with Twine (Harlowe, SugarCube) or
+Ink, yours or the many shared online, and Project Aon's free gamebooks such as Lone Wolf (their EPUB).
 Copy `.story` files into `AppFiles/gamebook/`. Undo, three text sizes, progress kept per story. The
 `.story` format is plain text and easy to write by hand: [FORMAT.md](apps/gamebook/FORMAT.md).
 [More](apps/gamebook/README.md)

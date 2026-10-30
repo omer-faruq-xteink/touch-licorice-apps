@@ -13,12 +13,14 @@ Hello $name, you have <<print $hp>> hp.
 [[Fight|Fight][$hp -= 4]]
 <<link "Rest" "Begin">><<set $hp to $hp + 1>><</link>>
 <<if $hp lte 3>>[[Run away->End]]<</if>>
+<<timed 5s>><<goto "End">><</timed>>
 
 :: Fight
 You fight. HP: $hp.
 <<if $hp lte 0>><<goto "End">><</if>>
 [[Again->Fight][$hp -= 4]]
 [[Stop|Begin]]
+<<back "Retreat">>
 
 :: End
 The end.

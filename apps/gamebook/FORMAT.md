@@ -54,6 +54,9 @@ A `->` is used only when the passage shows no choice at all: a passage that alwa
 never follows its `->`. To send the reader somewhere when a condition holds, give the check a
 passage of its own with no text (`-> {oil == 0} empty` then `-> lamp`) and lead there.
 
+`-> BACK` goes back to the page before, as **Undo** does (Twine's back links become this); a choice
+leading back is shown only when there is a page to go back to.
+
 A passage with no choices and no `->` is an ending. `-> END` ends the story too. If the passage
 shows no text at all and has a `->` that holds, the app goes on at once (a silent redirect).
 

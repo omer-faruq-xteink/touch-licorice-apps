@@ -685,7 +685,7 @@ function S.enter(story, st, name)
     local choices = {}
     for ci, c in ipairs(P.choices) do
       if (not c.once or not st.once[name .. '#' .. ci]) and (not c.cond or truthy(S.eval(story, st, c.cond))) then
-        choices[#choices + 1] = { label = render(story, st, c.label), k = ci }
+        choices[#choices + 1] = { label = render(story, st, c.label), k = ci, target = c.target }
       end
     end
     local cont
@@ -984,18 +984,24 @@ local function begin(fresh)
   go(story.start)
 end
 
-local function pick(i)
-  history[#history + 1] = { pre, go_name }
-  if #history > 30 then table.remove(history, 1) end
-  local nxt = S.choose(story, st, view, i)
-  go(nxt or 'END')
-end
-
 local function undo()
   local h = table.remove(history)
   if not h then return end
   st = S.load(story, h[1])
   go(h[2])
+end
+
+local function pick(i)
+  local saved = pre
+  local nxt = S.choose(story, st, view, i)
+  -- "-> BACK" (Twine's back links): the page before, as Undo does
+  if nxt == 'BACK' then
+    if #history > 0 then undo() else st = S.load(story, saved); go(go_name) end
+    return
+  end
+  history[#history + 1] = { saved, go_name }
+  if #history > 30 then table.remove(history, 1) end
+  go(nxt or 'END')
 end
 
 ------------------------------------------------------------------ layout of a page
@@ -1044,7 +1050,10 @@ layout = function()
     blocks[#blocks + 1] = { kind = 'button', lines = ls, h = #ls * lh + 22, act = act }
     blocks[#blocks + 1] = { kind = 'gap', h = 12 }
   end
-  for i, c in ipairs(view.choices) do button(c.label, function() pick(i) end) end
+  for i, c in ipairs(view.choices) do
+    -- a way back is shown only when there is a page to go back to
+    if c.target ~= 'BACK' or #history > 0 then button(c.label, function() pick(i) end) end
+  end
   if #view.choices == 0 and view.cont then button(w('cont'), function() pick(0) end) end
   if view.ending then
     blocks[#blocks + 1] = { kind = 'center', s = '~ ' .. w('the_end') .. ' ~', h = lh + 16 }

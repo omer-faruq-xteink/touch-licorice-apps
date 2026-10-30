@@ -296,6 +296,16 @@ assert A().screen() == 'error' and any('missing' in x for x in g.texts())
 g.tap_label('Undo')
 assert A().screen() == 'play'
 
+# "-> BACK": hidden with nothing to go back to, then like Undo
+L.execute(f'user_files["back.story"] = {lua_str("title: Back test" + chr(10) + "== a" + chr(10) + "Page A" + chr(10) + "* Back -> BACK" + chr(10) + "* On -> b" + chr(10) + "== b" + chr(10) + "Page B" + chr(10) + "* Back -> BACK" + chr(10))}')
+g.restart()
+g.tap_label('Back test'); g.tap_label('Start')
+assert 'Back' not in g.texts() and 'On' in g.texts()
+g.tap_label('On')
+assert 'Page B' in g.texts() and 'Back' in g.texts()
+g.tap_label('Back')
+assert 'Page A' in g.texts() and 'Back' not in g.texts()
+
 # the help page: the folder and the site's QR code
 g.restart()
 g.tap_label('More stories')
@@ -339,7 +349,9 @@ if shutil.which('node'):
     v = go(converted('sugar.twee'))
     assert lines(v) == ['Hello Ann, you have 10 hp.', 'You feel strong.'] and labels(v) == ['Fight', 'Rest'], (lines(v), labels(v))
     v = pick_label(v, 'Fight')
-    assert lines(v) == ['You fight. HP: 6.']
+    assert lines(v) == ['You fight. HP: 6.'] and labels(v) == ['Again', 'Stop', 'Retreat'], labels(v)
+    assert choose(3) == 'BACK'            # <<back>>: the page before
+    v = enter('Fight')
     v = pick_label(v, 'Again')
     v = pick_label(v, 'Again')            # hp -2: the passage leaves at once, for End
     assert str(v.name) == 'End' and lines(v) == ['The end.'] and v.ending, (str(v.name), lines(v))
@@ -362,6 +374,41 @@ if shutil.which('node'):
     v = enter(str(v.cont)); assert lines(v)[1] == 'The bell rings.'
     v = pick_label(go('forest'), 'Go home')
     assert lines(v) == ['You reach the door.'] and v.ending
+
+    # an EPUB laid out like Project Aon's (made up here: their books may not be shared)
+    import tempfile, zipfile
+    page = lambda body: f'<?xml version="1.0"?><html><head><title>t</title></head><body><div>{body}</div></body></html>'
+    tmp = tempfile.mkdtemp()
+    epub = os.path.join(tmp, 'test.epub')
+    with zipfile.ZipFile(epub, 'w') as z:
+        z.writestr('mimetype', 'application/epub+zip')
+        z.writestr('content.opf', '<package><metadata><dc:title>The Test Quest</dc:title><dc:creator>A. Writer</dc:creator>'
+                   '<dc:publisher>Project Aon</dc:publisher></metadata><manifest>'
+                   + ''.join(f'<item id="{n}" href="OEBPS/{n}"/>' for n in ['title.html', 'toc.html', 'gamerulz.html', 'sect1.html', 'sect2.html', 'sect3.html'])
+                   + '</manifest><spine>' + ''.join(f'<itemref idref="{n}"/>' for n in ['title.html', 'toc.html', 'gamerulz.html', 'sect1.html', 'sect2.html', 'sect3.html']) + '</spine></package>')
+        z.writestr('OEBPS/title.html', page('<h1>The Test Quest</h1><p>You are the hero &amp; the hope.</p>'))
+        z.writestr('OEBPS/toc.html', page('<ul><li><a href="sect1.html">1</a></li></ul>'))
+        z.writestr('OEBPS/gamerulz.html', page('<h2>The Game Rules</h2><p>Pick a number from the <a href="random.html">Random Number Table</a> for your COMBAT SKILL.</p>'))
+        z.writestr('OEBPS/sect1.html', page('<h3>1</h3><p>A fork in the road.</p><div class="illustration"><img src="x.png"/></div>'
+                   '<p class="choice">If you wish to go left, <a href="sect2.html">turn to 2</a>.</p><p class="choice"><a href="sect3.html">Turn to 3</a>.</p>'))
+        z.writestr('OEBPS/sect2.html', page('<h3>2</h3><p>Pick a number from the <a href="random.html">Random Number Table</a>.</p>'
+                   '<p class="choice">If you pick 0&ndash;4, <a href="sect3.html">turn to 3</a>.</p><p class="choice">If you pick 5&ndash;9, <a href="sect1.html">turn to 1</a>.</p>'))
+        z.writestr('OEBPS/sect3.html', page('<h3>3</h3><p>Your quest ends here {and well}.</p>'))
+    r = subprocess.run(['node', os.path.join(SITE, 'tools', 'gamebook', 'cli.mjs'), epub], capture_output=True, text=True, encoding='utf-8', check=True)
+    assert 'Project Aon (3 sections, 1 random numbers)' in r.stderr, r.stderr
+    assert 'licence: Project Aon licence: for your own use only' in r.stdout
+    engine(r.stdout, tiny=False)
+    v = enter(str(L.eval('_story.start')))
+    assert lines(v)[0] == 'You are the hero & the hope.' and labels(v) == ['The Game Rules', 'Begin the adventure'], (lines(v), labels(v))
+    v = pick_label(v, 'The Game Rules')
+    assert lines(v)[2].startswith('Pick a number') and lines(v)[3].startswith('Your number from the Random Number Table: ')
+    v = pick_label(v, 'Begin the adventure')
+    assert lines(v) == ['— 1 —', 'A fork in the road.'] and labels(v) == ['If you wish to go left', 'Turn to 3'], (lines(v), labels(v))
+    v = pick_label(v, 'If you wish to go left')
+    n = int(lines(v)[2].rsplit(' ', 1)[1])
+    assert 0 <= n <= 9 and labels(v) == ['If you pick 0–4', 'If you pick 5–9'], (lines(v), labels(v))
+    v = pick_label(v, 'If you pick 0–4')
+    assert lines(v) == ['— 3 —', 'Your quest ends here {and well}.'] and v.ending
 else:
     print('node not found: converted stories not tested')
 
