@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worker setup</title>
+<meta name="description" content="Set up your own free rss-opds Cloudflare Worker for the RSS, Hacker News and Readwise apps on the Xteink X4 Pro.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Worker setup</h1>
+  <p class="lead">Three apps can use a small server of your own, the
+    <a href="https://github.com/omer-faruq-xteink/rss-opds">rss-opds</a> Worker, on Cloudflare's free plan. Tick the
+    apps you use: the steps and what to type on the reader follow from that.</p>
+
+  <div class="table-scroll">
+    <table>
+      <tr><th>App</th><th>What the Worker does for it</th><th>Without it</th></tr>
+      <tr><td>RSS</td><td>Everything: your <a href="https://www.commafeed.com">CommaFeed</a> lists and articles as short
+        plain text, full text, star, read, tags</td><td>The app cannot work</td></tr>
+      <tr><td>Hacker News</td><td>The linked article as text, through a full-text service</td><td>Lists and comments
+        work; an article shows its address as a QR code</td></tr>
+      <tr><td>Readwise</td><td>Archive, Later / Inbox, tags and "seen" (Reader takes changes only as PATCH, which the
+        reader cannot send)</td><td>Reading works; nothing can be changed</td></tr>
+    </table>
+  </div>
+
+  <details class="panel">
+    <summary><b>Why a Worker at all?</b></summary>
+    <ul>
+      <li>The reader takes at most 128 KB per download and has little memory. Feeds and web pages come as full
+        HTML; the Worker turns them into short plain text and pages the lists.</li>
+      <li>Your keys stay off the reader: the CommaFeed API key and the full-text services' tokens are Cloudflare
+        secrets. The reader only knows the Worker's address and a token or password of its own.</li>
+      <li>Full text: feeds often carry only a summary. The Worker asks a full-text service, falls back to the
+        feed, and keeps the result for a day.</li>
+      <li>It also serves an OPDS catalog of your feeds to the reader's own library, KOReader and others. It costs
+        nothing and only you use it.</li>
+    </ul>
+  </details>
+
+  <ol class="steps">
+    <li>
+      <p><b>Which apps will use it?</b></p>
+      <div class="panel">
+        <div class="row">
+          <label class="check"><input type="checkbox" class="app" value="rss" checked> RSS</label>
+          <label class="check"><input type="checkbox" class="app" value="hn"> Hacker News</label>
+          <label class="check"><input type="checkbox" class="app" value="rw"> Readwise</label>
+        </div>
+        <div class="msg" id="appmsg"></div>
+      </div>
+    </li>
+    <li id="s-accounts">
+      <p><b>Accounts you need.</b></p>
+      <ul id="accounts"></ul>
+    </li>
+    <li>
+      <p><b>Your choices.</b> The reader signs in to the Worker with a path token (typed once in each app) or with a
+        user name and password.</p>
+      <div class="panel">
+        <div class="row">
+          <label class="check"><input type="radio" name="auth" value="token" checked> Path token (simplest on the reader)</label>
+          <label class="check"><input type="radio" name="auth" value="basic"> User and password</label>
+        </div>
+        <div class="row" id="tokenrow">
+          <label class="field">Path token <input type="text" id="token" size="24" spellcheck="false"></label>
+          <button class="quiet" id="newtoken" type="button">New token</button>
+        </div>
+        <div class="row" id="basicrow" hidden>
+          <label class="field">User <input type="text" id="user" size="16" value="reader"></label>
+          <p class="note">You choose the password when the command below asks for it; it is not entered on this page.</p>
+        </div>
+        <div id="sanbox">
+          <p class="note" id="sannote"></p>
+          <div class="row">
+            <label class="check"><input type="checkbox" class="san" value="INSTAPARSER_TOKEN"> <a href="https://www.instaparser.com">Instaparser</a></label>
+            <label class="check"><input type="checkbox" class="san" value="DIFFBOT_TOKEN"> <a href="https://www.diffbot.com">Diffbot</a></label>
+            <label class="check"><input type="checkbox" class="san" value="INSTAPAPER_TOKEN"> <a href="https://www.instapaper.com/developers/applications">Instapaper</a></label>
+          </div>
+        </div>
+        <div class="row" id="acct2row">
+          <label class="check"><input type="checkbox" id="acct2"> A second CommaFeed account</label>
+        </div>
+      </div>
+    </li>
+    <li>
+      <p><b>Deploy.</b> In a terminal, one line at a time. Each <code>secret put</code> asks for its value: paste it
+        and press Enter. <code>wrangler login</code> opens the browser to sign in to Cloudflare.</p>
+      <pre id="cmds"></pre>
+      <p class="note">At the end <code>wrangler deploy</code> prints your Worker's address, such as
+        <code>https://commafeed-opds.yourname.workers.dev</code>. Prefer the dashboard to the terminal? The
+        <a href="https://github.com/omer-faruq-xteink/rss-opds#3b-deploy-from-the-cloudflare-dashboard">Worker's README</a>
+        has that way too. Already have a Worker from before? <code>git pull</code> and
+        <code>npx wrangler deploy</code> in its folder bring it up to date.</p>
+    </li>
+    <li>
+      <p><b>On the reader.</b> Paste the address <code>wrangler deploy</code> printed:</p>
+      <div class="row">
+        <label class="field">Worker address <input type="text" id="host" size="40" placeholder="https://commafeed-opds.yourname.workers.dev" spellcheck="false"></label>
+      </div>
+      <div id="out" hidden>
+        <p>First check it: <a id="health" target="_blank" rel="noopener">open the health check</a>; it should say
+          <code>ok</code>. Then type these on the reader (each field opens the keyboard):</p>
+        <div class="table-scroll"><table id="settings"></table></div>
+        <p class="note">Keep the token like a password: anyone with it can read your feeds through the Worker.
+          A new token is a <code>secret put OPDS_TOKEN</code> away.</p>
+      </div>
+    </li>
+  </ol>
+</main>
+<script type="module">
+  import { chrome, esc } from '../../assets/site.js';
+  chrome('worker');
+
+  const $ = (id) => document.getElementById(id);
+  // letters and digits that are easy to type and tell apart on the reader's keyboard
+  const ABC = 'abcdefghjkmnpqrstuvwxyz23456789';
+  function newToken() {
+    const r = crypto.getRandomValues(new Uint8Array(18));
+    $('token').value = [...r].map((b) => ABC[b % ABC.length]).join('');
+    update();
+  }
+  const auth = () => document.querySelector('input[name=auth]:checked').value;
+  const apps = () => new Set([...document.querySelectorAll('.app:checked')].map((x) => x.value));
+
+  function update() {
+    const A = apps(), rss = A.has('rss'), hn = A.has('hn'), rw = A.has('rw');
+    const token = auth() === 'token';
+    $('tokenrow').hidden = !token;
+    $('basicrow').hidden = token;
+    $('acct2row').hidden = !rss;
+    $('sanbox').hidden = !(rss || hn);
+    const sans = [...document.querySelectorAll('.san:checked')].map((x) => x.value);
+    $('sannote').textContent = hn
+      ? 'Full text: Hacker News needs at least one of these (an account and a token at that service).'
+      : 'Full text, optional: each needs an account and a token at that service.';
+    $('appmsg').textContent = !A.size ? 'Tick at least one app.' : (hn && !sans.length ? 'Hacker News: also tick a full-text service in step 3.' : '');
+    $('appmsg').className = 'msg ' + (!A.size || (hn && !sans.length) ? 'warn' : '');
+
+    const acc = [];
+    if (rss) acc.push('<b>CommaFeed</b> (for RSS): in CommaFeed open <i>Settings → Profile</i>, generate an API key and keep it at hand. CommaFeed makes a new one when you change your password.');
+    if (rw) acc.push('<b>Readwise Reader</b>: nothing for the Worker; the app itself needs your Reader access token from <a href="https://readwise.io/access_token">readwise.io/access_token</a>.');
+    acc.push('<b>Cloudflare</b>, free, no card: <a href="https://dash.cloudflare.com/sign-up">dash.cloudflare.com</a>. And <a href="https://nodejs.org">Node.js</a> 18 or later and <a href="https://git-scm.com">git</a> on your computer.');
+    $('accounts').innerHTML = acc.map((x) => `<li>${x}</li>`).join('');
+
+    const lines = [
+      'git clone https://github.com/omer-faruq-xteink/rss-opds.git',
+      'cd rss-opds',
+      'npm install',
+      'npx wrangler login',
+    ];
+    if (rss) lines.push('npx wrangler secret put COMMAFEED_API_KEY');
+    if (token) lines.push(`npx wrangler secret put OPDS_TOKEN        # paste: ${$('token').value}`);
+    else lines.push(`npx wrangler secret put OPDS_USER         # type: ${$('user').value || 'reader'}`, 'npx wrangler secret put OPDS_PASS         # a password you choose');
+    if (rss || hn) for (const s of sans) lines.push(`npx wrangler secret put ${s}`);
+    if (rss && $('acct2').checked) lines.push('npx wrangler secret put COMMAFEED_API_KEY_2', 'npx wrangler secret put COMMAFEED_LABEL      # a name for account 1', 'npx wrangler secret put COMMAFEED_LABEL_2    # a name for account 2');
+    lines.push('npx wrangler deploy');
+    $('cmds').textContent = lines.join('\n');
+
+    const host = $('host').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    $('out').hidden = !host;
+    if (!host) return;
+    $('health').href = `https://${host}/health`;
+    const t = $('token').value, user = $('user').value || 'reader';
+    const cred = token ? ['Path token', t] : ['user:password', `${user}:<your password>`];
+    const rows = [];
+    if (rss) {
+      rows.push(['RSS', 'Host', host], ['RSS', token ? 'Token' : 'user:password', cred[1]],
+        ['RSS', 'Full text', sans.length ? 'on' : 'off (no full-text service)']);
+    }
+    if (hn) rows.push(['Hacker News', 'Worker host', host], ['Hacker News', cred[0], cred[1]]);
+    if (rw) {
+      rows.push(['Readwise', 'Worker for changes', token ? `${host}/k/${t}` : host]);
+      if (!token) rows.push(['Readwise', 'Worker user:password', cred[1]]);
+    }
+    if (rss) {
+      rows.push(['Reader\'s OPDS catalog', 'Catalog URL', token ? `https://${host}/k/${t}/opds` : `https://${host}/opds`]);
+      if (!token) rows.push(['Reader\'s OPDS catalog', 'Account and password', `${user} / your password`]);
+    }
+    $('settings').innerHTML = '<tr><th>App</th><th>Setting</th><th>Value</th></tr>' +
+      rows.map(([a, s, v]) => `<tr><td>${esc(a)}</td><td>${esc(s)}</td><td><code>${esc(v)}</code></td></tr>`).join('');
+  }
+  document.querySelectorAll('input').forEach((x) => x.addEventListener('input', update));
+  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((x) => x.addEventListener('change', update));
+  $('newtoken').addEventListener('click', newToken);
+  newToken();
+</script>
+</body>
+</html>

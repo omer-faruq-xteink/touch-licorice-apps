@@ -25,7 +25,8 @@ voting).
 - **Path token** (the part after `/k/`) or **user:password** for Basic auth, whichever your Worker
   uses (`OPDS_TOKEN`, or `OPDS_USER` / `OPDS_PASS`); the other stays empty.
 
-The article text needs the Worker's `/api/read` route (rss-opds after October 2026: `git pull`,
+The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through a Worker for Hacker News alone (no CommaFeed account
+needed) and works out these two values. The article text needs the Worker's `/api/read` route (rss-opds after October 2026: `git pull`,
 `npx wrangler deploy`) and one of its full-text services (Instaparser, Diffbot or Instapaper);
 without it the app says why and shows the QR code.
 

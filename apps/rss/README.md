@@ -8,7 +8,8 @@ optional full-text extraction.
 
 ## Setup
 
-1. Deploy rss-opds (its README, ten minutes) and note the Worker host, e.g.
+1. Deploy rss-opds: the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through it (about ten minutes) and works
+   out what to type in step 2; or follow the Worker's README. Note the Worker host, e.g.
    `rss-opds.<you>.workers.dev`, and either the path token (`OPDS_TOKEN`) or the Basic-auth
    user and password (`OPDS_USER` / `OPDS_PASS`).
 2. Install `rss.xtapp`, open it; it starts on **Settings**. Fill **Host**, then **Token** (the part

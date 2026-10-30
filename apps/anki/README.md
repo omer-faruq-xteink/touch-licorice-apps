@@ -35,7 +35,8 @@ Speer, word frequencies, CC BY-SA 4.0) and **WordNet 3.0** (Princeton University
 
 1. Get a deck as an `.apkg` file: export one from Anki (desktop or mobile), or download one of the
    many shared decks at https://ankiweb.net/shared/decks (like the KOReader Anki Viewer's decks).
-2. Convert it on a computer (Python 3):
+2. Convert it in the browser on the [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) (nothing to install; it can
+   also update a deck you study), or on a computer with Python 3:
 
    ```bash
    python apkg2cards.py My_Deck.apkg out

@@ -6,7 +6,7 @@ copy a package to the SD card and install it from the reader's own file browser.
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
 arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)
 converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser and walks through
-the RSS Worker setup.
+the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS, Hacker News and Readwise.
 
 | app | what it is |
 |---|---|
@@ -187,7 +187,8 @@ Your [CommaFeed](https://www.commafeed.com) account on the reader, as text: **Un
 lists), optionally as full text extracted by the Worker; opening one marks it read. The long-press preview
 stars an article, marks it unread and edits its tags. Lists and read
 articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
-Cloudflare Worker: enter its host and token in the app's Settings once. [More](apps/rss/README.md)
+Cloudflare Worker: the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) walks through it and works out what to enter in the
+app's Settings. [More](apps/rss/README.md)
 
 ### Merchant
 
@@ -219,14 +220,15 @@ screens as Instapaper. Reading needs only a Reader access token: the app talks t
 **Archive**, **Later** / **Inbox**, editing **tags** and marking a document seen go through your
 rss-opds Worker (the one RSS uses), signed in with the same user and password: Reader changes
 documents only by PATCH, which the reader cannot send. Without the Worker the app only reads.
-[More](apps/readwise/README.md)
+[Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/), [more](apps/readwise/README.md).
 
 ### Hacker News
 
 Top, New, Best, Ask and Show in HN's own order, and search. A story opens with its text (Ask HN) or
 the linked article as text through your rss-opds Worker (the one RSS uses), and ends with its
 address as a QR code. Comments come level by level, loaded while you read; tap "replies" to go
-down a level. Read-only: no login. [More](apps/hackernews/README.md)
+down a level. Read-only: no login. The Worker needs no CommaFeed account for this, only a full-text
+service: [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/), [more](apps/hackernews/README.md).
 
 ### Wikipedia
 
@@ -330,7 +332,7 @@ Copy `.story` files into `AppFiles/gamebook/`. Undo, three text sizes, progress 
 `site/` is a static site published to GitHub Pages by `.github/workflows/pages.yml`
 (`python -I tools/build_site.py` builds it into `dist/site`, with the story pack). Its converters
 are JavaScript ports of `apkg2cards.py` and `stardict2shards.py` that give the same files
-(`python -I site/test/test_converters.py`), plus the Gamebook converter and the RSS Worker guide. A
+(`python -I site/test/test_converters.py`), plus the Gamebook converter and the Worker setup guide. A
 new tool is a folder under `site/tools/` and a line in `site/assets/site.js`.
 
 ## Build from source

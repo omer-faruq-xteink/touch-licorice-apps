@@ -20,7 +20,8 @@ Worker in Settings the app only reads.
 3. For changes: **Worker for changes** is your Worker's address (`rss.example.workers.dev`, or
    with its path token `rss.example.workers.dev/k/<token>`), **Worker user:password** the same
    `user:password` the RSS app uses. The Worker must be a version with the Readwise relay; it
-   needs no CommaFeed account for it.
+   needs no CommaFeed account for it. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through one for
+   Readwise alone and works out both values.
 4. **Back** → **Inbox**.
 
 The device must be on Wi-Fi; the app keeps it on while in use and lets it go when you leave. The

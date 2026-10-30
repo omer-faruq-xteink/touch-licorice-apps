@@ -16,7 +16,9 @@ text shards of about 200 KB; a lookup reads one shard. The conversion runs once,
 2. Get a dictionary into the app's folder, in **USB mode**:
    - the ready-made **WordNet (English–English)** set from the release: unzip it into
      `XTApps/dict/files/` on the SD card; or
-   - any StarDict dictionary you have (`.ifo` + `.idx` + `.dict` or `.dict.dz`):
+   - any StarDict dictionary you have (`.ifo` + `.idx` + `.dict` or `.dict.dz`), converted in
+     the browser on the [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/dictionary/) (it opens `.zip`, `.tar.gz` and
+     `.tar.zst` archives too), or on a computer:
      ```bash
      python apps/dict/stardict2shards.py "path/to/stardict-en-tr" out --prefix entr
      ```

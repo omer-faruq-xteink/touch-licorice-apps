@@ -14,8 +14,8 @@ export const TOOLS = [
     blurb: 'Convert an Anki deck (.apkg) or a word list (.tsv, .csv) into cards for the reader.' },
   { id: 'dictionary', title: 'StarDict dictionaries', app: 'Dictionary',
     blurb: 'Cut a StarDict dictionary into the small files the Dictionary app looks words up in.' },
-  { id: 'rss-worker', title: 'RSS Worker setup', app: 'RSS, Readwise, Hacker News',
-    blurb: 'Step by step: your own free Cloudflare Worker for CommaFeed, and what to type on the reader.' },
+  { id: 'worker', title: 'Worker setup', app: 'RSS, Hacker News, Readwise',
+    blurb: 'Step by step: your own free Cloudflare Worker for the apps that use one, and what to type on the reader.' },
 ];
 
 export function chrome(id) {
