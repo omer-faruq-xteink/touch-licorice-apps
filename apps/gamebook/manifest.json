@@ -3,7 +3,7 @@
   "display_name": "Gamebook",
   "version": "1.0",
   "author": "omer-faruq",
-  "description": "Choose-your-own-adventure stories: read a page, pick what happens next. One story built in; more as .story files on the SD card, converted from Twine or Ink on the tools site.",
+  "description": "Choose-your-own-adventure stories: read a page, pick what happens next. Seven stories built in, from a lighthouse in a storm to a codebreaker's interrogation; more as .story files, converted from Twine, Ink or Project Aon gamebooks on the tools site.",
   "entry": "index.lua",
   "api": "2.0",
   "permissions": []

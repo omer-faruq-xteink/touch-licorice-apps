@@ -10,17 +10,17 @@ import os, shutil, sys, zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, 'site')
+# the story pack: stories that are not built into the app
 STORIES = os.path.join(ROOT, 'apps', 'gamebook', 'stories')
 
 PACK_README = """Gamebook story pack
 ====================
 
 Choose-your-own-adventure stories for the Gamebook app on the Xteink X4 Pro
-(https://github.com/omer-faruq-xteink/touch-licorice-apps).
+(https://github.com/omer-faruq-xteink/touch-licorice-apps), more than the ones it has built in.
 
-EN/ holds the stories in English, TR/ the ones in Turkish. Copy the .story files
-(not the folder: the app does not look inside folders) into AppFiles/gamebook/ on
-the reader's SD card (USB mode), then open Gamebook: they are in its list.
+Copy the .story files into AppFiles/gamebook/ on the reader's SD card (USB mode), then
+open Gamebook: they come first in its list.
 
 The stories are original works by omer-faruq, licensed CC BY 4.0
 (https://creativecommons.org/licenses/by/4.0/): share and adapt them freely,
@@ -29,18 +29,12 @@ naming the author.
 
 
 def story_pack(out):
-    """apps/gamebook/stories/<lang>/*.story -> <LANG>/*.story in the zip, with a README"""
-    names = []
+    """apps/gamebook/stories/*.story -> the zip, with a README"""
+    names = sorted(n for n in os.listdir(STORIES) if n.endswith('.story'))
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
         z.writestr('README.txt', PACK_README)
-        for lang in sorted(os.listdir(STORIES)):
-            folder = os.path.join(STORIES, lang)
-            if not os.path.isdir(folder):
-                continue
-            for n in sorted(os.listdir(folder)):
-                if n.endswith('.story'):
-                    z.write(os.path.join(folder, n), f'{lang.upper()}/{n}')
-                    names.append(f'{lang.upper()}/{n}')
+        for n in names:
+            z.write(os.path.join(STORIES, n), n)
     return names
 
 

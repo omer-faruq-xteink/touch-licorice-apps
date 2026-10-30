@@ -10,11 +10,11 @@ local S = require('story')
 local W, H = kit.W, kit.H
 
 local SITE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/'
-local BUILTIN = { { file = 'lighthouse.txt' } }
+local LANG_NAMES = { en = 'English', tr = 'Türkçe', de = 'Deutsch', fr = 'Français', es = 'Español' }
 
 local WORDS = {
   en = {
-    app = 'Gamebook', stories = 'Stories', none = 'Only the built-in story so far.',
+    app = 'Gamebook', stories = 'Stories',
     add = 'More stories', menu = 'Menu', back = 'Back', start = 'Start', resume = 'Continue',
     restart = 'Start over', undo = 'Undo', size = 'Text size', library = 'Library',
     the_end = 'The End', again = 'Play again', cont = 'Continue', by = 'by ',
@@ -29,7 +29,7 @@ local WORDS = {
     sizes = { 'small', 'medium', 'large' }, err = 'This story has a problem:',
   },
   tr = {
-    app = 'Oyun Kitabı', stories = 'Hikâyeler', none = 'Şimdilik yalnızca hazır hikâye var.',
+    app = 'Oyun Kitabı', stories = 'Hikâyeler',
     add = 'Daha fazla hikâye', menu = 'Menü', back = 'Geri', start = 'Başla', resume = 'Devam et',
     restart = 'Baştan başla', undo = 'Geri al', size = 'Yazı boyu', library = 'Kitaplık',
     the_end = 'Son', again = 'Yeniden oyna', cont = 'Devam', by = '',
@@ -44,7 +44,7 @@ local WORDS = {
     sizes = { 'küçük', 'orta', 'büyük' }, err = 'Bu hikâyede bir sorun var:',
   },
   de = {
-    app = 'Spielbuch', stories = 'Geschichten', none = 'Bisher nur die eingebaute Geschichte.',
+    app = 'Spielbuch', stories = 'Geschichten',
     add = 'Mehr Geschichten', menu = 'Menü', back = 'Zurück', start = 'Beginnen', resume = 'Weiter',
     restart = 'Neu beginnen', undo = 'Rückgängig', size = 'Schriftgröße', library = 'Bibliothek',
     the_end = 'Ende', again = 'Noch einmal', cont = 'Weiter', by = 'von ',
@@ -134,29 +134,49 @@ local function head_value(s, k)
   return v and v:match('^(.-)%s*$') or nil
 end
 
+-- the built-in stories: every data file but the packer's banks.tsv (it lists them)
+local function builtin_files()
+  local ok, s = pcall(function() return ctx.package:read('banks.tsv') end)
+  local out = {}
+  for name in ((ok and type(s) == 'string') and s or ''):gmatch('([^\t\n]+)\t[^\n]*') do
+    if name:match('%.txt$') then out[#out + 1] = name end
+  end
+  if #out == 0 then out = { 'lighthouse.txt' } end
+  return out
+end
+
+-- the library: the stories copied into the app's folder first (newest interest), then the built-in
+-- ones, those in the reader's language before the others, each group by title
 local function discover()
   stories = {}
-  for _, b in ipairs(BUILTIN) do
-    local src = package_source(b.file)
-    if src then
-      local head = src.read(0, 2048)
-      stories[#stories + 1] = { key = key_of('b_', b.file), file = b.file, builtin = true,
-        title = head_value(head, 'title') or b.file, author = head_value(head, 'author') }
-    end
-  end
   local okf, files = pcall(function() return ctx.files:list() end)
-  local user = {}
+  local user, built = {}, {}
   for _, f in ipairs((okf and type(files) == 'table') and files or {}) do
     local n = type(f) == 'table' and f.name or f
     if type(n) == 'string' and (n:lower():match('%.story$') or n:lower():match('%.story%.txt$')) then
       local src = file_source(n)
-      local head = src and src.read(0, 2048) or ''
+      local head = src and src.read(0, 4096) or ''
       user[#user + 1] = { key = key_of('f_', n), file = n, title = head_value(head, 'title') or n,
-        author = head_value(head, 'author') }
+        author = head_value(head, 'author'), lang = head_value(head, 'language') }
     end
   end
-  table.sort(user, function(a, b) return a.title:lower() < b.title:lower() end)
+  for _, fname in ipairs(builtin_files()) do
+    local src = package_source(fname)
+    if src then
+      local head = src.read(0, 4096)
+      built[#built + 1] = { key = key_of('b_', fname), file = fname, builtin = true,
+        title = head_value(head, 'title') or fname, author = head_value(head, 'author'), lang = head_value(head, 'language') }
+    end
+  end
+  local by_title = function(a, b) return a.title:lower() < b.title:lower() end
+  table.sort(user, by_title)
+  table.sort(built, function(a, b)
+    local ma, mb = (a.lang or 'en') == LANG, (b.lang or 'en') == LANG
+    if ma ~= mb then return ma end
+    return by_title(a, b)
+  end)
   for _, s in ipairs(user) do stories[#stories + 1] = s end
+  for _, s in ipairs(built) do stories[#stories + 1] = s end
 end
 
 local function status_of(s)
@@ -373,13 +393,13 @@ local function draw_library(gg)
     gg:text(MARGIN + 12, y + 8, t, { font = f })
     local sub = {}
     if s.author then sub[#sub + 1] = w('by') .. s.author end
+    if s.lang and s.lang ~= LANG then sub[#sub + 1] = LANG_NAMES[s.lang] or s.lang end
     sub[#sub + 1] = status_of(s) or (s.builtin and w('builtin') or nil)
     local line = table.concat(sub, '  ·  ')
     while #line > 1 and kit.width(sf, line) > W - 2 * MARGIN - 24 do line = kit.drop_last(line) end
     gg:text(MARGIN + 12, y + 44, line, { font = sf })
   end
   local pages_n = math.max(1, math.ceil(#stories / ROWS))
-  if #stories <= #BUILTIN then gg:text(MARGIN, TOP + 86 * #stories + 10, w('none'), { font = sf }) end
   if pages_n > 1 then
     kit.button(gg, 14, H - 130, 110, 50, '<')
     kit.button(gg, W - 124, H - 130, 110, 50, '>')

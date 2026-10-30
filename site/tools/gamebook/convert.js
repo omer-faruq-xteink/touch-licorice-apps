@@ -982,7 +982,27 @@ export function fromInk(src, fileName) {
         else warn(`"~ ${s}" is not supported; left out`);
         continue;
       }
-      if (/^->->|<-/.test(l) || /->\s*->/.test(l)) { warn(`tunnels and threads are not supported: ${l}`); continue; }
+      // tunnels: "-> X -> Y" plays X, whose "->->" comes back here, then goes on to Y. The call
+      // sets _ret_X to its number among X's calls; "->->" diverts by it.
+      let tm;
+      if ((tm = l.match(/^(.*?)->\s*([A-Za-z_][\w.]*)\s*->\s*([A-Za-z_][\w.]*)?\s*$/)) && !/->\s*->\s*$/.test(tm[1] + '->')) {
+        if (tm[1].trim()) out.push({ t: 'text', s: tm[1].trim(), cond: cond() });
+        const base = k && k.includes('.') ? k.split('.')[0] : k;
+        const x = names.has(`${base}.${tm[2]}`) ? `${base}.${tm[2]}` : tm[2];
+        const top = x.split('.')[0];
+        if (!tunnels.has(top)) tunnels.set(top, []);
+        // "-> X ->" alone: the story goes on after it, in a passage of its own that X comes back to
+        const cont = tm[3] ? null : `${k || 'top'}.r${++rcount}`;
+        tunnels.get(top).push(cont ? { back: cont, k, ready: true } : { back: tm[3], k });
+        out.push({ t: 'call', tunnel: x, top, n: tunnels.get(top).length, cond: cond(), cont });
+        continue;
+      }
+      if ((tm = l.match(/^(.*?)->->\s*$/))) {
+        if (tm[1].trim()) out.push({ t: 'text', s: tm[1].trim(), cond: cond() });
+        out.push({ t: 'ret', top: (k || '').split('.')[0], cond: cond() });
+        continue;
+      }
+      if (/^<-|->\s*->/.test(l)) { warn(`threads are not supported: ${l}`); continue; }
       // text, maybe ending with a divert; glue <> joins lines
       let divert = null;
       const dm = l.match(/(^|[^\\])->\s*([A-Za-z_][\w.]*)\s*$/);
@@ -1003,6 +1023,9 @@ export function fromInk(src, fileName) {
     return out;
   }
   const mlStack = [];
+  const tunnels = new Map();           // knot -> [{ back, k }]: its calls as a tunnel, in order
+  let rcount = 0;
+  const retVar = (top) => '_ret_' + top.replace(/\W/g, '_');
 
   // ---- weave: items -> passages
   let counter = 0;
@@ -1030,6 +1053,31 @@ export function fromInk(src, fileName) {
           const tgt = resolve(it.target, k);
           if (!tgt) warn(`-> ${it.target}: no such knot, stitch or label`);
           p.lines.push(`-> ${it.cond ? `{${it.cond}} ` : ''}${tgt || 'END'}`);
+          if (!it.cond) p.diverted = true;
+          i++; continue;
+        }
+        if (it.t === 'call') {
+          const tgt = resolve(it.tunnel, k);
+          if (!tgt) warn(`-> ${it.tunnel} ->: no such knot or stitch`);
+          p.lines.push(`~ ${it.cond ? `{${it.cond}} ` : ''}${retVar(it.top)} = ${it.n}`);
+          p.lines.push(`-> ${it.cond ? `{${it.cond}} ` : ''}${tgt || 'END'}`);
+          if (it.cont) {
+            // without the call (its condition false) the flow goes straight on
+            if (it.cond) p.lines.push(`-> ${it.cont}`);
+            p.diverted = true;
+            p = newPassage(it.cont);
+          } else if (!it.cond) p.diverted = true;
+          i++; continue;
+        }
+        if (it.t === 'ret') {
+          const calls = tunnels.get(it.top) || [];
+          if (!calls.length) warn(`"->->" in ${it.top}, which nothing calls as a tunnel`);
+          calls.forEach((c, j) => {
+            const back = c.ready ? c.back : resolve(c.back, c.k);
+            if (!back) warn(`-> ${it.top} -> ${c.back}: no such knot, stitch or label`);
+            const cnd = andCond(it.cond, `${retVar(it.top)} == ${j + 1}`);
+            p.lines.push(`-> {${cnd}} ${back || 'END'}`);
+          });
           if (!it.cond) p.diverted = true;
           i++; continue;
         }

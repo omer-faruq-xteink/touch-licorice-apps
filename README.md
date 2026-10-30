@@ -42,7 +42,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
 | **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |
-| **Gamebook** | choose-your-own-adventure stories: one built in, a pack of more, and Twine or Ink stories converted on the tools site |
+| **Gamebook** | choose-your-own-adventure stories: seven built in, a pack of more, and Twine, Ink or Project Aon stories converted on the tools site |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
 Everything here is unofficial and was reverse-engineered from the firmware. It worked on an X4
@@ -319,12 +319,11 @@ redrawn every 15 minutes. [More](apps/skytonight/README.md)
 
 ### Gamebook
 
-Choose-your-own-adventure stories: read a page, pick one of the choices under it. One story is
-built in (*The Dark Lighthouse*); the story pack on the
-[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/gamebook/) has five more
-in English and three in Turkish, and the site converts stories made with Twine (Harlowe, SugarCube) or
-Ink, yours or the many shared online, and Project Aon's free gamebooks such as Lone Wolf (their EPUB).
-Copy `.story` files into `AppFiles/gamebook/`. Undo, three text sizes, progress kept per story. The
+Choose-your-own-adventure stories: read a page, pick one of the choices under it. Seven stories are
+built in (six of ours and inkle's *The Intercept*); the story pack on the site has three more. More
+are `.story` files copied into `AppFiles/gamebook/`: the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/gamebook/) converts stories made with Twine (Harlowe, SugarCube) or Ink, yours or the many
+shared online, and Project Aon's free gamebooks such as Lone Wolf (their EPUB). Undo, three text sizes, progress kept per story. The
 `.story` format is plain text and easy to write by hand: [FORMAT.md](apps/gamebook/FORMAT.md).
 [More](apps/gamebook/README.md)
 

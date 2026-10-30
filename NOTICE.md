@@ -101,8 +101,12 @@ Copyright (c) 2015, Olaf Frohn, BSD 3-clause licence; the full notice is in
 ## Gamebook stories — `apps/gamebook/data/`, `apps/gamebook/stories/`
 
 Original stories by omer-faruq, licensed CC BY 4.0
-(https://creativecommons.org/licenses/by/4.0/); the release asset `gamebook-stories.zip` holds
-`stories/en` and `stories/tr`.
+(https://creativecommons.org/licenses/by/4.0/); the release asset `gamebook-stories.zip` holds them
+as `.story` files.
+
+`apps/gamebook/data/the-intercept.txt`: *The Intercept* by inkle
+(https://github.com/inkle/the-intercept), Copyright (c) 2016 inkle Ltd., MIT licence; converted
+from its Ink source. The full licence text is at the top of the file and travels with it.
 
 ## Tools site — `site/`
 
