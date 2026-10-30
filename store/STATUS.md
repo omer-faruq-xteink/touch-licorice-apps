@@ -52,5 +52,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
+| `gamebook` | Gamebook | `gamebook` | 1.0.0 | in review | - | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 
-32 published, 0 in review or draft, 32 in all.
+32 published, 1 in review or draft, 33 in all.
