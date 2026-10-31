@@ -273,13 +273,19 @@ end
 
 -- an element as plain text: a CDATA section is literal text ("First <post>" stays so); outside it
 -- tags are markup and go, and entities are decoded
-local function plain(s)
-  if not s then return nil end
-  local lit = {}
-  s = s:gsub('<!%[CDATA%[(.-)%]%]>', function(c) lit[#lit + 1] = c; return '\1' .. #lit .. '\1' end)
-  s = F.decode_entities((s:gsub('<[^>]*>', '')))
-  s = s:gsub('\1(%d+)\1', function(k) return lit[tonumber(k)] end)
-  return (s:gsub('%s+', ' '):gsub('^ ', ''):gsub(' $', ''))
+local function plain(text)
+  if not text then return nil end
+  local out, pos = {}, 1
+  while true do
+    local a, b, lit = text:find('<!%[CDATA%[(.-)%]%]>', pos)
+    local markup = text:sub(pos, (a or #text + 1) - 1)
+    out[#out + 1] = F.decode_entities((markup:gsub('<[^>]*>', '')))
+    if not a then break end
+    out[#out + 1] = lit
+    pos = b + 1
+  end
+  local joined = table.concat(out)
+  return (joined:gsub('%s+', ' '):gsub('^ ', ''):gsub(' $', ''))
 end
 
 local function atom_link(block)
@@ -329,8 +335,8 @@ function F.parse_feed(body)
     else
       it.link = plain(element(block, 'link'))
       if not it.link or it.link == '' then
-        local g = block:match('<guid[^>]-isPermaLink%s*=%s*["\']true["\'][^>]*>(.-)</guid>')
-        it.link = plain(g)
+        local guid = block:match('<guid[^>]-isPermaLink%s*=%s*["\']true["\'][^>]*>(.-)</guid>')
+        it.link = plain(guid)
       end
       it.id = plain(element(block, 'guid'))
       it.date = F.date(plain(element(block, 'pubDate')) or plain(element(block, 'dc:date')))

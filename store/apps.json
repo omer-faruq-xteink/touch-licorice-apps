@@ -214,10 +214,10 @@
     "app_id": "rss",
     "listing_id": "u_ab793ec31bec4a66affe7ec5ba71e9aa",
     "project_id": "89ca4ab2-9fb9-4017-8d88-31973aa0cc7d",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-10-31"
   },
   "skytonight": {
     "name": "Sky Tonight",
