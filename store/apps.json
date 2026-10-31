@@ -289,6 +289,16 @@
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
   },
+  "tsumego": {
+    "name": "Go problems",
+    "app_id": "tsumego",
+    "listing_id": "",
+    "project_id": "a255a696-b673-481a-b444-b5ed661e84bc",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-31"
+  },
   "wallabag": {
     "name": "wallabag",
     "app_id": "wallabag",

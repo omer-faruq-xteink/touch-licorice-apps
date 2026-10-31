@@ -52,6 +52,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.0 | in review | - | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
+| `tsumego` | Go problems | `tsumego` | 1.0.0 | in review | - | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
 | `rss` | RSS | `rss` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 
-31 published, 2 in review or draft, 33 in all.
+31 published, 3 in review or draft, 34 in all.

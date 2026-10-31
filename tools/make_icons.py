@@ -512,6 +512,21 @@ def gamebook(p):
     p.poly([(80, 10), (62, 14), (76, 28)], fill=True)
 
 
+def tsumego(p):
+    # a corner of a Go board: grid lines, thick edges, a black group and two white stones
+    for k in range(4):
+        x = 18 + k * 22
+        p.line([(x, 18), (x, 92)], 3 if k == 0 else 2)
+        p.line([(18, x), (92, x)], 3 if k == 0 else 2)
+    p.rect((14, 14, 22, 92), fill=True)
+    p.rect((14, 14, 92, 22), fill=True)
+    for (cx, cy) in ((40, 40), (62, 40), (40, 62)):
+        p.ellipse((cx - 10, cy - 10, cx + 10, cy + 10), fill=True)
+    for (cx, cy) in ((62, 62), (84, 40)):
+        p.white_ellipse((cx - 10, cy - 10, cx + 10, cy + 10))
+        p.ellipse((cx - 10, cy - 10, cx + 10, cy + 10), w=3)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -522,7 +537,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
-         'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook}
+         'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
+         'tsumego': tsumego}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

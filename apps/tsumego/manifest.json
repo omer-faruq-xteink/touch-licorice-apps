@@ -1,0 +1,10 @@
+{
+  "app_id": "tsumego",
+  "display_name": "Go problems",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Go life-and-death problems (tsumego): 620 corner problems in three levels, made and checked for this app, and your own SGF files. Hint, retry, progress kept.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

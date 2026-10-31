@@ -2,6 +2,10 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401** and **26102801** (beta)).
 
+## Added
+
+- **Go problems** (new, `tsumego.xtapp`): life-and-death problems (tsumego) in the corner, 620 of them in three levels: Easy (one move kills or lives), Medium (two moves) and Hard (three or more). They were made for this app and checked by a solver, so each has exactly one first move that works; the other side answers with its strongest reply, and Why shows the reply that refutes a wrong first move. Hint marks the point (twice plays it), Retry sets the problem up again, progress is kept. Your own SGF problem files copied into `AppFiles/tsumego/` become collections too (RIGHT / Correct marks are understood).
+
 ## Changed
 
 - **RSS: feeds on the reader**: RSS now reads feeds by itself, with no account and no Worker. **Add feed** takes a site (the app finds its feed), a feed or an OPML address, or offers feeds by topic from the new [Feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) page. Feeds go into the collection you add them from (**My feeds**, `AppFiles/rss/My feeds.opml`, is always there); any other OPML file copied into `AppFiles/rss/` becomes a collection of its own. A collection opens on its feeds, in the folders its OPML has (hundreds of feeds are fine); tap a feed for its articles, long-press it to remove it. Long-press an article for a preview; opening it marks it read, on the reader. A feed is fetched when you open it, with gzip and "not modified" answers; one over the reader's 128 KB limit is read in pieces where its server allows it. With a Worker set, feeds of any size come through it, and **Full text** fetches whole articles for feeds that carry only a summary (Full text without a Worker shows a QR code to the setup page). CommaFeed and your collections sit side by side in the menu. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page has a "feeds on the reader (full text only)" choice that needs no CommaFeed account. Needs the updated rss-opds Worker for large feeds through the Worker.
@@ -17,6 +21,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
+| `tsumego.xtapp` | **new**: Go problems |
 | `rss.xtapp` | changed: feeds on the reader, OPML collections, full text through the Worker |
 | `game2048.xtapp`, `sokoban.xtapp`, `suguru.xtapp` | changed: API 2.2 as in the store; Sokoban's and Suguru's packs load again |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip` | unchanged since v0.15.0 |

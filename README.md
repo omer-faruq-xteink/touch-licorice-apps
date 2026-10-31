@@ -19,6 +19,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
+| **Go problems** | 620 life-and-death problems (tsumego) in three levels, made and checked for the app, and your own SGF files; hint, retry |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
@@ -129,6 +130,13 @@ cells; long press or Flag mode for flags, open by tapping a finished number, Hin
 Find the best move: 2400 puzzles from the Lichess database (CC0) in six banks, from mate in 1 to
 2000+ rated tactics. Tap a piece and its square; the reply comes at once. Hint frames the piece
 and then its square, Show makes the move; themes and counts per bank. [More](apps/chess/README.md)
+
+### Go problems
+
+Life and death in the corner: find the move that kills the group or saves it. 620 problems in three
+levels (one, two, three or more moves), made for the app and checked by a solver: exactly one first
+move works, the other side answers with its strongest reply, a wrong move with its refutation.
+Your own SGF problem files in `AppFiles/tsumego/` become collections too. [More](apps/tsumego/README.md)
 
 ### Klondike
 
@@ -384,6 +392,7 @@ python -I apps/mahjong/test_mahjong.py
 python -I apps/anki/test_anki.py
 python -I apps/freecell/test_freecell.py
 python -I apps/chess/test_chess.py
+python -I apps/tsumego/test_tsumego.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
 python -I apps/klondike/test_klondike.py

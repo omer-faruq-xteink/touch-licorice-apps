@@ -1,0 +1,671 @@
+-- Go problems (tsumego) for XTOS Licorice, API 2.9 (uses tools/gamekit).
+--
+-- Three built-in collections made by make_problems.py (corner life and death, Easy / Medium /
+-- Hard: one, two, three or more moves; one SGF game tree per line in the package's data section), and the
+-- player's own SGF files in the app's folder on the card (AppFiles/tsumego/, ctx.files): a file
+-- holding several problems is a collection of its own, files holding one problem are gathered in
+-- "Single files". Every problem is an SGF tree: the setup (AB, AW), then the moves. A line is
+-- correct when it ends at a comment saying RIGHT or Correct; with no such comment anywhere in a
+-- tree, every line counts as correct except those whose comment says Wrong.
+--
+-- Tap a point to play. The other side answers from the tree. A wrong move stays on the board;
+-- Why then shows the reply that refutes it (often the key point itself, so not unasked), Retry
+-- starts again. Hint marks the point; a second Hint plays it. The board
+-- shows only the part in play, as large as it fits; the board's real edges are drawn thicker.
+
+local W, H = kit.W, kit.H
+local BOARD_TOP, BOARD_BOTTOM = 132, 668
+local BTN_Y, BTN_H = 704, 60
+local FOLDER = 'AppFiles/tsumego'
+
+local BANKS = {
+  { file = 'beginner.txt', label = 'Easy' },
+  { file = 'intermediate.txt', label = 'Medium' },
+  { file = 'advanced.txt', label = 'Hard' },
+}
+
+local colls = nil                -- { {key, label, kind = 'bank' | 'file' | 'singles', ...} }
+local cur = 1                    -- index in colls
+local idx, solved = {}, {}       -- key -> problem number; key -> string of '0' / '1' per problem
+local count = {}                 -- key -> problems in it
+local prob = nil                 -- { root, player, task, title }
+local node = nil                 -- the tree node reached
+local board = {}                 -- [r * 19 + c] = 'B' / 'W' (r, c from 0)
+local size = 19
+local view = nil                 -- { r0, c0, r1, c1, cell, x0, y0 }
+local last, hint = nil, nil      -- points
+local mistakes, helped = 0, false
+local state = 'play'             -- 'play' | 'wrong' | 'solved'
+local msg, ERR = nil, nil
+
+------------------------------------------------------------------ SGF
+
+-- one game tree from "(" to its ")": nodes { props = { B = {..}, AB = {..}, C = {..} }, kids = {} }
+local function parse_tree(s, pos)
+  local function skip(p) local _a, b = s:find('^[%s]*', p); return b + 1 end
+  local function node_at(p)
+    local n = { props = {}, kids = {} }
+    p = p + 1                                       -- past ';'
+    while true do
+      p = skip(p)
+      local id = s:match('^(%u+)', p)
+      if not id then break end
+      p = p + #id
+      local vals = {}
+      while true do
+        p = skip(p)
+        if s:sub(p, p) ~= '[' then break end
+        local q, out = p + 1, {}
+        while q <= #s do
+          local ch = s:sub(q, q)
+          if ch == '\\' then out[#out + 1] = s:sub(q + 1, q + 1); q = q + 2
+          elseif ch == ']' then break
+          else
+            local e = s:find('[\\%]]', q) or (#s + 1)
+            out[#out + 1] = s:sub(q, e - 1); q = e
+          end
+        end
+        vals[#vals + 1] = table.concat(out)
+        p = q + 1
+      end
+      if n.props[id] then                           -- a property repeated in one node: keep both
+        for _k, v in ipairs(vals) do table.insert(n.props[id], v) end
+      else
+        n.props[id] = vals
+      end
+    end
+    return n, p
+  end
+  local function tree_at(p)
+    p = skip(p)
+    if s:sub(p, p) ~= '(' then return nil, p end
+    p = skip(p + 1)
+    local first, lastn
+    while s:sub(p, p) == ';' do
+      local n
+      n, p = node_at(p)
+      if lastn then lastn.kids[#lastn.kids + 1] = n else first = n end
+      lastn = n
+      p = skip(p)
+    end
+    while s:sub(p, p) == '(' do
+      local sub
+      sub, p = tree_at(p)
+      if sub and lastn then lastn.kids[#lastn.kids + 1] = sub end
+      p = skip(p)
+    end
+    return first, p + 1
+  end
+  local t = tree_at(pos or 1)
+  return t
+end
+
+local function prop(n, id) local v = n and n.props[id]; return v and v[1] end
+
+local function point(v)                             -- 'cd' -> r, c; '' / 'tt' -> pass (nil)
+  if not v or #v < 2 then return nil end
+  local c, r = v:byte(1) - 97, v:byte(2) - 97
+  if c < 0 or r < 0 or c >= size or r >= size then return nil end
+  return r * 19 + c
+end
+
+local function move_of(n)
+  if n.props.B then return 'B', point(n.props.B[1]) end
+  if n.props.W then return 'W', point(n.props.W[1]) end
+  return nil
+end
+
+local function says(n, words)
+  local c = prop(n, 'C')
+  if not c then return false end
+  c = c:lower()
+  for _k, w in ipairs(words) do if c:find(w, 1, true) then return true end end
+  return false
+end
+local RIGHT_WORDS = { 'right', 'correct', '+' }
+local WRONG_WORDS = { 'wrong', 'incorrect', 'fail' }
+
+-- mark every node: good = a correct line goes through it
+local function mark(root)
+  local any_right = false
+  local function scan(n) if says(n, RIGHT_WORDS) and not says(n, { 'incorrect' }) then any_right = true end; for _k, k in ipairs(n.kids) do scan(k) end end
+  scan(root)
+  local function walk(n)
+    local good = false
+    if #n.kids == 0 then
+      if any_right then good = says(n, RIGHT_WORDS) and not says(n, WRONG_WORDS)
+      else good = not says(n, WRONG_WORDS) end
+    else
+      for _k, k in ipairs(n.kids) do if walk(k) then good = true end end
+      if says(n, WRONG_WORDS) then good = false end
+    end
+    n.good = good
+    return good
+  end
+  walk(root)
+end
+
+------------------------------------------------------------------ board
+
+local function nbrs(p)
+  local r, c = p // 19, p % 19
+  local out = {}
+  if r > 0 then out[#out + 1] = p - 19 end
+  if r < size - 1 then out[#out + 1] = p + 19 end
+  if c > 0 then out[#out + 1] = p - 1 end
+  if c < size - 1 then out[#out + 1] = p + 1 end
+  return out
+end
+
+local function group(p)
+  local col, seen, list, libs = board[p], { [p] = true }, { p }, 0
+  local i = 1
+  while list[i] do
+    for _k, q in ipairs(nbrs(list[i])) do
+      if not seen[q] then
+        if board[q] == col then seen[q] = true; list[#list + 1] = q
+        elseif not board[q] then seen[q] = true; libs = libs + 1 end
+      end
+    end
+    i = i + 1
+  end
+  return list, libs
+end
+
+-- returns the number of stones it captures
+local function place(col, p)
+  if not p then return 0 end
+  board[p] = col
+  local opp = col == 'B' and 'W' or 'B'
+  local taken = 0
+  for _k, q in ipairs(nbrs(p)) do
+    if board[q] == opp then
+      local stones, libs = group(q)
+      if libs == 0 then for _j, s in ipairs(stones) do board[s] = nil end; taken = taken + #stones end
+    end
+  end
+  local stones, libs = group(p)
+  if libs == 0 then for _j, s in ipairs(stones) do board[s] = nil end end    -- suicide in a file: allowed
+  last = p
+  return taken
+end
+
+local function setup(n)
+  for _k, v in ipairs(n.props.AB or {}) do local p = point(v); if p then board[p] = 'B' end end
+  for _k, v in ipairs(n.props.AW or {}) do local p = point(v); if p then board[p] = 'W' end end
+  for _k, v in ipairs(n.props.AE or {}) do local p = point(v); if p then board[p] = nil end end
+end
+
+-- the part of the board in play: every point of the setup and of every move, a line around it,
+-- reaching the edge when it is near; at least 6 x 6
+local function make_view(root)
+  local r0, c0, r1, c1 = size, size, -1, -1
+  local function add(p) if p then local r, c = p // 19, p % 19; r0, c0 = math.min(r0, r), math.min(c0, c); r1, c1 = math.max(r1, r), math.max(c1, c) end end
+  for p, _v in pairs(board) do add(p) end
+  local function walk(n) local _c, p = move_of(n); add(p); for _k, k in ipairs(n.kids) do walk(k) end end
+  walk(root)
+  if r1 < 0 then r0, c0, r1, c1 = 0, 0, size - 1, size - 1 end
+  r0, c0, r1, c1 = math.max(0, r0 - 1), math.max(0, c0 - 1), math.min(size - 1, r1 + 1), math.min(size - 1, c1 + 1)
+  if r0 <= 2 then r0 = 0 end
+  if c0 <= 2 then c0 = 0 end
+  if r1 >= size - 3 then r1 = size - 1 end
+  if c1 >= size - 3 then c1 = size - 1 end
+  while r1 - r0 < 5 do if r1 < size - 1 then r1 = r1 + 1 elseif r0 > 0 then r0 = r0 - 1 else break end end
+  while c1 - c0 < 5 do if c1 < size - 1 then c1 = c1 + 1 elseif c0 > 0 then c0 = c0 - 1 else break end end
+  local cols, rows = c1 - c0 + 1, r1 - r0 + 1
+  local cell = math.min((W - 40) // cols, (BOARD_BOTTOM - BOARD_TOP) // rows, 64)
+  local x0 = (W - cols * cell) // 2
+  local y0 = BOARD_TOP + ((BOARD_BOTTOM - BOARD_TOP) - rows * cell) // 2
+  return { r0 = r0, c0 = c0, r1 = r1, c1 = c1, cell = cell, x0 = x0, y0 = y0 }
+end
+
+------------------------------------------------------------------ collections
+
+local function open_bank(file)
+  local P = ctx.package
+  if not P then return nil end
+  local ok, r = pcall(function() return P:open_text(file, { max_bytes = 2000000, max_line_bytes = 8192 }) end)
+  if not ok or r == nil or type(r) == 'string' then return nil end
+  return r
+end
+
+local function file_read_all(name)
+  local F = ctx.files
+  if not F then return nil end
+  local parts, off = {}, 0
+  for _k = 1, 64 do                                 -- up to 4 MB
+    local ok, piece = pcall(function() return F:read(name, off, 65536) end)
+    if not ok or type(piece) ~= 'string' or piece == '' then break end
+    parts[#parts + 1] = piece
+    off = off + #piece
+    if #piece < 65536 then break end
+    pcall(function() ctx.budget:extend() end)
+  end
+  if #parts == 0 then return nil end
+  return table.concat(parts)
+end
+
+-- where each game tree of an SGF text starts and ends: { {from, to}, .. }
+local function tree_spans(s)
+  local out, depth, p, start = {}, 0, 1, nil
+  while true do
+    local q = s:find('[%[%(%)]', p)
+    if not q then break end
+    local ch = s:sub(q, q)
+    if ch == '[' then
+      local e = q + 1
+      while true do
+        e = s:find('[\\%]]', e)
+        if not e then return out end
+        if s:sub(e, e) == '\\' then e = e + 2 else break end
+      end
+      p = e + 1
+    elseif ch == '(' then
+      if depth == 0 then start = q end
+      depth = depth + 1; p = q + 1
+    else
+      depth = depth - 1; p = q + 1
+      if depth == 0 and start then out[#out + 1] = { start, q }; start = nil end
+    end
+  end
+  return out
+end
+
+local function user_files()
+  local F = ctx.files
+  if not F then return {} end
+  local ok, t = pcall(function() return F:list() end)
+  local out = {}
+  for _k, f in ipairs((ok and type(t) == 'table') and t or {}) do
+    local n = type(f) == 'table' and f.name or f
+    if type(n) == 'string' and n:lower():match('%.sgf$') then out[#out + 1] = n end
+  end
+  table.sort(out, function(a, b) return a:lower() < b:lower() end)
+  return out
+end
+
+local function load_colls()
+  colls = {}
+  for _k, b in ipairs(BANKS) do colls[#colls + 1] = { key = b.file, label = b.label, kind = 'bank', file = b.file } end
+  local singles = {}
+  for _k, fname in ipairs(user_files()) do
+    local text = file_read_all(fname)
+    if text then
+      local spans = tree_spans(text)
+      if #spans > 1 then
+        colls[#colls + 1] = { key = 'f:' .. fname, label = (fname:gsub('%.[Ss][Gg][Ff]$', '')), kind = 'file', name = fname, spans = spans }
+        count['f:' .. fname] = #spans
+      elseif #spans == 1 then
+        singles[#singles + 1] = fname
+      end
+    end
+  end
+  if #singles > 0 then
+    colls[#colls + 1] = { key = 'singles', label = 'Single files', kind = 'singles', names = singles }
+    count.singles = #singles
+  end
+end
+
+local function coll_count(k)
+  local c = colls[k]
+  if count[c.key] then return count[c.key] end
+  local n = 0
+  local r = open_bank(c.file)
+  if r then
+    while true do
+      local ok, l = pcall(function() return r:read_line() end)
+      if not ok or l == nil then break end
+      if l:find('(', 1, true) then n = n + 1 end
+    end
+    pcall(function() r:close() end)
+  end
+  count[c.key] = n
+  return n
+end
+
+local function problem_text(k, i)
+  local c = colls[k]
+  if c.kind == 'bank' then
+    local r = open_bank(c.file)
+    if not r then return nil end
+    local line, n = nil, 0
+    while true do
+      local ok, l = pcall(function() return r:read_line() end)
+      if not ok or l == nil then break end
+      if l:find('(', 1, true) then n = n + 1; if n == i then line = l; break end end
+    end
+    pcall(function() r:close() end)
+    return line
+  elseif c.kind == 'file' then
+    local text = file_read_all(c.name)
+    local sp = c.spans[i]
+    return text and sp and text:sub(sp[1], sp[2])
+  else
+    return file_read_all(c.names[i])
+  end
+end
+
+------------------------------------------------------------------ storage
+
+local function save()
+  local t = {}
+  for key, i in pairs(idx) do t[#t + 1] = key .. '\t' .. i .. '\t' .. (solved[key] or '') end
+  kit.write('state.txt', 'coll=' .. (colls[cur] and colls[cur].key or '') .. '\n' .. table.concat(t, '\n'))
+end
+
+local function load_state()
+  local s = kit.read('state.txt') or ''
+  local want = s:match('^coll=([^\n]*)')
+  for key, i, bits in s:gmatch('\n([^\t\n]+)\t(%d+)\t([01]*)') do idx[key] = tonumber(i); solved[key] = bits end
+  return want
+end
+
+local function is_solved(key, i) local b = solved[key] or ''; return b:sub(i, i) == '1' end
+local function set_solved(key, i)
+  local b = solved[key] or ''
+  if #b < i then b = b .. string.rep('0', i - #b) end
+  solved[key] = b:sub(1, i - 1) .. '1' .. b:sub(i + 1)
+end
+local function solved_count(key) local _s, n = (solved[key] or ''):gsub('1', ''); return n end
+
+------------------------------------------------------------------ play
+
+local function first_good(n, col)
+  for _k, kid in ipairs(n.kids) do
+    local c = move_of(kid)
+    if kid.good and (not col or c == col) then return kid end
+  end
+  return nil
+end
+
+local function finish()
+  state = 'solved'
+  local key = colls[cur].key
+  set_solved(key, idx[key])
+  msg = helped and 'Solved, with help.' or (mistakes == 0 and 'Solved on the first try!' or
+    ('Solved (' .. mistakes .. ' wrong move' .. (mistakes > 1 and 's' or '') .. ').'))
+  kit.moved()
+  save()
+end
+
+-- the other side's reply from the tree (a correct line when there is one): the stones it captures
+local function reply()
+  if #node.kids == 0 then return 0 end
+  local kid = first_good(node) or node.kids[1]
+  local col, p = move_of(kid)
+  if not col then node = kid; return 0 end
+  node = kid
+  if p then return place(col, p) end
+  msg = (col == 'B' and 'Black' or 'White') .. ' passes.'
+  return 0
+end
+
+local function start(k, i)
+  cur = k
+  local key = colls[k].key
+  local n = coll_count(k)
+  prob, node, board, last, hint, view = nil, nil, {}, nil, nil, nil
+  state, mistakes, helped, msg = 'play', 0, false, nil
+  if n == 0 then msg = colls[k].kind == 'bank' and 'No problems found in the package.' or 'No problems in this file.'; return end
+  i = ((i - 1) % n) + 1
+  idx[key] = i
+  local text = problem_text(k, i)
+  local root = text and parse_tree(text)
+  if not root then msg = 'Could not read problem ' .. i .. '.'; save(); return end
+  size = tonumber(prop(root, 'SZ')) or 19
+  if size > 19 or size < 5 then size = 19 end
+  -- setup nodes before the first move
+  local n0 = root
+  setup(n0)
+  while #n0.kids == 1 and not move_of(n0.kids[1]) do n0 = n0.kids[1]; setup(n0) end
+  mark(n0)
+  local first = n0.kids[1]
+  local player = (first and move_of(first)) or prop(root, 'PL') or 'B'
+  local task = prop(root, 'C') or ''
+  task = task:gsub('%s+', ' ')
+  prob = { root = n0, player = player, task = task, title = prop(root, 'GN') or (colls[k].label .. ' ' .. i) }
+  node = n0
+  view = make_view(n0)
+  last = nil
+  save()
+end
+
+local function play_at(p)
+  if state ~= 'play' or not prob then return end
+  if board[p] then return end
+  local hit
+  for _k, kid in ipairs(node.kids) do
+    local c, q = move_of(kid)
+    if c == prob.player and q == p then hit = kid; break end
+  end
+  hint = nil
+  if not hit then
+    mistakes = mistakes + 1
+    msg = 'Not the move. Try again.'
+    return
+  end
+  node = hit
+  place(prob.player, p)
+  if not hit.good then
+    mistakes = mistakes + 1
+    state = 'wrong'
+    msg = #node.kids > 0 and 'Wrong. Tap Why for the answer, or Retry.' or 'Wrong. Tap Retry.'
+    save()
+    return
+  end
+  reply()
+  if #node.kids == 0 then finish(); return end       -- the line ends: solved
+  msg = 'Good. Keep going.'
+  save()
+end
+
+local function show_hint()
+  if state ~= 'play' or not prob then return end
+  local kid = first_good(node, prob.player)
+  if not kid then return end
+  local _c, p = move_of(kid)
+  if hint and hint == p then
+    helped = true
+    play_at(p)
+  else
+    hint = p
+    msg = 'Hint again plays the marked point.'
+  end
+end
+
+-- after a wrong move: the other side's answer to it
+local function show_why()
+  if state ~= 'wrong' or #node.kids == 0 then return end
+  local other = prob.player == 'B' and 'White' or 'Black'
+  local taken = reply()
+  msg = taken > 0 and (other .. ' captures your stone' .. (taken > 1 and 's' or '') .. '. Tap Retry.')
+    or (other .. "'s answer to it. Tap Retry.")
+end
+
+local function retry()
+  if colls and colls[cur] then
+    local key = colls[cur].key
+    local m = mistakes
+    start(cur, idx[key] or 1)
+    mistakes = m
+  end
+end
+
+------------------------------------------------------------------ drawing
+
+local function xy(p)
+  local r, c = p // 19, p % 19
+  return view.x0 + (c - view.c0) * view.cell + view.cell // 2, view.y0 + (r - view.r0) * view.cell + view.cell // 2
+end
+
+local STARS = { [3] = true, [9] = true, [15] = true }
+local function draw_board(gg)
+  local v, cell = view, view.cell
+  local half = cell // 2
+  -- lines: to the edge of the view, or half a cell beyond it where the board goes on
+  for r = v.r0, v.r1 do
+    local y = v.y0 + (r - v.r0) * cell + half
+    local xa = v.x0 + half - (v.c0 > 0 and half or 0)
+    local xb = v.x0 + (v.c1 - v.c0) * cell + half + (v.c1 < size - 1 and half or 0)
+    local edge = (r == 0 or r == size - 1)
+    gg:rect(xa, y - (edge and 1 or 0), xb - xa, edge and 3 or 1, { fill = true })
+  end
+  for c = v.c0, v.c1 do
+    local x = v.x0 + (c - v.c0) * cell + half
+    local ya = v.y0 + half - (v.r0 > 0 and half or 0)
+    local yb = v.y0 + (v.r1 - v.r0) * cell + half + (v.r1 < size - 1 and half or 0)
+    local edge = (c == 0 or c == size - 1)
+    gg:rect(x - (edge and 1 or 0), ya, edge and 3 or 1, yb - ya, { fill = true })
+  end
+  if size == 19 then
+    for r = v.r0, v.r1 do for c = v.c0, v.c1 do
+      if STARS[r] and STARS[c] then local x, y = xy(r * 19 + c); gg:circle(x, y, 4, { fill = true }) end
+    end end
+  end
+  local rad = half - 2
+  for r = v.r0, v.r1 do for c = v.c0, v.c1 do
+    local p = r * 19 + c
+    local s = board[p]
+    if s then
+      local x, y = xy(p)
+      if s == 'B' then
+        gg:circle(x, y, rad, { fill = true })
+        if p == last then gg:circle(x, y, rad // 3, { fill = true, color = 0 }) end
+      else
+        gg:circle(x, y, rad, { fill = true, color = 0 })
+        gg:circle(x, y, rad, { line_width = 2 })
+        if p == last then gg:circle(x, y, rad // 3, { fill = true }) end
+      end
+    end
+  end end
+  if hint then
+    local x, y = xy(hint)
+    gg:rect(x - half + 3, y - half + 3, cell - 6, cell - 6, { line_width = 3 })
+  end
+end
+
+local BUTTONS = { 'Hint', 'Retry', 'Next' }
+local function button_rect(k)
+  local bw = math.floor((W - 24 - 3 * 8) / 4)
+  return 12 + (k - 1) * (bw + 8), BTN_Y, bw, BTN_H
+end
+
+function on_draw(c, gg)
+  if not gg then return end
+  local ok, e = pcall(function()
+    gg:clear(0)
+    gg:text(12, 12, 'Go problems', { font = kit.font('large') })
+    if colls and colls[cur] then
+      local key = colls[cur].key
+      local n = coll_count(cur)
+      local i = idx[key] or 1
+      gg:text(12, 52, kit.short(colls[cur].label .. '  ' .. i .. '/' .. n .. '    solved ' .. solved_count(key) ..
+        (is_solved(key, i) and '   (solved)' or ''), 48), { font = kit.font('small') })
+    end
+    gg:line(0, 90, W, 90)
+    if kit.modal() then kit.draw_modal(gg); return end
+    if prob then
+      local head = state == 'solved' and 'Solved!' or (prob.task ~= '' and prob.task or ((prob.player == 'B' and 'Black' or 'White') .. ' to play'))
+      gg:text(12, 102, kit.short(head, 40), { font = kit.font('medium') })
+      draw_board(gg)
+    end
+    if msg then
+      for k, l in ipairs(kit.wrap(msg, 'small', W - 24)) do
+        if k > 1 then break end
+        gg:text(12, BOARD_BOTTOM + 4, l, { font = kit.font('small') })
+      end
+    end
+    for k, b in ipairs(BUTTONS) do
+      local x, y, bw, bh = button_rect(k)
+      kit.button(gg, x, y, bw, bh, (k == 1 and state == 'wrong') and 'Why' or b)
+    end
+    local x, y, bw, bh = button_rect(4)
+    kit.button(gg, x, y, bw, bh, colls and colls[cur] and colls[cur].label or '-', { font = 'small' })
+    if ERR then gg:text(12, H - 30, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
+  end)
+  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
+end
+
+------------------------------------------------------------------ input
+
+local function point_at(x, y)
+  if not view then return nil end
+  local c = view.c0 + (x - view.x0) // view.cell
+  local r = view.r0 + (y - view.y0) // view.cell
+  if x < view.x0 or y < view.y0 or c > view.c1 or r > view.r1 then return nil end
+  return r * 19 + c
+end
+
+local function choose_collection()
+  load_colls()
+  local rows, row = {}, {}
+  for i, c in ipairs(colls) do
+    row[#row + 1] = { c.label, function() kit.close(); save(); start(i, idx[c.key] or 1) end }
+    if #row == 3 or i == 3 then rows[#rows + 1] = row; row = {} end
+    if #rows >= 5 then break end
+  end
+  if #row > 0 then rows[#rows + 1] = row end
+  rows[#rows + 1] = { { 'Cancel', kit.close } }
+  kit.show({ title = 'Problems', lines = { 'Built-in corner problems, easiest first: Easy one move, Medium two, Hard three or more. Your own SGF files go in ' .. FOLDER .. '/ on the card.' },
+             rows = rows, cancel = kit.close })
+end
+
+local function tap(x, y)
+  if kit.tap_modal(x, y) then return end
+  for k = 1, 4 do
+    local bx, by, bw, bh = button_rect(k)
+    if x >= bx and x < bx + bw and y >= by and y < by + bh then
+      if k == 1 then if state == 'wrong' then show_why() else show_hint() end
+      elseif k == 2 then retry()
+      elseif k == 3 then start(cur, (idx[colls[cur].key] or 1) + 1)
+      else choose_collection() end
+      return
+    end
+  end
+  local p = point_at(x, y)
+  if p then play_at(p) end
+end
+
+function on_input(c, ev)
+  ERR = nil
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' then return end
+    if ev.type == 'pointer' and ev.phase == 'up' then
+      tap(ev.x or 0, ev.y or 0)
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then
+        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+      elseif ev.key == 'down' or ev.key == 'right' then start(cur, (idx[colls[cur].key] or 1) + 1)
+      elseif ev.key == 'up' or ev.key == 'left' then start(cur, math.max(1, (idx[colls[cur].key] or 1) - 1)) end
+    end
+  end)
+  if not ok then ERR = tostring(e) end
+  kit.refresh()
+  return true
+end
+
+function on_load(c)
+  local ok, e = pcall(function()
+    local want = load_state()
+    colls = {}
+    for _k, b in ipairs(BANKS) do colls[#colls + 1] = { key = b.file, label = b.label, kind = 'bank', file = b.file } end
+    local k = 1
+    if want and want ~= '' and want ~= colls[1].key then
+      load_colls()
+      for i, cl in ipairs(colls) do if cl.key == want then k = i end end
+    else
+      for i, cl in ipairs(colls) do if cl.key == want then k = i end end
+    end
+    start(k, idx[colls[k].key] or 1)
+  end)
+  if not ok then ERR = tostring(e) end
+end
+function on_leave() pcall(save) end
+
+if rawget(_G, '__TEST') then
+  __TEST.api = { board = function() return board end, prob = function() return prob end, node = function() return node end,
+                 state = function() return state end, view = function() return view end, xy = xy, start = start,
+                 colls = function() return colls end, cur = function() return cur end, idx = function() return idx end,
+                 solved = function() return solved end, hint = function() return hint end, parse_tree = parse_tree,
+                 tree_spans = tree_spans, first_good = first_good, move_of = move_of, load_colls = load_colls }
+end
