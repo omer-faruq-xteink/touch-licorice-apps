@@ -17,8 +17,10 @@
   <div class="table-scroll">
     <table>
       <tr><th>App</th><th>What the Worker does for it</th><th>Without it</th></tr>
-      <tr><td>RSS</td><td>Everything: your <a href="https://www.commafeed.com">CommaFeed</a> lists and articles as short
-        plain text, full text, star, read, tags</td><td>The app cannot work</td></tr>
+      <tr><td>RSS with CommaFeed</td><td>Everything: your <a href="https://www.commafeed.com">CommaFeed</a> lists and
+        articles as short plain text, full text, star, read, tags</td><td>Only feeds on the reader</td></tr>
+      <tr><td>RSS, feeds on the reader</td><td>Full text for articles whose feed carries only a summary, and feeds too
+        large for the reader to fetch</td><td>Feeds work; articles show what the feed carries</td></tr>
       <tr><td>Hacker News</td><td>The linked article as text, through a full-text service</td><td>Lists and comments
         work; an article shows its address as a QR code</td></tr>
       <tr><td>Readwise</td><td>Archive, Later / Inbox, tags and "seen" (Reader takes changes only as PATCH, which the
@@ -48,6 +50,10 @@
           <label class="check"><input type="checkbox" class="app" value="rss" checked> RSS</label>
           <label class="check"><input type="checkbox" class="app" value="hn"> Hacker News</label>
           <label class="check"><input type="checkbox" class="app" value="rw"> Readwise</label>
+        </div>
+        <div class="row" id="rssmode">
+          <label class="check"><input type="radio" name="rssmode" value="cf" checked> RSS with CommaFeed</label>
+          <label class="check"><input type="radio" name="rssmode" value="local"> RSS, feeds on the reader (full text only)</label>
         </div>
         <div class="msg" id="appmsg"></div>
       </div>
@@ -124,20 +130,33 @@
   }
   const auth = () => document.querySelector('input[name=auth]:checked').value;
   const apps = () => new Set([...document.querySelectorAll('.app:checked')].map((x) => x.value));
+  const rssMode = () => document.querySelector('input[name=rssmode]:checked').value;
+  // ?for=rss | rss-local | hn | rw: the app that sent the reader here (a QR code on its screen)
+  const forApp = new URLSearchParams(location.search).get('for');
+  if (forApp) {
+    const want = forApp === 'rss-local' ? 'rss' : forApp;
+    document.querySelectorAll('.app').forEach((x) => { x.checked = x.value === want; });
+    if (forApp === 'rss-local') document.querySelector('input[name=rssmode][value=local]').checked = true;
+  }
 
   function update() {
-    const A = apps(), rss = A.has('rss'), hn = A.has('hn'), rw = A.has('rw');
+    const A = apps(), hn = A.has('hn'), rw = A.has('rw');
+    $('rssmode').hidden = !A.has('rss');
+    const local = A.has('rss') && rssMode() === 'local';
+    const rss = A.has('rss') && !local;      // with CommaFeed
     const token = auth() === 'token';
     $('tokenrow').hidden = !token;
     $('basicrow').hidden = token;
     $('acct2row').hidden = !rss;
-    $('sanbox').hidden = !(rss || hn);
+    $('sanbox').hidden = !(rss || hn || local);
     const sans = [...document.querySelectorAll('.san:checked')].map((x) => x.value);
-    $('sannote').textContent = hn
-      ? 'Full text: Hacker News needs at least one of these (an account and a token at that service).'
+    const needSan = hn || local;
+    $('sannote').textContent = needSan
+      ? `Full text: ${hn && local ? 'Hacker News and RSS need' : hn ? 'Hacker News needs' : 'RSS needs'} at least one of these (an account and a token at that service).`
       : 'Full text, optional: each needs an account and a token at that service.';
-    $('appmsg').textContent = !A.size ? 'Tick at least one app.' : (hn && !sans.length ? 'Hacker News: also tick a full-text service in step 3.' : '');
-    $('appmsg').className = 'msg ' + (!A.size || (hn && !sans.length) ? 'warn' : '');
+    const who = [hn && 'Hacker News', local && 'RSS'].filter(Boolean).join(' and ');
+    $('appmsg').textContent = !A.size ? 'Tick at least one app.' : (needSan && !sans.length ? `${who}: also tick a full-text service in step 3.` : '');
+    $('appmsg').className = 'msg ' + (!A.size || (needSan && !sans.length) ? 'warn' : '');
 
     const acc = [];
     if (rss) acc.push('<b>CommaFeed</b> (for RSS): in CommaFeed open <i>Settings → Profile</i>, generate an API key and keep it at hand. CommaFeed makes a new one when you change your password.');
@@ -154,7 +173,7 @@
     if (rss) lines.push('npx wrangler secret put COMMAFEED_API_KEY');
     if (token) lines.push(`npx wrangler secret put OPDS_TOKEN        # paste: ${$('token').value}`);
     else lines.push(`npx wrangler secret put OPDS_USER         # type: ${$('user').value || 'reader'}`, 'npx wrangler secret put OPDS_PASS         # a password you choose');
-    if (rss || hn) for (const s of sans) lines.push(`npx wrangler secret put ${s}`);
+    if (rss || hn || local) for (const s of sans) lines.push(`npx wrangler secret put ${s}`);
     if (rss && $('acct2').checked) lines.push('npx wrangler secret put COMMAFEED_API_KEY_2', 'npx wrangler secret put COMMAFEED_LABEL      # a name for account 1', 'npx wrangler secret put COMMAFEED_LABEL_2    # a name for account 2');
     lines.push('npx wrangler deploy');
     $('cmds').textContent = lines.join('\n');
@@ -166,7 +185,7 @@
     const t = $('token').value, user = $('user').value || 'reader';
     const cred = token ? ['Path token', t] : ['user:password', `${user}:<your password>`];
     const rows = [];
-    if (rss) {
+    if (rss || local) {
       rows.push(['RSS', 'Host', host], ['RSS', token ? 'Token' : 'user:password', cred[1]],
         ['RSS', 'Full text', sans.length ? 'on' : 'off (no full-text service)']);
     }
@@ -182,8 +201,7 @@
     $('settings').innerHTML = '<tr><th>App</th><th>Setting</th><th>Value</th></tr>' +
       rows.map(([a, s, v]) => `<tr><td>${esc(a)}</td><td>${esc(s)}</td><td><code>${esc(v)}</code></td></tr>`).join('');
   }
-  document.querySelectorAll('input').forEach((x) => x.addEventListener('input', update));
-  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((x) => x.addEventListener('change', update));
+  document.querySelectorAll('input').forEach((x) => x.addEventListener('input', update));  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach((x) => x.addEventListener('change', update));
   $('newtoken').addEventListener('click', newToken);
   newToken();
 </script>

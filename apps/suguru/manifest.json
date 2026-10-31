@@ -5,8 +5,6 @@
   "author": "omer",
   "description": "Suguru (Tectonic): fill each region with 1..n; touching cells never repeat. Four generated banks, 5x5 to 8x8, ship as data files; progress is kept.",
   "entry": "index.lua",
-  "permissions": [
-    "sys.battery",
-    "sys.status"
-  ]
+  "api": "2.2",
+  "permissions": []
 }

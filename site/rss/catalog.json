@@ -1,0 +1,99 @@
+{
+  "about": "Feeds the RSS app offers under Add feed > Choose from a list. Each one fits the reader's 128 KB per download (most with gzip). tools/build_site.py also makes rss/<topic>.opml from this file.",
+  "categories": [
+    { "name": "World news", "feeds": [
+      { "title": "BBC News", "url": "https://feeds.bbci.co.uk/news/rss.xml" },
+      { "title": "The Guardian: World", "url": "https://www.theguardian.com/world/rss" },
+      { "title": "NYT: Top Stories", "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" },
+      { "title": "Al Jazeera", "url": "https://www.aljazeera.com/xml/rss/all.xml" },
+      { "title": "NPR News", "url": "https://feeds.npr.org/1001/rss.xml" },
+      { "title": "France 24", "url": "https://www.france24.com/en/rss" },
+      { "title": "DW", "url": "https://rss.dw.com/rdf/rss-en-all" }
+    ] },
+    { "name": "Technology", "feeds": [
+      { "title": "Ars Technica", "url": "https://feeds.arstechnica.com/arstechnica/index" },
+      { "title": "The Verge", "url": "https://www.theverge.com/rss/index.xml" },
+      { "title": "Hacker News: Front Page", "url": "https://hnrss.org/frontpage" },
+      { "title": "TechCrunch", "url": "https://techcrunch.com/feed/" },
+      { "title": "Wired", "url": "https://www.wired.com/feed/rss" },
+      { "title": "MIT Technology Review", "url": "https://www.technologyreview.com/feed/" },
+      { "title": "Engadget", "url": "https://www.engadget.com/rss.xml" },
+      { "title": "Product Hunt", "url": "https://www.producthunt.com/feed" },
+      { "title": "VentureBeat", "url": "https://venturebeat.com/feed/" },
+      { "title": "Gizmodo", "url": "https://gizmodo.com/feed" },
+      { "title": "MakeUseOf", "url": "https://www.makeuseof.com/feed/" }
+    ] },
+    { "name": "Science", "feeds": [
+      { "title": "NASA", "url": "https://www.nasa.gov/feed/" },
+      { "title": "ScienceDaily", "url": "https://www.sciencedaily.com/rss/all.xml" },
+      { "title": "Quanta Magazine", "url": "https://www.quantamagazine.org/feed/" },
+      { "title": "New Scientist", "url": "https://www.newscientist.com/feed/" },
+      { "title": "Phys.org", "url": "https://phys.org/rss-feed/" }
+    ] },
+    { "name": "Programming", "feeds": [
+      { "title": "Julia Evans", "url": "https://jvns.ca/atom.xml" },
+      { "title": "Daring Fireball", "url": "https://daringfireball.net/feeds/main" },
+      { "title": "LWN.net", "url": "https://lwn.net/headlines/rss" }
+    ] },
+    { "name": "Web development", "feeds": [
+      { "title": "SitePoint", "url": "https://www.sitepoint.com/sitepoint.rss" },
+      { "title": "WPBeginner", "url": "https://www.wpbeginner.com/feed/" },
+      { "title": "WPShout", "url": "https://wpshout.com/feed/" },
+      { "title": "WP Mayor", "url": "https://wpmayor.com/feed/" },
+      { "title": "WPExplorer", "url": "https://www.wpexplorer.com/feed/" }
+    ] },
+    { "name": "Business and finance", "feeds": [
+      { "title": "The Economist", "url": "https://www.economist.com/latest/rss.xml" },
+      { "title": "Financial Times", "url": "https://www.ft.com/rss/home/international" },
+      { "title": "CNBC", "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html" },
+      { "title": "Forbes: Business", "url": "https://www.forbes.com/business/feed/" },
+      { "title": "MarketWatch", "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories" },
+      { "title": "Business Insider", "url": "https://feeds.businessinsider.com/custom/all" }
+    ] },
+    { "name": "Culture and comics", "feeds": [
+      { "title": "kottke.org", "url": "https://feeds.kottke.org/main" },
+      { "title": "Open Culture", "url": "https://www.openculture.com/feed" },
+      { "title": "The Public Domain Review", "url": "https://publicdomainreview.org/rss.xml" },
+      { "title": "xkcd", "url": "https://xkcd.com/rss.xml" },
+      { "title": "SMBC", "url": "https://www.smbc-comics.com/comic/rss" }
+    ] },
+    { "name": "Entertainment", "feeds": [
+      { "title": "Variety", "url": "https://variety.com/feed/" },
+      { "title": "Deadline", "url": "https://deadline.com/feed/" },
+      { "title": "Rolling Stone: Music", "url": "https://www.rollingstone.com/music/music-news/feed/" },
+      { "title": "Billboard", "url": "https://www.billboard.com/feed/" },
+      { "title": "E! Online", "url": "https://eol-feeds.eonline.com/rssfeed/us/top_stories" }
+    ] },
+    { "name": "Books and reading", "feeds": [
+      { "title": "Book Riot", "url": "https://bookriot.com/feed/" },
+      { "title": "Standard Ebooks: new releases", "url": "https://standardebooks.org/feeds/atom/new-releases" },
+      { "title": "Project Gutenberg: today", "url": "https://www.gutenberg.org/cache/epub/feeds/today.rss" }
+    ] },
+    { "name": "Long reads", "feeds": [
+      { "title": "Aeon", "url": "https://aeon.co/feed.rss" },
+      { "title": "Longreads", "url": "https://longreads.com/feed/" }
+    ] },
+    { "name": "Health", "feeds": [
+      { "title": "Mayo Clinic News", "url": "https://newsnetwork.mayoclinic.org/feed/" },
+      { "title": "NHS England", "url": "https://www.england.nhs.uk/feed/" }
+    ] },
+    { "name": "Travel", "feeds": [
+      { "title": "Condé Nast Traveler", "url": "https://www.cntraveler.com/feed/rss" },
+      { "title": "Nomadic Matt", "url": "https://www.nomadicmatt.com/feed/" }
+    ] },
+    { "name": "Hobbies and style", "feeds": [
+      { "title": "Food52", "url": "https://food52.com/blog.rss" },
+      { "title": "IGN", "url": "https://www.ign.com/rss/articles/feed" },
+      { "title": "Kotaku", "url": "https://kotaku.com/feed" },
+      { "title": "PetaPixel", "url": "https://petapixel.com/feed/" },
+      { "title": "Fstoppers", "url": "https://fstoppers.com/feed" },
+      { "title": "Vogue", "url": "https://www.vogue.com/feed/rss" },
+      { "title": "Elle", "url": "https://www.elle.com/rss/all.xml/" }
+    ] },
+    { "name": "Sports", "feeds": [
+      { "title": "BBC Sport", "url": "https://feeds.bbci.co.uk/sport/rss.xml" },
+      { "title": "ESPN", "url": "https://www.espn.com/espn/rss/news" },
+      { "title": "Sky Sports", "url": "https://www.skysports.com/rss/12040" }
+    ] }
+  ]
+}

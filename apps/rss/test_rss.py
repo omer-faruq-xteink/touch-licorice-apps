@@ -103,9 +103,15 @@ responses['/api/article/103'] = {'id': '103', 'title': 'Article 3', 'feed': 'Fee
 responses['/api/feeds'] = {'items': [{'id': '10', 'name': 'Feed A', 'unread': 3}, {'id': '11', 'name': 'Feed B', 'unread': 0}]}
 responses['/api/list?kind=feed'] = {'title': 'Feed A', 'page': 1, 'has_more': False, 'items': [{'id': '555', 'title': 'Only one', 'feed': 'Feed A', 'date': '', 'read': True, 'excerpt': ''}]}
 
-# no host yet -> settings screen; fill host and token through the editor callbacks
+# no host and no feeds yet -> the empty menu (Add feed, Settings, a QR code of the Worker guide);
+# Settings, then fill host and token through the editor callbacks
 g.on_load(g.ctx)
+t = texts()
+assert 'No feeds yet.' in t and 'My feeds' in t and 'Settings' in t, t
+assert g.qr_made and 'tools/worker' in str(g.qr_made), g.qr_made
+tap(100, 100 + 70 + 10)              # Settings (under My feeds)
 assert 'Host (e.g. rss.example.workers.dev)' in texts()
+g.images_drawn = 0                   # the QR code above counts as a drawn image
 tap(100, 56 + 20 + 24 + 10)          # host field
 g.pending[1](g.ctx, 'rss.example.workers.dev ')
 g.pending = L.table()
@@ -114,7 +120,9 @@ g.pending[1](g.ctx, 'secret')
 g.pending = L.table()
 assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default\nimages=0', g.store['config.txt']
 tap(100, 20)                         # Back
-assert 'RSS' in texts()
+t = texts()
+assert 'CommaFeed' in t and 'My feeds' in t and 'Settings' in t and 'Add feed' not in t, t
+tap(100, 100 + 10)                   # CommaFeed (then its menu: Unread Starred All Feeds Tags Settings Back)
 
 # Unread list
 tap(100, 100 + 10)
@@ -297,6 +305,8 @@ tap(50, 20)
 def fonts_of(word):
     return {str(r.f) for r in draw().values() if word in str(r.s)}
 key('back')                                            # list -> menu
+t = texts()
+assert t.index('Tags') < t.index('Settings') and 'Add feed' not in t, t   # feeds are added inside My feeds
 tap(100, 100 + 5 * 70 + 10)                            # Settings
 SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
 assert any(x.startswith('default') for x in texts()), texts()
@@ -513,8 +523,7 @@ assert 'Settings' in texts()
 # basic auth header and full-text switch
 g.cfg_set = L.eval("function() end")
 L.execute("screen_to_settings = function() end")
-key('back'); key('back')
-tap(100, 100 + 5 * 70 + 10)           # Settings
+tap(100, 100 + 5 * 70 + 10)           # Settings, in the CommaFeed menu
 tap(100, 56 + 20 + 2 * 96 + 24 + 10)  # auth field
 g.pending[1](g.ctx, 'me:pw')
 g.pending = L.table()
@@ -544,7 +553,7 @@ assert 'Work' in t and 'Personal' in t and 'Settings' in t and 'Unread' not in t
 assert 'accounts.txt' in g.store
 tap(100, 100 + 1 * 70 + 10)                            # Personal
 t = texts()
-assert 'RSS · Personal' in t and 'Unread' in t and 'Accounts' in t, t
+assert 'RSS · Personal' in t and 'Unread' in t and 'Back' in t, t
 tap(100, 100 + 10); g.flush()                          # Unread of Personal
 assert 'acct=2' in requests[-1], requests[-1]
 t = texts()
@@ -564,7 +573,7 @@ tap(100, 100 + 10); g.flush()
 assert 'acct=1' in requests[-1] and 'Work story' in texts(), (requests[-1], texts())
 assert 'Work story' in str(g.store['l_unread_0_1.txt'])   # the first account keeps the old cache names
 key('back')
-tap(100, 100 + 5 * 70 + 10)                            # Accounts row goes up as well
+tap(100, 100 + 6 * 70 + 10)                            # Back to the accounts
 assert 'Personal' in texts() and 'Unread' not in texts(), texts()
 # offline start: the cached account list still gives the folders
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")

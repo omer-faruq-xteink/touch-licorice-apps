@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feed lists</title>
+<meta name="description" content="Ready feed lists (OPML) for the RSS app on the Xteink X4 Pro, and a list of your own to download.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Feed lists</h1>
+  <p class="lead">The RSS app reads feeds on the reader itself, with no account. Add them on the reader
+    (<i>Add feed → Choose from a list</i> shows the feeds below; <i>Type an address</i> takes a site, a feed or an
+    OPML address), or copy an OPML file into <code>AppFiles/rss/</code> on the SD card (USB mode): each file
+    becomes a collection in the app's menu, next to <i>My feeds</i>.</p>
+
+  <h2>Ready lists</h2>
+  <p>One OPML file per topic. Download one and copy it to the reader, or type its address in <i>Add feed → Type
+    an address</i>.</p>
+  <div class="table-scroll"><table id="topics"></table></div>
+
+  <h2>A list of your own</h2>
+  <ol class="steps">
+    <li>
+      <p>Tick the feeds you want, and add others by their feed address (one per line).</p>
+      <div class="panel" id="picker"></div>
+      <div class="panel">
+        <label class="field">More feed addresses
+          <textarea id="extra" rows="3" style="min-height: 5em" spellcheck="false" placeholder="https://example.com/feed.xml"></textarea></label>
+      </div>
+    </li>
+    <li>
+      <p>Name the collection and download it. The file name is the name the app shows.</p>
+      <div class="row">
+        <label class="field">Name <input type="text" id="name" size="24" value="My list"></label>
+        <button id="save" type="button">Download OPML</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </li>
+    <li>
+      <p>Copy it into <code>AppFiles/rss/</code> and open RSS.</p>
+    </li>
+  </ol>
+
+  <h2>Good to know</h2>
+  <ul>
+    <li>An OPML exported from another feed reader (Feedly, Inoreader, NetNewsWire, CommaFeed...) works the same way.</li>
+    <li>The reader takes at most 128 KB per download. The feeds above fit; a larger feed shows its newest articles
+      as far as they fit.</li>
+    <li>Many feeds carry only a summary of each article. A <a href="../worker/?for=rss-local">Worker of your own</a>
+      with a full-text service brings the whole text, and also takes feeds of any size.</li>
+  </ul>
+</main>
+<script type="module">
+  import { chrome, esc, download } from '../../assets/site.js';
+  chrome('feeds');
+
+  const $ = (id) => document.getElementById(id);
+  const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  function opml(title, feeds) {
+    const lines = feeds.map((f) => `    <outline type="rss" text="${esc(f.title)}" title="${esc(f.title)}" xmlUrl="${esc(f.url)}"/>`);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head>\n    <title>${esc(title)}</title>\n  </head>\n  <body>\n${lines.join('\n')}\n  </body>\n</opml>\n`;
+  }
+
+  const cats = (await (await fetch('../../rss/catalog.json')).json()).categories;
+  $('topics').innerHTML = '<tr><th>Topic</th><th>Feeds</th><th>OPML</th></tr>' + cats.map((c) =>
+    `<tr><td>${esc(c.name)}</td><td>${c.feeds.map((f) => esc(f.title)).join(', ')}</td>` +
+    `<td><a href="../../rss/${slug(c.name)}.opml" download>${slug(c.name)}.opml</a></td></tr>`).join('') +
+    `<tr><td>All of them</td><td>A folder per topic</td><td><a href="../../rss/all.opml" download>all.opml</a></td></tr>`;
+  $('picker').innerHTML = cats.map((c, i) => `<p><b>${esc(c.name)}</b></p><div class="row">` +
+    c.feeds.map((f, j) => `<label class="check"><input type="checkbox" data-c="${i}" data-f="${j}"> ${esc(f.title)}</label>`).join('') +
+    '</div>').join('');
+
+  $('save').addEventListener('click', () => {
+    const feeds = [...document.querySelectorAll('#picker input:checked')].map((x) => cats[x.dataset.c].feeds[x.dataset.f]);
+    const bad = [];
+    for (const line of $('extra').value.split('\n').map((s) => s.trim()).filter(Boolean)) {
+      if (/^https?:\/\/\S+$/i.test(line)) feeds.push({ title: line.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/.*$/, ''), url: line });
+      else bad.push(line);
+    }
+    const name = $('name').value.trim().replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'My list';
+    if (!feeds.length) { $('msg').textContent = 'Tick a feed or add an address first.'; $('msg').className = 'msg warn'; return; }
+    download(`${name}.opml`, opml(name, feeds), 'text/x-opml');
+    $('msg').textContent = `${name}.opml: ${feeds.length} feed${feeds.length > 1 ? 's' : ''}` + (bad.length ? `; left out (not an http address): ${bad.join(', ')}` : '');
+    $('msg').className = 'msg ' + (bad.length ? 'warn' : 'ok');
+  });
+</script>
+</body>
+</html>

@@ -4,7 +4,9 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-Nothing yet.
+- **RSS: feeds on the reader**: RSS now reads feeds by itself, with no account and no Worker. **Add feed** takes a site (the app finds its feed), a feed or an OPML address, or offers feeds by topic from the new [Feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) page. Feeds go into the collection you add them from (**My feeds**, `AppFiles/rss/My feeds.opml`, is always there); any other OPML file copied into `AppFiles/rss/` becomes a collection of its own. A collection opens on its feeds, in the folders its OPML has (hundreds of feeds are fine); tap a feed for its articles, long-press it to remove it. Long-press an article for a preview; opening it marks it read, on the reader. A feed is fetched when you open it, with gzip and "not modified" answers; one over the reader's 128 KB limit is read in pieces where its server allows it. With a Worker set, feeds of any size come through it, and **Full text** fetches whole articles for feeds that carry only a summary (Full text without a Worker shows a QR code to the setup page). CommaFeed and your collections sit side by side in the menu. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page has a "feeds on the reader (full text only)" choice that needs no CommaFeed account. Needs the updated rss-opds Worker for large feeds through the Worker.
+
+- **2048, Sokoban and Suguru on the store's API**: these three were the last packages on the reader's older API; they now declare API 2.2, the same as their store versions, so the GitHub and store copies run the same way. This also brings back Sokoban's 385 levels in five packs and Suguru's 800 puzzles: installed from the `.xtapp` files, v0.15.0 showed only the few built into the code ("built-in bank (no data section)"), because the packs are read the way the newer API names them. The store versions were not affected.
 
 ## Update
 
@@ -15,7 +17,9 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip` | unchanged since v0.15.0 |
+| `rss.xtapp` | changed: feeds on the reader, OPML collections, full text through the Worker |
+| `game2048.xtapp`, `sokoban.xtapp`, `suguru.xtapp` | changed: API 2.2 as in the store; Sokoban's and Suguru's packs load again |
+| all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip` | unchanged since v0.15.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
 

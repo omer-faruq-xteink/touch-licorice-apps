@@ -1,25 +1,57 @@
 # RSS — XTOS Licorice mini app (API 2.9)
 
-Reads your [CommaFeed](https://www.commafeed.com) articles on the device, as text, through the
-[rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Cloudflare Worker (free plan). The
-Worker already publishes the account as an OPDS catalog for the stock reader; this app uses its
-JSON API instead, so articles open inside the app without downloading an EPUB, with the Worker's
-optional full-text extraction.
+Reads RSS and Atom feeds on the device, as text, in one of two ways (or both side by side):
+
+- **Feeds on the reader**: the app fetches the feeds itself. No account, nothing to set up.
+- **CommaFeed**: your [CommaFeed](https://www.commafeed.com) account through the
+  [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Cloudflare Worker (free plan), with
+  star, read and tags kept in CommaFeed. The Worker also publishes the account as an OPDS catalog
+  for the stock reader; this app uses its JSON API, so articles open inside the app.
 
 ## Setup
+
+Feeds on the reader: install `rss.xtapp`, open it, tap **Add feed** (see below).
+
+CommaFeed, or full text for feeds on the reader:
 
 1. Deploy rss-opds: the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through it (about ten minutes) and works
    out what to type in step 2; or follow the Worker's README. Note the Worker host, e.g.
    `rss-opds.<you>.workers.dev`, and either the path token (`OPDS_TOKEN`) or the Basic-auth
-   user and password (`OPDS_USER` / `OPDS_PASS`).
-2. Install `rss.xtapp`, open it; it starts on **Settings**. Fill **Host**, then **Token** (the part
+   user and password (`OPDS_USER` / `OPDS_PASS`). For full text only, choose "feeds on the reader"
+   there: no CommaFeed account is needed.
+2. Open the app's **Settings**. Fill **Host**, then **Token** (the part
    after `/k/`) or **user:password**, and switch **Full text** on if the Worker has a sanitizer
    token. Each field opens the firmware's keyboard. **Text size** (small / default / large) sets
    the type of articles and previews; tap it to change. **Images in articles** (off by default)
    shows article pictures where they are in the text.
-3. **Back** → **Unread**.
+3. **Back**: CommaFeed appears in the menu, next to your collections.
 
 The device must be on Wi-Fi; the app asks the host to keep it on while in use.
+
+## Feeds on the reader
+
+- **Add feed** → **Choose from a list**: feeds by topic (the list comes from the
+  [Feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) page, with a
+  short built-in list when offline); tap a feed to add or remove it. → **Type an address**: a
+  site (`example.com`: the app finds its feed), a feed address, or an OPML address (it becomes a
+  collection of its own).
+- The menu lists the sources: CommaFeed (with a Worker), **My feeds** (always there), the other
+  collections, then Settings. My feeds is saved as `AppFiles/rss/My feeds.opml` on the SD card;
+  every other `.opml` file in `AppFiles/rss/` is a collection too: copy in one from the Feed lists
+  page or exported from another feed reader (USB mode).
+- A collection opens on its feeds: **Add feed** first (into this collection; an OPML address
+  becomes a new collection), then its folders as the OPML has them (tap to open, Back to go up)
+  and its feeds with their unread counts. Long-press a feed to remove it. Collections of hundreds
+  of feeds open at once: the counts come from one index file.
+- Tap a feed for its articles: it is fetched then, if not in the last 30 minutes (**Reload**
+  fetches now), with gzip and "not modified" answers to save time. Opening an article marks it
+  read (on the reader); the long-press preview shows the summary with Prev / Open / Close / Next.
+  The newest 40 articles of each feed are kept.
+- The reader takes at most 128 KB per download. A larger feed is read in pieces where its server
+  allows that, else as far as it fits; with a Worker set, it comes through the Worker whole.
+- An article shows what its feed carries. Many feeds carry only a summary: with a Worker and
+  **Full text** on, the app fetches the whole article through the Worker. **Full text** without a
+  Worker shows a QR code to the setup page.
 
 ## Several CommaFeed accounts
 
@@ -88,11 +120,15 @@ emoji are left out. Needs the updated rss-opds Worker.
 ## Build
 
 ```bash
+python -I apps/rss/bundle.py         # src/*.lua -> index.lua (the tests run it too)
 python xtpack.py apps/rss
-python -I apps/rss/test_rss.py   # offline, Lua 5.4 via lupa, fake Worker
+python -I apps/rss/test_feeds.py     # the feed and OPML parser
+python -I apps/rss/test_rss.py       # offline, Lua 5.4 via lupa, fake Worker
+python -I apps/rss/test_rss_local.py # feeds on the reader: fake servers, gzip, 304, ranges
 ```
+
+Edit `src/main.lua` (screens), `src/library.lua` (collections, fetching, storage) and
+`src/feeds.lua` (parsing); `index.lua` is generated.
 
 Verified on an X4 Pro running Licorice 26102301 (2026-10-24) against a deployed Worker: HTTPS,
 JSON decoding, list paging, article layout, Basic auth and path-token auth, offline cache.
-
-Images are not shown (the screen is 1-bit); a later version may fetch them through the Worker.

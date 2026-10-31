@@ -36,7 +36,7 @@ STORE_ICON_PX = 512
 # the API version a store build declares: Studio checks every call against it (the sideloaded
 # packages keep "2.0", which the X4 Pro's host runs as 2.9); 2.1 zlib, image decode; 2.4
 # net:keep_wifi; 2.8 lockscreen:clear_default; 2.2 ctx.state; 2.9 ctx.files
-STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.4', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9',
+STORE_API = {'calendar': '2.8', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.9', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9',
              'game2048': '2.2', 'sokoban': '2.2', 'sudoku': '2.2', 'suguru': '2.2',
              'litclock': '2.9', 'wordclock': '2.9', 'skytonight': '2.9', 'gamebook': '2.9'}
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):

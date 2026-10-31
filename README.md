@@ -5,7 +5,8 @@ written in Lua for the firmware's built-in mini-app host. No custom firmware, no
 copy a package to the SD card and install it from the reader's own file browser. Most of them are
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
 arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)
-converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser and walks through
+converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
+[feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS, and walks through
 the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS, Hacker News and Readwise.
 
 | app | what it is |
@@ -26,7 +27,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
 | **Notes** | freehand drawing, typed text and QR codes on eight pages; one page becomes the lock screen (an ID card with a contact QR), with clock and battery |
-| **RSS** | reads your CommaFeed articles as text over Wi-Fi, through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
+| **RSS** | RSS and Atom feeds as text over Wi-Fi: fetched on the reader with no account, or your CommaFeed articles through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags through the rss-opds Worker |
@@ -182,12 +183,14 @@ contact-card QR code on a page make the lock screen an ID card. Pages live in th
 
 ### RSS
 
-Your [CommaFeed](https://www.commafeed.com) account on the reader, as text: **Unread**, **Starred**,
-**All**, by **Feed** and by **Tag**. Articles open inside the app, laid out with the system fonts (headings, quotes,
+Feeds on the reader, with no account: **Add feed** takes a site, a feed or an OPML address, or
+offers [feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) by topic;
+OPML files copied into `AppFiles/rss/` become collections. Or your [CommaFeed](https://www.commafeed.com)
+account: **Unread**, **Starred**, **All**, by **Feed** and by **Tag**. Articles open inside the app, laid out with the system fonts (headings, quotes,
 lists), optionally as full text extracted by the Worker; opening one marks it read. The long-press preview
 stars an article, marks it unread and edits its tags. Lists and read
-articles are cached for offline use. Needs the free [rss-opds](https://github.com/omer-faruq-xteink/rss-opds)
-Cloudflare Worker: the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) walks through it and works out what to enter in the
+articles are cached for offline use. CommaFeed, and full text for feeds on the reader, need the free
+[rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Cloudflare Worker: the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) walks through it and works out what to enter in the
 app's Settings. [More](apps/rss/README.md)
 
 ### Merchant
@@ -385,7 +388,9 @@ python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
 python -I apps/klondike/test_klondike.py
 python -I apps/notes/test_notes.py
+python -I apps/rss/test_feeds.py
 python -I apps/rss/test_rss.py
+python -I apps/rss/test_rss_local.py
 python -I apps/instapaper/test_instapaper.py
 python -I apps/merchant/test_merchant.py
 python -I apps/dict/test_dict.py
