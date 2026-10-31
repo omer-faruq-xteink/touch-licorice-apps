@@ -289,6 +289,16 @@
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
   },
+  "textadv": {
+    "name": "Text adventures",
+    "app_id": "textadv",
+    "listing_id": "",
+    "project_id": "09148091-fa75-4eed-94f4-4cdface99a69",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-10-31"
+  },
   "tsumego": {
     "name": "Go problems",
     "app_id": "tsumego",

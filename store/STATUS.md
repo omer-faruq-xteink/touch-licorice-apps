@@ -54,5 +54,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `gamebook` | Gamebook | `gamebook` | 1.0.0 | in review | - | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | in review | - | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
 | `rss` | RSS | `rss` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `textadv` | Text adventures | `textadv` | 1.0.0 | in review | - | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
 
-31 published, 3 in review or draft, 34 in all.
+31 published, 4 in review or draft, 35 in all.
