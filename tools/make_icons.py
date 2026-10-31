@@ -527,6 +527,17 @@ def tsumego(p):
         p.ellipse((cx - 10, cy - 10, cx + 10, cy + 10), w=3)
 
 
+def textadv(p):
+    # an open book with a prompt and a cursor on its right page
+    p.line([(8, 22), (48, 30), (88, 22)], 4)
+    p.line([(8, 22), (8, 80), (48, 88), (88, 80), (88, 22)], 4)
+    p.line([(48, 30), (48, 88)], 3)
+    p.line([(56, 46), (64, 52), (56, 58)], 3)
+    p.rect((68, 54, 80, 58), fill=True)
+    for y in (42, 52, 62):
+        p.line([(16, y), (40, y + 3)], 2)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -538,7 +549,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
-         'tsumego': tsumego}
+         'tsumego': tsumego, 'textadv': textadv}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

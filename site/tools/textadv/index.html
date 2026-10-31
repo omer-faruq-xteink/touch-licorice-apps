@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text adventures</title>
+<meta name="description" content="Zork I, II and III for the Text adventures app on the Xteink X4 Pro, and where to find more games.">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<main class="wrap">
+  <h1>Text adventures</h1>
+  <p class="lead">The Text adventures app plays Z-machine story files: the Infocom classics and most games
+    written in Inform. Type little: directions and common commands are buttons, the game's words from its
+    last reply are chips to tap, and the keyboard is there for the rest.</p>
+
+  <h2>Zork I, II and III</h2>
+  <p>Microsoft released the three Zork games under the MIT licence in 2025. Zork I is built into the app; the pack
+    has all three, for Zork II and III.</p>
+  <p><a class="button" href="../../downloads/zork-pack.zip" download>Download the Zork pack</a> (three .z3 files,
+    about 270 KB)</p>
+  <ol class="steps">
+    <li><p>Unzip it and copy the <code>.z3</code> files into <code>AppFiles/textadv/</code> on the reader's SD card
+      (USB mode).</p></li>
+    <li><p>Open <b>Text adventures</b> and tap a game. Start with Zork I: "open mailbox".</p></li>
+  </ol>
+
+  <h2>More games</h2>
+  <ul>
+    <li>Any <code>.z3</code>, <code>.z5</code> or <code>.z8</code> story file works (not <code>.z6</code>, which needs
+      pictures, and not Glulx <code>.ulx</code> / <code>.gblorb</code>).</li>
+    <li>Thousands of games are on the <a href="https://ifarchive.org/indexes/if-archive/games/zcode/">IF Archive</a>,
+      described and rated on <a href="https://ifdb.org">IFDB</a> (search for "Z-code" games). Each game has its own
+      terms; most are free to download and play.</li>
+    <li>A game in a <code>.zblorb</code> file: many sites also offer the plain <code>.z5</code> / <code>.z8</code>
+      file; take that one.</li>
+  </ul>
+
+  <h2>Playing</h2>
+  <ul>
+    <li>Your place is saved after every turn: leave the app and it continues there. The game's own
+      <b>SAVE</b> and <b>RESTORE</b> keep one more save per game.</li>
+    <li>Tap the left third of the text to page back, the rest to page on; the side buttons do the same.</li>
+    <li>Menu: text size, restart, back to the list of games.</li>
+  </ul>
+</main>
+<script type="module">
+  import { chrome } from '../../assets/site.js';
+  chrome('textadv');
+</script>
+</body>
+</html>

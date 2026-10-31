@@ -6,7 +6,8 @@ copy a package to the SD card and install it from the reader's own file browser.
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
 arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)
 converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
-[feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS, and walks through
+[feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS and the
+[Zork pack](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/) for Text adventures, and walks through
 the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS, Hacker News and Readwise.
 
 | app | what it is |
@@ -20,6 +21,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
 | **Go problems** | 620 life-and-death problems (tsumego) in three levels, made and checked for the app, and your own SGF files; hint, retry |
+| **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
@@ -130,6 +132,14 @@ cells; long press or Flag mode for flags, open by tapping a finished number, Hin
 Find the best move: 2400 puzzles from the Lichess database (CC0) in six banks, from mate in 1 to
 2000+ rated tactics. Tap a piece and its square; the reply comes at once. Hint frames the piece
 and then its square, Show makes the move; themes and counts per bank. [More](apps/chess/README.md)
+
+### Text adventures
+
+Classic parser games on the reader: Zork, Infocom's other games and most Inform games (`.z3`, `.z5`,
+`.z8` in `AppFiles/textadv/`). Directions and common commands are buttons, the game's own words from
+its last reply are chips that build the command, the keyboard does the rest; saved after every turn.
+Zork I is built in; Zork II and III (MIT licence since 2025, like Zork I) are a free pack on the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/). [More](apps/textadv/README.md)
 
 ### Go problems
 
@@ -393,6 +403,7 @@ python -I apps/anki/test_anki.py
 python -I apps/freecell/test_freecell.py
 python -I apps/chess/test_chess.py
 python -I apps/tsumego/test_tsumego.py
+python -I apps/textadv/test_textadv.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
 python -I apps/klondike/test_klondike.py

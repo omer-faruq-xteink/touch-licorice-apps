@@ -4,6 +4,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Added
 
+- **Text adventures** (new, `textadv.xtapp`): plays classic text adventures, Z-machine story files (Zork, Infocom's other games, most Inform games: `.z3`, `.z5`, `.z8`) copied into `AppFiles/textadv/`. Little typing: the eight directions, Up, Down, In, Out, Look, Inventory and Wait are buttons; the game's own words from its last reply and common verbs are chips that build the command; the keyboard does the rest. The game is saved after every turn and continues where you left it; the game's own SAVE and RESTORE keep one more save. Zork I is built in; Zork II and III, released by Microsoft under the MIT licence like Zork I, are a free pack (`zork-pack.zip`, also on the [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/)). The interpreter passes the CZECH and Praxix test programs.
+
 - **Go problems** (new, `tsumego.xtapp`): life-and-death problems (tsumego) in the corner, 620 of them in three levels: Easy (one move kills or lives), Medium (two moves) and Hard (three or more). They were made for this app and checked by a solver, so each has exactly one first move that works; the other side answers with its strongest reply, and Why shows the reply that refutes a wrong first move. Hint marks the point (twice plays it), Retry sets the problem up again, progress is kept. Your own SGF problem files copied into `AppFiles/tsumego/` become collections too (RIGHT / Correct marks are understood).
 
 ## Changed
@@ -22,6 +24,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `tsumego.xtapp` | **new**: Go problems |
+| `textadv.xtapp` + `zork-pack.zip` | **new**: Text adventures, and Zork I-III to copy into `AppFiles/textadv/` |
 | `rss.xtapp` | changed: feeds on the reader, OPML collections, full text through the Worker |
 | `game2048.xtapp`, `sokoban.xtapp`, `suguru.xtapp` | changed: API 2.2 as in the store; Sokoban's and Suguru's packs load again |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip` | unchanged since v0.15.0 |

@@ -1,0 +1,10 @@
+{
+  "app_id": "textadv",
+  "display_name": "Text adventures",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Classic text adventures (Z-machine story files: Zork, Infocom and Inform games) with tappable directions and words, the keyboard for the rest, and an automatic save. Zork I built in.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

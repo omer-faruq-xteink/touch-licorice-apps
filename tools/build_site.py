@@ -1,6 +1,7 @@
 """Build the tools site (GitHub Pages) into OUT_DIR: site/ without its tests, plus the downloads
-made from the repo, such as the Gamebook story pack, and an OPML file per topic of the RSS
-app's feed list (site/rss/catalog.json): rss/<topic>.opml and rss/all.opml.
+made from the repo, such as the Gamebook story pack and the Zork pack of Text adventures, and an
+OPML file per topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and
+rss/all.opml.
 
   python -I tools/build_site.py [OUT_DIR]          (default: dist/site)
   python -m http.server 8765 --directory dist/site (to look at it)
@@ -40,6 +41,29 @@ def story_pack(out):
     return names
 
 
+ZORK = os.path.join(ROOT, 'apps', 'textadv', 'games')
+ZORK_README = """Zork I, II and III for the Text adventures app
+================================================
+
+The Infocom classics, released by Microsoft under the MIT licence in 2025 (see LICENSE-Zork.txt;
+"Zork" is a trademark of its owners). Copy the .z3 files into AppFiles/textadv/ on the reader's
+SD card (USB mode), then open Text adventures: they are listed there.
+
+More games: any Z-machine story file (.z3, .z5, .z8) works, for example from the IF Archive
+(https://ifarchive.org/indexes/if-archive/games/zcode/) or IFDB (https://ifdb.org).
+"""
+
+
+def zork_pack(out):
+    """apps/textadv/games/ -> the zip, with a README"""
+    names = sorted(n for n in os.listdir(ZORK) if n.endswith('.z3') or n.startswith('LICENSE'))
+    with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('README.txt', ZORK_README)
+        for n in names:
+            z.write(os.path.join(ZORK, n), n)
+    return [n for n in names if n.endswith('.z3')]
+
+
 def opml(title, groups):
     """groups: [(folder or None, feeds)] -> OPML 2.0 text"""
     out = ['<?xml version="1.0" encoding="UTF-8"?>', '<opml version="2.0">', '  <head>',
@@ -74,9 +98,11 @@ def main():
     shutil.copytree(SITE, out, ignore=shutil.ignore_patterns('test', '__pycache__', '*.py', '*.mjs'))
     os.makedirs(os.path.join(out, 'downloads'), exist_ok=True)
     names = story_pack(os.path.join(out, 'downloads', 'gamebook-stories.zip'))
+    games = zork_pack(os.path.join(out, 'downloads', 'zork-pack.zip'))
     topics = feed_lists(os.path.join(out, 'rss'))
     open(os.path.join(out, '.nojekyll'), 'w').close()
-    print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), rss/*.opml ({topics} topics)')
+    print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
+          f'({len(games)} games), rss/*.opml ({topics} topics)')
 
 
 if __name__ == '__main__':
