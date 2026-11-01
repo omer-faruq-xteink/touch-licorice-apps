@@ -14,6 +14,10 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **Word Ladder** (new, `wordladder.xtapp`): change the start word into the target one letter at a time, every step a word. Tap a letter of the newest word, then the new letter; letters already in their target place are underlined. Par is the shortest ladder; Undo takes back a step; Hint adds the next word of a shortest ladder from wherever you are. A new ladder every day (four letters, five on every third day), earlier days kept; 730 ladders from the public-domain 12dicts lists.
 
+- **Hashi** (new, `hashi.xtapp`): Bridges. Join the numbered islands with one or two bridges each way, straight, never crossing, all joined. Tap the water between two islands (one, two, none), or two islands in line; full islands get a second ring, overfull ones a cross. Undo, Restart, levels Easy 7x7, Medium 9x9, Hard 11x11, 200 puzzles each, every one with one solution reached by reasoning (made by our own generator).
+
+- **Kakuro** (new, `kakuro.xtapp`): cross sums. Fill the white cells so each run adds up to its clue, no digit twice. The selected cell's runs and every way to make them are shown under the grid ("Across 16 in 2: 79"); repeated digits and wrong full runs are crossed; Hint fills a cell. Easy 6x6, Medium 7x7, Hard 8x8, 200 puzzles each, every one solved by reasoning about the runs alone (our own generator).
+
 - **Tarot** (new, `tarot.xtapp`): tarot cards as prompts for reflection, not fortune telling, with the pictures of Pamela Colman Smith's 1909 deck (public domain), dithered for e-ink. **Today**: tap the face-down card for the day's card; it stays until midnight, and **Journal** keeps the earlier days. **Reading**: three cards, Situation, Obstacle and Way forward; tap a card to read it. **Deck**: all 78 cards by suit with both meanings; the side buttons step through them. Every card has an upright and a reversed meaning, written for the app; reversed draws can be switched off. The pictures use the reader's image decoding, as RSS pictures do; without it the cards show as framed names.
 ## Changed
 
@@ -35,6 +39,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | `wordhive.xtapp` | **new**: Word Hive |
 | `cryptogram.xtapp` | **new**: Cryptogram |
 | `wordladder.xtapp` | **new**: Word Ladder |
+| `hashi.xtapp` | **new**: Hashi |
+| `kakuro.xtapp` | **new**: Kakuro |
 | `tarot.xtapp` | **new**: Tarot |
 | `tsumego.xtapp` | **new**: Go problems |
 | `textadv.xtapp` + `zork-pack.zip` | **new**: Text adventures, and Zork I-III to copy into `AppFiles/textadv/` |

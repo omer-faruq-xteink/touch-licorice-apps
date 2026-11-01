@@ -25,6 +25,8 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Word Hive** | a daily honeycomb of seven letters: make words with the middle letter, find the pangram, climb the ranks; hints, yesterday's answers |
 | **Cryptogram** | a daily quote with every letter swapped for another: work out the code; hint, check, 471 quotes |
 | **Word Ladder** | a daily ladder from one word to another, one letter at a time; par, hints, 730 ladders |
+| **Hashi** | Bridges: join the numbered islands, no crossings; 600 puzzles in three levels |
+| **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
@@ -170,6 +172,18 @@ every place it appears fills in. Hint, Check (strikes out wrong guesses), earlie
 Change the start word into the target one letter at a time, every step a word (COLD, CORD, CARD,
 WARD, WARM). A new ladder every day, four or five letters, with par, Undo and a Hint that finds the
 next step from wherever you are. 730 ladders from the public-domain 12dicts lists. [More](apps/wordladder/README.md)
+
+### Hashi
+
+Bridges: join the numbered islands with one or two bridges each way, none crossing, all joined.
+Tap the water between two islands. 600 puzzles (7x7, 9x9, 11x11), each with one solution reached
+by reasoning. [More](apps/hashi/README.md)
+
+### Kakuro
+
+Cross sums: fill the runs so they add up to their clues, no digit twice. The selected cell's runs
+and every way to make them are shown under the grid; Hint fills a cell. 600 puzzles (6x6, 7x7,
+8x8), each with one solution reached by reasoning. [More](apps/kakuro/README.md)
 
 ### Tarot
 
@@ -439,6 +453,8 @@ python -I apps/textadv/test_textadv.py
 python -I apps/wordhive/test_wordhive.py
 python -I apps/cryptogram/test_cryptogram.py
 python -I apps/wordladder/test_wordladder.py
+python -I apps/hashi/test_hashi.py
+python -I apps/kakuro/test_kakuro.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py

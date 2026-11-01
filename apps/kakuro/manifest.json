@@ -1,0 +1,10 @@
+{
+  "app_id": "kakuro",
+  "display_name": "Kakuro",
+  "version": "1.0.1",
+  "author": "omer-faruq",
+  "description": "Kakuro (cross sums): fill the white cells so each run adds up to its clue, no digit twice. 600 puzzles in three sizes, each with one solution reached by logic; the ways to make each run are shown.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

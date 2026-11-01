@@ -590,6 +590,34 @@ def wordladder(p):
             p.text((30 + k * 18, cy), ch, big)
 
 
+def hashi(p):
+    # four islands joined by bridges: a double one across the top, single ones down and across
+    big = font('arialbd.ttf', 20)
+    isl = {(22, 22): '3', (74, 22): '2', (22, 74): '2', (74, 74): '1'}
+    p.line([(34, 17), (62, 17)], 3)
+    p.line([(34, 27), (62, 27)], 3)
+    p.line([(22, 34), (22, 62)], 3)
+    p.line([(34, 74), (62, 74)], 3)
+    for (x, y), t in isl.items():
+        p.white_ellipse((x - 13, y - 13, x + 13, y + 13))
+        p.ellipse((x - 13, y - 13, x + 13, y + 13), w=3)
+        p.text((x, y + 1), t, big)
+
+
+def kakuro(p):
+    # a corner of a board: the clue cell with its diagonal, and white cells with digits
+    small, big = font('arialbd.ttf', 14), font('arialbd.ttf', 24)
+    p.rect((6, 6, 90, 90), w=4)
+    p.line([(6, 48), (90, 48)], 3)
+    p.line([(48, 6), (48, 90)], 3)
+    p.line([(8, 8), (46, 46)], 3)
+    p.text((36, 18), '9', small)
+    p.text((18, 36), '8', small)
+    p.text((69, 28), '4', big)
+    p.text((27, 69), '3', big)
+    p.text((69, 69), '5', big)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -602,7 +630,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
-         'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder}
+         'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
+         'hashi': hashi, 'kakuro': kakuro}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:
