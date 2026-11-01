@@ -408,5 +408,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-01"
+  },
+  "delve": {
+    "name": "Delve",
+    "app_id": "delve",
+    "listing_id": "",
+    "project_id": "f48f0c06-c0cf-4cec-a8c9-8c0523c558e6",
+    "release_version": "1.0.0",
+    "status": "draft",
+    "live_version": null,
+    "submitted": null
   }
 }

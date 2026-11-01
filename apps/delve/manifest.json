@@ -1,0 +1,10 @@
+{
+  "app_id": "delve",
+  "display_name": "Delve",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "A small roguelike: ten depths of rooms and monsters, a new dungeon every run (or today's dungeon), one torch burning down, unknown potions and scrolls, and a dragon guarding the Amulet. Turn-based, tap to move.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

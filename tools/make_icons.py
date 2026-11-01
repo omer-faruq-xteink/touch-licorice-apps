@@ -618,6 +618,17 @@ def kakuro(p):
     p.text((69, 69), '5', big)
 
 
+def delve(p):
+    # the hero from the game's own pixel art (apps/delve/src/sprites.lua), 5 px a pixel
+    import re
+    src = open(os.path.join(HERE, 'apps', 'delve', 'src', 'sprites.lua'), encoding='utf-8').read()
+    rows = re.findall(r"'([.#]{16})'", re.search(r"S\.hero = \{(.*?)\n\}", src, re.S).group(1))
+    for y, row in enumerate(rows):
+        for x, c in enumerate(row):
+            if c == '#':
+                p.d.rectangle([(8 + x * 5) * S, (8 + y * 5) * S, (13 + x * 5) * S - 1, (13 + y * 5) * S - 1], fill=0)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -631,7 +642,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
          'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
-         'hashi': hashi, 'kakuro': kakuro}
+         'hashi': hashi, 'kakuro': kakuro, 'delve': delve}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

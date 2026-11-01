@@ -2,6 +2,10 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta) and **26102901**).
 
+## Added
+
+- **Delve** (new, `delve.xtapp`): a small roguelike. Go down ten depths of rooms, corridors and monsters and take the Amulet from the dragon on the last; every run is a new dungeon, and **Today's dungeon** is the same for everyone on a day. Pixel-art pictures at 48 px a tile, the view following the hero; a tap near the hero steps that way (no need to hit the tile), a tap further away walks there and stops when a monster comes into view. The torch burns down a point a turn and with it your light; potions and scrolls are unknown until tried; monsters wander, give up the chase or run off when hurt, each in its own way, and a tap on one shows what a fight would cost. Death ends the run; the run in progress is saved and continued.
+
 ## Changed
 
 - **Tasks: items that repeat**: an item's menu has **Repeat**: every day, week, 2 weeks, month, or any number of days, weeks or months (Other: "3 days", "6 months"). Tick it when done: it keeps the day and comes back un-ticked when it is due again, counted from that day, so chores like watering plants or changing a filter keep coming round. Under it: "next Thu 5 Nov" while ticked, "due today" or "late 2 days" while open. **Clear done** leaves repeating items; on the lock screen a repeating item appears again on its day. In `lists.txt` it is a tail you can also write by hand: `[x] Water plants {every 4 days, done 2026-11-01}`.
@@ -15,6 +19,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
+| `delve.xtapp` | **new**: Delve |
 | `tasks.xtapp` | Tasks 1.1.0: items that repeat |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip`, `zork-pack.zip` | unchanged since v0.16.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

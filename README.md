@@ -27,6 +27,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Word Ladder** | a daily ladder from one word to another, one letter at a time; par, hints, 730 ladders |
 | **Hashi** | Bridges: join the numbered islands, no crossings; 600 puzzles in three levels |
 | **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
+| **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
@@ -184,6 +185,14 @@ by reasoning. [More](apps/hashi/README.md)
 Cross sums: fill the runs so they add up to their clues, no digit twice. The selected cell's runs
 and every way to make them are shown under the grid; Hint fills a cell. 600 puzzles (6x6, 7x7,
 8x8), each with one solution reached by reasoning. [More](apps/kakuro/README.md)
+
+### Delve
+
+A small roguelike: go down ten depths and take the Amulet from the dragon. Every run is a new
+dungeon (or today's dungeon, the same for everyone); pixel-art tiles of 48 px, the view following
+the hero. Tap near the hero to step that way, further away to walk there; tap a monster to see
+what a fight costs. The torch burns down, potions and scrolls are unknown until tried, monsters
+chase, wander, give up or flee in their own ways; death ends the run. [More](apps/delve/README.md)
 
 ### Tarot
 
@@ -458,6 +467,7 @@ python -I apps/cryptogram/test_cryptogram.py
 python -I apps/wordladder/test_wordladder.py
 python -I apps/hashi/test_hashi.py
 python -I apps/kakuro/test_kakuro.py
+python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
