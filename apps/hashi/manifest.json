@@ -1,0 +1,10 @@
+{
+  "app_id": "hashi",
+  "display_name": "Hashi",
+  "version": "1.0.1",
+  "author": "omer-faruq",
+  "description": "Hashi (Bridges): connect the islands with bridges as their numbers say, no crossings, all joined. 600 puzzles in three levels, each with one solution reached by logic.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
