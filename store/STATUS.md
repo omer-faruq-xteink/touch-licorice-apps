@@ -23,10 +23,11 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `game2048` | 2048 | `twentyfortyeight` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d2ef365a-0cbc-486a-9188-f2a3588bc7ca` |
 | `anki` | Anki | `anki` | 0.1.1 | published | 0.1.1 | 2026-10-29 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
-| `calendar` | Calendar | `calendar` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `dict` | Dictionary | `dict` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
+| `gamebook` | Gamebook | `gamebook` | 1.0.0 | published | 1.0.0 | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
+| `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
 | `hackernews` | Hacker News | `hackernews` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `instapaper` | Instapaper | `instapaper` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `klondike` | Klondike | `klondike` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cb0f7994-54d7-41a6-963d-fc1fd466c3d6` |
@@ -47,13 +48,14 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `suguru` | Suguru | `suguru` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
 | `tasks` | Tasks | `tasks` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
+| `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
 | `wallabag` | wallabag | `wallabag` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
-| `gamebook` | Gamebook | `gamebook` | 1.0.0 | in review | - | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
-| `tsumego` | Go problems | `tsumego` | 1.0.0 | in review | - | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
-| `rss` | RSS | `rss` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
-| `textadv` | Text adventures | `textadv` | 1.0.0 | in review | - | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
+| `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
+| `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
+| `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | in review | - | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
+| `rss` | RSS | `rss` | 1.1.0 | approved, stuck (to recreate) | 1.0.0 | 2026-10-31 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 
-31 published, 4 in review or draft, 35 in all.
+34 published, 3 in review or draft, 37 in all.
