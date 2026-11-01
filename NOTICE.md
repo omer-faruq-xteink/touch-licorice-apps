@@ -86,6 +86,14 @@ which he released to the public domain, asking for acknowledgment. Its inflected
 Proverbs and short quotes by authors who died long ago (Shakespeare, Franklin, Austen, Twain,
 Wilde and others); the texts are in the public domain.
 
+## Tarot cards — `apps/tarot/data/`
+
+The pictures are the tarot deck drawn by **Pamela Colman Smith** and published in 1909 (she died
+in 1951; the drawings are in the public domain), from the scans on Wikimedia Commons, Category:
+Rider-Waite tarot deck (Roses & Lilies), cropped and dithered to black and white by
+`apps/tarot/make_data.py`. The card meanings in `apps/tarot/cards.txt` were written for this app
+(CC0).
+
 ## Chess puzzles — `apps/chess/data/`
 
 Puzzles from the Lichess puzzle database, https://database.lichess.org/#puzzles, released under

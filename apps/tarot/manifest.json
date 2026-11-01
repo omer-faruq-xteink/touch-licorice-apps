@@ -1,0 +1,10 @@
+{
+  "app_id": "tarot",
+  "display_name": "Tarot",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

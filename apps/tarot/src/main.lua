@@ -1,0 +1,572 @@
+-- Tarot for XTOS Licorice, API 2.0 (uses tools/gamekit).
+--
+-- The 78 cards of Pamela Colman Smith's 1909 deck (public domain), each with an upright and a
+-- reversed meaning written for this app. Today: one card a day, drawn by tapping the face-down
+-- card and kept for the day (Journal lists the earlier ones). Reading: Situation, Obstacle
+-- and Way forward; tap a card to read it. The cards are prompts to think with, not predictions. Deck: every card by suit, with both meanings.
+--
+-- The pictures are 1-bit PNGs in the package's data section (make_data.py), one card a line,
+-- base64, padded to one length so a card is a seek away; ctx.image:decode turns one into an
+-- image when it is shown. The store build carries them as packaged images instead (Studio's
+-- preview has no image_decode), and those come first when they are there. A reversed card is drawn upside down where the host can rotate
+-- (image_transform); elsewhere it is drawn upright and marked reversed. Without image_decode
+-- the cards are framed names.
+
+local W, H = kit.W, kit.H
+local TAB_Y, TAB_H = 8, 50
+local CARD_X, CARD_Y, CARD_W, CARD_H = 120, 70, 240, 418          -- the large card
+local SM_W, SM_H, SM_Y = 144, 251, 96                              -- the spread's cards
+local SM_X = { 12, 168, 324 }
+local POS = { 'Situation', 'Obstacle', 'Way forward' }
+local SUITS = { { 'm', 'Major' }, { 'w', 'Wands' }, { 'c', 'Cups' }, { 's', 'Swords' }, { 'p', 'Pentacles' } }
+local LIST_Y, LIST_H = 130, 44
+local BTN_Y, BTN_H = 738, 54
+
+local cards = {}         -- { key, name, up_kw, up, rev_kw, rev }
+local tab = 'today'      -- 'today', 'three', 'deck', 'journal'
+local detail = nil       -- { n, rev, label, both, back }
+local suit = 'm'
+local today = 0
+local journal = {}       -- day -> { n, rev }
+local reading = nil      -- { { n, rev }, x3 }
+local reversals = true
+local status = nil
+local ERR = nil
+
+------------------------------------------------------------------ days
+
+local function days_from_civil(y, m, d)
+  y = m <= 2 and y - 1 or y
+  local era = (y >= 0 and y or y - 399) // 400
+  local yoe = y - era * 400
+  local doy = (153 * (m > 2 and m - 3 or m + 9) + 2) // 5 + d - 1
+  local doe = yoe * 365 + yoe // 4 - yoe // 100 + doy
+  return era * 146097 + doe - 719468
+end
+
+local function civil(z)
+  z = z + 719468
+  local era = (z >= 0 and z or z - 146096) // 146097
+  local doe = z - era * 146097
+  local yoe = (doe - doe // 1460 + doe // 36524 - doe // 146096) // 365
+  local doy = doe - (365 * yoe + yoe // 4 - yoe // 100)
+  local mp = (5 * doy + 2) // 153
+  local d = doy - (153 * mp + 2) // 5 + 1
+  local m = mp < 10 and mp + 3 or mp - 9
+  return yoe + era * 400 + (m <= 2 and 1 or 0), m, d
+end
+
+local MONTHS = { 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' }
+local WDAYS = { 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' }
+local function date_label(day)
+  local _y, m, d = civil(day)
+  return WDAYS[(day + 4) % 7 + 1] .. ' ' .. d .. ' ' .. MONTHS[m]
+end
+
+local function local_day()
+  local ok, t = pcall(function() return ctx.clock:now() end)
+  if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return days_from_civil(2026, 11, 1) end
+  local e = math.floor(tonumber(t.epoch_sec))
+  if tonumber(t.hour) then
+    local wall = tonumber(t.hour) * 3600 + (tonumber(t.minute) or 0) * 60 + (tonumber(t.second) or 0)
+    local off = (wall - e % 86400) % 86400
+    if off > 14 * 3600 then off = off - 86400 end
+    off = math.floor(off / 900 + 0.5) * 900
+    return (e + off) // 86400
+  end
+  return e // 86400
+end
+
+------------------------------------------------------------------ cards and pictures
+
+local function load_cards()
+  local P = ctx.package
+  if not P then return end
+  local ok, r = pcall(function() return P:open_text('cards.txt', { max_line_bytes = 1024 }) end)
+  if not ok or r == nil or type(r) == 'string' then return end
+  while true do
+    local okl, l = pcall(function() return r:read_line() end)
+    if not okl or l == nil then break end
+    local key, name, a, b, c, d = l:match('^(%w+)|([^|]*)|([^|]*)|([^|]*)|([^|]*)|([^|]*)$')
+    if key then cards[#cards + 1] = { key = key, name = name, up_kw = a, up = b, rev_kw = c, rev = d } end
+  end
+  pcall(function() r:close() end)
+end
+
+local function can_decode()
+  return ctx.capabilities and ctx.capabilities.image_decode and ctx.image and ctx.base64 and true or false
+end
+local function can_rotate() return ctx.capabilities and ctx.capabilities.image_transform and true or false end
+
+local PER_FILE = 39      -- cards in each picture file (open_text opens at most 1 MB)
+local strides = {}       -- file -> line length + 1 (every line padded to the same length)
+-- the picture line of card n: size 'l' or 's', in art_l1.txt / art_l2.txt and so on
+local function art_line(size, num)
+  local file = 'art_' .. size .. ((num - 1) // PER_FILE + 1) .. '.txt'
+  local n = (num - 1) % PER_FILE + 1
+  local ok, r = pcall(function() return ctx.package:open_text(file, { max_line_bytes = 65536 }) end)
+  if not ok or r == nil or type(r) == 'string' then return nil end
+  local line
+  pcall(function()
+    if not strides[file] then
+      local first = r:read_line()
+      if not first then return end
+      strides[file] = #first + 1
+      if n == 1 then line = first; return end
+    end
+    r:seek((n - 1) * strides[file])
+    line = r:read_line()
+  end)
+  pcall(function() r:close() end)
+  return line and (line:gsub(' +$', ''))
+end
+
+-- the store build carries the pictures as packaged images, l_m00 ... s_p14 (store_assets.py)
+local function packaged(size, n)
+  local P = ctx.package
+  if not (P and P.image) then return nil end
+  local ok, img = pcall(function() return P:image(size .. '_' .. cards[n].key) end)
+  return ok and img or nil
+end
+
+-- pictures, the most recently used last; the host holds at most 8 runtime images
+local cache, order = {}, {}
+local function picture(size, n)
+  local id = size .. n
+  if cache[id] ~= nil then
+    for k, v in ipairs(order) do if v == id then table.remove(order, k); break end end
+    order[#order + 1] = id
+    return cache[id] or nil
+  end
+  while #order >= 4 do
+    local old = table.remove(order, 1)
+    if cache[old] then pcall(function() cache[old]:release() end) end
+    cache[old] = nil
+  end
+  local img = packaged(size, n) or false
+  local b64 = not img and can_decode() and art_line(size, n)
+  if b64 then
+    local w, h = size == 'l' and CARD_W or SM_W, size == 'l' and CARD_H or SM_H
+    local ok, bytes = pcall(function() return ctx.base64:decode(b64) end)
+    if ok and bytes then
+      local oki, im = pcall(function() return ctx.image:decode(bytes, { max_w = w, max_h = h }) end)
+      if oki and im then img = im end
+    end
+  end
+  cache[id] = img
+  order[#order + 1] = id
+  return img or nil
+end
+
+------------------------------------------------------------------ saving
+
+local function save()
+  local t = { 'reversals=' .. (reversals and 1 or 0) }
+  if reading then
+    local r = {}
+    for k = 1, 3 do r[k] = reading[k].n .. ',' .. (reading[k].rev and 1 or 0) end
+    t[#t + 1] = 'reading=' .. table.concat(r, ';')
+  end
+  kit.write('settings.txt', table.concat(t, '\n'))
+  local j, days = {}, {}
+  for d in pairs(journal) do days[#days + 1] = d end
+  table.sort(days)
+  for _k, d in ipairs(days) do j[#j + 1] = d .. '\t' .. journal[d].n .. '\t' .. (journal[d].rev and 1 or 0) end
+  kit.write('journal.txt', table.concat(j, '\n'))
+end
+
+local function load_saved()
+  local s = kit.kv(kit.read('settings.txt'))
+  reversals = s.reversals ~= '0'
+  if s.reading then
+    local r = {}
+    for num, rv in s.reading:gmatch('(%d+),(%d)') do r[#r + 1] = { n = tonumber(num), rev = rv == '1' } end
+    if #r == 3 then reading = r end
+  end
+  for d, num, rv in (kit.read('journal.txt') or ''):gmatch('(%-?%d+)\t(%d+)\t(%d)') do
+    journal[tonumber(d)] = { n = tonumber(num), rev = rv == '1' }
+  end
+end
+
+------------------------------------------------------------------ drawing a card
+
+local function random(n)
+  local ok, b = pcall(function() return ctx.random:bytes(4) end)
+  if ok and type(b) == 'string' and #b == 4 then
+    local v = ((b:byte(1) * 256 + b:byte(2)) * 256 + b:byte(3)) * 256 + b:byte(4)
+    return v % n + 1
+  end
+  return math.random(n)
+end
+
+local function draw_one(taken)
+  local n
+  repeat n = random(#cards) until not (taken and taken[n])
+  return { n = n, rev = reversals and random(2) == 2 }
+end
+
+local function full_refresh() pcall(function() ctx:invalidate('full') end) end
+
+local function draw_today()
+  if journal[today] or #cards == 0 then return end
+  journal[today] = draw_one()
+  save()
+  full_refresh()
+end
+
+local function new_reading()
+  if #cards == 0 then return end
+  local taken, r = {}, {}
+  for k = 1, 3 do r[k] = draw_one(taken); taken[r[k].n] = true end
+  reading = r
+  save()
+  full_refresh()
+end
+
+------------------------------------------------------------------ screens
+
+local function in_rect(x, y, rx, ry, rw, rh) return x >= rx and x < rx + rw and y >= ry and y < ry + rh end
+
+local function tab_rect(k) local w = (W - 24 - 16) // 3; return 12 + (k - 1) * (w + 8), TAB_Y, w, TAB_H end
+local TABS = { { 'today', 'Today' }, { 'three', 'Reading' }, { 'deck', 'Deck' } }
+
+local function card_back(gg, x, y, w, h)
+  gg:rect(x, y, w, h, { line_width = 2, radius = 8 })
+  gg:rect(x + 8, y + 8, w - 16, h - 16, { line_width = 1, radius = 4 })
+  local cx, cy, r = x + w // 2, y + h // 2, w // 4
+  gg:circle(cx, cy, r, { line_width = 2 })
+  gg:circle(cx, cy, r // 3, { line_width = 1 })
+  local pts = {}
+  for k = 0, 15 do
+    local a, rr = math.pi * k / 8 - math.pi / 2, (k % 2 == 0) and r * 0.9 or r * 0.45
+    pts[#pts + 1] = math.floor(cx + rr * math.cos(a) + 0.5)
+    pts[#pts + 1] = math.floor(cy + rr * math.sin(a) + 0.5)
+  end
+  gg:polygon(pts, { line_width = 1 })
+  for _k, c in ipairs({ { x + 20, y + 20 }, { x + w - 20, y + 20 }, { x + 20, y + h - 20 }, { x + w - 20, y + h - 20 } }) do
+    gg:circle(c[1], c[2], 6, { line_width = 1 })
+  end
+end
+
+-- a card's picture at x, y (size 'l' or 's'); a framed name when there is none
+local function card_face(gg, x, y, size, n, rev)
+  local w, h = size == 'l' and CARD_W or SM_W, size == 'l' and CARD_H or SM_H
+  local img = picture(size, n)
+  local drawn = false
+  if img then
+    local iw, ih = tonumber(img.width) or w, tonumber(img.height) or h
+    local ix, iy = x + (w - iw) // 2, y + (h - ih) // 2
+    if rev and can_rotate() then
+      drawn = pcall(function() gg:image(img, ix, iy, { rotate = 180 }) end)
+    end
+    if not drawn then drawn = pcall(function() gg:image(img, ix, iy) end) end
+  end
+  if not drawn then
+    gg:rect(x, y, w, h, { line_width = 2, radius = 8 })
+    local f = size == 'l' and 'large' or 'small'
+    local ly = y + h // 2 - kit.line_h(f)
+    for _k, l in ipairs(kit.wrap(cards[n].name, f, w - 16)) do
+      gg:text(x + (w - kit.width(kit.font(f), l)) // 2, ly, l, { font = kit.font(f) }); ly = ly + kit.line_h(f) + 2
+    end
+  end
+  gg:rect(x, y, w, h, { line_width = 1 })
+end
+
+-- lines of text from y down to the bottom limit (and at most max lines); returns the next y
+local function para(gg, y, s, font, bottom, max)
+  local lh = kit.line_h(font) + 2
+  for k, l in ipairs(kit.wrap(s, font, W - 24)) do
+    if y + lh > bottom or (max and k > max) then return y end
+    gg:text(12, y, l, { font = kit.font(font) }); y = y + lh
+  end
+  return y
+end
+
+-- s cut to fit maxw pixels in the font
+local function fit(s, font, maxw)
+  local f = kit.font(font)
+  while #s > 1 and kit.width(f, s) > maxw do s = kit.drop_last(s) end
+  return s
+end
+
+local function card_text(gg, y, n, rev, label, both, bottom)
+  local c = cards[n]
+  local title = c.name .. (rev and ' (reversed)' or '')
+  gg:text(12, y, fit(title, 'large', W - 24), { font = kit.font('large') })
+  y = y + kit.line_h('large') + 6
+  if label then gg:text(12, y, label, { font = kit.font('small') }); y = y + kit.line_h('small') + 4 end
+  if both then
+    y = para(gg, y, 'Upright: ' .. c.up_kw, 'medium', bottom)
+    y = para(gg, y, c.up, 'small', bottom) + 6
+    y = para(gg, y, 'Reversed: ' .. c.rev_kw, 'medium', bottom)
+    para(gg, y, c.rev, 'small', bottom)
+  else
+    y = para(gg, y, rev and c.rev_kw or c.up_kw, 'medium', bottom)
+    para(gg, y + 2, rev and c.rev or c.up, 'small', bottom)
+  end
+end
+
+local function draw_tabs(gg)
+  for k, t in ipairs(TABS) do
+    local x, y, w, h = tab_rect(k)
+    kit.button(gg, x, y, w, h, t[2], { line_width = (tab == t[1] or (tab == 'journal' and t[1] == 'today')) and 4 or 1 })
+  end
+end
+
+local function draw_detail(gg)
+  kit.button(gg, 12, TAB_Y, 110, TAB_H, '< Back')
+  local d = detail
+  gg:text(136, TAB_Y + 12, kit.short(d.title or '', 28), { font = kit.font('medium') })
+  card_face(gg, CARD_X, CARD_Y, 'l', d.n, d.rev)
+  card_text(gg, CARD_Y + CARD_H + 8, d.n, d.rev, d.label, d.both, H - 8)
+end
+
+local function draw_today_tab(gg)
+  local j = journal[today]
+  if not j then
+    card_back(gg, CARD_X, CARD_Y, CARD_W, CARD_H)
+    local y = CARD_Y + CARD_H + 24
+    gg:text(12, y, date_label(today), { font = kit.font('large') })
+    para(gg, y + kit.line_h('large') + 10, "Tap the card to draw today's card: a theme to think about today. It stays the same all day.", 'medium', BTN_Y - 4)
+  else
+    card_face(gg, CARD_X, CARD_Y, 'l', j.n, j.rev)
+    card_text(gg, CARD_Y + CARD_H + 8, j.n, j.rev, date_label(today), false, BTN_Y - 4)
+  end
+  kit.button(gg, 12, BTN_Y, W - 24, BTN_H, 'Journal: earlier days')
+end
+
+local function draw_three(gg)
+  local f = kit.font('medium')
+  for k = 1, 3 do
+    gg:text(SM_X[k] + (SM_W - kit.width(f, POS[k])) // 2, SM_Y - 30, POS[k], { font = f })
+    if reading then card_face(gg, SM_X[k], SM_Y, 's', reading[k].n, reading[k].rev)
+    else card_back(gg, SM_X[k], SM_Y, SM_W, SM_H) end
+  end
+  local y = SM_Y + SM_H + 14
+  if reading then
+    for k = 1, 3 do
+      local c, rev = cards[reading[k].n], reading[k].rev
+      gg:text(12, y, fit(POS[k] .. ': ' .. c.name, 'medium', W - 24), { font = kit.font('medium') })
+      y = y + kit.line_h('medium') + 2
+      y = para(gg, y, (rev and 'Reversed: ' .. c.rev_kw) or c.up_kw, 'small', BTN_Y - 30, 1)
+      y = para(gg, y, (rev and c.rev or c.up):match('^[^.]*%.?'), 'small', BTN_Y - 30, 2) + 8
+    end
+    gg:text(12, BTN_Y - 30, 'Tap a card to read it.', { font = kit.font('small') })
+  else
+    para(gg, y + 10, 'Think of something on your mind, then tap New reading: where you stand, what is in the way, what could help. The cards are prompts to think with, not predictions.', 'medium', BTN_Y - 4)
+  end
+  kit.button(gg, 12, BTN_Y, W - 24, BTN_H, 'New reading')
+end
+
+-- the suit buttons share the row by the width of their labels ("Pentacles" needs more than "Cups")
+local function suit_rect(k)
+  local f, widths, total = kit.font('small'), {}, 0
+  for i, s in ipairs(SUITS) do widths[i] = kit.width(f, s[2]); total = total + widths[i] end
+  local extra = (W - 24 - 4 * 6 - total) / #SUITS
+  local x = 12
+  for i = 1, k - 1 do x = x + math.floor(widths[i] + extra) + 6 end
+  return x, 70, math.floor(widths[k] + extra), 48
+end
+local function deck_list()
+  local out = {}
+  for n, c in ipairs(cards) do if c.key:sub(1, 1) == suit then out[#out + 1] = n end end
+  return out
+end
+local function list_rect(i)
+  local rows = math.ceil(#deck_list() / 2)
+  local col, row = (i - 1) // rows, (i - 1) % rows
+  local w = (W - 24 - 8) // 2
+  return 12 + col * (w + 8), LIST_Y + row * LIST_H, w, LIST_H - 6
+end
+
+local function draw_deck(gg)
+  local sf = kit.font('small')
+  for k, s in ipairs(SUITS) do
+    local x, y, w, h = suit_rect(k)
+    gg:rect(x, y, w, h, { line_width = suit == s[1] and 3 or 1 })
+    gg:text(x + (w - kit.width(sf, s[2])) // 2, y + (h - kit.line_h('small')) // 2, s[2], { font = sf })
+  end
+  for i, n in ipairs(deck_list()) do
+    local x, y, w, h = list_rect(i)
+    gg:rect(x, y, w, h, { line_width = 1 })
+    local name = cards[n].name:gsub('^The ', '')
+    gg:text(x + 8, y + (h - kit.line_h('small')) // 2, kit.short(name, 22), { font = sf })
+  end
+  local bw = (W - 24 - 8) // 2
+  kit.button(gg, 12, BTN_Y, bw, BTN_H, 'Reversed: ' .. (reversals and 'on' or 'off'))
+  kit.button(gg, 12 + bw + 8, BTN_Y, bw, BTN_H, 'About')
+end
+
+local JOURNAL_N = 12
+local function journal_days()
+  local days = {}
+  for d in pairs(journal) do if d ~= today then days[#days + 1] = d end end
+  table.sort(days, function(a, b) return a > b end)
+  return days
+end
+
+local function draw_journal(gg)
+  kit.button(gg, 12, TAB_Y, 110, TAB_H, '< Back')
+  gg:text(136, TAB_Y + 12, 'Journal', { font = kit.font('medium') })
+  local days = journal_days()
+  if #days == 0 then
+    para(gg, 90, "No earlier cards yet. Each day's card is kept here.", 'medium', H)
+    return
+  end
+  for i = 1, math.min(JOURNAL_N, #days) do
+    local d = days[i]
+    local y = 70 + (i - 1) * 56
+    gg:rect(12, y, W - 24, 50, { line_width = 1 })
+    local c = cards[journal[d].n]
+    gg:text(22, y + 13, kit.short(date_label(d) .. '   ' .. (c and c.name or '?') .. (journal[d].rev and ' (rev.)' or ''), 40), { font = kit.font('medium') })
+  end
+end
+
+function on_draw(c, gg)
+  local ok, e = pcall(function()
+    gg:clear(0)
+    if kit.modal() then
+      if detail then draw_detail(gg) else draw_tabs(gg) end
+      kit.draw_modal(gg)
+      return
+    end
+    if #cards == 0 then
+      gg:text(12, 100, 'The cards are missing from the package.', { font = kit.font('medium') })
+    elseif detail then draw_detail(gg)
+    elseif tab == 'journal' then draw_journal(gg)
+    else
+      draw_tabs(gg)
+      if tab == 'today' then draw_today_tab(gg) elseif tab == 'three' then draw_three(gg) else draw_deck(gg) end
+    end
+    if status then gg:text(12, H - 26, kit.short(status, 46), { font = kit.font('small') }) end
+    if ERR then gg:text(12, H - 50, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
+  end)
+  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
+end
+
+------------------------------------------------------------------ input
+
+local function open_detail(d) detail = d; full_refresh() end
+local function close_detail()
+  if not detail then return end
+  detail = nil
+  full_refresh()
+end
+
+local function about()
+  kit.show({ title = 'Tarot', lines = {
+    'Tarot cards as prompts for reflection: each card is a theme to think about, not a prediction.',
+    "Today: tap the face-down card for the day's card; it stays the same until tomorrow. Reading: three cards, Situation, Obstacle and Way forward. Deck: every card with both meanings.",
+    'Pictures: Pamela Colman Smith, 1909 (public domain). Meanings written for this app.',
+  }, rows = { { { 'Close', kit.close } } }, cancel = kit.close })
+end
+
+local function tap(x, y)
+  if kit.tap_modal(x, y) then return end
+  status = nil
+  if detail then
+    if in_rect(x, y, 12, TAB_Y, 110, TAB_H) then close_detail() end
+    return
+  end
+  if tab == 'journal' then
+    if in_rect(x, y, 12, TAB_Y, 110, TAB_H) then tab = 'today'; full_refresh(); return end
+    local days = journal_days()
+    for i = 1, math.min(JOURNAL_N, #days) do
+      if in_rect(x, y, 12, 70 + (i - 1) * 56, W - 24, 50) then
+        local j = journal[days[i]]
+        open_detail({ n = j.n, rev = j.rev, title = 'Journal', label = date_label(days[i]) })
+        return
+      end
+    end
+    return
+  end
+  for k, t in ipairs(TABS) do
+    if in_rect(x, y, tab_rect(k)) then
+      if tab ~= t[1] then tab = t[1]; full_refresh() end
+      return
+    end
+  end
+  if tab == 'today' then
+    if in_rect(x, y, CARD_X, CARD_Y, CARD_W, CARD_H) then
+      if not journal[today] then draw_today()
+      else open_detail({ n = journal[today].n, rev = journal[today].rev, title = 'Today', label = date_label(today) }) end
+    elseif in_rect(x, y, 12, BTN_Y, W - 24, BTN_H) then
+      tab = 'journal'; full_refresh()
+    end
+  elseif tab == 'three' then
+    for k = 1, 3 do
+      if in_rect(x, y, SM_X[k], SM_Y, SM_W, SM_H) then
+        if not reading then new_reading()
+        else open_detail({ n = reading[k].n, rev = reading[k].rev, title = 'Reading', label = POS[k] }) end
+        return
+      end
+    end
+    if in_rect(x, y, 12, BTN_Y, W - 24, BTN_H) then new_reading() end
+  else
+    for k, s in ipairs(SUITS) do
+      if in_rect(x, y, suit_rect(k)) then suit = s[1]; return end
+    end
+    for i, num in ipairs(deck_list()) do
+      if in_rect(x, y, list_rect(i)) then open_detail({ n = num, rev = false, title = 'Deck', both = true, deck = true }); return end
+    end
+    local bw = (W - 24 - 8) // 2
+    if in_rect(x, y, 12, BTN_Y, bw, BTN_H) then
+      reversals = not reversals
+      save()
+      status = reversals and 'New draws can come out reversed.' or 'New draws are all upright.'
+    elseif in_rect(x, y, 12 + bw + 8, BTN_Y, bw, BTN_H) then about() end
+  end
+end
+
+-- side buttons: in a Deck card, the previous or next card; elsewhere, the tabs
+local function step(d)
+  if detail and detail.deck then
+    detail.n = (detail.n - 1 + d) % #cards + 1
+    suit = cards[detail.n].key:sub(1, 1)
+    full_refresh()
+  elseif not detail and tab ~= 'journal' then
+    local k = 1
+    for i, t in ipairs(TABS) do if t[1] == tab then k = i end end
+    tab = TABS[(k - 1 + d) % 3 + 1][1]
+    full_refresh()
+  end
+end
+
+function on_input(c, ev)
+  ERR = nil
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' then return end
+    if ev.type == 'pointer' and ev.phase == 'up' then
+      tap(ev.x or 0, ev.y or 0)
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then
+        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+      elseif ev.key == 'back' then
+        if detail then close_detail() elseif tab == 'journal' then tab = 'today'; full_refresh() end
+      elseif ev.key == 'down' or ev.key == 'right' then step(1)
+      elseif ev.key == 'up' or ev.key == 'left' then step(-1) end
+    end
+  end)
+  if not ok then ERR = tostring(e) end
+  kit.refresh()
+  return true
+end
+
+function on_load(c)
+  local ok, e = pcall(function()
+    pcall(function() math.randomseed(kit.now_ms() or os.time()) end)
+    load_cards()
+    load_saved()
+    today = local_day()
+  end)
+  if not ok then ERR = tostring(e) end
+end
+function on_leave() pcall(save) end
+
+if rawget(_G, '__TEST') then
+  __TEST.api = { cards = function() return cards end, journal = function() return journal end, today = function() return today end,
+                 reading = function() return reading end, detail = function() return detail end, tab = function() return tab end,
+                 reversals = function() return reversals end, art_line = art_line, picture = picture, list_rect = list_rect,
+                 suit_rect = suit_rect, set_today = function(d) today = d end, CARD = { CARD_X, CARD_Y, CARD_W, CARD_H },
+                 SM = { SM_X, SM_Y, SM_W, SM_H }, BTN_Y = BTN_Y, cache_size = function() return #order end }
+end

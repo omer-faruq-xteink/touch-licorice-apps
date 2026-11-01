@@ -11,6 +11,9 @@ cloud and submitted from the Developer Center. The archive is Studio's own backu
     assets/xic/icon.xic        the icon drawn again at 88x88 (the store's icon tile), 1 bpp
     assets/raw/icon.png        the same as PNG
     presentation/store_icon.png  the icon at 512x512 for the store listing and the project card
+    assets/xic/<key>.xic, assets/raw/<key>.png   more packaged images (ctx.package:image), from
+                               an app's store_assets.py: assets(app_dir) -> {key: 1-bit image};
+                               its DROP_DATA names data files the store build leaves out
 
   python -I tools/store_export.py APP [APP ...]      ->  dist/store/<app>/<app>.zip
 
@@ -22,7 +25,7 @@ store/STATUS.md). Its app_id is the one the package carries; the docs say a firs
 issues "u-xxxxxxxx", but the live packages kept ours (Mahjong: "mahjong"), so an update exports
 with the same app_id and installs as an upgrade.
 """
-import datetime, io, json, os, re, sys, zipfile
+import datetime, importlib.util, io, json, os, re, sys, zipfile
 from PIL import Image
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,7 +42,7 @@ STORE_ICON_PX = 512
 STORE_API = {'calendar': '2.9', 'notes': '2.2', 'tasks': '2.8', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.4', 'wikipedia': '2.9', 'rss': '2.9', 'instapaper': '2.4', 'wallabag': '2.4', 'readwise': '2.4', 'dict': '2.9', 'anki': '2.9',
              'game2048': '2.2', 'sokoban': '2.2', 'sudoku': '2.2', 'suguru': '2.2',
              'litclock': '2.9', 'wordclock': '2.9', 'skytonight': '2.9', 'gamebook': '2.9', 'tsumego': '2.9', 'textadv': '2.9',
-             'wordhive': '2.9', 'cryptogram': '2.9'}
+             'wordhive': '2.9', 'cryptogram': '2.9', 'tarot': '2.9'}
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):
 # from a line "-- store: cut" through the next "-- store: end"
 STORE_CUT = re.compile(r'^[ \t]*-- store: cut.*?^[ \t]*-- store: end[^\n]*\n', re.M | re.S)
@@ -83,6 +86,17 @@ DATA_FORMATS = ('txt', 'tsv', 'json')
 DATA_NAME = re.compile(r'^[A-Za-z0-9._-]{1,64}$')
 
 
+def store_hook(app_dir):
+    """The app's store_assets.py as a module, or None."""
+    path = os.path.join(app_dir, 'store_assets.py')
+    if not os.path.isfile(path):
+        return None
+    spec = importlib.util.spec_from_file_location('store_assets_' + os.path.basename(app_dir), path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def data_files(app, app_dir):
     """{name: bytes}: apps/<app>/data/ as the sideloaded packages carry it (xtpack: normalised
     files and the generated banks.tsv the games read), checked against the official packager's
@@ -93,6 +107,9 @@ def data_files(app, app_dir):
         if not DATA_NAME.match(fn) or ext not in DATA_FORMATS:
             raise SystemExit(f'{app}: data/{fn}: a data file name is [A-Za-z0-9._-], at most 64 bytes, .txt .tsv or .json')
         out[fn] = blob
+    hook = store_hook(app_dir)
+    for fn in getattr(hook, 'DROP_DATA', ()):
+        out.pop(fn, None)
     return out
 
 
@@ -135,22 +152,30 @@ def export(app, ids, out_dir):
     master = icon_master(app, app_dir)
     icon = icon_image(master)
     store_png = png_bytes(store_icon(master))
-    asset = {'key': 'icon', 'width': ICON_PX, 'height': ICON_PX, 'bpp': 1, 'contentHash': '', 'process': {},
-             'xicPath': 'assets/xic/icon.xic', 'rawPath': 'assets/raw/icon.png',
-             'rawType': 'image/png', 'xicType': 'application/x-xic'}
+    images = {'icon': icon}
+    hook = store_hook(app_dir)
+    if hook and hasattr(hook, 'assets'):
+        images.update(hook.assets(app_dir))
+    for key in images:
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,23}', key):
+            raise SystemExit(f'{app}: asset key {key!r}: [A-Za-z0-9_-], at most 23 bytes')
+    asset_list = [{'key': k, 'width': im.size[0], 'height': im.size[1], 'bpp': 1, 'contentHash': '', 'process': {},
+                   'xicPath': f'assets/xic/{k}.xic', 'rawPath': f'assets/raw/{k}.png',
+                   'rawType': 'image/png', 'xicType': 'application/x-xic'} for k, im in images.items()]
     meta = {'format': 'xtapp-studio-project-archive', 'version': 1,
             'project': {'sourceProjectId': '', 'name': manifest['display_name'], 'device': 'x4_pro',
-                        'manifest': manifest, 'assetRefs': {'icon': {}}, 'folders': [],
+                        'manifest': manifest, 'assetRefs': {k: {} for k in images}, 'folders': [],
                         'presentation': {'storeCover': None,
                                          'storeIcon': {'key': 'store_icon', 'mime': 'image/png',
                                                        'width': STORE_ICON_PX, 'height': STORE_ICON_PX,
                                                        'path': 'presentation/store_icon.png'}}},
-            'sourceFiles': sorted(list(sources) + ['data/' + n for n in data]), 'assets': [asset],
+            'sourceFiles': sorted(list(sources) + ['data/' + n for n in data]), 'assets': asset_list,
             'exportedAt': datetime.datetime.now(datetime.timezone.utc).isoformat()}
     files = {'xtapp-studio/project.json': (json.dumps(meta, indent=2, ensure_ascii=False) + '\n').encode('utf-8'),
-             'assets/xic/icon.xic': xtpack.build_xic_1bpp(icon),
-             'assets/raw/icon.png': png_bytes(icon),
              'presentation/store_icon.png': store_png}
+    for k, im in images.items():
+        files[f'assets/xic/{k}.xic'] = xtpack.build_xic_1bpp(im)
+        files[f'assets/raw/{k}.png'] = png_bytes(im)
     files.update({'project-files/' + p: s.encode('utf-8') for p, s in sources.items()})
     files.update({'project-files/data/' + n: b for n, b in data.items()})
     out_dir = os.path.join(out_dir, app)

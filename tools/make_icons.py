@@ -559,6 +559,25 @@ def cryptogram(p):
     p.rect((2, 2, 94, 94), w=3, r=10)
 
 
+def tarot(p):
+    # two cards: one tilted behind, the front one with a star and a crescent moon
+    import math
+    def tilted(cx, cy, w, h, deg):
+        a = math.radians(deg)
+        return [(cx + x * math.cos(a) - y * math.sin(a), cy + x * math.sin(a) + y * math.cos(a))
+                for x, y in ((-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2))]
+    p.poly(tilted(36, 50, 44, 74, -14), fill=False, w=4)
+    p.white_rect((34, 8, 84, 90))
+    p.rect((34, 8, 84, 90), w=4, r=6)
+    star = []
+    for k in range(16):
+        a, rr = math.pi * k / 8 - math.pi / 2, 16 if k % 2 == 0 else 6
+        star.append((59 + rr * math.cos(a), 38 + rr * math.sin(a)))
+    p.poly(star, fill=True)
+    p.ellipse((48, 60, 70, 82), fill=True)
+    p.white_ellipse((54, 58, 76, 80))
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -571,7 +590,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
-         'cryptogram': cryptogram}
+         'cryptogram': cryptogram, 'tarot': tarot}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

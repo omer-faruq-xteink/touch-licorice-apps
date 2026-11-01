@@ -24,6 +24,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
 | **Word Hive** | a daily honeycomb of seven letters: make words with the middle letter, find the pangram, climb the ranks; hints, yesterday's answers |
 | **Cryptogram** | a daily quote with every letter swapped for another: work out the code; hint, check, 471 quotes |
+| **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
@@ -162,6 +163,13 @@ public-domain 12dicts word list. [More](apps/wordhive/README.md)
 A quote a day with every letter swapped for another. Tap a letter, then the key it stands for;
 every place it appears fills in. Hint, Check (strikes out wrong guesses), earlier days kept.
 471 proverbs and public-domain quotes. [More](apps/cryptogram/README.md)
+
+### Tarot
+
+A card a day (tap the face-down card; it stays until midnight, and a journal keeps the earlier
+ones) and three-card readings (Situation, Obstacle, Way forward), with the pictures of Pamela Colman Smith's
+1909 deck dithered for e-ink. The cards are prompts to think with, not predictions: every card has
+an upright and a reversed meaning, written for the app; the Deck lists all 78. [More](apps/tarot/README.md)
 
 ### Klondike
 
@@ -423,6 +431,7 @@ python -I apps/tsumego/test_tsumego.py
 python -I apps/textadv/test_textadv.py
 python -I apps/wordhive/test_wordhive.py
 python -I apps/cryptogram/test_cryptogram.py
+python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
 python -I apps/klondike/test_klondike.py
