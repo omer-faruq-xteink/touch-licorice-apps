@@ -58,5 +58,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | in review | - | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
 | `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
+| `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-34 published, 4 in review or draft, 38 in all.
+34 published, 5 in review or draft, 39 in all.

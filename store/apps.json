@@ -378,5 +378,15 @@
     "status": "published",
     "live_version": "1.0.0",
     "submitted": "2026-10-31"
+  },
+  "wordladder": {
+    "name": "Word Ladder",
+    "app_id": "wordladder",
+    "listing_id": "",
+    "project_id": "0975b389-101d-444e-9d66-ee8856c15112",
+    "release_version": "1.0.1",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-01"
   }
 }
