@@ -119,6 +119,16 @@
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
   },
+  "kakuro": {
+    "name": "Kakuro",
+    "app_id": "kakuro",
+    "listing_id": "",
+    "project_id": "81dbbe6a-3f72-438f-9db8-5c105c5328f4",
+    "release_version": "1.0.1",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-01"
+  },
   "klondike": {
     "name": "Klondike",
     "app_id": "klondike",
