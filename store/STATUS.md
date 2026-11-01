@@ -56,6 +56,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | in review | - | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
-| `rss` | RSS | `rss` | 1.1.0 | approved, stuck (to recreate) | 1.0.0 | 2026-10-31 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 
 34 published, 3 in review or draft, 37 in all.
