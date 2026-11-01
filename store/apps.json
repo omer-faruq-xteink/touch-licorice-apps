@@ -314,10 +314,10 @@
     "app_id": "tasks",
     "listing_id": "u_85cae7d4e8a84cbe902b72067623adaa",
     "project_id": "547d9981-6d6c-43a4-878d-612452ce57f0",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-01"
   },
   "tbr": {
     "name": "TBR Planner",

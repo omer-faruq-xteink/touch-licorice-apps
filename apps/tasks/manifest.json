@@ -1,9 +1,9 @@
 {
   "app_id": "tasks",
   "display_name": "Tasks",
-  "version": "1.0",
+  "version": "1.1.0",
   "author": "omer-faruq",
-  "description": "Lists of things to do, ticked off with a tap; a list can be the lock screen. Kept as a plain text file you can also edit on a computer.",
+  "description": "Lists of things to do, ticked off with a tap; chores that repeat come back when due; a list can be the lock screen. Kept as a plain text file you can also edit on a computer.",
   "entry": "index.lua",
   "api": "2.0",
   "permissions": [],

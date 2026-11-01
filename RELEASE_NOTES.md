@@ -4,7 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-Nothing yet.
+- **Tasks: items that repeat**: an item's menu has **Repeat**: every day, week, 2 weeks, month, or any number of days, weeks or months (Other: "3 days", "6 months"). Tick it when done: it keeps the day and comes back un-ticked when it is due again, counted from that day, so chores like watering plants or changing a filter keep coming round. Under it: "next Thu 5 Nov" while ticked, "due today" or "late 2 days" while open. **Clear done** leaves repeating items; on the lock screen a repeating item appears again on its day. In `lists.txt` it is a tail you can also write by hand: `[x] Water plants {every 4 days, done 2026-11-01}`.
 
 ## Update
 
@@ -15,7 +15,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
-| all `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip`, `zork-pack.zip` | unchanged since v0.16.0 |
+| `tasks.xtapp` | Tasks 1.1.0: items that repeat |
+| all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip`, `zork-pack.zip` | unchanged since v0.16.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |
 | `wikipedia-en-vital.zip` | the offline Wikipedia pack, unchanged (see v0.11.0) |
 

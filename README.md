@@ -42,7 +42,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags through the rss-opds Worker |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
-| **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
+| **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
@@ -306,7 +306,10 @@ opens on a list of sources. [More](apps/wikipedia/README.md)
 ### Tasks
 
 To-do lists: tap the box to tick an item, Add with the firmware keyboard, Clear done to remove the
-ticked ones; edit, move and delete items, several lists. One list can be the lock screen. Kept in
+ticked ones; edit, move and delete items, several lists. **Repeat** makes an item come back when it
+is due again (every day, week, 2 weeks, month, or any number of days, weeks or months, counted
+from the day you ticked it), with "late 2 days" or the next date under it. One list can be the lock
+screen. Kept in
 `XTApps/tasks/files/lists.txt`, plain text you can also edit on a computer. [More](apps/tasks/README.md)
 
 ### Weather

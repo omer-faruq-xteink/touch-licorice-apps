@@ -46,7 +46,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
 | `suguru` | Suguru | `suguru` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
-| `tasks` | Tasks | `tasks` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
 | `wallabag` | wallabag | `wallabag` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
@@ -60,6 +59,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | in review | - | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
 | `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
+| `tasks` | Tasks | `tasks` | 1.1.0 | in review | 1.0.0 | 2026-11-01 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-34 published, 7 in review or draft, 41 in all.
+33 published, 8 in review or draft, 41 in all.

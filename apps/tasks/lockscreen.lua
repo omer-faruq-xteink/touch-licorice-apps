@@ -1,5 +1,6 @@
 -- Lock-screen entry for Tasks (API 2.9): the open items of the list chosen in the app, from
--- lock.txt (first line: the list's name; then one item a line), with today's date.
+-- lock.txt (first line: the list's name; then one item a line), with today's date. A ticked
+-- repeating item is "<day it is due>\t<text>" (days since 1970) and shows from that day on.
 
 local W, H = 480, 800
 
@@ -29,10 +30,10 @@ end
 local DAYS = { 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' }
 local MONTHS = { 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' }
 
--- the date from the clock: local days since 1970 -> weekday, day, month (civil-from-days)
-local function today()
+-- local days since 1970 from the clock (its wall time decides the time zone), nil without one
+local function local_day()
   local ok, t = pcall(function() return ctx.clock:now() end)
-  if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return '' end
+  if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return nil end
   local e = math.floor(tonumber(t.epoch_sec))
   if tonumber(t.hour) then
     local wall = tonumber(t.hour) * 3600 + (tonumber(t.minute) or 0) * 60 + (tonumber(t.second) or 0)
@@ -40,7 +41,13 @@ local function today()
     if off > 14 * 3600 then off = off - 86400 end
     e = e + math.floor(off / 900 + 0.5) * 900
   end
-  local z = e // 86400
+  return e // 86400
+end
+
+-- the date: weekday, day, month (civil-from-days)
+local function today()
+  local z = local_day()
+  if not z then return '' end
   local weekday = (z + 4) % 7 + 1
   z = z + 719468
   local era = z // 146097
@@ -64,7 +71,13 @@ function on_draw(c, gg)
     gg:line(24, 104, W - 24, 104)
     local y, n, shown = 124, 0, 0
     local items = {}
-    for line in ((rest or '') .. '\n'):gmatch('([^\n]*)\n') do if line:match('%S') then items[#items + 1] = line end end
+    local day = local_day()
+    for line in ((rest or '') .. '\n'):gmatch('([^\n]*)\n') do
+      local d, t = line:match('^(%d+)\t(.*)$')
+      if d then
+        if day and day >= tonumber(d) and t:match('%S') then items[#items + 1] = t end
+      elseif line:match('%S') then items[#items + 1] = line end
+    end
     local f = font('large')
     for _k, it in ipairs(items) do
       local lines_ = wrap(it, f, W - 96)

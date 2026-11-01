@@ -7,8 +7,12 @@
 --   [ ] bread
 --   [x] milk
 --
+-- An item can repeat: ticking it keeps the date, and it un-ticks itself when it is due again,
+-- counted from that date ("[x] Water plants {every 4 days, done 2026-11-01}"; days, weeks, months).
+--
 -- A list can be the lock screen (lockscreen.lua): its open items in the large font, with the date.
--- The app writes lock.txt (the list's name and open items) whenever that list changes.
+-- The app writes lock.txt (the list's name and open items) whenever that list changes; a ticked
+-- repeating item goes in as "<day it is due>\t<text>", for the lock screen to show from that day.
 
 local W, H = kit.W, kit.H
 local TOP = 96
@@ -16,12 +20,95 @@ local ROW_H = 64
 local ROWS = 9
 local BTN_Y, BTN_H = 704, 64
 
-local lists = {}                -- { { name, items = { { text, done } } } }
+local lists = {}                -- { { name, items = { { text, done, every = { n, unit }, last } } } }
 local screen = 'lists'          -- lists | list
 local cur = 1                   -- the open list
 local top = 1                   -- first row shown
 local lock_name = nil           -- the list on the lock screen
 local msg, ERR = nil, nil
+
+------------------------------------------------------------------ days
+
+local function days_from_civil(y, m, d)
+  y = m <= 2 and y - 1 or y
+  local era = (y >= 0 and y or y - 399) // 400
+  local yoe = y - era * 400
+  local doy = (153 * (m > 2 and m - 3 or m + 9) + 2) // 5 + d - 1
+  local doe = yoe * 365 + yoe // 4 - yoe // 100 + doy
+  return era * 146097 + doe - 719468
+end
+
+local function civil(z)
+  z = z + 719468
+  local era = (z >= 0 and z or z - 146096) // 146097
+  local doe = z - era * 146097
+  local yoe = (doe - doe // 1460 + doe // 36524 - doe // 146096) // 365
+  local doy = doe - (365 * yoe + yoe // 4 - yoe // 100)
+  local mp = (5 * doy + 2) // 153
+  local d = doy - (153 * mp + 2) // 5 + 1
+  local m = mp < 10 and mp + 3 or mp - 9
+  return yoe + era * 400 + (m <= 2 and 1 or 0), m, d
+end
+
+local MONTHS = { 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' }
+local WDAYS = { 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' }
+local function date_label(day)
+  local _y, m, d = civil(day)
+  return WDAYS[(day + 4) % 7 + 1] .. ' ' .. d .. ' ' .. MONTHS[m]
+end
+
+-- local days since 1970 (the clock's wall time decides the time zone)
+local function local_day()
+  local ok, t = pcall(function() return ctx.clock:now() end)
+  if not ok or type(t) ~= 'table' or not tonumber(t.epoch_sec) then return days_from_civil(2026, 11, 1) end
+  local e = math.floor(tonumber(t.epoch_sec))
+  if tonumber(t.hour) then
+    local wall = tonumber(t.hour) * 3600 + (tonumber(t.minute) or 0) * 60 + (tonumber(t.second) or 0)
+    local off = (wall - e % 86400) % 86400
+    if off > 14 * 3600 then off = off - 86400 end
+    off = math.floor(off / 900 + 0.5) * 900
+    return (e + off) // 86400
+  end
+  return e // 86400
+end
+
+------------------------------------------------------------------ repeating
+
+local UNITS = { d = 'day', day = 'day', days = 'day', w = 'week', week = 'week', weeks = 'week',
+                m = 'month', month = 'month', months = 'month' }
+
+-- "3 days", "every 2 weeks", "month" -> { n, unit } or nil
+local function parse_every(s)
+  local n, u = s:lower():gsub('^%s*every%s*', ''):match('^%s*(%d*)%s*(%a+)%s*$')
+  u = u and UNITS[u]
+  n = tonumber(n ~= '' and n or 1)
+  if not u or not n or n < 1 or n > 999 then return nil end
+  return { n = n, unit = u }
+end
+
+local function every_label(ev)
+  if ev.n == 1 then return 'every ' .. ev.unit end
+  return 'every ' .. ev.n .. ' ' .. ev.unit .. 's'
+end
+
+-- the day a repeating item is due again: its last done day plus the interval (months are
+-- calendar months, the day cut to the month's length: 31 Jan + 1 month = 28 or 29 Feb)
+local function due(it)
+  if not (it.every and it.last) then return nil end
+  local ev = it.every
+  if ev.unit == 'day' then return it.last + ev.n end
+  if ev.unit == 'week' then return it.last + 7 * ev.n end
+  local y, m, d = civil(it.last)
+  m = m - 1 + ev.n
+  y, m = y + m // 12, m % 12 + 1
+  local len = days_from_civil(m == 12 and y + 1 or y, m == 12 and 1 or m + 1, 1) - days_from_civil(y, m, 1)
+  return days_from_civil(y, m, math.min(d, len))
+end
+
+local function iso(day)
+  local y, m, d = civil(day)
+  return string.format('%04d-%02d-%02d', y, m, d)
+end
 
 ------------------------------------------------------------------ storage
 
@@ -37,7 +124,15 @@ local function parse(text)
       if mark and t:match('%S') then
         if #out == 0 then out[1] = { name = 'Tasks', items = {} } end
         local items = out[#out].items
-        items[#items + 1] = { text = t, done = mark ~= ' ' }
+        local it = { text = t, done = mark ~= ' ' }
+        local body, tail = t:match('^(.-)%s*{([^{}]*)}%s*$')
+        local every = tail and parse_every(tail:match('^%s*([^,]*)') or '')
+        if every and body:match('%S') then
+          it.text, it.every = body, every
+          local y, m, d = tail:match('done%s+(%d%d%d%d)%-(%d%d?)%-(%d%d?)')
+          if y then it.last = days_from_civil(tonumber(y), tonumber(m), tonumber(d)) end
+        end
+        items[#items + 1] = it
       end
     end
   end
@@ -48,7 +143,11 @@ local function serialize()
   local out = {}
   for _k, l in ipairs(lists) do
     out[#out + 1] = '# ' .. l.name
-    for _j, it in ipairs(l.items) do out[#out + 1] = (it.done and '[x] ' or '[ ] ') .. it.text end
+    for _j, it in ipairs(l.items) do
+      local tail = ''
+      if it.every then tail = ' {' .. every_label(it.every) .. (it.last and ', done ' .. iso(it.last) or '') .. '}' end
+      out[#out + 1] = (it.done and '[x] ' or '[ ] ') .. it.text .. tail
+    end
     out[#out + 1] = ''
   end
   return table.concat(out, '\n')
@@ -59,7 +158,10 @@ local function write_lock()
   for _k, l in ipairs(lists) do
     if l.name == lock_name then
       local open = {}
-      for _j, it in ipairs(l.items) do if not it.done then open[#open + 1] = it.text end end
+      for _j, it in ipairs(l.items) do
+        if not it.done then open[#open + 1] = it.text
+        elseif due(it) then open[#open + 1] = due(it) .. '\t' .. it.text end
+      end
       kit.write('lock.txt', l.name .. '\n' .. table.concat(open, '\n'))
       return
     end
@@ -78,6 +180,34 @@ local function load()
   local t = kit.kv(kit.read('settings.txt'))
   lock_name = (t.lock and t.lock ~= '') and t.lock or nil
   cur = math.max(1, math.min(#lists, tonumber(t.open) or 1))
+end
+
+-- a ticked repeating item whose day has come is open again
+local function refresh_due()
+  local today, changed = local_day(), false
+  for _k, l in ipairs(lists) do
+    for _j, it in ipairs(l.items) do
+      if it.done and due(it) and today >= due(it) then it.done = false; changed = true end
+    end
+  end
+  if changed then save() end
+end
+
+local function tick(it)
+  it.done = not it.done
+  if it.done and it.every then it.last = local_day() end
+  save()
+end
+
+-- the small line under a repeating item
+local function repeat_status(it)
+  local s, d = every_label(it.every), due(it)
+  if not d then return s end
+  if it.done then return s .. ', next ' .. date_label(d) end
+  local late = local_day() - d
+  if late > 0 then return s .. ', late ' .. late .. (late == 1 and ' day' or ' days') end
+  if late == 0 then return s .. ', due today' end
+  return s .. ', due ' .. date_label(d)
 end
 
 ------------------------------------------------------------------ actions
@@ -115,15 +245,45 @@ local function set_lock(l)
   msg = 'Lock screen: ' .. l.name .. '.'
 end
 
-local function item_menu(i)
+local item_menu
+
+local function repeat_menu(i)
+  local it = lists[cur].items[i]
+  local function set(ev)
+    return function()
+      kit.close()
+      it.every = ev
+      if ev and not it.last and it.done then it.last = local_day() end
+      save()
+    end
+  end
+  kit.show({ title = 'Repeat ' .. kit.short(it.text, 30),
+             lines = { 'Ticked, it comes back when it is due again, counted from the day you ticked it.',
+                       it.every and ('Now: ' .. every_label(it.every) .. '.') or 'Now: does not repeat.' },
+             rows = { { { 'Every day', set({ n = 1, unit = 'day' }) }, { 'Every week', set({ n = 1, unit = 'week' }) } },
+                      { { 'Every 2 weeks', set({ n = 2, unit = 'week' }) }, { 'Every month', set({ n = 1, unit = 'month' }) } },
+                      { { 'Other', function()
+                            kit.close()
+                            ask('Repeat every (3 days, 2 weeks, 6 months)', it.every and every_label(it.every):gsub('^every ', '') or '', function(s)
+                              local ev = parse_every(s)
+                              if not ev then msg = 'Not understood: ' .. s; return end
+                              set(ev)()
+                            end)
+                          end },
+                        { 'Off', set(nil), it.every ~= nil } },
+                      { { 'Back', function() item_menu(i) end } } },
+             cancel = kit.close })
+end
+
+function item_menu(i)
   local l = lists[cur]
   local it = l.items[i]
-  kit.show({ title = kit.short(it.text, 40), lines = {},
+  kit.show({ title = kit.short(it.text, 40), lines = it.every and { repeat_status(it) } or {},
              rows = { { { 'Edit', function() kit.close(); ask('Edit', it.text, function(s) it.text = s end) end },
                         { 'Delete', function() kit.close(); table.remove(l.items, i); save() end } },
                       { { 'Up', function() kit.close(); if i > 1 then l.items[i], l.items[i - 1] = l.items[i - 1], it; save() end end, i > 1 },
                         { 'Down', function() kit.close(); if i < #l.items then l.items[i], l.items[i + 1] = l.items[i + 1], it; save() end end, i < #l.items } },
-                      { { 'Close', kit.close } } },
+                      { { 'Repeat', function() repeat_menu(i) end }, { 'Close', kit.close } } },
              cancel = kit.close })
 end
 
@@ -214,10 +374,20 @@ function on_draw(c, gg)
       else
         draw_checkbox(gg, 16, y + 14, r.done)
         local f = kit.font('medium')
-        local lines_ = kit.wrap(r.text, 'medium', W - 90)
-        gg:text(64, y + (#lines_ > 1 and 6 or 18), lines_[1], { font = f })
-        if lines_[2] then gg:text(64, y + 32, kit.short(lines_[2], 34), { font = f }) end
-        if r.done then gg:line(64, y + 30, 64 + math.min(W - 90, kit.width(f, lines_[1])), y + 30) end
+        if r.every then
+          -- one line of text, the repeat and when it is due under it
+          local s = r.text
+          while #s > 1 and kit.width(f, s) > W - 90 do s = kit.drop_last(s) end
+          if s ~= r.text then s = kit.drop_last(kit.drop_last(s)) .. '..' end
+          gg:text(64, y + 4, s, { font = f })
+          gg:text(64, y + 36, repeat_status(r), { font = kit.font('small') })
+          if r.done then gg:line(64, y + 16, 64 + math.min(W - 90, kit.width(f, s)), y + 16) end
+        else
+          local lines_ = kit.wrap(r.text, 'medium', W - 90)
+          gg:text(64, y + (#lines_ > 1 and 6 or 18), lines_[1], { font = f })
+          if lines_[2] then gg:text(64, y + 32, kit.short(lines_[2], 34), { font = f }) end
+          if r.done then gg:line(64, y + 30, 64 + math.min(W - 90, kit.width(f, lines_[1])), y + 30) end
+        end
       end
       gg:line(12, y + ROW_H - 2, W - 12, y + ROW_H - 2)
     end
@@ -243,17 +413,18 @@ local function press(b)
   elseif b == 'Help' then
     kit.show({ title = 'Tasks', lines = { 'Tap a list to open it; long-press it to rename, delete or put it on the lock screen.',
                                           'In a list: tap the box to tick an item, tap its text (or long-press) to edit, move or delete it.',
+                                          'Repeat (in that menu): a ticked item comes back when it is due again, such as every week or every 3 months.',
                                           'The lists are the file lists.txt in XTApps/tasks/files/: "# name" and "[ ] item" lines.' },
                rows = { { { 'Close', kit.close } } }, cancel = kit.close })
   elseif b == 'Back' then screen, top = 'lists', 1
   elseif b == 'Add' then
     ask('New item', '', function(s) local items = lists[cur].items; items[#items + 1] = { text = s, done = false } end)
   elseif b == 'Clear done' then
-    -- the ticked (struck-through) items go, after asking: there is no undo
+    -- the ticked (struck-through) items go, after asking: there is no undo; repeating ones stay
     local items, keep = lists[cur].items, {}
-    for _k, it in ipairs(items) do if not it.done then keep[#keep + 1] = it end end
+    for _k, it in ipairs(items) do if not it.done or it.every then keep[#keep + 1] = it end end
     local n = #items - #keep
-    if n == 0 then msg = 'Nothing is ticked.'; return end
+    if n == 0 then msg = 'Nothing to clear.'; return end
     kit.show({ title = 'Clear ' .. n .. ' done item' .. (n == 1 and '' or 's') .. '?', lines = { 'The ticked items are removed from ' .. lists[cur].name .. '.' },
                rows = { { { 'Clear', function() kit.close(); lists[cur].items = keep; msg = n .. ' cleared.'; save() end },
                           { 'Cancel', kit.close } } },
@@ -281,7 +452,7 @@ local function tap(x, y, long)
     if long then list_menu(k) else cur, screen, top = k, 'list', 1; save() end
   else
     local it = lists[cur].items[k]
-    if x < 60 and not long then it.done = not it.done; save()
+    if x < 60 and not long then tick(it)
     else item_menu(k) end
   end
 end
@@ -291,6 +462,7 @@ function on_input(c, ev)
   ERR = nil
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
+    refresh_due()
     if ev.type == 'pointer' then
       local x, y = ev.x or 0, ev.y or 0
       if ev.phase == 'down' then long_done = false end
@@ -322,12 +494,13 @@ function on_input(c, ev)
 end
 
 function on_load(c)
-  local ok, e = pcall(load)
+  local ok, e = pcall(function() load(); refresh_due() end)
   if not ok then ERR = tostring(e) end
 end
 function on_leave() pcall(save) end
 
 if rawget(_G, '__TEST') then
   __TEST.api = { lists = function() return lists end, screen = function() return screen end, cur = function() return cur end,
-                 parse = parse, serialize = serialize, lock = function() return lock_name end }
+                 parse = parse, serialize = serialize, lock = function() return lock_name end,
+                 due = due, parse_every = parse_every, days = days_from_civil, today = local_day }
 end
