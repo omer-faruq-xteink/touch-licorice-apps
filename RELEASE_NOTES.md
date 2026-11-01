@@ -1,6 +1,6 @@
 # v0.16.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401** and **26102801** (beta)).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta) and **26102901**).
 
 ## Added
 
@@ -8,9 +8,14 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **Go problems** (new, `tsumego.xtapp`): life-and-death problems (tsumego) in the corner, 620 of them in three levels: Easy (one move kills or lives), Medium (two moves) and Hard (three or more). They were made for this app and checked by a solver, so each has exactly one first move that works; the other side answers with its strongest reply, and Why shows the reply that refutes a wrong first move. Hint marks the point (twice plays it), Retry sets the problem up again, progress is kept. Your own SGF problem files copied into `AppFiles/tsumego/` become collections too (RIGHT / Correct marks are understood).
 
+- **Word Hive** (new, `wordhive.xtapp`): a daily word puzzle. Seven letters in a honeycomb; make words of four letters or more that use the middle letter (letters may repeat). A four-letter word scores 1, a longer one a point a letter, a pangram (all seven letters, one in every hive) 7 more; the ranks go from Beginner to Queen bee. Hints counts the words still to find by first letter and length and by their first two letters; Yesterday shows the answers you found and missed; earlier days can be played and keep their words. 730 puzzles of 20 to 50 answers, built from Alan Beale's public-domain 12dicts list of common words with their plurals and verb forms.
+
+- **Cryptogram** (new, `cryptogram.xtapp`): a quote a day with every letter swapped for another. Tap a letter of the puzzle (every place it appears is framed, with how often it appears), then the key it stands for; the next open letter is chosen. Hint shows a letter, Check strikes out wrong guesses, Erase clears one; the author is part of the puzzle. Earlier days keep their guesses. 471 proverbs and public-domain quotes (Shakespeare, Austen, Twain, Wilde, Franklin and others); How to play lists the classic tips.
 ## Changed
 
 - **RSS: feeds on the reader**: RSS now reads feeds by itself, with no account and no Worker. **Add feed** takes a site (the app finds its feed), a feed or an OPML address, or offers feeds by topic from the new [Feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) page. Feeds go into the collection you add them from (**My feeds**, `AppFiles/rss/My feeds.opml`, is always there); any other OPML file copied into `AppFiles/rss/` becomes a collection of its own. A collection opens on its feeds, in the folders its OPML has (hundreds of feeds are fine); tap a feed for its articles, long-press it to remove it. Long-press an article for a preview; opening it marks it read, on the reader. A feed is fetched when you open it, with gzip and "not modified" answers; one over the reader's 128 KB limit is read in pieces where its server allows it. With a Worker set, feeds of any size come through it, and **Full text** fetches whole articles for feeds that carry only a summary (Full text without a Worker shows a QR code to the setup page). CommaFeed and your collections sit side by side in the menu. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page has a "feeds on the reader (full text only)" choice that needs no CommaFeed account. Needs the updated rss-opds Worker for large feeds through the Worker.
+
+- **Calendar: My calendar on the reader** (1.1.0): **+** (right of the date) adds an event without any account or Wi-Fi: title, date, start or all day, length, repeat (every day, week, month or year), place and notes. Tap one of its events to **Edit** or **Delete** it (a repeating one: this one or all). The events are an ordinary iCalendar file, `AppFiles/calendar/My calendar.ics` on the SD card, written after every change: import it into any calendar program, or edit it elsewhere (the app reads it again at every start). My calendar shows with your Google calendars, on the lock screen too, and is never synced; uninstalling the app leaves the file on the card.
 
 - **2048, Sokoban and Suguru on the store's API**: these three were the last packages on the reader's older API; they now declare API 2.2, the same as their store versions, so the GitHub and store copies run the same way. This also brings back Sokoban's 385 levels in five packs and Suguru's 800 puzzles: installed from the `.xtapp` files, v0.15.0 showed only the few built into the code ("built-in bank (no data section)"), because the packs are read the way the newer API names them. The store versions were not affected.
 
@@ -23,9 +28,12 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 
 | file | content |
 |---|---|
+| `wordhive.xtapp` | **new**: Word Hive |
+| `cryptogram.xtapp` | **new**: Cryptogram |
 | `tsumego.xtapp` | **new**: Go problems |
 | `textadv.xtapp` + `zork-pack.zip` | **new**: Text adventures, and Zork I-III to copy into `AppFiles/textadv/` |
 | `rss.xtapp` | changed: feeds on the reader, OPML collections, full text through the Worker |
+| `calendar.xtapp` | changed: My calendar, events added on the reader (`AppFiles/calendar/My calendar.ics`) |
 | `game2048.xtapp`, `sokoban.xtapp`, `suguru.xtapp` | changed: API 2.2 as in the store; Sokoban's and Suguru's packs load again |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip` | unchanged since v0.15.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

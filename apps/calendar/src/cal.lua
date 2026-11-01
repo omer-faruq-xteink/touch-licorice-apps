@@ -9,6 +9,8 @@
 -- the reader's). Numbers may be 32-bit on the device, so nothing goes past 2037.
 --
 -- calendars.txt: one calendar a line, "Name|address|on" (or just the address; "off" hides it).
+--                The reader's own calendar is "Name|local://My calendar.ics|on": its events live in
+--                that iCalendar file in AppFiles/calendar/ (C.ics_text writes it).
 -- c<hash>.txt:   a calendar's cache, "#cal<TAB>updated<TAB>offset<TAB>bytes" then one event a line,
 --                start, end, all-day, RRULE, EXDATEs, UID, title, place, notes (tab-separated).
 
@@ -349,11 +351,14 @@ local TEXT_MAX = { DESCRIPTION = 1600, SUMMARY = 500, LOCATION = 400 }
 
 -- iCalendar text -> events near `today` (a day number): those within two months back and
 -- 400 days ahead, and every repeating one that has not ended. Notes are cut to keep memory low.
+-- With `all` (the reader's own calendar, written back after every change) every event is kept,
+-- with longer texts.
 -- C.parser reads it in pieces: p.step(bytes) reads about that many and is true when done, then
 -- p.events (p.pos of p.size tells how far it is). The host closes an app whose callback runs too
 -- long ("callback exceeded its time budget"), and reading 200 KB at once did on the device.
-function C.parser(body, off, today)
+function C.parser(body, off, today, all)
   local w0, w1 = today * DAY - KEEP_BACK, today * DAY + KEEP_AHEAD
+  local SUM_MAX, LOC_MAX, DESC_MAX = all and 300 or 120, all and 300 or 100, all and 1500 or 400
   local events, moved = {}, {}
   local cur, depth = nil, 0
 
@@ -370,13 +375,15 @@ function C.parser(body, off, today)
       end
     end
     if ev.cancel then return end
-    if ev.rr then
-      local r = C.rule(ev.rr, off)
-      if r.till and r.till < w0 then return end
-    elseif ev.e < w0 or ev.s > w1 then
-      return
+    if not all then
+      if ev.rr then
+        local r = C.rule(ev.rr, off)
+        if r.till and r.till < w0 then return end
+      elseif ev.e < w0 or ev.s > w1 then
+        return
+      end
     end
-    if ev.desc then ev.desc = text_value(ev.desc, 400) end    -- only for the events kept
+    if ev.desc then ev.desc = text_value(ev.desc, DESC_MAX) end    -- only for the events kept
     events[#events + 1] = ev
   end
 
@@ -391,11 +398,11 @@ function C.parser(body, off, today)
         cur = nil
       elseif cur and depth > 0 then depth = depth - 1 end
     elseif cur and depth == 0 then           -- an alarm's own SUMMARY must not replace the title
-      if name == 'SUMMARY' then cur.sum = text_value(v, 120)
+      if name == 'SUMMARY' then cur.sum = text_value(v, SUM_MAX)
       elseif name == 'DTSTART' then cur.s, cur.ad = C.parse_dt(v, off)
       elseif name == 'DTEND' then cur.e = C.parse_dt(v, off)
       elseif name == 'DURATION' then cur.dur = C.parse_dur(v)
-      elseif name == 'LOCATION' then cur.loc = text_value(v, 100)
+      elseif name == 'LOCATION' then cur.loc = text_value(v, LOC_MAX)
       elseif name == 'DESCRIPTION' then cur.desc = v                 -- cleaned in finish, if kept
       elseif name == 'UID' then cur.uid = v:sub(1, 80)
       elseif name == 'RRULE' then cur.rr = v
@@ -458,7 +465,7 @@ function C.parser(body, off, today)
       if m then for _j, t in ipairs(m) do ev.ex[#ev.ex + 1] = t end end
     end
     -- far too many: keep the repeating ones and those nearest today
-    if #events > MAX_EVENTS then
+    if #events > MAX_EVENTS and not all then
       local now = today * DAY
       table.sort(events, function(a, b)
         local da = a.rr and -1 or math.abs(a.s - now)
@@ -473,8 +480,8 @@ function C.parser(body, off, today)
   return p
 end
 
-function C.parse_ics(body, off, today)
-  local p = C.parser(body, off, today)
+function C.parse_ics(body, off, today, all)
+  local p = C.parser(body, off, today, all)
   while not p.step(1000000000) do end
   return p.events
 end
@@ -523,13 +530,77 @@ function C.load_cache(text)
   return events, updated, bytes, packed
 end
 
+------------------------------------------------------------------ writing iCalendar
+
+function C.is_local(url) return url and url:match('^local://') ~= nil end
+function C.local_file(url) return url:match('^local://(.+)$') end
+
+local function two(n) return string.format('%02d', n) end
+local function ics_date(day)
+  local y, m, d = C.civil(day)
+  return string.format('%04d', y) .. two(m) .. two(d)
+end
+local function ics_time(t) return ics_date(t // DAY) .. 'T' .. two(t % DAY // 3600) .. two(t % 3600 // 60) .. two(t % 60) end
+local ICS_ESC = { ['\\'] = '\\\\', [';'] = '\\;', [','] = '\\,', ['\n'] = '\\n' }
+local function ics_esc(s) return (tostring(s):gsub('[\\;,\n]', ICS_ESC)) end
+-- lines longer than 75 bytes go on in lines that start with a space, never inside a character
+local function fold(l, out)
+  local limit = 75
+  while #l > limit do
+    local cut_at = limit
+    while cut_at > 1 and l:byte(cut_at + 1) and l:byte(cut_at + 1) >= 128 and l:byte(cut_at + 1) < 192 do cut_at = cut_at - 1 end
+    out[#out + 1] = l:sub(1, cut_at)
+    l = ' ' .. l:sub(cut_at + 1)
+  end
+  out[#out + 1] = l
+end
+
+-- events (wall seconds, as read) -> an iCalendar file; times are written as floating local times,
+-- which every calendar program shows at the same wall-clock time
+function C.ics_text(events, utc_now)
+  local out = {}
+  fold('BEGIN:VCALENDAR', out)
+  fold('VERSION:2.0', out)
+  fold('PRODID:-//touch-licorice-apps//Calendar//EN', out)
+  fold('CALSCALE:GREGORIAN', out)
+  local stamp = ics_time(utc_now or 0) .. 'Z'
+  local seen = {}
+  for k, ev in ipairs(events) do
+    local uid = ev.uid or ('ev' .. k .. '-' .. (utc_now or 0) .. '@xteink')
+    if seen[uid] then uid = uid .. '-' .. k end      -- a moved instance read as an event of its own
+    seen[uid] = true
+    fold('BEGIN:VEVENT', out)
+    fold('UID:' .. uid, out)
+    fold('DTSTAMP:' .. stamp, out)
+    if ev.ad then
+      fold('DTSTART;VALUE=DATE:' .. ics_date(ev.s // DAY), out)
+      fold('DTEND;VALUE=DATE:' .. ics_date(math.max(ev.e, ev.s + DAY) // DAY), out)
+    else
+      fold('DTSTART:' .. ics_time(ev.s), out)
+      if ev.e > ev.s then fold('DTEND:' .. ics_time(ev.e), out) end
+    end
+    if ev.rr then fold('RRULE:' .. ev.rr, out) end
+    if ev.ex and #ev.ex > 0 then
+      local t = {}
+      for _j, x in ipairs(ev.ex) do t[#t + 1] = ev.ad and ics_date(x // DAY) or ics_time(x) end
+      fold('EXDATE' .. (ev.ad and ';VALUE=DATE:' or ':') .. table.concat(t, ','), out)
+    end
+    fold('SUMMARY:' .. ics_esc(ev.sum or ''), out)
+    if ev.loc and ev.loc ~= '' then fold('LOCATION:' .. ics_esc(ev.loc), out) end
+    if ev.desc and ev.desc ~= '' then fold('DESCRIPTION:' .. ics_esc(ev.desc), out) end
+    fold('END:VEVENT', out)
+  end
+  fold('END:VCALENDAR', out)
+  return table.concat(out, '\r\n') .. '\r\n'
+end
+
 ------------------------------------------------------------------ recurrence
 
 local MAX_PERIODS = 3000
 
 local function overlaps(s, e, w0, w1) return s < w1 and (e > w0 or (e == s and s >= w0)) end
 local function instance(ev, s, e, cal)
-  return { s = s, e = e, ad = ev.ad, sum = ev.sum, loc = ev.loc, desc = ev.desc, uid = ev.uid, cal = cal }
+  return { s = s, e = e, ad = ev.ad, sum = ev.sum, loc = ev.loc, desc = ev.desc, uid = ev.uid, cal = cal, ev = ev }
 end
 
 -- the days of a month that a MONTHLY/YEARLY rule picks

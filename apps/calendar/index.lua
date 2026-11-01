@@ -181,6 +181,8 @@ __mods['cal'] = function()
 -- the reader's). Numbers may be 32-bit on the device, so nothing goes past 2037.
 --
 -- calendars.txt: one calendar a line, "Name|address|on" (or just the address; "off" hides it).
+--                The reader's own calendar is "Name|local://My calendar.ics|on": its events live in
+--                that iCalendar file in AppFiles/calendar/ (C.ics_text writes it).
 -- c<hash>.txt:   a calendar's cache, "#cal<TAB>updated<TAB>offset<TAB>bytes" then one event a line,
 --                start, end, all-day, RRULE, EXDATEs, UID, title, place, notes (tab-separated).
 
@@ -521,11 +523,14 @@ local TEXT_MAX = { DESCRIPTION = 1600, SUMMARY = 500, LOCATION = 400 }
 
 -- iCalendar text -> events near `today` (a day number): those within two months back and
 -- 400 days ahead, and every repeating one that has not ended. Notes are cut to keep memory low.
+-- With `all` (the reader's own calendar, written back after every change) every event is kept,
+-- with longer texts.
 -- C.parser reads it in pieces: p.step(bytes) reads about that many and is true when done, then
 -- p.events (p.pos of p.size tells how far it is). The host closes an app whose callback runs too
 -- long ("callback exceeded its time budget"), and reading 200 KB at once did on the device.
-function C.parser(body, off, today)
+function C.parser(body, off, today, all)
   local w0, w1 = today * DAY - KEEP_BACK, today * DAY + KEEP_AHEAD
+  local SUM_MAX, LOC_MAX, DESC_MAX = all and 300 or 120, all and 300 or 100, all and 1500 or 400
   local events, moved = {}, {}
   local cur, depth = nil, 0
 
@@ -542,13 +547,15 @@ function C.parser(body, off, today)
       end
     end
     if ev.cancel then return end
-    if ev.rr then
-      local r = C.rule(ev.rr, off)
-      if r.till and r.till < w0 then return end
-    elseif ev.e < w0 or ev.s > w1 then
-      return
+    if not all then
+      if ev.rr then
+        local r = C.rule(ev.rr, off)
+        if r.till and r.till < w0 then return end
+      elseif ev.e < w0 or ev.s > w1 then
+        return
+      end
     end
-    if ev.desc then ev.desc = text_value(ev.desc, 400) end    -- only for the events kept
+    if ev.desc then ev.desc = text_value(ev.desc, DESC_MAX) end    -- only for the events kept
     events[#events + 1] = ev
   end
 
@@ -563,11 +570,11 @@ function C.parser(body, off, today)
         cur = nil
       elseif cur and depth > 0 then depth = depth - 1 end
     elseif cur and depth == 0 then           -- an alarm's own SUMMARY must not replace the title
-      if name == 'SUMMARY' then cur.sum = text_value(v, 120)
+      if name == 'SUMMARY' then cur.sum = text_value(v, SUM_MAX)
       elseif name == 'DTSTART' then cur.s, cur.ad = C.parse_dt(v, off)
       elseif name == 'DTEND' then cur.e = C.parse_dt(v, off)
       elseif name == 'DURATION' then cur.dur = C.parse_dur(v)
-      elseif name == 'LOCATION' then cur.loc = text_value(v, 100)
+      elseif name == 'LOCATION' then cur.loc = text_value(v, LOC_MAX)
       elseif name == 'DESCRIPTION' then cur.desc = v                 -- cleaned in finish, if kept
       elseif name == 'UID' then cur.uid = v:sub(1, 80)
       elseif name == 'RRULE' then cur.rr = v
@@ -630,7 +637,7 @@ function C.parser(body, off, today)
       if m then for _j, t in ipairs(m) do ev.ex[#ev.ex + 1] = t end end
     end
     -- far too many: keep the repeating ones and those nearest today
-    if #events > MAX_EVENTS then
+    if #events > MAX_EVENTS and not all then
       local now = today * DAY
       table.sort(events, function(a, b)
         local da = a.rr and -1 or math.abs(a.s - now)
@@ -645,8 +652,8 @@ function C.parser(body, off, today)
   return p
 end
 
-function C.parse_ics(body, off, today)
-  local p = C.parser(body, off, today)
+function C.parse_ics(body, off, today, all)
+  local p = C.parser(body, off, today, all)
   while not p.step(1000000000) do end
   return p.events
 end
@@ -695,13 +702,77 @@ function C.load_cache(text)
   return events, updated, bytes, packed
 end
 
+------------------------------------------------------------------ writing iCalendar
+
+function C.is_local(url) return url and url:match('^local://') ~= nil end
+function C.local_file(url) return url:match('^local://(.+)$') end
+
+local function two(n) return string.format('%02d', n) end
+local function ics_date(day)
+  local y, m, d = C.civil(day)
+  return string.format('%04d', y) .. two(m) .. two(d)
+end
+local function ics_time(t) return ics_date(t // DAY) .. 'T' .. two(t % DAY // 3600) .. two(t % 3600 // 60) .. two(t % 60) end
+local ICS_ESC = { ['\\'] = '\\\\', [';'] = '\\;', [','] = '\\,', ['\n'] = '\\n' }
+local function ics_esc(s) return (tostring(s):gsub('[\\;,\n]', ICS_ESC)) end
+-- lines longer than 75 bytes go on in lines that start with a space, never inside a character
+local function fold(l, out)
+  local limit = 75
+  while #l > limit do
+    local cut_at = limit
+    while cut_at > 1 and l:byte(cut_at + 1) and l:byte(cut_at + 1) >= 128 and l:byte(cut_at + 1) < 192 do cut_at = cut_at - 1 end
+    out[#out + 1] = l:sub(1, cut_at)
+    l = ' ' .. l:sub(cut_at + 1)
+  end
+  out[#out + 1] = l
+end
+
+-- events (wall seconds, as read) -> an iCalendar file; times are written as floating local times,
+-- which every calendar program shows at the same wall-clock time
+function C.ics_text(events, utc_now)
+  local out = {}
+  fold('BEGIN:VCALENDAR', out)
+  fold('VERSION:2.0', out)
+  fold('PRODID:-//touch-licorice-apps//Calendar//EN', out)
+  fold('CALSCALE:GREGORIAN', out)
+  local stamp = ics_time(utc_now or 0) .. 'Z'
+  local seen = {}
+  for k, ev in ipairs(events) do
+    local uid = ev.uid or ('ev' .. k .. '-' .. (utc_now or 0) .. '@xteink')
+    if seen[uid] then uid = uid .. '-' .. k end      -- a moved instance read as an event of its own
+    seen[uid] = true
+    fold('BEGIN:VEVENT', out)
+    fold('UID:' .. uid, out)
+    fold('DTSTAMP:' .. stamp, out)
+    if ev.ad then
+      fold('DTSTART;VALUE=DATE:' .. ics_date(ev.s // DAY), out)
+      fold('DTEND;VALUE=DATE:' .. ics_date(math.max(ev.e, ev.s + DAY) // DAY), out)
+    else
+      fold('DTSTART:' .. ics_time(ev.s), out)
+      if ev.e > ev.s then fold('DTEND:' .. ics_time(ev.e), out) end
+    end
+    if ev.rr then fold('RRULE:' .. ev.rr, out) end
+    if ev.ex and #ev.ex > 0 then
+      local t = {}
+      for _j, x in ipairs(ev.ex) do t[#t + 1] = ev.ad and ics_date(x // DAY) or ics_time(x) end
+      fold('EXDATE' .. (ev.ad and ';VALUE=DATE:' or ':') .. table.concat(t, ','), out)
+    end
+    fold('SUMMARY:' .. ics_esc(ev.sum or ''), out)
+    if ev.loc and ev.loc ~= '' then fold('LOCATION:' .. ics_esc(ev.loc), out) end
+    if ev.desc and ev.desc ~= '' then fold('DESCRIPTION:' .. ics_esc(ev.desc), out) end
+    fold('END:VEVENT', out)
+  end
+  fold('END:VCALENDAR', out)
+  return table.concat(out, '\r\n') .. '\r\n'
+end
+
 ------------------------------------------------------------------ recurrence
 
 local MAX_PERIODS = 3000
 
 local function overlaps(s, e, w0, w1) return s < w1 and (e > w0 or (e == s and s >= w0)) end
 local function instance(ev, s, e, cal)
-  return { s = s, e = e, ad = ev.ad, sum = ev.sum, loc = ev.loc, desc = ev.desc, uid = ev.uid, cal = cal }
+  return { s = s, e = e, ad = ev.ad, sum = ev.sum, loc = ev.loc, desc = ev.desc, uid = ev.uid, cal = cal, ev = ev }
 end
 
 -- the days of a month that a MONTHLY/YEARLY rule picks
@@ -1270,6 +1341,11 @@ end
 -- into XTApps/calendar/files/). Each is fetched over Wi-Fi when older than the sync interval (or
 -- on Sync), read on the device and kept as c<hash>.txt: only events near today and the repeating
 -- ones, so the views and the lock screen (lockscreen.lua) work offline.
+--
+-- My calendar is the reader's own: + adds an event to it, and its events can be edited and
+-- deleted from their box. They live in an iCalendar file the user can see and take,
+-- AppFiles/calendar/My calendar.ics (ctx.files), read again at every start (so it can be edited
+-- elsewhere too) and written after every change, with its c<hash>.txt for the lock screen.
 
 local C = require('cal')
 local V = require('views')
@@ -1286,7 +1362,8 @@ local cfg = { ws = 1, every = 6, lock = 'off', mode = 'week' }
 local cals = {}
 local mode, anchor, back_mode = 'week', 0, nil
 local ag = { first = 0, starts = { 1 }, page = 1 }
-local screen = 'main'                 -- main | settings
+local screen = 'main'                 -- main | settings | edit
+local form = nil                       -- the event being edited (screen 'edit')
 local hits = {}
 local status, ERR = nil, nil
 local OFF = 0                          -- the UTC offset
@@ -1311,6 +1388,60 @@ local function load_cal(c)
   local events, updated, bytes, packed = C.load_cache(kit.read(C.cache_name(c.url)))
   c.events, c.updated, c.bytes, c.packed = events, events and updated or nil, bytes, packed
 end
+
+------------------------------------------------------------------ the reader's own calendar
+
+local LOCAL_NAME, LOCAL_URL = 'My calendar', 'local://My calendar.ics'
+local function is_local(c) return C.is_local(c.url) end
+local function local_cal()
+  for _k, c in ipairs(cals) do if is_local(c) then return c end end
+  return nil
+end
+
+-- a file in AppFiles/calendar/: its text; nil, 'absent' when it is not there; nil, 'no files'
+-- when the firmware has no app files (API 2.9)
+local function files_read(name)
+  local F = ctx.files
+  if not F then return nil, 'no files' end
+  local parts, off = {}, 0
+  for _k = 1, 16 do                                   -- up to 1 MB
+    local ok, piece = pcall(function() return F:read(name, off, 65536) end)
+    if not ok or type(piece) ~= 'string' then
+      if off == 0 then return nil, 'absent' end
+      break
+    end
+    if piece == '' then break end
+    parts[#parts + 1] = piece
+    off = off + #piece
+    if #piece < 65536 then break end
+    pcall(function() ctx.budget:extend() end)
+  end
+  return table.concat(parts)
+end
+
+-- read My calendar's file (all of it: it is written back whole), and give the lock screen its cache
+local function load_local(c)
+  local e, _wall, today = clock()
+  local body, why = files_read(C.local_file(c.url))
+  if body then
+    c.events = C.parse_ics(body, OFF, today, true)
+  elseif why == 'absent' or not c.events then
+    c.events = {}
+  end
+  c.updated, c.bytes, c.packed, c.err = e, body and #body or 0, 0, nil
+  kit.write(C.cache_name(c.url), C.cache_text(c.events, e, OFF, c.bytes, 0))
+end
+
+local function save_local(c)
+  local e = clock()
+  local text = C.ics_text(c.events, e)
+  local name = C.local_file(c.url)
+  local ok, res, err = pcall(function() return ctx.files:write(name, text) end)
+  if not ok or not res then status = 'Not saved to AppFiles/calendar: ' .. kit.short(tostring(ok and err or res), 30) end
+  c.updated, c.bytes = e, #text
+  kit.write(C.cache_name(c.url), C.cache_text(c.events, e, OFF, #text, 0))
+  data_ver = data_ver + 1
+end
 local function load_all()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.ws = t.ws == '0' and 0 or 1
@@ -1320,7 +1451,10 @@ local function load_all()
   for _k, l in ipairs(LOCKS) do if t.lock == l then cfg.lock = l end end
   for _k, m in ipairs(MODES) do if t.mode == m then mode = m end end
   cals = C.parse_list(kit.read('calendars.txt'))
-  for _k, c in ipairs(cals) do load_cal(c) end
+  for _k, c in ipairs(cals) do
+    load_cal(c)
+    if is_local(c) then load_local(c) end
+  end
   data_ver = data_ver + 1
 end
 
@@ -1422,10 +1556,15 @@ local function sync(force, only)
   local e = clock()
   local q = {}
   for _k, c in ipairs(cals) do
-    if c.on and ((only and c == only) or (not only and (force or stale(c, e)))) then q[#q + 1] = c end
+    if c.on and not is_local(c) and ((only and c == only) or (not only and (force or stale(c, e)))) then q[#q + 1] = c end
   end
   if #q == 0 then
-    if force then status = #cals == 0 and 'No calendars: add one in Settings.' or 'No calendar is shown.' end
+    if force then
+      local net = false
+      for _k, c in ipairs(cals) do if not is_local(c) then net = true end end
+      status = #cals == 0 and 'No calendars: add one in Settings.' or not net and 'My calendar is on the reader: nothing to sync.'
+        or 'No calendar is shown.'
+    end
     return
   end
   for _k, c in ipairs(q) do c.err = nil end
@@ -1444,6 +1583,7 @@ end
 
 ------------------------------------------------------------------ the shown period
 
+local edit_event, ask_delete, ask_text    -- (below)
 local vkey, vinsts = nil, {}
 local function insts(first, n)
   local key = first .. ':' .. n .. ':' .. data_ver .. ':' .. OFF
@@ -1512,6 +1652,191 @@ end
 
 ------------------------------------------------------------------ boxes
 
+------------------------------------------------------------------ editing My calendar
+
+local DURS = { 15, 30, 45, 60, 90, 120, 180, 240, 360, 480 }      -- minutes
+local FREQS = { { '', 'Never' }, { 'DAILY', 'Every day' }, { 'WEEKLY', 'Every week' },
+                { 'MONTHLY', 'Every month' }, { 'YEARLY', 'Every year' } }
+local uid_n = 0
+
+local function new_uid()
+  local e = clock()
+  uid_n = uid_n + 1
+  return e .. '-' .. ((kit.now_ms() or 0) % 100000) .. '-' .. uid_n .. '@touch-licorice-apps'
+end
+
+local function freq_of(rr) return rr and (rr:upper():match('FREQ=(%u+)') or '') or '' end
+
+edit_event = function(c, ev, day)
+  local f = { cal = c, ev = ev, sum = '', day = day, ad = false, min = 9 * 60, dur = 60, days = 1, freq = '', loc = '', desc = '' }
+  if ev then
+    f.sum, f.loc, f.desc = ev.sum or '', ev.loc or '', ev.desc or ''
+    f.day, f.ad = ev.s // DAY, ev.ad == true
+    if f.ad then f.days = math.max(1, (ev.e - ev.s + DAY - 1) // DAY)
+    else f.min, f.dur = ev.s % DAY // 60, math.max(0, (ev.e - ev.s) // 60) end
+    f.freq, f.rr0 = freq_of(ev.rr), ev.rr
+    f.freq0 = f.freq
+  end
+  form, screen, status = f, 'edit', nil
+end
+
+local function new_event()
+  local _e, _w, today = clock()
+  edit_event(nil, nil, mode == 'agenda' and today or anchor)
+end
+
+local function ensure_local()
+  local c = local_cal()
+  if not c then
+    c = { name = LOCAL_NAME, url = LOCAL_URL, on = true }
+    cals[#cals + 1] = c
+    load_local(c)                       -- a file left from before comes back with it
+  end
+  if not c.on then c.on = true end
+  save_list()
+  return c
+end
+
+local function save_form()
+  local f = form
+  if not f.sum:match('%S') then status = 'Type a title first.'; return end
+  local c = f.cal or ensure_local()
+  local ev = f.ev
+  if not ev then
+    ev = { uid = new_uid(), ex = {} }
+    c.events = c.events or {}
+    c.events[#c.events + 1] = ev
+  end
+  ev.sum = f.sum
+  ev.loc = f.loc ~= '' and f.loc or nil
+  ev.desc = f.desc ~= '' and f.desc or nil
+  ev.ad = f.ad
+  ev.s = f.day * DAY + (f.ad and 0 or f.min * 60)
+  ev.e = f.ad and ev.s + f.days * DAY or ev.s + f.dur * 60
+  if f.freq == '' then ev.rr = nil
+  elseif f.freq == f.freq0 and f.rr0 then ev.rr = f.rr0          -- keep a rule with more in it
+  else ev.rr = 'FREQ=' .. f.freq end
+  ev.rule, ev.exset = nil, nil            -- C.expand's copies of the rule and the skipped days
+  save_local(c)
+  anchor, form, screen = f.day, nil, 'main'
+  status = status or ('Saved in ' .. c.name .. '.')
+end
+
+ask_delete = function(it)
+  local c, ev = it.cal, it.ev
+  local function drop()
+    for k, x in ipairs(c.events) do if x == ev then table.remove(c.events, k); break end end
+    save_local(c); kit.close(); status = status or 'Deleted.'
+  end
+  local rows
+  if ev.rr then
+    rows = { { { 'This one', function()
+                 ev.ex = ev.ex or {}
+                 ev.ex[#ev.ex + 1] = it.s
+                 ev.exset = nil
+                 save_local(c); kit.close(); status = status or ('Deleted on ' .. C.date(it.s // DAY) .. '.')
+               end }, { 'All', drop } }, { { 'Cancel', kit.close } } }
+  else
+    rows = { { { 'Delete', drop }, { 'Cancel', kit.close } } }
+  end
+  kit.show({ title = 'Delete "' .. kit.short(ev.sum ~= '' and ev.sum or '(no title)', 30) .. '"?',
+             lines = { ev.rr and 'It repeats: delete this one or all of them.' or 'From My calendar on this reader.' },
+             rows = rows, cancel = kit.close })
+end
+
+local function parse_date(s)
+  s = (s or ''):gsub('%s', '')
+  local y, m, d = s:match('^(%d%d%d%d)%-(%d%d?)%-(%d%d?)$')
+  if not y then d, m, y = s:match('^(%d%d?)[./](%d%d?)[./](%d%d%d%d)$') end
+  y, m, d = tonumber(y), tonumber(m), tonumber(d)
+  if not y or m < 1 or m > 12 or d < 1 or d > C.month_len(y, m) or y < 1971 or y > 2037 then return nil end
+  return C.days(y, m, d)
+end
+-- "9", "9:30", "0930", "9.30" -> minutes; "" -> false (all day); nil when it is not a time
+local function parse_time(s)
+  s = (s or ''):gsub('%s', '')
+  if s == '' then return false end
+  local h, mi = s:match('^(%d%d?)[:.]?(%d%d)$')
+  if not h then h, mi = s:match('^(%d%d?)$'), '0' end
+  h, mi = tonumber(h), tonumber(mi)
+  if not h or h > 23 or mi > 59 then return nil end
+  return h * 60 + mi
+end
+
+local function dur_label(f)
+  if f.ad then return f.days .. (f.days == 1 and ' day' or ' days') end
+  local h, m = f.dur // 60, f.dur % 60
+  return (h > 0 and (h .. ' h') or '') .. (h > 0 and m > 0 and ' ' or '') .. ((m > 0 or h == 0) and (m .. ' min') or '')
+end
+local function freq_label(f)
+  for _k, q in ipairs(FREQS) do if q[1] == f.freq then return q[2] end end
+  return f.freq:lower()
+end
+
+local function form_rows(f)
+  local hm = string.format('%02d:%02d', f.min // 60, f.min % 60)
+  return {
+    { 'sum', 'Title', f.sum ~= '' and f.sum or '(tap to type)' },
+    { 'day', 'Date', C.date(f.day, true), true },
+    { 'time', 'Starts', f.ad and 'All day' or hm, true },
+    { 'len', 'Length', dur_label(f), true },
+    { 'rep', 'Repeats', freq_label(f), true },
+    { 'loc', 'Place', f.loc ~= '' and f.loc or '-' },
+    { 'desc', 'Notes', f.desc ~= '' and (f.desc:gsub('\n', ' ')) or '-' },
+  }
+end
+local FORM_Y, FORM_H = 92, 84
+
+local function step_form(key, dir)
+  local f = form
+  if key == 'day' then f.day = f.day + dir
+  elseif key == 'time' then
+    if f.ad then f.ad, f.min = false, 9 * 60
+    else f.min = (f.min + 30 * dir) % (24 * 60) end
+  elseif key == 'len' then
+    if f.ad then f.days = math.max(1, math.min(31, f.days + dir))
+    else
+      local k = 1
+      for i, d in ipairs(DURS) do if d <= f.dur then k = i end end
+      if DURS[k] ~= f.dur and dir > 0 then k = k - 1 end
+      f.dur = DURS[math.max(1, math.min(#DURS, k + dir))]
+    end
+  elseif key == 'rep' then
+    local k = 1
+    for i, q in ipairs(FREQS) do if q[1] == f.freq then k = i end end
+    f.freq = FREQS[(k - 1 + dir) % #FREQS + 1][1]
+  end
+end
+
+local function one_line(s) return (s:gsub('[\r\n]+', ' ')) end
+
+local function type_form(key)
+  local f = form
+  if key == 'sum' then
+    ask_text('Title', f.sum, function(s) if s then f.sum = kit.short(one_line(s), 120) end end)
+  elseif key == 'loc' then
+    ask_text('Place', f.loc, function(s) if s then f.loc = kit.short(one_line(s), 120) end end)
+  elseif key == 'desc' then
+    ask_text('Notes', f.desc, function(s) if s then f.desc = s end end)
+  elseif key == 'day' then
+    local y, m, d = C.civil(f.day)
+    ask_text('Date (YYYY-MM-DD or DD.MM.YYYY)', string.format('%04d-%02d-%02d', y, m, d), function(s)
+      local day = s and parse_date(s)
+      if day then f.day = day elseif s then status = 'Not a date: ' .. kit.short(s, 20) end
+    end)
+  elseif key == 'time' then
+    ask_text('Time (9:30, 14:00; empty for all day)', f.ad and '' or string.format('%02d:%02d', f.min // 60, f.min % 60), function(s)
+      if not s then return end
+      local t = parse_time(s)
+      if t == false then f.ad = true
+      elseif t then f.ad, f.min = false, t
+      else status = 'Not a time: ' .. kit.short(s, 20) end
+    end)
+  else
+    step_form(key, 1)
+  end
+end
+
 local function show_event(it)
   local lines = { C.when(it) }
   if it.loc and it.loc ~= '' then lines[#lines + 1] = 'At ' .. it.loc end
@@ -1524,12 +1849,17 @@ local function show_event(it)
     lines[#lines + 1] = ''
     lines[#lines + 1] = table.concat(keep, '\n')
   end
-  kit.show({ title = it.sum ~= '' and it.sum or '(no title)', lines = lines, rows = { { { 'Close', kit.close } } }, cancel = kit.close })
+  local rows = { { { 'Close', kit.close } } }
+  if it.cal and is_local(it.cal) and it.ev then
+    rows = { { { 'Edit', function() kit.close(); edit_event(it.cal, it.ev) end },
+               { 'Delete', function() ask_delete(it) end } }, rows[1] }
+  end
+  kit.show({ title = it.sum ~= '' and it.sum or '(no title)', lines = lines, rows = rows, cancel = kit.close })
 end
 
 local function host_of(url) return url:match('^%a+://([^/]+)') or url end
 
-local function ask_text(title, value, fn)
+ask_text = function(title, value, fn)
   ctx.input:text({ title = title, text = value or '', max_chars = 400, max_bytes = 256 }, function(c, s)
     local ok, e = pcall(fn, s)
     if not ok then ERR = tostring(e) end
@@ -1554,7 +1884,7 @@ local function add_calendar()
 end
 
 local function calendar_box(c)
-  local info = { kit.short(host_of(c.url), 40) .. '/...' }
+  local info = { is_local(c) and ('AppFiles/calendar/' .. C.local_file(c.url)) or (kit.short(host_of(c.url), 40) .. '/...') }
   if c.err then info[#info + 1] = 'Last sync: ' .. c.err end
   kit.show({
     title = c.name, lines = info, cancel = kit.close,
@@ -1570,10 +1900,12 @@ local function calendar_box(c)
           end)
         end } },
       { { 'Delete', function()
-          kit.show({ title = 'Delete "' .. c.name .. '"?', lines = { 'Only this list forgets it; the calendar itself is not touched.' },
+          kit.show({ title = 'Delete "' .. c.name .. '"?', lines = { is_local(c) and
+                       ('Only this list forgets it; its file AppFiles/calendar/' .. C.local_file(c.url) .. ' stays on the card and comes back with the next event added with +.')
+                       or 'Only this list forgets it; the calendar itself is not touched.' },
                      cancel = kit.close, rows = { { { 'Delete', function()
                        for k, x in ipairs(cals) do if x == c then table.remove(cals, k); break end end
-                       pcall(function() ctx.storage:remove(C.cache_name(c.url)) end)
+                       if not is_local(c) then pcall(function() ctx.storage:remove(C.cache_name(c.url)) end) end
                        save_list(); data_ver = data_ver + 1; kit.close()
                      end }, { 'Cancel', kit.close } } } })
         end },
@@ -1610,9 +1942,15 @@ end
 
 local function main_buttons() return { '<', 'Today', '>', syncing() and 'Wait' or 'Sync', 'More' } end
 local function settings_buttons() return { 'Back', 'Add', syncing() and 'Wait' or 'Sync now' } end
+local function edit_buttons() return { 'Cancel', 'Save' } end
+local function buttons()
+  return screen == 'settings' and settings_buttons() or screen == 'edit' and edit_buttons() or main_buttons()
+end
 -- '<' and '>' get narrow buttons and the words share the rest ("Today" did not fit a fifth)
 local ARROW_W = 64
 local function arrow(b) return b == '<' or b == '>' end
+-- + (a new event in My calendar) sits at the right of the title line: the bottom row has no room
+local PLUS_X, PLUS_Y, PLUS_W, PLUS_H = W - 62, 56, 54, 42
 local function button_rect(k, bs)
   local n, narrow = #bs, 0
   for _, b in ipairs(bs) do if arrow(b) then narrow = narrow + 1 end end
@@ -1627,10 +1965,12 @@ local function draw_main(gg)
   for k, m in ipairs(MODES) do
     kit.button(gg, (k - 1) * tw + 4, 4, tw - 8, TAB_H - 8, MODE_LABEL[m], { line_width = m == mode and 4 or 1 })
   end
+  kit.button(gg, PLUS_X, PLUS_Y, PLUS_W, PLUS_H, '+', { font = 'large' })
   if #cals == 0 then
     gg:text(16, 70, 'Calendar', { font = kit.font('large') })
     local y = 130
-    for _k, l in ipairs(kit.wrap('No calendars yet. Tap More, then Add, and type the calendar\'s secret iCal address '
+    for _k, l in ipairs(kit.wrap('No calendars yet. The + above adds an event to My calendar, kept on this reader. '
+        .. 'To show a Google or other calendar, tap More, then Add, and type its secret iCal address '
         .. '(Google Calendar on the web: Settings > your calendar > Integrate calendar > Secret address in iCal format). '
         .. 'Or copy a calendars.txt with "Name|address" lines into XTApps/calendar/files/ over USB.', 'medium', W - 32)) do
       gg:text(16, y, l, { font = kit.font('medium') })
@@ -1640,7 +1980,7 @@ local function draw_main(gg)
     return
   end
   local title = V.title(mode, mode == 'agenda' and ag.first or anchor, cfg.ws)
-  gg:text(12, 62, kit.short(title, 34), { font = kit.font('large') })
+  gg:text(12, 62, kit.short(title, 30), { font = kit.font('large') })
   local first, n = V.window(mode, mode == 'agenda' and ag.first or anchor, cfg.ws)
   local env = env_for(first, n)
   if mode == 'month' then hits = V.month(gg, env, anchor, 2, TOP, W - 4, BODY_H)
@@ -1652,7 +1992,37 @@ local function draw_main(gg)
     if ag.page > #ag.starts then ag.page = #ag.starts end
     hits = V.agenda(gg, env, rows, ag.starts[ag.page], 4, TOP, W - 8, BODY_H)
     if #rows == 0 then gg:text(16, TOP + 20, 'No events in these 60 days.', { font = kit.font('medium') }) end
-    gg:text(W - 70, 70, ag.page .. '/' .. #ag.starts, { font = kit.font('small') })
+    gg:text(PLUS_X - 56, 70, ag.page .. '/' .. #ag.starts, { font = kit.font('small') })
+  end
+end
+
+local function draw_edit(gg)
+  gg:text(16, 12, form.ev and 'Edit event' or 'New event', { font = kit.font('large') })
+  gg:text(16, 56, (form.cal or local_cal() or { name = LOCAL_NAME }).name .. ', on this reader', { font = kit.font('small') })
+  gg:line(0, FORM_Y - 4, W, FORM_Y - 4)
+  for k, r in ipairs(form_rows(form)) do
+    local y = FORM_Y + (k - 1) * FORM_H
+    gg:text(16, y + 8, r[2], { font = kit.font('small') })
+    gg:text(16, y + 36, C.fit(kit.font('medium'), r[3], r[4] and W - 176 or W - 32), { font = kit.font('medium') })
+    if r[4] then
+      kit.button(gg, W - 152, y + 14, 64, FORM_H - 28, '<', { font = 'medium' })
+      kit.button(gg, W - 80, y + 14, 64, FORM_H - 28, '>', { font = 'medium' })
+    end
+    gg:line(12, y + FORM_H - 2, W - 12, y + FORM_H - 2)
+  end
+end
+
+local function tap_edit(x, y)
+  if y < FORM_Y then return end
+  status = nil
+  local k = (y - FORM_Y) // FORM_H + 1
+  local r = form_rows(form)[k]
+  if not r then return end
+  local ry = FORM_Y + (k - 1) * FORM_H
+  if r[4] and y >= ry + 6 and y < ry + FORM_H - 6 and x >= W - 156 then
+    step_form(r[1], x < W - 84 and -1 or 1)
+  else
+    type_form(r[1])
   end
 end
 
@@ -1677,7 +2047,10 @@ local function draw_settings(gg)
     local y = CAL_Y + (k - 1) * CAL_H
     gg:text(20, y + 6, kit.short(c.name, 30) .. (c.on and '' or '  (hidden)'), { font = kit.font('medium') })
     local info
-    if sync_cur == c then info = 'syncing...'
+    if is_local(c) then
+      local n = #(c.events or {})
+      info = n .. (n == 1 and ' event' or ' events') .. ', on this reader: AppFiles/calendar'
+    elseif sync_cur == c then info = 'syncing...'
     elseif c.err then info = 'error: ' .. c.err
     elseif c.updated then
       info = #(c.events or {}) .. ' events, ' .. ((c.bytes or 0) // 1024) .. ' KB' ..
@@ -1738,12 +2111,12 @@ function on_draw(c, gg)
     pump()
     gg:clear(0)
     if kit.modal() and not white_image() then kit.draw_modal(gg); return end
-    if screen == 'settings' then draw_settings(gg) else draw_main(gg) end
+    if screen == 'settings' then draw_settings(gg) elseif screen == 'edit' then draw_edit(gg) else draw_main(gg) end
     local line = (reading and ('Reading ' .. kit.short(reading.c.name, 20) .. '... ' ..
                     (reading.p.pos * 100 // math.max(1, reading.p.size)) .. '%'))
       or (sync_cur and ('Syncing ' .. kit.short(sync_cur.name, 24) .. '...')) or status or ERR
     if line then gg:text(12, BTN_Y - 26, kit.short(line, 48), { font = kit.font('small') }) end
-    local bs = screen == 'settings' and settings_buttons() or main_buttons()
+    local bs = buttons()
     for k, b in ipairs(bs) do
       local x, y, bw, bh = button_rect(k, bs)
       kit.button(gg, x, y, bw, bh, b, { font = 'medium' })
@@ -1786,7 +2159,7 @@ end
 
 local function tap(x, y)
   if kit.tap_modal(x, y) then return end
-  local bs = screen == 'settings' and settings_buttons() or main_buttons()
+  local bs = buttons()
   for k, b in ipairs(bs) do
     local bx, by, bw, bh = button_rect(k, bs)
     if x >= bx and x < bx + bw and y >= by and y < by + bh then
@@ -1797,11 +2170,15 @@ local function tap(x, y)
       elseif b == 'Sync' or b == 'Sync now' then sync(true)
       elseif b == 'More' then screen = 'settings'
       elseif b == 'Back' then screen = 'main'
-      elseif b == 'Add' then add_calendar() end
+      elseif b == 'Add' then add_calendar()
+      elseif b == 'Cancel' then form, screen = nil, 'main'
+      elseif b == 'Save' then save_form() end
       return
     end
   end
   if screen == 'settings' then tap_settings(x, y); return end
+  if screen == 'edit' then tap_edit(x, y); return end
+  if x >= PLUS_X and x < PLUS_X + PLUS_W and y >= PLUS_Y and y < PLUS_Y + PLUS_H then new_event(); return end
   if y < TAB_H then
     local m = MODES[x // (W // 4) + 1]
     if m then set_mode(m) end
@@ -1825,6 +2202,7 @@ local function go_back()
   if kit.modal() then
     if kit.modal().cancel then kit.modal().cancel() end
   elseif screen == 'settings' then screen = 'main'
+  elseif screen == 'edit' then form, screen = nil, 'main'
   elseif back_mode then
     local m = back_mode
     set_mode(m)
@@ -1837,10 +2215,10 @@ function on_input(c, ev)
     watchdog()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
-      local g = ev.gesture
-      if not kit.modal() and screen == 'main' and (g == 'swipe_left' or g == 'swipe_right') then
-        step(g == 'swipe_left' and 1 or -1)
-      elseif g == nil or g == 'tap' then
+      local gest = ev.gesture
+      if not kit.modal() and screen == 'main' and (gest == 'swipe_left' or gest == 'swipe_right') then
+        step(gest == 'swipe_left' and 1 or -1)
+      elseif gest == nil or gest == 'tap' then
         tap(ev.x or 0, ev.y or 0)
       end
     elseif ev.type == 'key' and kit.key_accepted(ev) then
@@ -1886,5 +2264,6 @@ function on_leave() pcall(function() ctx.net:keep_wifi(1) end) end
 if rawget(_G, '__TEST') then
   __TEST.api = { C = C, V = V, cals = function() return cals end, cfg = cfg, mode = function() return mode end,
                  anchor = function() return anchor end, ag = ag, screen = function() return screen end,
-                 status = function() return status end, hits = function() return hits end }
+                 status = function() return status end, hits = function() return hits end,
+                 form = function() return form end, parse_date = parse_date, parse_time = parse_time }
 end

@@ -22,6 +22,8 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
 | **Go problems** | 620 life-and-death problems (tsumego) in three levels, made and checked for the app, and your own SGF files; hint, retry |
 | **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
+| **Word Hive** | a daily honeycomb of seven letters: make words with the middle letter, find the pangram, climb the ranks; hints, yesterday's answers |
+| **Cryptogram** | a daily quote with every letter swapped for another: work out the code; hint, check, 471 quotes |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
 | **Mahjong** | Mahjong Solitaire: 100 tiles in a pyramid made for the portrait screen; every deal clearable; hint, shuffle, undo |
@@ -38,7 +40,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
-| **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views; can be the lock screen |
+| **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
@@ -147,6 +149,19 @@ Life and death in the corner: find the move that kills the group or saves it. 62
 levels (one, two, three or more moves), made for the app and checked by a solver: exactly one first
 move works, the other side answers with its strongest reply, a wrong move with its refutation.
 Your own SGF problem files in `AppFiles/tsumego/` become collections too. [More](apps/tsumego/README.md)
+
+### Word Hive
+
+A new hive of seven letters every day: make words of four letters or more that use the middle
+letter, find the pangram (all seven), climb the ranks to Queen bee. Hints counts the words still to
+find by first letter and length; Yesterday shows the answers you missed. 730 puzzles from the
+public-domain 12dicts word list. [More](apps/wordhive/README.md)
+
+### Cryptogram
+
+A quote a day with every letter swapped for another. Tap a letter, then the key it stands for;
+every place it appears fills in. Hint, Check (strikes out wrong guesses), earlier days kept.
+471 proverbs and public-domain quotes. [More](apps/cryptogram/README.md)
 
 ### Klondike
 
@@ -276,7 +291,9 @@ can be the lock screen. [More](apps/weather/README.md)
 Your Google Calendar, or any calendar with an iCal address, read-only: Day (a timeline), Week,
 Month and Agenda, with each event's time, place and notes a tap away. Add a calendar with its
 secret iCal address, on the reader or as a `calendars.txt` over USB. It syncs over Wi-Fi and
-works offline. It can be the lock screen in any of the four views; Day then runs from the current
+works offline. **+** adds an event to My calendar, kept on the reader as
+`AppFiles/calendar/My calendar.ics`, editable, repeating if you like, and readable by any calendar
+program. It can be the lock screen in any of the four views; Day then runs from the current
 hour on. A port of calendar.koplugin (AGPL v3). [More](apps/calendar/README.md)
 
 ### TBR Planner
@@ -404,6 +421,8 @@ python -I apps/freecell/test_freecell.py
 python -I apps/chess/test_chess.py
 python -I apps/tsumego/test_tsumego.py
 python -I apps/textadv/test_textadv.py
+python -I apps/wordhive/test_wordhive.py
+python -I apps/cryptogram/test_cryptogram.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
 python -I apps/klondike/test_klondike.py

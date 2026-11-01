@@ -466,4 +466,126 @@ g.tap_label('More')
 assert not any('Worker' in t for t in texts()), texts()
 assert all(u.startswith('https://calendar.google.com/') for u, h in sent), sent
 g.no_err()
+
+# ---- My calendar: events made on the reader, kept in AppFiles/calendar/My calendar.ics
+FILES_STUB = '''
+files = files or {}
+ctx.files = {
+  read = function(self, n, off, len) local s = files[n]; if not s then return nil, 'not_found' end
+    off = off or 0; return s:sub(off + 1, off + (len or 65536)) end,
+  write = function(self, n, d) files[n] = d; return true end,
+  list = function(self) local t = {} for k, v in pairs(files) do t[#t + 1] = { name = k, size = #v } end return t end,
+}
+'''
+g.L.execute(FILES_STUB)
+files = g.L.globals().files
+P = A().parse_date
+assert P('2026-10-27') == C.days(2026, 10, 27) and P('27.10.2026') == C.days(2026, 10, 27) and P('3/1/2027') == C.days(2027, 1, 3)
+assert P('2026-02-30') is None and P('tomorrow') is None
+T = A().parse_time
+assert T('9') == 540 and T('9:30') == 570 and T('0930') == 570 and T('14.05') == 845 and T('') is False
+assert T('25:00') is None and T('9:75') is None
+g.tap_label('Back')
+g.tap_label('Day')
+FY, FH = 92, 84
+
+
+def row_tap(k, where='value'):
+    y = FY + (k - 1) * FH + 40
+    g.tap({'value': 20, '<': 480 - 120, '>': 480 - 48}[where], y)
+
+
+g.tap_label('+')
+assert A().screen() == 'edit' and has('New event') and has('Tuesday 27 October 2026'), texts()
+g.tap_label('Save')
+assert A().status() == 'Type a title first.' and A().screen() == 'edit'
+row_tap(1); typed('Piano lesson')
+row_tap(3, '>')
+assert has('09:30'), texts()
+row_tap(3); typed('16:15')
+row_tap(4, '>')
+assert has('1 h 30 min'), texts()
+row_tap(5, '>')
+assert has('Every day'), texts()
+row_tap(5, '>')
+assert has('Every week') and not has('Type a title first.'), texts()
+row_tap(6); typed('Music school, room 3')
+row_tap(7); typed('Bring the book; scales\nand the new piece')
+g.tap_label('Save')
+assert A().screen() == 'main' and A().status() == 'Saved in My calendar.', A().status()
+ics = files['My calendar.ics']
+assert ics.startswith('BEGIN:VCALENDAR\r\n') and ics.endswith('END:VCALENDAR\r\n'), ics
+for want in ('DTSTART:20261027T161500', 'DTEND:20261027T174500', 'RRULE:FREQ=WEEKLY', 'SUMMARY:Piano lesson',
+             'LOCATION:Music school\\, room 3', 'DESCRIPTION:Bring the book\\; scales\\nand the new piece'):
+    assert want in ics, (want, ics)
+assert 'My calendar|local://My calendar.ics|on' in store['calendars.txt'], store['calendars.txt']
+assert has('16:15 - 17:45') and has('Piano lesson'), texts()
+n_req = len(requests)
+g.tap_label('Sync')
+answer_all()
+assert not any(r.startswith('local:') for r in requests[n_req:]), requests[n_req:]
+g.tap_label('More')
+assert has('My calendar') and has('1 event, on this reader: AppFiles/calendar'), texts()
+g.tap_label('Back')
+
+# the file is read again at every start: an edit made elsewhere shows, and reaches the lock screen
+files['My calendar.ics'] = ics.replace('SUMMARY:Piano lesson', 'SUMMARY:Piano class')
+g.restart()
+g.L.execute(f'now_sec = {NOW}')
+g.tap_label('Day')
+assert has('Piano class'), texts()
+lt, _n, _L = lock_texts('agenda')
+assert any('Piano class' in s for s in lt), lt
+
+
+def event_hit(name):
+    for h in A().hits().values():
+        if h.it and str(h.it.sum) == name:
+            return int(h.x) + 3, int(h.y) + 3
+    raise AssertionError((name, texts()))
+
+
+# edit: move it to Wednesday
+g.tap(*event_hit('Piano class'))
+assert has('Edit') and has('Delete'), texts()
+g.tap_label('Edit')
+assert has('Edit event') and has('16:15') and has('Every week') and has('Music school, room 3'), texts()
+row_tap(2, '>')
+g.tap_label('Save')
+assert 'DTSTART:20261028T161500' in files['My calendar.ics'] and has('Wednesday 28 October 2026'), texts()
+# delete one week of it, then the whole series
+g.tap(*event_hit('Piano class'))
+g.tap_label('Delete')
+assert has('It repeats: delete this one or all of') and has('This one'), texts()
+g.tap_label('This one')
+assert 'EXDATE:20261028T161500' in files['My calendar.ics'] and not has('Piano class'), files['My calendar.ics']
+for _ in range(7):
+    g.tap_label('>')
+assert has('Wednesday 4 November 2026') and has('Piano class'), texts()
+g.tap(*event_hit('Piano class'))
+g.tap_label('Delete')
+g.tap_label('All')
+assert 'BEGIN:VEVENT' not in files['My calendar.ics'] and not has('Piano class'), files['My calendar.ics']
+
+# an all-day event over two days, with a long title in Turkish: folded lines, read back the same
+g.tap_label('+')
+title = 'Çalışma günü ' * 12
+row_tap(1); typed(title)
+row_tap(3); typed('')
+assert has('All day'), texts()
+row_tap(4, '>')
+assert has('2 days'), texts()
+g.tap_label('Save')
+ics = files['My calendar.ics']
+assert 'DTSTART;VALUE=DATE:20261104' in ics and 'DTEND;VALUE=DATE:20261106' in ics, ics
+assert all(len(l.encode()) <= 75 for l in ics.split('\r\n')), [l for l in ics.split('\r\n') if len(l.encode()) > 75]
+evs = C.parse_ics(ics, 0, C.days(2026, 11, 4), True)
+assert str(evs[1].sum).startswith('Çalışma günü Çalışma'), evs[1].sum
+assert evs[1].ad and evs[1].e - evs[1].s == 2 * 86400
+# Back leaves the form without saving
+g.tap_label('+')
+row_tap(1); typed('Not kept')
+g.key('back')
+assert A().screen() == 'main' and 'Not kept' not in files['My calendar.ics']
+g.no_err()
 print('calendar: all tests passed')

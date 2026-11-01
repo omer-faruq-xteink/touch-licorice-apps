@@ -1,7 +1,8 @@
 # Calendar — XTOS Licorice mini app (API 2.9)
 
-Your Google Calendar (or any calendar with an iCal address), read-only, in **Day**, **Week**,
-**Month** and **Agenda** views, and on the **lock screen**. A port of
+Your Google Calendar (or any calendar with an iCal address), read-only, and **My calendar** for
+events you add on the reader, in **Day**, **Week**, **Month** and **Agenda** views, and on the
+**lock screen**. A port of
 [calendar.koplugin](https://github.com/omer-faruq/calendar.koplugin) for KOReader, laid out for
 the X4 Pro's 480x800 screen. Needs Wi-Fi to sync; works offline afterwards.
 
@@ -25,6 +26,21 @@ offer a similar "publish" or "subscribe" address; `webcal://` works too.
   A line with just the address also works (the host becomes its name). `off` hides it.
 
 The address is a password to your calendar: don't share `calendars.txt`.
+
+## My calendar: events added on the reader
+
+**+** (right of the date) adds an event to **My calendar**, which lives on the reader: no account,
+no Wi-Fi. A form asks for the title, the date (< and >, or tap it to type 2026-11-05 or
+05.11.2026), the start (half-hour steps, or type 9:30; empty means all day), the length, whether it
+repeats (every day, week, month or year), a place and notes. Tap one of its events for **Edit** and
+**Delete** (a repeating one: this one, or all of them).
+
+Its events are an ordinary iCalendar file, `AppFiles/calendar/My calendar.ics` on the SD card,
+written after every change: copy it to a computer or phone and import it into any calendar program.
+The app reads the file again every time it starts, so you can also edit it elsewhere or put an
+exported `.ics` there under that name (repeat rules, skipped days and notes are kept; alarms and
+guests are not). Uninstalling the app leaves the file on the card. My calendar is shown with the
+others, can be hidden or renamed in More, and is never synced.
 
 ## Using it
 

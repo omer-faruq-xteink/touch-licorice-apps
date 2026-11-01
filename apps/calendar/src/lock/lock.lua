@@ -32,7 +32,7 @@ local function try_refresh(cals, every, e, t)
   if asked_at and e - asked_at < 3600 then return end
   local q = {}
   for _k, c in ipairs(cals) do
-    if c.on and (not c.updated or e - c.updated > every) then q[#q + 1] = c end
+    if c.on and not C.is_local(c.url) and (not c.updated or e - c.updated > every) then q[#q + 1] = c end
   end
   if #q == 0 then return end
   asked_at = e
@@ -77,7 +77,8 @@ function on_draw(c, gg)
     for _k, cal in ipairs(cals) do
       local events, updated = C.load_cache(read(C.cache_name(cal.url)))
       cal.events, cal.updated = events, events and updated or nil
-      if cal.on and (not oldest or (cal.updated or 0) < oldest) then oldest = cal.updated or 0 end
+      -- My calendar is on the reader: it is never synced
+      if cal.on and not C.is_local(cal.url) and (not oldest or (cal.updated or 0) < oldest) then oldest = cal.updated or 0 end
     end
 
     local y, m, d = C.civil(today)
