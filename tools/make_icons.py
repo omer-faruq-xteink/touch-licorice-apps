@@ -538,6 +538,27 @@ def textadv(p):
         p.line([(16, y), (40, y + 3)], 2)
 
 
+def wordhive(p):
+    # a honeycomb of seven hexagons, the middle one black
+    import math
+    r, nb = 15, 28
+    cells = [(48, 48)] + [(48 + nb * math.cos(math.radians(-90 + 60 * k)), 48 + nb * math.sin(math.radians(-90 + 60 * k))) for k in range(6)]
+    for i, (cx, cy) in enumerate(cells):
+        pts = [(cx + r * math.cos(math.radians(60 * k)), cy + r * math.sin(math.radians(60 * k))) for k in range(6)]
+        p.poly(pts, fill=i == 0, w=3)
+
+
+def cryptogram(p):
+    # three puzzle cells: a solved letter over its line, the code letter below
+    big, small = font('arialbd.ttf', 26), font('arialbd.ttf', 14)
+    for k, (a, b) in enumerate((('C', 'X'), ('O', 'M'), ('D', 'Q'))):
+        x = 18 + k * 30
+        p.text((x, 34), a, big)
+        p.line([(x - 11, 52), (x + 11, 52)], 3)
+        p.text((x, 66), b, small)
+    p.rect((2, 2, 94, 94), w=3, r=10)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -549,7 +570,8 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
-         'tsumego': tsumego, 'textadv': textadv}
+         'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
+         'cryptogram': cryptogram}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

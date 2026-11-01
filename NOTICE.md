@@ -74,6 +74,18 @@ whose data is licensed CC BY-SA 4.0; senses, example sentences and similar words
 3.0**, Princeton University ("WordNet ® Princeton University", licence in
 `apps/anki/LICENSE-WORDNET.txt`). The deck files are therefore shared under CC BY-SA 4.0 as well.
 
+## Word Hive puzzles — `apps/wordhive/data/`
+
+Built from **2of12inf** of the **12dicts** word lists by Alan Beale (http://wordlist.aspell.net/12dicts/),
+which he released to the public domain, asking for acknowledgment. Its inflected forms come from
+**AGID** by Kevin Atkinson; its copyright and permission notice is in
+`apps/wordhive/LICENSE-12dicts.txt`.
+
+## Cryptogram quotes — `apps/cryptogram/quotes.txt`
+
+Proverbs and short quotes by authors who died long ago (Shakespeare, Franklin, Austen, Twain,
+Wilde and others); the texts are in the public domain.
+
 ## Chess puzzles — `apps/chess/data/`
 
 Puzzles from the Lichess puzzle database, https://database.lichess.org/#puzzles, released under
