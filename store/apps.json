@@ -279,6 +279,16 @@
     "live_version": "0.1.0",
     "submitted": "2026-10-29"
   },
+  "tarot": {
+    "name": "Tarot",
+    "app_id": "tarot",
+    "listing_id": "",
+    "project_id": "e505686d-eb7a-4648-a224-859c17aa76f2",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-01"
+  },
   "tasks": {
     "name": "Tasks",
     "app_id": "tasks",
