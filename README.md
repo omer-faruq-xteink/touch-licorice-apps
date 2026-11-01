@@ -24,6 +24,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
 | **Word Hive** | a daily honeycomb of seven letters: make words with the middle letter, find the pangram, climb the ranks; hints, yesterday's answers |
 | **Cryptogram** | a daily quote with every letter swapped for another: work out the code; hint, check, 471 quotes |
+| **Word Ladder** | a daily ladder from one word to another, one letter at a time; par, hints, 730 ladders |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
@@ -163,6 +164,12 @@ public-domain 12dicts word list. [More](apps/wordhive/README.md)
 A quote a day with every letter swapped for another. Tap a letter, then the key it stands for;
 every place it appears fills in. Hint, Check (strikes out wrong guesses), earlier days kept.
 471 proverbs and public-domain quotes. [More](apps/cryptogram/README.md)
+
+### Word Ladder
+
+Change the start word into the target one letter at a time, every step a word (COLD, CORD, CARD,
+WARD, WARM). A new ladder every day, four or five letters, with par, Undo and a Hint that finds the
+next step from wherever you are. 730 ladders from the public-domain 12dicts lists. [More](apps/wordladder/README.md)
 
 ### Tarot
 
@@ -431,6 +438,7 @@ python -I apps/tsumego/test_tsumego.py
 python -I apps/textadv/test_textadv.py
 python -I apps/wordhive/test_wordhive.py
 python -I apps/cryptogram/test_cryptogram.py
+python -I apps/wordladder/test_wordladder.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py

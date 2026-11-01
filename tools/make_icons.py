@@ -578,6 +578,18 @@ def tarot(p):
     p.white_ellipse((54, 58, 76, 80))
 
 
+def wordladder(p):
+    # a ladder: CAT standing on the top rung, DOG on the bottom one
+    big = font('arialbd.ttf', 24)
+    p.line([(12, 6), (12, 90)], 5)
+    p.line([(84, 6), (84, 90)], 5)
+    for y in (38, 60, 88):
+        p.line([(12, y), (84, y)], 3)
+    for cy, word in ((22, 'CAT'), (74, 'DOG')):
+        for k, ch in enumerate(word):
+            p.text((30 + k * 18, cy), ch, big)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -590,7 +602,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
-         'cryptogram': cryptogram, 'tarot': tarot}
+         'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

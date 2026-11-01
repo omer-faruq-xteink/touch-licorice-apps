@@ -81,6 +81,11 @@ which he released to the public domain, asking for acknowledgment. Its inflected
 **AGID** by Kevin Atkinson; its copyright and permission notice is in
 `apps/wordhive/LICENSE-12dicts.txt`.
 
+## Word Ladder words — `apps/wordladder/data/`
+
+Built from the same **12dicts** lists by Alan Beale (2of12inf, 2of12, 3of6game, 3esl; public domain),
+with AGID's inflections by Kevin Atkinson; the notice is in `apps/wordladder/LICENSE-12dicts.txt`.
+
 ## Cryptogram quotes — `apps/cryptogram/quotes.txt`
 
 Proverbs and short quotes by authors who died long ago (Shakespeare, Franklin, Austen, Twain,

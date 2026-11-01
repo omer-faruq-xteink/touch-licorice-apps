@@ -1,0 +1,10 @@
+{
+  "app_id": "wordladder",
+  "display_name": "Word Ladder",
+  "version": "1.0.1",
+  "author": "omer-faruq",
+  "description": "A new word ladder every day: change the start word into the target one letter at a time, every step a word. Par, hints, earlier days.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

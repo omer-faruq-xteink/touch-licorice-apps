@@ -12,6 +12,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **Cryptogram** (new, `cryptogram.xtapp`): a quote a day with every letter swapped for another. Tap a letter of the puzzle (every place it appears is framed, with how often it appears), then the key it stands for; the next open letter is chosen. Hint shows a letter, Check strikes out wrong guesses, Erase clears one; the author is part of the puzzle. Earlier days keep their guesses. 471 proverbs and public-domain quotes (Shakespeare, Austen, Twain, Wilde, Franklin and others); How to play lists the classic tips.
 
+- **Word Ladder** (new, `wordladder.xtapp`): change the start word into the target one letter at a time, every step a word. Tap a letter of the newest word, then the new letter; letters already in their target place are underlined. Par is the shortest ladder; Undo takes back a step; Hint adds the next word of a shortest ladder from wherever you are. A new ladder every day (four letters, five on every third day), earlier days kept; 730 ladders from the public-domain 12dicts lists.
+
 - **Tarot** (new, `tarot.xtapp`): tarot cards as prompts for reflection, not fortune telling, with the pictures of Pamela Colman Smith's 1909 deck (public domain), dithered for e-ink. **Today**: tap the face-down card for the day's card; it stays until midnight, and **Journal** keeps the earlier days. **Reading**: three cards, Situation, Obstacle and Way forward; tap a card to read it. **Deck**: all 78 cards by suit with both meanings; the side buttons step through them. Every card has an upright and a reversed meaning, written for the app; reversed draws can be switched off. The pictures use the reader's image decoding, as RSS pictures do; without it the cards show as framed names.
 ## Changed
 
@@ -32,6 +34,7 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 |---|---|
 | `wordhive.xtapp` | **new**: Word Hive |
 | `cryptogram.xtapp` | **new**: Cryptogram |
+| `wordladder.xtapp` | **new**: Word Ladder |
 | `tarot.xtapp` | **new**: Tarot |
 | `tsumego.xtapp` | **new**: Go problems |
 | `textadv.xtapp` + `zork-pack.zip` | **new**: Text adventures, and Zork I-III to copy into `AppFiles/textadv/` |
