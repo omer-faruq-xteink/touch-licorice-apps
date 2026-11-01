@@ -55,7 +55,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | in review | - | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
-| `delve` | Delve | `delve` | 1.0.0 | draft | - | - | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
+| `delve` | Delve | `delve` | 1.0.0 | in review | - | 2026-11-01 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | in review | - | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | in review | - | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
 | `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
