@@ -99,6 +99,16 @@
     "live_version": "1.0.0",
     "submitted": "2026-10-29"
   },
+  "hashi": {
+    "name": "Hashi",
+    "app_id": "hashi",
+    "listing_id": "",
+    "project_id": "5bc739e3-198a-45ec-adec-c670eb0f2dae",
+    "release_version": "1.0.1",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-01"
+  },
   "instapaper": {
     "name": "Instapaper",
     "app_id": "instapaper",
