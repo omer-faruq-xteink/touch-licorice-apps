@@ -154,6 +154,21 @@ local measure_cache = {}
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
 -- a character limit set for the 480 px portrait width, scaled to the screen's width now
 local function wide(n) return math.max(8, math.floor(n * W / 480)) end
+-- s cut to fit maxw pixels in font f, whole UTF-8 characters, with "~" where it was cut
+local function fit(s, f, maxw)
+  s = tostring(s)
+  if not f then return short(s, math.floor(maxw / 11)) end
+  local function wd(t) local ok, m = pcall(function() return f:measure(t) end); return (ok and type(m) == 'number') and m or #t * 11 end
+  if wd(s) <= maxw then return s end
+  local n = utf8.len(s)
+  if not n then return short(s, math.floor(maxw / 11)) end
+  local lo, hi = 0, n - 1                         -- characters kept, found by halving
+  while lo < hi do
+    local mid = (lo + hi + 1) // 2
+    if wd(s:sub(1, (utf8.offset(s, mid + 1) or #s + 1) - 1) .. '~') <= maxw then lo = mid else hi = mid - 1 end
+  end
+  return s:sub(1, (utf8.offset(s, lo + 1) or #s + 1) - 1) .. '~'
+end
 local function note(s) status = tostring(s or '') end
 
 local function refresh() pcall(function() ctx:invalidate() end) end
@@ -1234,13 +1249,13 @@ local function draw_list(gg)
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
   local who = (multi() and acct) and (acct_label() .. ' · ') or ''
-  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), wide(44)), { font = F and F.small })
+  gg:text(8, TOP + 2, fit(who .. list.title .. range .. (list.cached and '  (offline)' or ''), F and F.small, W - 16), { font = F and F.small })
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
-    gg:text(16, y, short(it.title or '', wide(42)), { font = F and F.medium })
-    gg:text(16, y + 26, short((it.feed or '') .. '  ' .. (it.date or ''), wide(50)), { font = F and F.small })
+    gg:text(16, y, fit(it.title or '', F and F.medium, W - 32), { font = F and F.medium })
+    gg:text(16, y + 26, fit((it.feed or '') .. '  ' .. (it.date or ''), F and F.small, W - 32), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1253,7 +1268,7 @@ local function draw_feeds(gg)
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
     local it = feeds.items[i]
-    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), wide(42)), { font = F and F.medium })
+    gg:text(16, y, fit((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), F and F.medium, W - 32), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1302,7 +1317,7 @@ local function draw_settings(gg)
   local list_ = settings_list()
   for i, s in ipairs(list_) do
     local x, y, w = setting_rect(i)
-    gg:text(x, y, s[2], { font = F and F.small })
+    gg:text(x, y, fit(s[2], F and F.small, w), { font = F and F.small })
     gg:rect(x, y + 24, w, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
@@ -1311,7 +1326,7 @@ local function draw_settings(gg)
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'token' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
-    gg:text(x + 12, y + 36, short(v ~= '' and v or '(empty)', math.floor(40 * w / 448)), { font = F and F.medium })
+    gg:text(x + 12, y + 36, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
   if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
   local y = TOP + 20 + #list_ * 96

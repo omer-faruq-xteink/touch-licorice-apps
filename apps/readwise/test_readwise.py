@@ -333,6 +333,10 @@ tap(x + 5, y + 5)
 assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
 t = texts()
 assert 'landscape   (tap to change)' in t and 'no Worker is needed.' not in t, t      # two columns, no note
+def overflow():
+    """texts that run past the right edge, or into the next column (10 px a character here)"""
+    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
+assert not overflow(), overflow()
 key('back')
 # the menu in two columns: Later is the second cell of the first row
 mx, my = recs()['Later']
@@ -344,6 +348,7 @@ x, y = recs()['Inbox']; tap(x + 5, y + 5); g.flush()
 assert calls[-1][1].startswith('https://readwise.io/api/v3/list/?limit=6&location=new'), calls[-1]
 t = texts()
 assert 'Story 5' in t and 'Story 6' not in t and any('1-6 / ' in v for v in t), t
+assert not [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > 800], texts()
 tap(100, TOP + 26 + 2 * 58 + 5); g.flush()                                  # row 3: an article
 now, total = page_ind()
 key('right'); key('right')
