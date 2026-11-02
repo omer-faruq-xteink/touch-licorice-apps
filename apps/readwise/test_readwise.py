@@ -357,6 +357,7 @@ assert m == 'PATCH' and url.endswith('/update/01doc0001/') and 'tags' in json.lo
 assert len(writes()) == n_worker and not any('ERR' in x for x in texts())
 key('back'); key('back'); tap(*MENU(6))
 assert 'no Worker is needed.' in texts(), texts()
+assert 'Worker for changes on firmware before 2.18' not in texts() and 'Worker user:password (as in RSS)' not in texts(), texts()
 # landscape (API 2.18): Settings offers Screen; turning gives 800 x 480, two menu columns, 6 rows
 # a list page (Reader is asked for 6), and an open article laid out again at the same place
 L.execute("""

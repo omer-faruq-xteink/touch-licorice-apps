@@ -21,7 +21,8 @@ Reader's update endpoint:
    the token with the firmware keyboard. Easier for a long token: open the app once, put the
    reader in USB mode and write a line `token=<your token>` into
    `XTApps/readwise/files/config.txt` on the SD card.
-3. Only on firmware before 2.18, for changes: **Worker for changes on firmware before 2.18** is your Worker's address (`rss.example.workers.dev`, or
+3. Only on firmware before 2.18 (on 2.18 Settings does not show these two fields), for changes:
+   **Worker for changes on firmware before 2.18** is your Worker's address (`rss.example.workers.dev`, or
    with its path token `rss.example.workers.dev/k/<token>`), **Worker user:password** the same
    `user:password` the RSS app uses. The Worker must be a version with the Readwise relay; it
    needs no CommaFeed account for it. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through one for

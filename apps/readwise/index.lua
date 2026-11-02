@@ -1167,11 +1167,13 @@ end
 local function apply_orientation()
   if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
 end
+-- on firmware 2.18 changes need no Worker, so its two fields are left out (kept in config.txt)
 settings_list = function()
-  if not can_rotate() then return SETTINGS end
   local t = {}
-  for k, s in ipairs(SETTINGS) do t[k] = s end
-  t[#t + 1] = { 'screen', 'Screen (turns the app)' }
+  for _, s in ipairs(SETTINGS) do
+    if not (direct_patch() and (s[1] == 'host' or s[1] == 'auth')) then t[#t + 1] = s end
+  end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
   return t
 end
 setting_rect = function(i) return cell(i, TOP + 20, 96, 96) end
