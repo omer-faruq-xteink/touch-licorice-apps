@@ -7,9 +7,13 @@
 -- preview), article (paged, ends with the source QR code, Archive and Star), folders, settings.
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
+-- Portrait (480 x 800) or, on firmware with API 2.18, landscape (800 x 480), chosen in Settings:
+-- the layout follows ctx.screen's size, a list page holds the rows that fit (12 or 6) and asks
+-- for that many, the menu and Settings take two columns, and after turning, the article and the
+-- preview are laid out again at the same place.
 local W, H, TOP = 480, 800, 56
 local QR_PX = 200             -- the source QR code at the end of an article, at most this wide
-local LIST_N = 12
+local LIST_N = 12             -- list rows a page: the rows that fit (sync_screen)
 local LIST_MAX_ITEMS = 240    -- list rows kept in memory as pages are appended
 local TEXT_MAX = 40000         -- article text kept (characters), cut at a word
 
@@ -61,7 +65,7 @@ net_pump = function()
   local ok, err = pcall(function()
     job.handle = ctx.net:request(job.opts, function(c, resp) net_finish(job, resp, nil) end)
   end)
-  if not ok then net_finish(job, nil, short(err, 60)) end
+  if not ok then net_finish(job, nil, tostring(err):sub(1, 60)) end   -- (short() is defined further down)
 end
 
 -- drop the request in flight: cancel it in the host and report it as failed
@@ -96,7 +100,7 @@ local function net_submit(opts, label, timeout, on_result)
   net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
   net_pump()
 end
-local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
+local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false, screen = 'portrait' }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -119,6 +123,7 @@ local read_accounts, load_accounts, note_accounts   -- defined in the accounts s
 -- No timer: timeouts are checked on draw and input.
 local accounts_fresh = false
 local load_page_images, release_images, draw_image_line   -- defined in the images section
+local settings_list, setting_rect, sync_screen   -- defined with Settings / before on_input
 local draw_source_line                                    -- the source QR block, images section
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
@@ -141,6 +146,23 @@ local art = { id = nil, title = '', feed = '', date = '', lines = {}, starts = {
 local measure_cache = {}
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
+-- a character limit set for the 480 px portrait width, scaled to the screen's width now
+local function wide(n) return math.max(8, math.floor(n * W / 480)) end
+-- s cut to fit maxw pixels in font f, whole UTF-8 characters, with "~" where it was cut
+local function fit(s, f, maxw)
+  s = tostring(s)
+  if not f then return short(s, math.floor(maxw / 11)) end
+  local function wd(t) local ok, m = pcall(function() return f:measure(t) end); return (ok and type(m) == 'number') and m or #t * 11 end
+  if wd(s) <= maxw then return s end
+  local n = utf8.len(s)
+  if not n then return short(s, math.floor(maxw / 11)) end
+  local lo, hi = 0, n - 1                         -- characters kept, found by halving
+  while lo < hi do
+    local mid = (lo + hi + 1) // 2
+    if wd(s:sub(1, (utf8.offset(s, mid + 1) or #s + 1) - 1) .. '~') <= maxw then lo = mid else hi = mid - 1 end
+  end
+  return s:sub(1, (utf8.offset(s, lo + 1) or #s + 1) - 1) .. '~'
+end
 local function note(s) status = tostring(s or '') end
 
 local function refresh() pcall(function() ctx:invalidate() end) end
@@ -172,13 +194,14 @@ local function load_cfg()
       if k == 'full' then cfg.full = (v == '1')
       elseif k == 'images' then cfg.images = (v == '1')
       elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
+      elseif k == 'screen' then cfg.screen = v:match('^landscape') and 'landscape' or 'portrait'
       else cfg[k] = (v:gsub('%s+$', '')) end   -- a config.txt written on Windows ends lines in CR
     end
   end
 end
 
 local function save_cfg()
-  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0')) end)
+  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0') .. '\nscreen=' .. cfg.screen) end)
 end
 
 local function base_url()
@@ -373,6 +396,7 @@ end
 
 -- paragraphs come separated by blank lines; "# " marks a heading, "> " a quote, "• " a list item
 local function layout_article(data)
+  art.data = data               -- kept, so turning the screen can lay it out again
   measure_cache = {}
   local out = {}
   local function gap(h) out[#out + 1] = { s = '', f = 'small', h = h, x = 0 } end
@@ -1088,6 +1112,32 @@ local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'Archive', 'a
 local SETTINGS = { { 'token', 'Access token (instapaper.com/developers)' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
+-- the menu's and Settings' cells: one column in portrait, two in landscape
+local function cols() return W > H and 2 or 1 end
+local function cell(i, y0, row_h, h)
+  local n = cols()
+  local cw = math.floor((W - 32 - (n - 1) * 16) / n)
+  local r, c = (i - 1) // n, (i - 1) % n
+  return 16 + c * (cw + 16), y0 + r * row_h, cw, h
+end
+local function menu_rect(i) return cell(i, 100, 70, 58) end
+
+-- landscape needs ctx.screen:set_orientation (API 2.18); Settings offers it only then
+local function can_rotate()
+  local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
+  return ok and type(f) == 'function'
+end
+local function apply_orientation()
+  if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
+end
+settings_list = function()
+  local t = {}
+  for k, v in ipairs(SETTINGS) do t[k] = v end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  return t
+end
+setting_rect = function(i) return cell(i, TOP + 20, 96, 96) end
+
 local function bar(gg, labels)
   local F = ctx.fonts
   local n = #labels
@@ -1113,15 +1163,15 @@ local function draw_empty(gg, y, err, empty_text)
   local F = ctx.fonts
   if not err then gg:text(16, y + 20, empty_text, { font = F and F.medium }); return end
   gg:text(16, y + 20, 'Could not load this list.', { font = F and F.medium })
-  gg:text(16, y + 54, short(err, 46), { font = F and F.small })
+  gg:text(16, y + 54, short(err, wide(46)), { font = F and F.small })
   gg:text(16, y + 80, 'Check Wi-Fi, then tap Reload.', { font = F and F.small })
 end
 
 local function draw_status(gg)
   local F = ctx.fonts
   local s = (busy() and loading) or status
-  if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
-  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
+  if s ~= '' then gg:text(8, H - 26, short(s, wide(52)), { font = F and F.small }) end
+  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, wide(52)), { font = F and F.small }) end
 end
 
 -- the menu's rows: account folders, the chosen account's menu, or the single-account menu
@@ -1141,9 +1191,9 @@ local function draw_menu(gg)
   gg:text(16, 20, 'Instapaper', { font = F and F.large })
   gg:text(16, 54, (cfg.token ~= '' and 'signed in with an access token' or 'no access token: open Settings'), { font = F and F.small })
   for i, m in ipairs(menu_items()) do
-    local y = 100 + (i - 1) * 70
-    gg:rect(16, y, W - 32, 58)
-    gg:text(36, y + 16, m[1], { font = F and F.medium })
+    local x, y, w, h = menu_rect(i)
+    gg:rect(x, y, w, h)
+    gg:text(x + 20, y + 16, m[1], { font = F and F.medium })
   end
   draw_status(gg)
 end
@@ -1177,13 +1227,13 @@ local function draw_list(gg)
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
   local who = (multi() and acct) and (acct_label() .. ' · ') or ''
-  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  gg:text(8, TOP + 2, fit(who .. list.title .. range .. (list.cached and '  (offline)' or ''), F and F.small, W - 16), { font = F and F.small })
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
-    gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
-    gg:text(16, y + 26, short((it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
+    gg:text(16, y, fit(it.title or '', F and F.medium, W - 32), { font = F and F.medium })
+    gg:text(16, y + 26, fit((it.feed or '') .. '  ' .. (it.date or ''), F and F.small, W - 32), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1196,7 +1246,7 @@ local function draw_feeds(gg)
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
     local it = feeds.items[i]
-    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), 42), { font = F and F.medium })
+    gg:text(16, y, fit((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), F and F.medium, W - 32), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1237,25 +1287,28 @@ local function draw_article(gg)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
+  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, wide(42)), { font = F and F.medium }) end
   draw_status(gg)
 end
 
 local function draw_settings(gg)
   local F = ctx.fonts
   bar(gg, { 'Back' })
-  for i, s in ipairs(SETTINGS) do
-    local y = TOP + 20 + (i - 1) * 96
-    gg:text(16, y, s[2], { font = F and F.small })
-    gg:rect(16, y + 24, W - 32, 48)
+  local list_ = settings_list()
+  for i, s in ipairs(list_) do
+    local x, y, w = setting_rect(i)
+    gg:text(x, y, fit(s[2], F and F.small, w), { font = F and F.small })
+    gg:rect(x, y + 24, w, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
+    if s[1] == 'screen' then v = cfg.screen .. '   (tap to change)' end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'token' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
-    gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
+    gg:text(x + 12, y + 36, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
-  local y = TOP + 20 + #SETTINGS * 96
+  if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
+  local y = TOP + 20 + #list_ * 96
   for _, l in ipairs({ 'Create an application at instapaper.com/developers', 'and generate an access token for it. Or put a line',
                        'token=... in XTApps/instapaper/files/config.txt', 'on the SD card over USB.' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 24
@@ -1264,6 +1317,7 @@ local function draw_settings(gg)
 end
 
 local function draw_impl(gg)
+  sync_screen()
   gg:clear(0)
   if screen == 'menu' then draw_menu(gg)
   elseif screen == 'list' then draw_list(gg)
@@ -1277,13 +1331,13 @@ function on_draw(c, gg)
   if not G then return end
   local ok, e = pcall(draw_impl, G)
   -- a drawing error is painted for this frame only; the next good frame no longer shows it
-  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), wide(46))) end) end
 end
 
 ------------------------------------------------------------------ input
 
 local function edit_setting(i)
-  local s = SETTINGS[i]
+  local s = settings_list()[i]
   if not s then return end
   if s[1] == 'cache' then
     if #copies() == 0 then clear_armed = false; note('nothing saved offline'); return end
@@ -1294,6 +1348,12 @@ local function edit_setting(i)
   clear_armed = false
   if s[1] == 'full' then cfg.full = not cfg.full; save_cfg(); return end
   if s[1] == 'images' then cfg.images = not cfg.images; save_cfg(); return end
+  if s[1] == 'screen' then
+    cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
+    save_cfg()
+    apply_orientation()           -- the next callback sees the new size (sync_screen)
+    return
+  end
   if s[1] == 'size' then
     local nxt = 1
     for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
@@ -1334,8 +1394,8 @@ end
 local function tap(x, y)
   if screen == 'menu' then
     for i, m in ipairs(menu_items()) do
-      local y0 = 100 + (i - 1) * 70
-      if x >= 16 and x < W - 16 and y >= y0 and y < y0 + 58 then
+      local mx, my, mw, mh = menu_rect(i)
+      if x >= mx and x < mx + mw and y >= my and y < my + mh then
         if m[2] == 'acct' then acct = m[3]
         elseif m[2] == 'accounts' then acct = nil
         elseif m[2] == 'settings' then screen = 'settings'
@@ -1346,9 +1406,9 @@ local function tap(x, y)
     end
   elseif screen == 'settings' then
     if y < 46 then screen = 'menu'; clear_armed = false; load_accounts(); return end
-    for i = 1, #SETTINGS do
-      local y0 = TOP + 20 + (i - 1) * 96 + 24
-      if y >= y0 and y < y0 + 48 then edit_setting(i); return end
+    for i = 1, #settings_list() do
+      local sx, sy, sw = setting_rect(i)
+      if x >= sx and x < sx + sw and y >= sy + 24 and y < sy + 72 then edit_setting(i); return end
     end
   elseif screen == 'list' then
     if y < 46 then
@@ -1511,10 +1571,35 @@ local function preview_tap(x, y)
   end
 end
 
+-- the screen's size, read at every callback: after the app turns (Settings), the list keeps the
+-- rows that fit (and asks for that many), the article is laid out again at the same share of
+-- its pages, the preview box again for its article
+sync_screen = function()
+  local okw, w = pcall(function() return tonumber(ctx.screen.width) end)
+  local okh, h = pcall(function() return tonumber(ctx.screen.height) end)
+  w, h = okw and w or 480, okh and h or 800
+  if w == W and h == H then return end
+  W, H = w, h
+  LIST_N = math.max(3, math.floor((H - TOP - 26 - 22) / 58))
+  PREVIEW_BOTTOM = H - 64
+  list.top = window_of(list.top or 1)
+  feeds.top = window_of(feeds.top or 1)
+  if art.data and #art.lines > 0 then
+    local share = (art.page - 1) / math.max(1, art.pages)
+    release_images()
+    layout_article(art.data)
+    art.page = math.min(art.pages, math.floor(share * art.pages + 0.5) + 1)
+    art.start_page = art.start_page and art.page
+    load_page_images()
+  end
+  if preview then open_preview(preview.item) end
+end
+
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
   keep_wifi()   -- still in use: Wi-Fi stays up (at most one call per 30 s)
   local ok, e = pcall(function()
+    sync_screen()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
       -- a long press (the host reports a "hold" phase and / or a "long" gesture) opens the preview
@@ -1570,6 +1655,7 @@ end
 
 function on_load(c)
   load_cfg()
+  if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
   read_accounts(cache_read('accounts.txt'))   -- the saved list draws the folders at once
   keep_wifi(true)
   -- ask the account list right away: it also brings Wi-Fi up for whatever is opened next

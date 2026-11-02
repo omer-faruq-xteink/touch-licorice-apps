@@ -8,6 +8,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
+- **Instapaper and wallabag: landscape**: on firmware with API 2.18, Settings has **Screen** (portrait or landscape). In landscape a list page holds 6 articles and the server is asked for 6 at a time, the menu and Settings take two columns, titles and articles use the wider lines, and an open article keeps its place when the app turns. Older firmware shows no Screen setting; everything else is unchanged.
+
 - **Readwise 0.3.0: needs firmware with API 2.18, no Worker**: the reader can now send PATCH, so **Archive**, **Later** / **Inbox**, **tags** and marking a document seen go straight to Readwise with your access token; the Worker fields are gone from Settings. Firmware older than XT Licorice 26110201 refuses to install it and asks for an update. **Landscape**: Settings has **Screen** (portrait or landscape); in landscape a list page holds 6 rows and Reader is asked for 6 at a time, the menu and Settings take two columns, and articles and titles use the wider lines.
 
 - **Tasks: items that repeat**: an item's menu has **Repeat**: every day, week, 2 weeks, month, or any number of days, weeks or months (Other: "3 days", "6 months"). Tick it when done: it keeps the day and comes back un-ticked when it is due again, counted from that day, so chores like watering plants or changing a filter keep coming round. Under it: "next Thu 5 Nov" while ticked, "due today" or "late 2 days" while open. **Clear done** leaves repeating items; on the lock screen a repeating item appears again on its day. In `lists.txt` it is a tail you can also write by hand: `[x] Water plants {every 4 days, done 2026-11-01}`.
@@ -22,6 +24,8 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `delve.xtapp` | **new**: Delve |
+| `instapaper.xtapp` | Instapaper 0.2.0: landscape on firmware 2.18 |
+| `wallabag.xtapp` | wallabag 1.1: landscape on firmware 2.18 |
 | `readwise.xtapp` | Readwise 0.3.0: changes straight to Readwise, landscape; needs firmware 2.18 |
 | `tasks.xtapp` | Tasks 1.1.0: items that repeat |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip`, `zork-pack.zip` | unchanged since v0.16.0 |

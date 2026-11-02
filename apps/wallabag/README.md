@@ -43,6 +43,10 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
   **Starred** to remove the star).
 - **Text size** and **Images in articles** in Settings, as in Instapaper: pictures come as
   greyscale JPEGs from the free images.weserv.nl resizer, for the page on screen only.
+- **Screen** in Settings (firmware with API 2.18): portrait or landscape. The app turns at once and
+  opens that way next time; in landscape a list page holds 6 rows (the server is asked for 6 at a
+  time), the menu and Settings take two columns, and an open article is laid out again at about the
+  same place.
 - Opened articles and lists are saved on the card and open without a connection. The 100 most
   recently opened articles stay; an archived article's copy goes at once. **Articles saved
   offline** in Settings: tap twice to delete them all.

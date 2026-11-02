@@ -172,7 +172,7 @@ store = g.store
 
 # ---- no settings: the app opens on Settings; typing them in, then Back signs in
 t = texts()
-assert 'Server (e.g. app.wallabag.it or https://your.server)' in t and 'Client ID' in t and len(calls) == 0, t
+assert 'Server (app.wallabag.it or your own)' in t and 'Client ID' in t and len(calls) == 0, t
 for i, v in enumerate(['wb.example.org/', 'cid', 'secret-wrong', 'tester', 'pw']):
     tap(*SET(i)); typed(v)
 assert 'host=wb.example.org/\nclient_id=cid\nclient_secret=secret-wrong\nusername=tester\npassword=pw' in store['config.txt'], store['config.txt']
@@ -321,4 +321,39 @@ assert 'Story 2' in t and 'Story 4' in t and 'Story 5' not in t and any('1-3 / 3
 tap(*BAR(2)); g.flush()
 assert 'perPage=3&page=2' in calls[-1][1] and 'Story 5' in texts()
 state['old'] = False
+
+# landscape (API 2.18): Settings offers Screen; turning gives 800 x 480, two menu columns, 6 rows
+# a list page (the server is asked for 6), nothing past the edges, and back to portrait
+L.execute("""
+ctx.screen = { width = 480, height = 800, orientation = 'portrait' }
+function ctx.screen.set_orientation(self, o)
+  if o == 'landscape' then self.width, self.height, self.orientation = 800, 480, 'landscape'
+  else self.width, self.height, self.orientation = 480, 800, 'portrait' end
+  return true
+end
+""")
+g = load(); g.flush()
+def overflow():
+    """texts that run past the right edge, or into the next column (10 px a character here)"""
+    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
+if 'Settings' in texts(): tap_label('Settings')
+assert 'Screen (turns the app)' in texts(), texts()
+x, y = recs()['portrait   (tap to change)']; tap(x + 5, y + 5)
+assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
+assert 'landscape   (tap to change)' in texts() and not overflow(), overflow()
+key('back')
+cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
+assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns
+first = min(((y, x, s) for s, x, y in cells))[2]
+n = len(calls)
+tap_label(first); g.flush()
+asked = [c[1] for c in calls[n:]]
+assert any('perPage=6' in u for u in asked), asked
+assert not [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > 800], texts()
+key('back'); tap_label('Settings')
+x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
+g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
+g = load(); g.flush()
+assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
 print('wallabag tests passed')

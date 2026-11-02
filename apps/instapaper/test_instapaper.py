@@ -128,7 +128,7 @@ assert 'Access token (instapaper.com/developers)' in t and 'on the SD card over 
 tap(100, TOP + 20 + 24 + 10)
 g.inputs[1](g.ctx, '  tok123456789  ')
 g.inputs = L.table()
-assert g.store['config.txt'] == 'token=tok123456789\nsize=default\nimages=0', g.store['config.txt']
+assert g.store['config.txt'] == 'token=tok123456789\nsize=default\nimages=0\nscreen=portrait', g.store['config.txt']
 assert 'tok1...6789' in texts()
 tap(*BAR(0))                                             # Back: menu; the folder list is asked
 assert calls[-1][:2] == ('GET', 'https://www.instapaper.com/api/2/folders') and calls[-1][3] == 'Bearer tok123456789', calls[-1]
@@ -285,7 +285,7 @@ assert 'Before the pictures.' in texts() and not any('[[img' in x for x in texts
 key('back'); key('back')
 tap(*MENU(4))                                            # Settings -> Images in articles
 tap(100, TOP + 20 + 2 * 96 + 24 + 10)
-assert g.store['config.txt'].endswith('images=1'), g.store['config.txt']
+assert g.store['config.txt'].endswith('images=1\nscreen=portrait'), g.store['config.txt']
 tap(*BAR(0)); g.flush()
 tap(*MENU(0)); g.flush()
 n = len(calls)
@@ -373,4 +373,39 @@ tap(100, row)
 assert any(x.startswith('0 ') for x in texts()) and 'offline copies deleted' in texts(), texts()
 assert g.store['a5001.txt'] is None and str(g.store['cache_idx.txt']) == ''
 assert g.store['config.txt'] is not None and g.store['progress.txt'] is not None
+
+# landscape (API 2.18): Settings offers Screen; turning gives 800 x 480, two menu columns, 6 rows
+# a list page (the server is asked for 6), nothing past the edges, and back to portrait
+L.execute("""
+ctx.screen = { width = 480, height = 800, orientation = 'portrait' }
+function ctx.screen.set_orientation(self, o)
+  if o == 'landscape' then self.width, self.height, self.orientation = 800, 480, 'landscape'
+  else self.width, self.height, self.orientation = 480, 800, 'portrait' end
+  return true
+end
+""")
+g = restart(); g.flush()
+def overflow():
+    """texts that run past the right edge, or into the next column (10 px a character here)"""
+    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
+if 'Settings' in texts(): tap_label('Settings')
+assert 'Screen (turns the app)' in texts(), texts()
+x, y = recs()['portrait   (tap to change)']; tap(x + 5, y + 5)
+assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
+assert 'landscape   (tap to change)' in texts() and not overflow(), overflow()
+key('back')
+cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
+assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns
+first = min(((y, x, s) for s, x, y in cells))[2]
+n = len(calls)
+tap_label(first); g.flush()
+asked = [c[1] for c in calls[n:]]
+assert any('limit=6' in u for u in asked), asked
+assert not [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > 800], texts()
+key('back'); tap_label('Settings')
+x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
+g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
+g = restart(); g.flush()
+assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
 print('instapaper29 tests passed')

@@ -9,9 +9,13 @@
 -- preview), article (paged, ends with the source QR code, Archive and Star), tags, settings.
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
+-- Portrait (480 x 800) or, on firmware with API 2.18, landscape (800 x 480), chosen in Settings:
+-- the layout follows ctx.screen's size, a list page holds the rows that fit (12 or 6) and asks
+-- for that many, the menu and Settings take two columns, and after turning, the article and the
+-- preview are laid out again at the same place.
 local W, H, TOP = 480, 800, 56
 local QR_PX = 200             -- the source QR code at the end of an article, at most this wide
-local LIST_N = 12
+local LIST_N = 12             -- list rows a page: the rows that fit (sync_screen)
 local LIST_MAX_ITEMS = 240    -- list rows kept in memory as pages are appended
 local TEXT_MAX = 40000         -- article text kept (characters), cut at a word
 
@@ -98,7 +102,7 @@ local function net_submit(opts, label, timeout, on_result)
   net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
   net_pump()
 end
-local cfg = { host = '', client_id = '', client_secret = '', username = '', password = '', size = 'default', images = false }
+local cfg = { host = '', client_id = '', client_secret = '', username = '', password = '', size = 'default', images = false, screen = 'portrait' }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -109,6 +113,7 @@ local SIZES = {
 local SIZE_ORDER = { 'default', 'large', 'small' }
 local function st() return SIZES[cfg.size] or SIZES.default end
 local load_page_images, release_images, draw_image_line   -- defined in the images section
+local settings_list, setting_rect, sync_screen   -- defined with Settings / before on_input
 local draw_source_line                                    -- the source QR block, images section
 local function cpre() return '' end           -- (the Instapaper app's per-account cache prefix: one account here)
 
@@ -126,6 +131,23 @@ local art = { id = nil, title = '', feed = '', date = '', lines = {}, starts = {
 local measure_cache = {}
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
+-- a character limit set for the 480 px portrait width, scaled to the screen's width now
+local function wide(n) return math.max(8, math.floor(n * W / 480)) end
+-- s cut to fit maxw pixels in font f, whole UTF-8 characters, with "~" where it was cut
+local function fit(s, f, maxw)
+  s = tostring(s)
+  if not f then return short(s, math.floor(maxw / 11)) end
+  local function wd(t) local ok, m = pcall(function() return f:measure(t) end); return (ok and type(m) == 'number') and m or #t * 11 end
+  if wd(s) <= maxw then return s end
+  local n = utf8.len(s)
+  if not n then return short(s, math.floor(maxw / 11)) end
+  local lo, hi = 0, n - 1                         -- characters kept, found by halving
+  while lo < hi do
+    local mid = (lo + hi + 1) // 2
+    if wd(s:sub(1, (utf8.offset(s, mid + 1) or #s + 1) - 1) .. '~') <= maxw then lo = mid else hi = mid - 1 end
+  end
+  return s:sub(1, (utf8.offset(s, lo + 1) or #s + 1) - 1) .. '~'
+end
 local function note(s) status = tostring(s or '') end
 
 local function refresh() pcall(function() ctx:invalidate() end) end
@@ -160,6 +182,7 @@ local function load_cfg()
   for k, v in (s or ''):gmatch('([%w_]+)=([^\n]*)') do
     if k == 'images' then cfg.images = (v == '1')
     elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
+    elseif k == 'screen' then cfg.screen = v:match('^landscape') and 'landscape' or 'portrait'
     elseif cfg[k] ~= nil then cfg[k] = (v:gsub('%s+$', '')) end   -- a config.txt written on Windows ends lines in CR
   end
 end
@@ -168,6 +191,7 @@ local function save_cfg()
   local t = {}
   for _, k in ipairs({ 'host', 'client_id', 'client_secret', 'username', 'password', 'size' }) do t[#t + 1] = k .. '=' .. cfg[k] end
   t[#t + 1] = 'images=' .. (cfg.images and '1' or '0')
+  t[#t + 1] = 'screen=' .. cfg.screen
   pcall(function() ctx.storage:write('config.txt', table.concat(t, '\n')) end)
 end
 
@@ -451,6 +475,7 @@ end
 
 -- paragraphs come separated by blank lines; "# " marks a heading, "> " a quote, "• " a list item
 local function layout_article(data)
+  art.data = data               -- kept, so turning the screen can lay it out again
   measure_cache = {}
   local out = {}
   local function gap(h) out[#out + 1] = { s = '', f = 'small', h = h, x = 0 } end
@@ -548,9 +573,11 @@ end
 -- GET /api/entries: unread is "not archived", starred, archive, or one tag (by its label).
 -- detail=metadata leaves the article text out; a server that ignores it (older than 2.4) sends
 -- every text, and twelve of them pass the reader's 128 KB, so such a list is asked 3 at a time.
-local per_page = LIST_N
+-- Otherwise a page is the rows that fit (LIST_N follows the screen: 12, or 6 in landscape).
+local three_at_a_time = false
+local function per_page() return three_at_a_time and math.min(3, LIST_N) or LIST_N end
 local function list_path(page)
-  local q = '/api/entries.json?sort=created&order=desc&detail=metadata&perPage=' .. per_page .. '&page=' .. page
+  local q = '/api/entries.json?sort=created&order=desc&detail=metadata&perPage=' .. per_page() .. '&page=' .. page
   if list.id then return q .. '&tags=' .. url_encode(list.id) end
   if list.kind == 'starred' then return q .. '&starred=1' end
   if list.kind == 'archive' then return q .. '&archive=1' end
@@ -594,7 +621,7 @@ local function to_list(d, page)
     end
   end
   local pg, pages = type(d) == 'table' and tonumber(d.page) or page, type(d) == 'table' and tonumber(d.pages) or nil
-  return { items = items, has_more = pages and (pg or page) < pages or (#items >= per_page) }
+  return { items = items, has_more = pages and (pg or page) < pages or (#items >= per_page()) }
 end
 
 -- GET /api/tags -> { {id = label, name = label} ... }, by name
@@ -833,8 +860,8 @@ local function fetch_page(page, append, after, retried)
   if not append then list.err = nil end
   request(path, function(data, err, raw)
     local ok = false
-    if not data and err == 'too long for the reader' and per_page > 3 then
-      per_page = 3                              -- the server sends the texts too: fewer at a time
+    if not data and err == 'too long for the reader' and not three_at_a_time and LIST_N > 3 then
+      three_at_a_time = true                    -- the server sends the texts too: fewer at a time
       fetch_page(1, false, after, retried)
       return
     end
@@ -1109,11 +1136,37 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'Archive', 'archive' }, { 'Tags', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'host', 'Server (e.g. app.wallabag.it or https://your.server)' }, { 'client_id', 'Client ID' },
+local SETTINGS = { { 'host', 'Server (app.wallabag.it or your own)' }, { 'client_id', 'Client ID' },
                    { 'client_secret', 'Client secret' }, { 'username', 'Username' }, { 'password', 'Password' },
                    { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 local SET_Y, SET_H = TOP + 14, 74
+
+-- the menu's and Settings' cells: one column in portrait, two in landscape
+local function cols() return W > H and 2 or 1 end
+local function cell(i, y0, row_h, h)
+  local n = cols()
+  local cw = math.floor((W - 32 - (n - 1) * 16) / n)
+  local r, c = (i - 1) // n, (i - 1) % n
+  return 16 + c * (cw + 16), y0 + r * row_h, cw, h
+end
+local function menu_rect(i) return cell(i, 100, 70, 58) end
+
+-- landscape needs ctx.screen:set_orientation (API 2.18); Settings offers it only then
+local function can_rotate()
+  local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
+  return ok and type(f) == 'function'
+end
+local function apply_orientation()
+  if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
+end
+settings_list = function()
+  local t = {}
+  for k, v in ipairs(SETTINGS) do t[k] = v end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  return t
+end
+setting_rect = function(i) return cell(i, SET_Y, SET_H, SET_H) end
 
 local function bar(gg, labels)
   local F = ctx.fonts
@@ -1140,26 +1193,26 @@ local function draw_empty(gg, y, err, empty_text)
   local F = ctx.fonts
   if not err then gg:text(16, y + 20, empty_text, { font = F and F.medium }); return end
   gg:text(16, y + 20, 'Could not load this list.', { font = F and F.medium })
-  gg:text(16, y + 54, short(err, 46), { font = F and F.small })
+  gg:text(16, y + 54, short(err, wide(46)), { font = F and F.small })
   gg:text(16, y + 80, 'Check Wi-Fi, then tap Reload.', { font = F and F.small })
 end
 
 local function draw_status(gg)
   local F = ctx.fonts
   local s = (busy() and loading) or status
-  if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
-  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
+  if s ~= '' then gg:text(8, H - 26, short(s, wide(52)), { font = F and F.small }) end
+  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, wide(52)), { font = F and F.small }) end
 end
 
 local function draw_menu(gg)
   local F = ctx.fonts
   gg:text(16, 20, 'wallabag', { font = F and F.large })
-  local who = configured() and short(cfg.username .. ' at ' .. host_of(base_url()), 46) or 'not signed in: open Settings'
+  local who = configured() and short(cfg.username .. ' at ' .. host_of(base_url()), wide(46)) or 'not signed in: open Settings'
   gg:text(16, 54, who, { font = F and F.small })
   for i, m in ipairs(MENU) do
-    local y = 100 + (i - 1) * 70
-    gg:rect(16, y, W - 32, 58)
-    gg:text(36, y + 16, m[1], { font = F and F.medium })
+    local x, y, w, h = menu_rect(i)
+    gg:rect(x, y, w, h)
+    gg:text(x + 20, y + 16, m[1], { font = F and F.medium })
   end
   draw_status(gg)
 end
@@ -1192,13 +1245,13 @@ local function draw_list(gg)
   bar(gg, { 'Back', 'Prev', 'Next', 'Reload' })
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
-  gg:text(8, TOP + 2, short(list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  gg:text(8, TOP + 2, fit(list.title .. range .. (list.cached and '  (offline)' or ''), F and F.small, W - 16), { font = F and F.small })
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
-    gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
-    gg:text(16, y + 26, short((it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
+    gg:text(16, y, fit(it.title or '', F and F.medium, W - 32), { font = F and F.medium })
+    gg:text(16, y + 26, fit((it.feed or '') .. '  ' .. (it.date or ''), F and F.small, W - 32), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1211,7 +1264,7 @@ local function draw_feeds(gg)
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
     local it = feeds.items[i]
-    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), 42), { font = F and F.medium })
+    gg:text(16, y, fit((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), F and F.medium, W - 32), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1252,26 +1305,29 @@ local function draw_article(gg)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
+  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, wide(42)), { font = F and F.medium }) end
   draw_status(gg)
 end
 
 local function draw_settings(gg)
   local F = ctx.fonts
   bar(gg, { 'Back' })
-  for i, s in ipairs(SETTINGS) do
-    local y = SET_Y + (i - 1) * SET_H
-    gg:text(16, y, s[2], { font = F and F.small })
-    gg:rect(16, y + 22, W - 32, 44)
+  local list_ = settings_list()
+  for i, s in ipairs(list_) do
+    local x, y, w = setting_rect(i)
+    gg:text(x, y, fit(s[2], F and F.small, w), { font = F and F.small })
+    gg:rect(x, y + 22, w, 44)
     local v = cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
+    if s[1] == 'screen' then v = cfg.screen .. '   (tap to change)' end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'password' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'client_secret' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
-    gg:text(28, y + 32, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
+    gg:text(x + 12, y + 32, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
-  local y = SET_Y + #SETTINGS * SET_H
+  if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
+  local y = SET_Y + #list_ * SET_H
   for _, l in ipairs({ 'In wallabag on the web: API clients management,', 'Create a new client; copy its ID and secret. Or',
                        'put host=, client_id=, client_secret=, username=,', 'password= lines in XTApps/wallabag/files/config.txt.' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 22
@@ -1280,6 +1336,7 @@ local function draw_settings(gg)
 end
 
 local function draw_impl(gg)
+  sync_screen()
   gg:clear(0)
   if screen == 'menu' then draw_menu(gg)
   elseif screen == 'list' then draw_list(gg)
@@ -1293,13 +1350,13 @@ function on_draw(c, gg)
   if not G then return end
   local ok, e = pcall(draw_impl, G)
   -- a drawing error is painted for this frame only; the next good frame no longer shows it
-  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), wide(46))) end) end
 end
 
 ------------------------------------------------------------------ input
 
 local function edit_setting(i)
-  local s = SETTINGS[i]
+  local s = settings_list()[i]
   if not s then return end
   if s[1] == 'cache' then
     if #copies() == 0 then clear_armed = false; note('nothing saved offline'); return end
@@ -1309,6 +1366,12 @@ local function edit_setting(i)
   end
   clear_armed = false
   if s[1] == 'images' then cfg.images = not cfg.images; save_cfg(); return end
+  if s[1] == 'screen' then
+    cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
+    save_cfg()
+    apply_orientation()           -- the next callback sees the new size (sync_screen)
+    return
+  end
   if s[1] == 'size' then
     local nxt = 1
     for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
@@ -1353,8 +1416,8 @@ end
 local function tap(x, y)
   if screen == 'menu' then
     for i, m in ipairs(MENU) do
-      local y0 = 100 + (i - 1) * 70
-      if x >= 16 and x < W - 16 and y >= y0 and y < y0 + 58 then
+      local mx, my, mw, mh = menu_rect(i)
+      if x >= mx and x < mx + mw and y >= my and y < my + mh then
         if m[2] == 'settings' then screen = 'settings'
         elseif m[2] == 'feeds' then fetch_feeds()
         else open_list(m[2], nil, m[1]); fetch_list() end
@@ -1363,9 +1426,9 @@ local function tap(x, y)
     end
   elseif screen == 'settings' then
     if y < 46 then screen = 'menu'; clear_armed = false; warm_up('signing in'); return end
-    for i = 1, #SETTINGS do
-      local y0 = SET_Y + (i - 1) * SET_H + 22
-      if y >= y0 and y < y0 + 44 then edit_setting(i); return end
+    for i = 1, #settings_list() do
+      local sx, sy, sw = setting_rect(i)
+      if x >= sx and x < sx + sw and y >= sy + 22 and y < sy + 66 then edit_setting(i); return end
     end
   elseif screen == 'list' then
     if y < 46 then
@@ -1528,10 +1591,35 @@ local function preview_tap(x, y)
   end
 end
 
+-- the screen's size, read at every callback: after the app turns (Settings), the list keeps the
+-- rows that fit (and asks for that many), the article is laid out again at the same share of
+-- its pages, the preview box again for its article
+sync_screen = function()
+  local okw, w = pcall(function() return tonumber(ctx.screen.width) end)
+  local okh, h = pcall(function() return tonumber(ctx.screen.height) end)
+  w, h = okw and w or 480, okh and h or 800
+  if w == W and h == H then return end
+  W, H = w, h
+  LIST_N = math.max(3, math.floor((H - TOP - 26 - 22) / 58))
+  PREVIEW_BOTTOM = H - 64
+  list.top = window_of(list.top or 1)
+  feeds.top = window_of(feeds.top or 1)
+  if art.data and #art.lines > 0 then
+    local share = (art.page - 1) / math.max(1, art.pages)
+    release_images()
+    layout_article(art.data)
+    art.page = math.min(art.pages, math.floor(share * art.pages + 0.5) + 1)
+    art.start_page = art.start_page and art.page
+    load_page_images()
+  end
+  if preview then open_preview(preview.item) end
+end
+
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
   keep_wifi()   -- still in use: Wi-Fi stays up (at most one call per 30 s)
   local ok, e = pcall(function()
+    sync_screen()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
       -- a long press (the host reports a "hold" phase and / or a "long" gesture) opens the preview
@@ -1586,6 +1674,7 @@ end
 
 function on_load(c)
   load_cfg()
+  if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
   load_tokens()
   load_positions()
   keep_wifi(true)
