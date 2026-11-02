@@ -40,7 +40,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
 | `notes` | Notes | `notes` | 1.1.0 | published | 1.1.0 | 2026-10-30 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
-| `readwise` | Readwise | `readwise` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
@@ -58,9 +57,10 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `delve` | Delve | `delve` | 1.0.0 | in review | - | 2026-11-01 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | in review | - | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | in review | - | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
+| `readwise` | Readwise | `readwise` | 1.1.0 | in review | 1.0.0 | 2026-11-02 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
 | `tasks` | Tasks | `tasks` | 1.1.0 | in review | 1.0.0 | 2026-11-01 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-33 published, 9 in review or draft, 42 in all.
+32 published, 10 in review or draft, 42 in all.
