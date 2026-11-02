@@ -40,7 +40,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **RSS** | RSS and Atom feeds as text over Wi-Fi: fetched on the reader with no account, or your CommaFeed articles through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies |
-| **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader on firmware 2.18, through the rss-opds Worker before |
+| **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader on firmware 2.18 (through the rss-opds Worker before); landscape on 2.18 |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |

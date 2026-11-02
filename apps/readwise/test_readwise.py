@@ -72,15 +72,15 @@ def answer(method, url, body, headers):
             d = dict(docs[q['id']])
             d['html_content'] = ARTICLE if q.get('withHtmlContent') == 'true' else None
             return 200, json.dumps({'count': 1, 'nextPageCursor': None, 'results': [d]})
-        assert q['limit'] == '12', q
+        n = int(q['limit'])                                # the rows that fit: 12, or 6 in landscape
         if q.get('tag') == 'Big Ideas':
             return 200, json.dumps({'count': 1, 'nextPageCursor': None, 'results': tagged})
         rows = {'new': inbox, 'later': later, 'archive': archive}.get(q.get('location'), [])
-        start = 13 if q.get('pageCursor') == 'cur2' else 0
+        start = n + 1 if q.get('pageCursor') == 'cur2' else 0
         if q.get('pageCursor') not in (None, 'cur2'):
             return 400, '{"detail":"bad cursor"}'
-        page = rows[start:start + 13]
-        return 200, json.dumps({'count': len(rows), 'nextPageCursor': 'cur2' if start == 0 and len(rows) > 13 else None, 'results': page})
+        page = rows[start:start + n + 1]
+        return 200, json.dumps({'count': len(rows), 'nextPageCursor': 'cur2' if start == 0 and len(rows) > n + 1 else None, 'results': page})
     return 404, '{"detail":"Not found."}'
 
 
@@ -164,7 +164,7 @@ g.on_load(g.ctx)
 t = texts()
 assert 'Access token (readwise.io/access_token)' in t and 'only reads (2.18 firmware: no Worker).' in t, t
 tap(*SET(0)); type_in('  rwTOKEN123456  ')
-assert g.store['config.txt'] == 'token=rwTOKEN123456\nhost=\nauth=\nsize=default\nimages=0', g.store['config.txt']
+assert g.store['config.txt'] == 'token=rwTOKEN123456\nhost=\nauth=\nsize=default\nimages=0\nscreen=portrait', g.store['config.txt']
 assert 'rwTO...3456' in texts()
 tap(*BAR(0))
 assert calls[-1][:2] == ('GET', 'https://readwise.io/api/v3/tags/') and calls[-1][3]['Authorization'] == 'Token rwTOKEN123456', calls[-1]
@@ -357,4 +357,54 @@ assert m == 'PATCH' and url.endswith('/update/01doc0001/') and 'tags' in json.lo
 assert len(writes()) == n_worker and not any('ERR' in x for x in texts())
 key('back'); key('back'); tap(*MENU(6))
 assert 'no Worker is needed.' in texts(), texts()
+# landscape (API 2.18): Settings offers Screen; turning gives 800 x 480, two menu columns, 6 rows
+# a list page (Reader is asked for 6), and an open article laid out again at the same place
+L.execute("""
+ctx.screen = { width = 480, height = 800, orientation = 'portrait' }
+function ctx.screen.set_orientation(self, o)
+  assert(self == ctx.screen)
+  if o == 'landscape' then self.width, self.height, self.orientation = 800, 480, 'landscape'
+  else self.width, self.height, self.orientation = 480, 800, 'portrait' end
+  return true
+end
+""")
+L.execute(f"dofile([[{SRC}]])")
+g = L.globals()
+g.pending = L.table()
+g.on_load(g.ctx); g.flush()
+key('back') if 'Settings' not in texts() else None
+tap(*MENU(6))
+assert 'Screen (turns the app)' in texts() and 'portrait   (tap to change)' in texts(), texts()
+x, y = recs()['portrait   (tap to change)']
+tap(x + 5, y + 5)
+assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
+t = texts()
+assert 'landscape   (tap to change)' in t and 'no Worker is needed.' not in t, t      # two columns, no note
+key('back')
+# the menu in two columns: Later is the second cell of the first row
+mx, my = recs()['Later']
+assert mx > 400 and my < 200, (mx, my)
+tap(mx + 5, my + 5); g.flush()
+assert 'limit=6&location=later' in calls[-1][1], calls[-1]
+key('back')
+x, y = recs()['Inbox']; tap(x + 5, y + 5); g.flush()
+assert calls[-1][1].startswith('https://readwise.io/api/v3/list/?limit=6&location=new'), calls[-1]
+t = texts()
+assert 'Story 5' in t and 'Story 6' not in t and any('1-6 / ' in v for v in t), t
+tap(100, TOP + 26 + 2 * 58 + 5); g.flush()                                  # row 3: an article
+now, total = page_ind()
+key('right'); key('right')
+share = (page_ind()[0] - 1) / page_ind()[1]
+# back to portrait from Settings: the article is laid out again at about the same share
+key('back'); key('back'); tap_label('Settings')
+x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
+assert not any('ERR' in v for v in texts()), texts()
+# a restart in landscape turns the app in on_load
+g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
+L.execute(f"dofile([[{SRC}]])")
+g = L.globals()
+g.pending = L.table()
+g.on_load(g.ctx); g.flush()
+assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
 print('readwise tests passed')

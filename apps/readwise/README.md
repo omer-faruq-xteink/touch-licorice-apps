@@ -50,6 +50,9 @@ menu's second line says how changes go: `changes go straight to Readwise` (firmw
   position stays on the card. Opening an unseen document marks it seen in Reader.
 - The last page shows the source's link as a **QR code**, then the two moves and **Tags**.
 - **Text size** and **Images in articles** in Settings, as in Instapaper.
+- **Screen** (firmware with API 2.18): portrait or landscape. The app turns at once and opens that
+  way next time; in landscape a list page holds 6 rows (Reader is asked for 6 at a time), the menu
+  and Settings take two columns, and an open article is laid out again at about the same place.
 - Opened documents and lists are saved on the card and open again without a connection. The 100
   most recently opened documents stay; an archived document's copy goes at once. **Articles saved
   offline** in Settings shows how many there are; tap it twice to delete them all.
