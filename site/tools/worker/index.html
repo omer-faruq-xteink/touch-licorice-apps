@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Worker setup</title>
-<meta name="description" content="Set up your own free rss-opds Cloudflare Worker for the RSS, Hacker News and Readwise apps on the Xteink X4 Pro.">
+<meta name="description" content="Set up your own free rss-opds Cloudflare Worker for the RSS and Hacker News apps on the Xteink X4 Pro.">
 <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body>
@@ -23,8 +23,6 @@
         large for the reader to fetch</td><td>Feeds work; articles show what the feed carries</td></tr>
       <tr><td>Hacker News</td><td>The linked article as text, through a full-text service</td><td>Lists and comments
         work; an article shows its address as a QR code</td></tr>
-      <tr><td>Readwise</td><td>Archive, Later / Inbox, tags and "seen" (Reader takes changes only as PATCH, which the
-        reader cannot send)</td><td>Reading works; nothing can be changed</td></tr>
     </table>
   </div>
 
@@ -49,7 +47,6 @@
         <div class="row">
           <label class="check"><input type="checkbox" class="app" value="rss" checked> RSS</label>
           <label class="check"><input type="checkbox" class="app" value="hn"> Hacker News</label>
-          <label class="check"><input type="checkbox" class="app" value="rw"> Readwise</label>
         </div>
         <div class="row" id="rssmode">
           <label class="check"><input type="radio" name="rssmode" value="cf" checked> RSS with CommaFeed</label>
@@ -131,7 +128,7 @@
   const auth = () => document.querySelector('input[name=auth]:checked').value;
   const apps = () => new Set([...document.querySelectorAll('.app:checked')].map((x) => x.value));
   const rssMode = () => document.querySelector('input[name=rssmode]:checked').value;
-  // ?for=rss | rss-local | hn | rw: the app that sent the reader here (a QR code on its screen)
+  // ?for=rss | rss-local | hn: the app that sent the reader here (a QR code on its screen)
   const forApp = new URLSearchParams(location.search).get('for');
   if (forApp) {
     const want = forApp === 'rss-local' ? 'rss' : forApp;
@@ -140,7 +137,7 @@
   }
 
   function update() {
-    const A = apps(), hn = A.has('hn'), rw = A.has('rw');
+    const A = apps(), hn = A.has('hn');
     $('rssmode').hidden = !A.has('rss');
     const local = A.has('rss') && rssMode() === 'local';
     const rss = A.has('rss') && !local;      // with CommaFeed
@@ -160,7 +157,6 @@
 
     const acc = [];
     if (rss) acc.push('<b>CommaFeed</b> (for RSS): in CommaFeed open <i>Settings → Profile</i>, generate an API key and keep it at hand. CommaFeed makes a new one when you change your password.');
-    if (rw) acc.push('<b>Readwise Reader</b>: nothing for the Worker; the app itself needs your Reader access token from <a href="https://readwise.io/access_token">readwise.io/access_token</a>.');
     acc.push('<b>Cloudflare</b>, free, no card: <a href="https://dash.cloudflare.com/sign-up">dash.cloudflare.com</a>. And <a href="https://nodejs.org">Node.js</a> 18 or later and <a href="https://git-scm.com">git</a> on your computer.');
     $('accounts').innerHTML = acc.map((x) => `<li>${x}</li>`).join('');
 
@@ -190,10 +186,6 @@
         ['RSS', 'Full text', sans.length ? 'on' : 'off (no full-text service)']);
     }
     if (hn) rows.push(['Hacker News', 'Worker host', host], ['Hacker News', cred[0], cred[1]]);
-    if (rw) {
-      rows.push(['Readwise', 'Worker for changes', token ? `${host}/k/${t}` : host]);
-      if (!token) rows.push(['Readwise', 'Worker user:password', cred[1]]);
-    }
     if (rss) {
       rows.push(['Reader\'s OPDS catalog', 'Catalog URL', token ? `https://${host}/k/${t}/opds` : `https://${host}/opds`]);
       if (!token) rows.push(['Reader\'s OPDS catalog', 'Account and password', `${user} / your password`]);

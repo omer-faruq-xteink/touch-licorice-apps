@@ -8,7 +8,7 @@ arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch
 converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
 [feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS and the
 [Zork pack](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/) for Text adventures, and walks through
-the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS, Hacker News and Readwise.
+the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS and Hacker News.
 
 | app | what it is |
 |---|---|
@@ -40,7 +40,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **RSS** | RSS and Atom feeds as text over Wi-Fi: fetched on the reader with no account, or your CommaFeed articles through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies |
-| **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader on firmware 2.18 (through the rss-opds Worker before); landscape on 2.18 |
+| **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; portrait or landscape; needs firmware 2.18 |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
@@ -291,11 +291,10 @@ refresh tokens). Articles open where you left off on the reader. [More](apps/wal
 Your [Readwise Reader](https://readwise.io/read) library on the reader: **Inbox**, **Later**,
 **Shortlist**, **Archive**, **Feed** and your **Tags**, with the same list, preview and article
 screens as Instapaper. Reading needs only a Reader access token: the app talks to Reader directly.
-**Archive**, **Later** / **Inbox**, editing **tags** and marking a document seen are PATCHes to
-Reader: firmware with API 2.18 sends them itself; on older firmware, which cannot send PATCH, they
-go through your rss-opds Worker (the one RSS uses), signed in with the same user and password, and
-without the Worker the app only reads there.
-[Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/), [more](apps/readwise/README.md).
+**Archive**, **Later** / **Inbox**, editing **tags** and marking a document seen go straight to
+Reader with the same token; Settings can turn the app to landscape. Needs firmware with API 2.18
+(XT Licorice 26110201 or later).
+[More](apps/readwise/README.md).
 
 ### Hacker News
 
@@ -519,7 +518,7 @@ limits and gotchas are in [docs/firmware-notes.md](docs/firmware-notes.md).
 - **e-ink.** The apps draw lightly and trigger a full refresh every few moves to limit ghosting.
 - **Network.** Only the apps that read something online use it, and each talks only to the
   service it names or you enter: RSS and Hacker News to your Worker, Instapaper to
-  www.instapaper.com, wallabag to your server, Readwise to readwise.io (changes through your Worker on firmware before 2.18), Calendar to your calendars' addresses, Weather to
+  www.instapaper.com, wallabag to your server, Readwise to readwise.io, Calendar to your calendars' addresses, Weather to
   Open-Meteo, Wikipedia to Wikipedia; article pictures come through images.weserv.nl. Nothing
   else leaves the device. Notes needs no permission at all.
 - Other Xteink models (X4, X4 Classic, X3) are untested.

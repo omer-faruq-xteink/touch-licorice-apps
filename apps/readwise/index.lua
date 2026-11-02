@@ -1,10 +1,9 @@
--- Readwise Reader for XTOS Licorice, API 2.9. Reads Reader (readwise.io/api/v3) directly over
+-- Readwise Reader for XTOS Licorice, API 2.18. Reads Reader (readwise.io/api/v3) directly over
 -- HTTPS with a personal access token, turns the documents' HTML into styled text on the device and
 -- keeps an offline cache in ctx.storage. Built from the Instapaper app: same list, preview and
 -- article screens. Changes (Archive, Later / Inbox, tags, seen) are PATCHes to Reader's update
--- endpoint: firmware with API 2.18 sends them itself; older firmware gets an answer only to GET
--- and POST, so there they go through the user's RSS Worker, which passes the app's POST on as
--- PATCH. Without either the app only reads.
+-- endpoint, which API 2.18 can send (the manifest asks for 2.18: older firmware is refused at
+-- install and asked to update; before 0.3.0 they went through the rss-opds Worker's relay).
 --
 -- Screens: menu (Inbox / Later / Shortlist / Archive / Feed / Tags / Settings), list (paged,
 -- long-press for a preview), article (paged, ends with the source QR code and the actions), tags,
@@ -105,7 +104,7 @@ local function net_submit(opts, label, timeout, on_result)
   net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
   net_pump()
 end
-local cfg = { token = '', host = '', auth = '', size = 'default', images = false, screen = 'portrait' }
+local cfg = { token = '', size = 'default', images = false, screen = 'portrait' }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -192,7 +191,7 @@ local function load_cfg()
 end
 
 local function save_cfg()
-  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token .. '\nhost=' .. cfg.host .. '\nauth=' .. cfg.auth
+  pcall(function() ctx.storage:write('config.txt', 'token=' .. cfg.token
     .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0') .. '\nscreen=' .. cfg.screen) end)
 end
 
@@ -200,19 +199,17 @@ end
 
 local API = 'https://readwise.io/api/v3'
 
--- Reader errors come as {"detail": ".."}; worker: the answer came from the relay
-local function api_error(st, body, worker)
+-- Reader errors come as {"detail": ".."}
+local function api_error(st, body)
   local okj, d = pcall(function() return ctx.json:decode(body) end)
   local msg = okj and type(d) == 'table' and ((type(d.detail) == 'string' and d.detail) or (type(d.error) == 'string' and d.error)) or nil
   if st == 429 then return 'Readwise: too many requests, wait a minute' end
-  if worker and st == 401 then return 'Worker password rejected: see Settings' end
   if st == 401 or st == 403 then return 'token rejected (' .. st .. '): see Settings' end
-  if worker and (st == 404 or st == 405) and not msg then return 'the Worker has no Readwise relay: update it' end
   return 'HTTP ' .. tostring(st) .. (msg and (' ' .. tostring(msg)) or (' ' .. short(body or '', 40)))
 end
 
--- the bytes of an article image, straight from the resizer URL the Worker gave (another host:
--- no Worker credentials go with it); on_done(body) or on_done(nil, err)
+-- the bytes of an article image, straight from its resizer URL (images.weserv.nl; no
+-- credentials go with it); on_done(body) or on_done(nil, err)
 local function fetch_image(url, on_done)
   local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink Readwise mini app)' }
   net_submit({ url = url, method = 'GET', headers = headers }, loading or 'loading image', 30000, function(resp, err)
@@ -224,9 +221,9 @@ local function fetch_image(url, on_done)
   end)
 end
 
--- one request through the queue; worker: it goes to the relay. on_done(data, err, raw); a
--- change answered with an empty body gives {}
-local function send(opts, label, worker, on_done)
+-- one request through the queue; on_done(data, err, raw); a change answered with an empty body
+-- gives {}
+local function send(opts, label, on_done)
   keep_wifi()
   net_submit(opts, label, 30000, function(resp, err)
     if err then on_done(nil, err); return end
@@ -234,7 +231,7 @@ local function send(opts, label, worker, on_done)
     local st = tonumber(resp.status) or tonumber(resp.code)
     local body = resp.body
     if resp.error and not body then on_done(nil, tostring(resp.error)); return end
-    if st and st >= 400 then on_done(nil, api_error(st, body, worker)); return end
+    if st and st >= 400 then on_done(nil, api_error(st, body)); return end
     if opts.method ~= 'GET' and (type(body) ~= 'string' or body == '') then on_done({}, nil, ''); return end
     if type(body) ~= 'string' then on_done(nil, 'empty body'); return end
     local okj, data = pcall(function() return ctx.json:decode(body) end)
@@ -248,45 +245,18 @@ end
 local function request(path, on_done, label)
   if cfg.token == '' then note('set the access token in Settings'); on_done(nil, 'no access token'); return end
   send({ url = API .. path, method = 'GET', headers = { ['Accept'] = 'application/json', ['Authorization'] = 'Token ' .. cfg.token } },
-    label or ('loading ' .. short(path:gsub('%?.*$', ''), 30)), false, on_done)
+    label or ('loading ' .. short(path:gsub('%?.*$', ''), 30)), on_done)
 end
 
--- the Worker that relays changes: "rss.example.workers.dev", or with its path token
--- "rss.example.workers.dev/k/<token>"
-local function worker_base()
-  local host = cfg.host:gsub('^%s+', ''):gsub('%s+$', ''):gsub('/+$', '')
-  if host == '' then return nil end
-  if not host:match('^https?://') then host = 'https://' .. host end
-  return host
-end
--- API 2.18 adds PATCH to ctx.net:request (checked on the reader 2026-11-02, XT Licorice
--- 26110201); hosts of 2.17 and earlier refuse it, so their changes need the Worker
-local function direct_patch()
-  local a = ctx.api
-  if type(a) ~= 'table' then return false end
-  local major, minor = tonumber(a.major) or 0, tonumber(a.minor) or 0
-  return major > 2 or (major == 2 and minor >= 18)
-end
-local function can_write() return cfg.token ~= '' and (direct_patch() or worker_base() ~= nil) end
+local function can_write() return cfg.token ~= '' end
 
--- a change to one document: json_body holds Reader's update fields ({"location":"archive"} ...);
--- PATCHed to Reader itself on 2.18, else posted to the Worker's relay
+-- a change to one document: json_body holds Reader's update fields ({"location":"archive"} ...),
+-- PATCHed to Reader's update endpoint
 local function update(id, json_body, on_done, label)
-  if cfg.token ~= '' and direct_patch() then
-    send({ url = API .. '/update/' .. id .. '/', method = 'PATCH', body = json_body,
-           headers = { ['Accept'] = 'application/json', ['Content-Type'] = 'application/json', ['Authorization'] = 'Token ' .. cfg.token } },
-      label or 'saving', false, on_done)
-    return
-  end
-  local base = worker_base()
-  if cfg.token == '' or not base then on_done(nil, 'changes need the Worker: see Settings'); return end
-  local headers = { ['Accept'] = 'application/json', ['Content-Type'] = 'application/json',
-    ['Content-Length'] = tostring(#json_body), ['X-Readwise-Token'] = cfg.token }
-  if cfg.auth ~= '' then
-    local ok, b64 = pcall(function() return ctx.base64:encode(cfg.auth) end)
-    if ok and b64 then headers['Authorization'] = 'Basic ' .. b64 end
-  end
-  send({ url = base .. '/readwise/update/' .. id, method = 'POST', headers = headers, body = json_body }, label or 'saving', true, on_done)
+  if cfg.token == '' then on_done(nil, 'set the access token in Settings'); return end
+  send({ url = API .. '/update/' .. id .. '/', method = 'PATCH', body = json_body,
+         headers = { ['Accept'] = 'application/json', ['Content-Type'] = 'application/json', ['Authorization'] = 'Token ' .. cfg.token } },
+    label or 'saving', on_done)
 end
 
 local function cache_write(name, s) pcall(function() ctx.storage:write(name, s) end) end
@@ -728,7 +698,7 @@ end
 
 -- The list keeps every page fetched so far in list.items and shows LIST_N rows from list.top.
 -- Next (button, side key or swipe) on the last screen fetches the following page while the
--- Worker says there is more, and appends it; the new rows start on the next screen.
+-- Reader says there is more, and appends it; the new rows start on the next screen.
 
 local function list_cache_name(page)
   local id = (list.id or '0'):gsub('[^%w]', function(c) return string.format('_%02x', c:byte()) end)
@@ -935,7 +905,7 @@ end
 -- the keyboard opens with the document's tags; what comes back replaces them
 local function edit_tags(item)
   if not item then return end
-  if not can_write() then note('tags need the Worker: see Settings'); return end
+  if not can_write() then note('set the access token in Settings'); return end
   local ok, err = pcall(function()
     ctx.input:text({ title = 'Tags, separated by commas', text = item.tag_line or '', max_bytes = 256 }, function(c, v)
       if type(v) ~= 'string' then refresh(); return end
@@ -975,7 +945,7 @@ local function fetch_feeds(retried)
 end
 
 ------------------------------------------------------------------ images
--- Article images come from the resizer URL the Worker gives (src), as greyscale JPEGs of the
+-- Article images come from their resizer URL (src, images.weserv.nl), as greyscale JPEGs of the
 -- size it announced, at most 456 px wide, so they are drawn at their own size. Only the images of the page on screen are fetched and decoded, one
 -- at a time; leaving the page or the article releases them. A failed image shows "[image]".
 
@@ -1145,8 +1115,7 @@ end
 
 local MENU = { { 'Inbox', 'new' }, { 'Later', 'later' }, { 'Shortlist', 'shortlist' }, { 'Archive', 'archive' },
                { 'Feed', 'feed' }, { 'Tags', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'token', 'Access token (readwise.io/access_token)' }, { 'host', 'Worker for changes on firmware before 2.18' },
-                   { 'auth', 'Worker user:password (as in RSS)' }, { 'size', 'Text size (articles and previews)' },
+local SETTINGS = { { 'token', 'Access token (readwise.io/access_token)' }, { 'size', 'Text size (articles and previews)' },
                    { 'images', 'Images in articles' }, { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
 -- the menu's and Settings' cells: one column in portrait, two in landscape
@@ -1167,12 +1136,9 @@ end
 local function apply_orientation()
   if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
 end
--- on firmware 2.18 changes need no Worker, so its two fields are left out (kept in config.txt)
 settings_list = function()
   local t = {}
-  for _, s in ipairs(SETTINGS) do
-    if not (direct_patch() and (s[1] == 'host' or s[1] == 'auth')) then t[#t + 1] = s end
-  end
+  for k, s in ipairs(SETTINGS) do t[k] = s end
   if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
   return t
 end
@@ -1229,9 +1195,7 @@ end
 local function draw_menu(gg)
   local F = ctx.fonts
   gg:text(16, 20, 'Readwise Reader', { font = F and F.large })
-  local sub = cfg.token == '' and 'no access token: open Settings'
-    or (direct_patch() and 'changes go straight to Readwise')
-    or (can_write() and 'changes go through your Worker' or 'read-only: no Worker in Settings')
+  local sub = cfg.token == '' and 'no access token: open Settings' or 'changes go straight to Readwise'
   gg:text(16, 54, sub, { font = F and F.small })
   for i, m in ipairs(menu_items()) do
     local x, y, w, h = menu_rect(i)
@@ -1351,10 +1315,7 @@ local function draw_settings(gg)
   end
   if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
   local y = TOP + 20 + #list_ * 96
-  local tail = direct_patch() and { 'seen go straight to Readwise;', 'no Worker is needed.' }
-    or { 'seen go through your RSS Worker; without it', 'only reads (2.18 firmware: no Worker).' }
-  for _, l in ipairs({ 'Or write token=... into XTApps/readwise/files/', 'config.txt over USB. Archive, Later, tags and',
-                       tail[1], tail[2] }) do
+  for _, l in ipairs({ 'Or write token=... into XTApps/readwise/files/', 'config.txt over USB.' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 24
   end
   draw_status(gg)
@@ -1482,7 +1443,7 @@ local function tap(x, y)
       if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then
         local it = art.item
         if b.act == 'tags' then edit_tags(it)
-        elseif not can_write() then note('changes need the Worker: see Settings')
+        elseif not can_write() then note('set the access token in Settings')
         else
           move(it, b.act)
           if leaves_list(b.act) then art.from_preview = nil end
@@ -1636,7 +1597,7 @@ local function preview_tap(x, y)
         open_article(it)
         art.from_preview = it
       elseif b.act == 'tags' then edit_tags(it)
-      elseif not can_write() then note('changes need the Worker: see Settings')
+      elseif not can_write() then note('set the access token in Settings')
       else
         -- a move that takes it off this list: the preview goes on to the next one at once
         local leaves = leaves_list(b.act)

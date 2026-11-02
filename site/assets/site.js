@@ -18,7 +18,7 @@ export const TOOLS = [
     blurb: 'Ready feed lists by topic, and an OPML list of your own for the RSS app to read on the reader.' },
   { id: 'textadv', title: 'Text adventures', app: 'Text adventures',
     blurb: 'Zork I, II and III as a free pack, and where to find more games for the reader.' },
-  { id: 'worker', title: 'Worker setup', app: 'RSS, Hacker News, Readwise',
+  { id: 'worker', title: 'Worker setup', app: 'RSS, Hacker News',
     blurb: 'Step by step: your own free Cloudflare Worker for the apps that use one, and what to type on the reader.' },
 ];
 

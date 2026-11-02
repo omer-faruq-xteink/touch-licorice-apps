@@ -251,7 +251,7 @@ def validate_manifest(obj, where):
     host's API 2.9 (docs/firmware-notes.md): its permission vocabulary is just `net` and `reader`
     (the 0.8 names make the installer reject the package), and it may carry a `lockscreen` block
     ({enabled, entry, interval_sec}) whose entry is drawn when the device locks."""
-    if str(obj.get('api', '')) != '2.0':
+    if not re.fullmatch(r'2\.\d+', str(obj.get('api', ''))):     # any 2.x (2.0 ... 2.18)
         return xtapp.validate_manifest_licorice(obj, where)
     for key in ('app_id', 'display_name'):
         if not isinstance(obj.get(key), str) or not obj[key].strip():
@@ -260,7 +260,7 @@ def validate_manifest(obj, where):
         raise SystemExit(f'{where}: app_id must be ASCII letters only, got {obj["app_id"]!r}')
     perms = obj.get('permissions', [])
     if not isinstance(perms, list) or any(p not in API2_PERMISSIONS for p in perms):
-        raise SystemExit(f'{where}: with "api": "2.0" permissions must be a list drawn from {API2_PERMISSIONS}, got {perms!r}')
+        raise SystemExit(f'{where}: with "api": "2.x" permissions must be a list drawn from {API2_PERMISSIONS}, got {perms!r}')
     entry = obj.get('entry', 'index.lua')
     if not isinstance(entry, str) or not 1 <= len(entry.encode()) <= 31:
         raise SystemExit(f'{where}: "entry" must be 1..31 bytes, got {entry!r}')
