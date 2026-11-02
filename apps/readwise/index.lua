@@ -153,6 +153,8 @@ local art = { id = nil, title = '', feed = '', date = '', lines = {}, starts = {
 local measure_cache = {}
 
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
+-- a character limit set for the 480 px portrait width, scaled to the screen's width now
+local function wide(n) return math.max(8, math.floor(n * W / 480)) end
 local function note(s) status = tostring(s or '') end
 
 local function refresh() pcall(function() ctx:invalidate() end) end
@@ -1199,15 +1201,15 @@ local function draw_empty(gg, y, err, empty_text)
   local F = ctx.fonts
   if not err then gg:text(16, y + 20, empty_text, { font = F and F.medium }); return end
   gg:text(16, y + 20, 'Could not load this list.', { font = F and F.medium })
-  gg:text(16, y + 54, short(err, 46), { font = F and F.small })
+  gg:text(16, y + 54, short(err, wide(46)), { font = F and F.small })
   gg:text(16, y + 80, 'Check Wi-Fi, then tap Reload.', { font = F and F.small })
 end
 
 local function draw_status(gg)
   local F = ctx.fonts
   local s = (busy() and loading) or status
-  if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
-  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
+  if s ~= '' then gg:text(8, H - 26, short(s, wide(52)), { font = F and F.small }) end
+  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, wide(52)), { font = F and F.small }) end
 end
 
 -- the menu's rows: account folders, the chosen account's menu, or the single-account menu
@@ -1266,13 +1268,13 @@ local function draw_list(gg)
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
   local who = (multi() and acct) and (acct_label() .. ' · ') or ''
-  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), wide(44)), { font = F and F.small })
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
-    gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
-    gg:text(16, y + 26, short((it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
+    gg:text(16, y, short(it.title or '', wide(42)), { font = F and F.medium })
+    gg:text(16, y + 26, short((it.feed or '') .. '  ' .. (it.date or ''), wide(50)), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1285,7 +1287,7 @@ local function draw_feeds(gg)
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
     local it = feeds.items[i]
-    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), 42), { font = F and F.medium })
+    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), wide(42)), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -1324,7 +1326,7 @@ local function draw_article(gg)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
+  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, wide(42)), { font = F and F.medium }) end
   draw_status(gg)
 end
 
@@ -1343,7 +1345,7 @@ local function draw_settings(gg)
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'token' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
-    gg:text(x + 12, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
+    gg:text(x + 12, y + 36, short(v ~= '' and v or '(empty)', math.floor(40 * w / 448)), { font = F and F.medium })
   end
   if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
   local y = TOP + 20 + #list_ * 96
@@ -1371,7 +1373,7 @@ function on_draw(c, gg)
   if not G then return end
   local ok, e = pcall(draw_impl, G)
   -- a drawing error is painted for this frame only; the next good frame no longer shows it
-  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), wide(46))) end) end
 end
 
 ------------------------------------------------------------------ input
