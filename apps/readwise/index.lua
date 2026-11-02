@@ -1,9 +1,10 @@
 -- Readwise Reader for XTOS Licorice, API 2.9. Reads Reader (readwise.io/api/v3) directly over
 -- HTTPS with a personal access token, turns the documents' HTML into styled text on the device and
 -- keeps an offline cache in ctx.storage. Built from the Instapaper app: same list, preview and
--- article screens. Changes (Archive, Later / Inbox, tags, seen) go through the user's RSS Worker:
--- Reader changes a document only by PATCH, which the reader cannot send (only GET and POST get
--- an answer), and the Worker passes the app's POST on as PATCH. Without it the app only reads.
+-- article screens. Changes (Archive, Later / Inbox, tags, seen) are PATCHes to Reader's update
+-- endpoint: firmware with API 2.18 sends them itself; older firmware gets an answer only to GET
+-- and POST, so there they go through the user's RSS Worker, which passes the app's POST on as
+-- PATCH. Without either the app only reads.
 --
 -- Screens: menu (Inbox / Later / Shortlist / Archive / Feed / Tags / Settings), list (paged,
 -- long-press for a preview), article (paged, ends with the source QR code and the actions), tags,
@@ -247,10 +248,25 @@ local function worker_base()
   if not host:match('^https?://') then host = 'https://' .. host end
   return host
 end
-local function can_write() return cfg.token ~= '' and worker_base() ~= nil end
+-- API 2.18 adds PATCH to ctx.net:request (checked on the reader 2026-11-02, XT Licorice
+-- 26110201); hosts of 2.17 and earlier refuse it, so their changes need the Worker
+local function direct_patch()
+  local a = ctx.api
+  if type(a) ~= 'table' then return false end
+  local major, minor = tonumber(a.major) or 0, tonumber(a.minor) or 0
+  return major > 2 or (major == 2 and minor >= 18)
+end
+local function can_write() return cfg.token ~= '' and (direct_patch() or worker_base() ~= nil) end
 
--- a change to one document: json_body holds Reader's update fields ({"location":"archive"} ...)
+-- a change to one document: json_body holds Reader's update fields ({"location":"archive"} ...);
+-- PATCHed to Reader itself on 2.18, else posted to the Worker's relay
 local function update(id, json_body, on_done, label)
+  if cfg.token ~= '' and direct_patch() then
+    send({ url = API .. '/update/' .. id .. '/', method = 'PATCH', body = json_body,
+           headers = { ['Accept'] = 'application/json', ['Content-Type'] = 'application/json', ['Authorization'] = 'Token ' .. cfg.token } },
+      label or 'saving', false, on_done)
+    return
+  end
   local base = worker_base()
   if cfg.token == '' or not base then on_done(nil, 'changes need the Worker: see Settings'); return end
   local headers = { ['Accept'] = 'application/json', ['Content-Type'] = 'application/json',
@@ -827,7 +843,7 @@ local function keep_progress()
   art.start_page = art.page
 end
 
--- opening a document marks it seen in Reader (through the Worker; quietly skipped without one)
+-- opening a document marks it seen in Reader (skipped quietly when changes cannot be sent)
 local function mark_seen(item)
   if item.seen or not can_write() then return end
   item.seen = true
@@ -1117,7 +1133,7 @@ end
 
 local MENU = { { 'Inbox', 'new' }, { 'Later', 'later' }, { 'Shortlist', 'shortlist' }, { 'Archive', 'archive' },
                { 'Feed', 'feed' }, { 'Tags', 'feeds' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'token', 'Access token (readwise.io/access_token)' }, { 'host', 'Worker for changes (e.g. rss.example.workers.dev)' },
+local SETTINGS = { { 'token', 'Access token (readwise.io/access_token)' }, { 'host', 'Worker for changes on firmware before 2.18' },
                    { 'auth', 'Worker user:password (as in RSS)' }, { 'size', 'Text size (articles and previews)' },
                    { 'images', 'Images in articles' }, { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
@@ -1173,6 +1189,7 @@ local function draw_menu(gg)
   local F = ctx.fonts
   gg:text(16, 20, 'Readwise Reader', { font = F and F.large })
   local sub = cfg.token == '' and 'no access token: open Settings'
+    or (direct_patch() and 'changes go straight to Readwise')
     or (can_write() and 'changes go through your Worker' or 'read-only: no Worker in Settings')
   gg:text(16, 54, sub, { font = F and F.small })
   for i, m in ipairs(menu_items()) do
@@ -1290,8 +1307,10 @@ local function draw_settings(gg)
     gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
   end
   local y = TOP + 20 + #SETTINGS * 96
+  local tail = direct_patch() and { 'seen go straight to Readwise;', 'no Worker is needed.' }
+    or { 'seen go through your RSS Worker; without it', 'only reads (2.18 firmware: no Worker).' }
   for _, l in ipairs({ 'Or write token=... into XTApps/readwise/files/', 'config.txt over USB. Archive, Later, tags and',
-                       'seen go through your RSS Worker; without it', 'the app only reads.' }) do
+                       tail[1], tail[2] }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 24
   end
   draw_status(gg)

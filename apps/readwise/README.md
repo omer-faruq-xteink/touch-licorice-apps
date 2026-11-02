@@ -4,11 +4,15 @@ Reads your [Readwise Reader](https://readwise.io/read) library on the device, as
 reads Reader directly with a personal access token. It works like the Instapaper app (same list,
 preview and article screens) and adds Reader's locations, tags and feed.
 
-Changes (**Archive**, **Later** / **Inbox**, **tags**, marking a document seen) go through the
-[rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker, the one the RSS app uses: Reader
-changes a document only by `PATCH`, and the reader sends only GET and POST. The app posts the change
-to the Worker's `/readwise/update/<id>` route, which passes it on to Reader as `PATCH`. Without the
-Worker in Settings the app only reads.
+Changes (**Archive**, **Later** / **Inbox**, **tags**, marking a document seen) are `PATCH`es to
+Reader's update endpoint:
+
+- **Firmware with API 2.18** (XT Licorice 26110201 and later): the app sends them to Reader itself
+  with your access token. No Worker is needed.
+- **Older firmware** sends only GET and POST, so changes go through the
+  [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker, the one the RSS app uses: the
+  app posts the change to the Worker's `/readwise/update/<id>` route, which passes it on to Reader
+  as `PATCH`. Without the Worker in Settings the app only reads there.
 
 ## Setup
 
@@ -17,7 +21,7 @@ Worker in Settings the app only reads.
    the token with the firmware keyboard. Easier for a long token: open the app once, put the
    reader in USB mode and write a line `token=<your token>` into
    `XTApps/readwise/files/config.txt` on the SD card.
-3. For changes: **Worker for changes** is your Worker's address (`rss.example.workers.dev`, or
+3. Only on firmware before 2.18, for changes: **Worker for changes on firmware before 2.18** is your Worker's address (`rss.example.workers.dev`, or
    with its path token `rss.example.workers.dev/k/<token>`), **Worker user:password** the same
    `user:password` the RSS app uses. The Worker must be a version with the Readwise relay; it
    needs no CommaFeed account for it. The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through one for
@@ -25,8 +29,8 @@ Worker in Settings the app only reads.
 4. **Back** → **Inbox**.
 
 The device must be on Wi-Fi; the app keeps it on while in use and lets it go when you leave. The
-menu's second line says whether changes are possible (`changes go through your Worker`) or not
-(`read-only: no Worker in Settings`).
+menu's second line says how changes go: `changes go straight to Readwise` (firmware 2.18),
+`changes go through your Worker`, or `read-only: no Worker in Settings`.
 
 ## Using it
 

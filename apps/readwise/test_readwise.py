@@ -51,6 +51,12 @@ def answer(method, url, body, headers):
             return 400, '{"error":"bad relay call"}'
         json.loads(body)
         return 200, json.dumps({'id': m.group(1), 'url': 'https://read.readwise.io/read/' + m.group(1)})
+    m = re.fullmatch(r'https://readwise\.io/api/v3/update/(\w+)/', url)
+    if m:                                                 # Reader's own update endpoint (API 2.18)
+        if method != 'PATCH' or headers.get('Authorization') != 'Token rwTOKEN123456':
+            return 405, '{"detail":"Method not allowed."}'
+        json.loads(body)
+        return 200, json.dumps({'id': m.group(1), 'url': 'https://read.readwise.io/read/' + m.group(1)})
     if url.startswith('https://images.weserv.nl/'):
         return 200, b'\xff\xd8' + b'x' * 50
     if headers.get('Authorization') != 'Token rwTOKEN123456' or not state['token_ok']:
@@ -156,7 +162,7 @@ def page_ind():
 # no token: Settings; the token typed in is saved; Back asks the tag list (Wi-Fi comes up with it)
 g.on_load(g.ctx)
 t = texts()
-assert 'Access token (readwise.io/access_token)' in t and 'the app only reads.' in t, t
+assert 'Access token (readwise.io/access_token)' in t and 'only reads (2.18 firmware: no Worker).' in t, t
 tap(*SET(0)); type_in('  rwTOKEN123456  ')
 assert g.store['config.txt'] == 'token=rwTOKEN123456\nhost=\nauth=\nsize=default\nimages=0', g.store['config.txt']
 assert 'rwTO...3456' in texts()
@@ -329,4 +335,26 @@ g.pending = L.table()
 g.on_load(g.ctx); g.flush()
 assert calls[-1][3]['Authorization'] == 'Token rwTOKEN123456', calls[-1]
 assert 'changes go through your Worker' in texts() and not any('ERR' in x for x in texts())
+
+# firmware with API 2.18: no Worker needed, changes are PATCHed to Reader itself
+g.store['config.txt'] = 'token=rwTOKEN123456\nhost=\nauth=\n'
+L.execute("ctx.api = { major = 2, minor = 18 }")
+L.execute(f"dofile([[{SRC}]])")
+g = L.globals()
+g.pending = L.table()
+g.on_load(g.ctx); g.flush()
+assert 'changes go straight to Readwise' in texts(), texts()
+n_worker = len(writes())
+tap(*MENU(0)); g.flush()
+long_press(100, row_y(0))
+tap_label('Archive'); g.flush()
+m, url, body, h = calls[-1]
+assert (m, url) == ('PATCH', 'https://readwise.io/api/v3/update/01doc0000/') and json.loads(body) == {'location': 'archive'}, calls[-1]
+assert h['Authorization'] == 'Token rwTOKEN123456' and 'X-Readwise-Token' not in h and len(writes()) == n_worker, h
+tap_label('Tags'); type_in('alpha, new one'); g.flush()
+m, url, body, h = calls[-1]
+assert m == 'PATCH' and url.endswith('/update/01doc0001/') and 'tags' in json.loads(body), calls[-1]
+assert len(writes()) == n_worker and not any('ERR' in x for x in texts())
+key('back'); key('back'); tap(*MENU(6))
+assert 'no Worker is needed.' in texts(), texts()
 print('readwise tests passed')
