@@ -1,6 +1,6 @@
 # v0.17.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta) and **26102901**).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
 ## Added
 
@@ -8,7 +8,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- **Instapaper, wallabag, RSS and Hacker News: landscape; they now need firmware with API 2.18** (XT Licorice 26110201 or later; older firmware refuses to install them and asks for an update). Settings has **Screen** (portrait or landscape). In landscape a list page holds 6 articles and the server (for RSS, your Worker) is asked for 6 at a time; Hacker News shows 4 stories a page. The menu and Settings take two columns, titles and articles use the wider lines, and an open article keeps its place when the app turns. Pictures in articles are never taller than a page, here and in Readwise (0.3.1). wallabag sends Archive and Star as a real PATCH now, so they work with servers that do not take a POST in its place.
+- **Instapaper, wallabag, RSS and Hacker News: landscape; they now need firmware with API 2.18** (XT Licorice 26110201 or later; older firmware refuses to install them and asks for an update). Settings has **Screen** (portrait or landscape). In landscape a list page holds 6 articles and the server (for RSS, your Worker) is asked for 6 at a time; Hacker News shows 4 stories a page. The menu and Settings take two columns, titles and articles use the wider lines, and an open article keeps its place when the app turns. Short settings (text size, pictures, screen) sit two to a row in portrait, so Settings fits the screen in RSS, Hacker News and wallabag. Pictures in articles are never taller than a page, here and in Readwise (0.3.1). wallabag sends Archive and Star as a real PATCH now, so they work with servers that do not take a POST in its place.
 
 - **Readwise 0.3.0: needs firmware with API 2.18, no Worker**: the reader can now send PATCH, so **Archive**, **Later** / **Inbox**, **tags** and marking a document seen go straight to Readwise with your access token; the Worker fields are gone from Settings. Firmware older than XT Licorice 26110201 refuses to install it and asks for an update. **Landscape**: Settings has **Screen** (portrait or landscape); in landscape a list page holds 6 rows and Reader is asked for 6 at a time, the menu and Settings take two columns, and articles and titles use the wider lines.
 
