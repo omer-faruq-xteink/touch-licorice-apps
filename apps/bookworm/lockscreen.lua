@@ -253,7 +253,7 @@ function P.read_data(reader, now)
   if data.today then
     local okd, days = pcall(function() return reader:days(P.date(data.today - 13), P.date(data.today)) end)
     if okd and type(days) == 'table' then data.days = days end
-    local okk, rows = pcall(function() return reader:book_days(P.date(data.today - 6), P.date(data.today)) end)
+    local okk, rows = pcall(function() return reader:book_days(P.date(data.today - 13), P.date(data.today)) end)
     if okk and type(rows) == 'table' then data.book_days = rows end
   end
   return data
@@ -340,9 +340,12 @@ local function trait(st, data)
   end
   if days >= 3 and secs / days >= 75 * 60 then return 'marathon' end
   local titles, ndays = {}, {}
+  local week = data.today and P.date(data.today - 6) or ''
   for _, r in ipairs(data.book_days) do
+    if (r.date or '') < week then goto skip end
     if r.id then titles[r.id] = true end
     if r.date then ndays[r.date] = true end
+    ::skip::
   end
   local nbooks, nd = 0, 0
   for _ in pairs(titles) do nbooks = nbooks + 1 end
@@ -381,7 +384,8 @@ local function add_taste(st, data)
   if data.current and data.current.id then authors[data.current.id] = data.current.author end
   for _, r in ipairs(data.book_days) do
     local day = P.day_of(r.date or '')
-    if day and (not st.born or day >= st.born) then
+    -- the last week only: older days are forgotten below and would count again
+    if day and (not st.born or day >= st.born) and (not data.today or day >= data.today - 6) then
       local key = r.date .. '|' .. tostring(r.id or r.title or '')
       local sec, before = tonumber(r.sec) or 0, st.tasted[key] or 0
       if sec > before then

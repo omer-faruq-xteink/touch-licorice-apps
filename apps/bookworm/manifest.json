@@ -6,6 +6,7 @@
   "description": "A little bookworm that lives on your reading: it hatches, grows and gets hungry with the time you spend in books, and sleeps on your sleep screen.",
   "entry": "index.lua",
   "api": "2.9",
+  "requires": ["reader"],
   "permissions": ["reader"],
   "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 3600 }
 }

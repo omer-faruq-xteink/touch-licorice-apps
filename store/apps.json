@@ -438,5 +438,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-03"
+  },
+  "bookworm": {
+    "name": "Bookworm",
+    "app_id": "bookworm",
+    "listing_id": "",
+    "project_id": "3c24e555-c442-42a7-bcc9-05ab60b1e975",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-03"
   }
 }

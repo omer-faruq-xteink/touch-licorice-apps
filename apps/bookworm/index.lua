@@ -683,7 +683,7 @@ function P.read_data(reader, now)
   if data.today then
     local okd, days = pcall(function() return reader:days(P.date(data.today - 13), P.date(data.today)) end)
     if okd and type(days) == 'table' then data.days = days end
-    local okk, rows = pcall(function() return reader:book_days(P.date(data.today - 6), P.date(data.today)) end)
+    local okk, rows = pcall(function() return reader:book_days(P.date(data.today - 13), P.date(data.today)) end)
     if okk and type(rows) == 'table' then data.book_days = rows end
   end
   return data
@@ -770,9 +770,12 @@ local function trait(st, data)
   end
   if days >= 3 and secs / days >= 75 * 60 then return 'marathon' end
   local titles, ndays = {}, {}
+  local week = data.today and P.date(data.today - 6) or ''
   for _, r in ipairs(data.book_days) do
+    if (r.date or '') < week then goto skip end
     if r.id then titles[r.id] = true end
     if r.date then ndays[r.date] = true end
+    ::skip::
   end
   local nbooks, nd = 0, 0
   for _ in pairs(titles) do nbooks = nbooks + 1 end
@@ -811,7 +814,8 @@ local function add_taste(st, data)
   if data.current and data.current.id then authors[data.current.id] = data.current.author end
   for _, r in ipairs(data.book_days) do
     local day = P.day_of(r.date or '')
-    if day and (not st.born or day >= st.born) then
+    -- the last week only: older days are forgotten below and would count again
+    if day and (not st.born or day >= st.born) and (not data.today or day >= data.today - 6) then
       local key = r.date .. '|' .. tostring(r.id or r.title or '')
       local sec, before = tonumber(r.sec) or 0, st.tasted[key] or 0
       if sec > before then
@@ -1220,7 +1224,7 @@ local function stats(gg)
   local s = st()
   local next_line
   if not s.hatched then next_line = 'Hatches after ' .. hm(view.to_next) .. ' more reading.'
-  else next_line = 'Fed ' .. hm(view.food) .. ':  ' .. hm(view.to_next) .. ' more to ' .. view.next_name .. '.' end
+  else next_line = 'Fed ' .. hm(view.food) .. '  ·  ' .. hm(view.to_next) .. ' to ' .. view.next_name end
   gg:text(12, y + 64, kit.short(next_line, 50), { font = small })
   -- how full it is: five dots
   local fill = ({ full = 5, peckish = 4, hungry = 3, sulky = 1, hiding = 0, egg = 5 })[view.hunger] or 3
@@ -1275,12 +1279,12 @@ local function draw_diary(gg)
   for _, r in ipairs(rows) do
     gg:text(12, y, P.label(r.day), { font = small })
     if r.sec > 0 then
-      local w = math.max(4, math.min(150, r.sec * 150 // 7200))     -- two hours fill the bar
-      gg:rect(120, y + 3, w, 14, { fill = true })
-      gg:text(280, y, hm(r.sec), { font = small })
-      if r.title then gg:text(120, y + 20, kit.short(r.title, 38), { font = small }) end
+      local w = math.max(4, math.min(140, r.sec * 140 // 7200))     -- two hours fill the bar
+      gg:rect(140, y + 3, w, 14, { fill = true })
+      gg:text(296, y, hm(r.sec), { font = small })
+      if r.title then gg:text(140, y + 20, kit.short(r.title, 36), { font = small }) end
     else
-      gg:text(120, y, '(a hungry day)', { font = small })
+      gg:text(140, y, '(a hungry day)', { font = small })
     end
     y = y + 42
     if y > BTN_Y - 30 then break end

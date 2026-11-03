@@ -146,6 +146,9 @@ assert S().pets == pets + 1 and A().line() in [s for s in A().L.PET.values()], A
 # the screens
 g.tap_label('Diary')
 assert A().screen() == 'diary' and 'Diary' in texts() and 'Dracula' in texts(), texts()
+# the second week has its books too
+old = L.eval('(function() local P = __TEST.api.P; local d = P.read_data(ctx.reader, NOW); for _, r in ipairs(P.diary(d)) do if r.day == d.today - 8 then return r.title end end end)()')
+assert old == 'Dracula', old
 assert g.commands() < 900
 L.execute("on_input(ctx, {type='key', key='back', phase='down'})")
 back_home = L.eval("on_input(ctx, {type='key', key='back', phase='up'})")

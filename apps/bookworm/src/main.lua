@@ -139,7 +139,7 @@ local function stats(gg)
   local s = st()
   local next_line
   if not s.hatched then next_line = 'Hatches after ' .. hm(view.to_next) .. ' more reading.'
-  else next_line = 'Fed ' .. hm(view.food) .. ':  ' .. hm(view.to_next) .. ' more to ' .. view.next_name .. '.' end
+  else next_line = 'Fed ' .. hm(view.food) .. '  ·  ' .. hm(view.to_next) .. ' to ' .. view.next_name end
   gg:text(12, y + 64, kit.short(next_line, 50), { font = small })
   -- how full it is: five dots
   local fill = ({ full = 5, peckish = 4, hungry = 3, sulky = 1, hiding = 0, egg = 5 })[view.hunger] or 3
@@ -194,12 +194,12 @@ local function draw_diary(gg)
   for _, r in ipairs(rows) do
     gg:text(12, y, P.label(r.day), { font = small })
     if r.sec > 0 then
-      local w = math.max(4, math.min(150, r.sec * 150 // 7200))     -- two hours fill the bar
-      gg:rect(120, y + 3, w, 14, { fill = true })
-      gg:text(280, y, hm(r.sec), { font = small })
-      if r.title then gg:text(120, y + 20, kit.short(r.title, 38), { font = small }) end
+      local w = math.max(4, math.min(140, r.sec * 140 // 7200))     -- two hours fill the bar
+      gg:rect(140, y + 3, w, 14, { fill = true })
+      gg:text(296, y, hm(r.sec), { font = small })
+      if r.title then gg:text(140, y + 20, kit.short(r.title, 36), { font = small }) end
     else
-      gg:text(120, y, '(a hungry day)', { font = small })
+      gg:text(140, y, '(a hungry day)', { font = small })
     end
     y = y + 42
     if y > BTN_Y - 30 then break end
