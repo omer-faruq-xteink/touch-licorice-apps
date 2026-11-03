@@ -418,5 +418,15 @@
     "status": "published",
     "live_version": "1.0.0",
     "submitted": "2026-11-01"
+  },
+  "chessplay": {
+    "name": "Chess",
+    "app_id": "chessplay",
+    "listing_id": "",
+    "project_id": "eb70de48-11b6-4061-baca-04d77e071955",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-03"
   }
 }

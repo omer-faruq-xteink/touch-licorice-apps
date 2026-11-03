@@ -363,6 +363,19 @@ def chess(p):
     p.white_ellipse((45, 31, 51, 37))
 
 
+def chessplay(p):
+    # a whole game: a solid king beside a white (outlined) pawn, standing on a line
+    p.rect((31, 6, 37, 24), fill=True)                     # the king's cross
+    p.rect((25, 11, 43, 17), fill=True)
+    p.poly([(14, 28), (54, 28), (48, 62), (20, 62)], fill=True)       # its body
+    p.rect((14, 64, 54, 72), fill=True, r=2)               # the collar and the base
+    p.rect((8, 76, 60, 86), fill=True, r=3)
+    p.ellipse((68, 38, 84, 54), w=3)                       # the pawn: head, body, base
+    p.poly([(70, 58), (82, 58), (88, 78), (64, 78)], fill=False, w=3)
+    p.rect((60, 78, 92, 86), w=3, r=2)
+    p.rect((4, 90, 92, 93), fill=True)
+
+
 def calculator(p):
     # a calculator: a display and a grid of keys
     p.rect((16, 6, 80, 90), w=5, r=8)
@@ -635,7 +648,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
