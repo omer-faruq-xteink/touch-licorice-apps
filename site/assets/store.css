@@ -26,8 +26,7 @@
 body.store { background: var(--s-bg); }
 body.store .wrap { max-width: 1120px; }
 body.store main { padding-top: 0; }
-body.store header.site { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--s-bg) 82%, transparent);
-  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); border-bottom-color: transparent; }
+body.store header.site { position: sticky; top: 0; z-index: 10; background: var(--s-bg); border-bottom-color: transparent; }
 body.store header.site .home { font-size: 1.05rem; letter-spacing: -0.01em; }
 body.store footer.site { border-top: 0; }
 
@@ -81,8 +80,9 @@ body.store footer.site { border-top: 0; }
 .reader-panel.on .ico { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
 
 /* search and categories */
-.toolbar { position: sticky; top: 52px; z-index: 5; padding: 10px 0; margin-bottom: 4px;
-  background: color-mix(in srgb, var(--s-bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+/* solid, so the tiles scrolling under it do not show through; the shadow reaches past the sides */
+.toolbar { position: sticky; top: 50px; z-index: 5; padding: 10px 0 12px; margin-bottom: 4px; background: var(--s-bg);
+  box-shadow: 0 0 0 100vmax var(--s-bg); clip-path: inset(-2px -100vmax 0 -100vmax); }
 .search { position: relative; max-width: 520px; }
 .search svg { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--muted); }
 .search input { width: 100%; font: inherit; font-size: 1rem; color: var(--ink); background: var(--s-card); border: 0;
@@ -170,7 +170,7 @@ body.store footer.site { border-top: 0; }
   .hero-device { display: none; }
   .reader-panel { display: grid; grid-template-columns: 48px 1fr; padding: 16px; gap: 12px 14px; align-items: start; }
   .reader-panel .acts { grid-column: 1 / -1; justify-content: flex-start; }
-  .toolbar { top: 50px; }
+  .toolbar { top: 48px; }
   .tiles { grid-template-columns: 1fr; }
   .app-top { grid-template-columns: 84px 1fr; gap: 16px; }
   .appicon.big { width: 84px; height: 84px; border-radius: 20px; }
