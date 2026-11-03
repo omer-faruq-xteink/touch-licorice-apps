@@ -47,6 +47,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; portrait or landscape; needs firmware 2.18 |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; needs firmware 2.18 |
+| **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
@@ -322,6 +323,16 @@ the linked article as text through your rss-opds Worker (the one RSS uses), and 
 address as a QR code. Comments come level by level, loaded while you read; tap "replies" to go
 down a level. Read-only: no login. The Worker needs no CommaFeed account for this, only a full-text
 service: [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/), [more](apps/hackernews/README.md).
+
+### Bookworm
+
+A little bookworm that lives on your reading, from the reader's own reading statistics (nothing
+leaves the reader). Ten minutes of reading hatch its egg; it grows to an elder with a scholar's cap
+as the hours add up, and at 100 hours leaves an egg for the next generation. It gets hungry on days
+without a book, takes after how you read (night owl, marathon reader, butterfly...) and what you read (a candle
+for a horror fan, a magnifier for mysteries, a wizard's hat for fantasy...), talks about
+the book it is eating, keeps a diary and awards, and sleeps on the sleep screen dreaming of your
+book. [More](apps/bookworm/README.md)
 
 ### Wikipedia
 

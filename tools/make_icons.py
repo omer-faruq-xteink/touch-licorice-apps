@@ -391,6 +391,21 @@ def checkers(p):
     p.ellipse((62, 62, 74, 74), fill=True)
 
 
+def bookworm(p):
+    # a bookworm in round glasses on a closed book
+    p.rect((8, 66, 88, 86), w=3, r=3)                      # the book
+    p.rect((76, 66, 88, 86), fill=True)                    # its spine
+    for x, r in ((18, 7), (31, 8), (45, 9)):               # the body, smallest at the tail
+        p.ellipse((x - r, 58 - r, x + r, 58 + r), w=3)
+    p.white_ellipse((48, 30, 80, 62))                      # the head
+    p.ellipse((48, 30, 80, 62), w=3)
+    p.ellipse((53, 38, 63, 48), w=2); p.ellipse((65, 38, 75, 48), w=2)       # the glasses
+    p.ellipse((56, 41, 60, 45), fill=True); p.ellipse((68, 41, 72, 45), fill=True)
+    p.arc((58, 46, 70, 56), 20, 160, w=2)                  # a smile
+    p.line([(57, 31), (52, 18)], w=2); p.line([(71, 31), (76, 18)], w=2)    # antennae
+    p.ellipse((49, 15, 55, 21), fill=True); p.ellipse((73, 15, 79, 21), fill=True)
+
+
 def calculator(p):
     # a calculator: a display and a grid of keys
     p.rect((16, 6, 80, 90), w=5, r=8)
@@ -663,7 +678,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

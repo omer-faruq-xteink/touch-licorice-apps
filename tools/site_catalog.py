@@ -21,7 +21,7 @@ STORE = 'https://xtapp-ai.xteink.cc/store'
 FIRMWARE = {'2.18': '26110201'}
 
 CATEGORIES = [
-    ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'wikipedia']),
+    ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'wikipedia', 'bookworm']),
     ('tools', 'Tools and lock screens', ['tasks', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
                                          'skytonight', 'litclock', 'wordclock']),
     ('learn', 'Learning', ['anki', 'dict', 'tarot']),
