@@ -59,6 +59,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `instapaper` | Instapaper | `instapaper` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | in review | - | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
 | `notes` | Notes | `notes` | 1.1.1 | in review | 1.1.0 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
+| `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `readwise` | Readwise | `readwise` | 1.1.1 | in review | 1.0.0 | 2026-11-03 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.2.0 | in review | 1.0.0 | 2026-11-03 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
@@ -66,4 +67,4 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wallabag` | wallabag | `wallabag` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-29 published, 16 in review or draft, 45 in all.
+29 published, 17 in review or draft, 46 in all.

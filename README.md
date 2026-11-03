@@ -31,6 +31,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Cryptogram** | a daily quote with every letter swapped for another: work out the code; hint, check, 471 quotes |
 | **Word Ladder** | a daily ladder from one word to another, one letter at a time; par, hints, 730 ladders |
 | **Hashi** | Bridges: join the numbered islands, no crossings; 600 puzzles in three levels |
+| **Queens** | Queens and Star Battle: one queen (or two stars) in every row, column and region, none touching; dots for ruled-out cells; 1200 puzzles |
 | **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
@@ -199,6 +200,13 @@ next step from wherever you are. 730 ladders from the public-domain 12dicts list
 Bridges: join the numbered islands with one or two bridges each way, none crossing, all joined.
 Tap the water between two islands. 600 puzzles (7x7, 9x9, 11x11), each with one solution reached
 by reasoning. [More](apps/hashi/README.md)
+
+### Queens
+
+Queens (one queen a row, column and region) and Star Battle (two stars): no two pieces touch, not
+even diagonally. Tap a cell for a cross, again for a piece; the cells your pieces rule out are
+dotted, mistakes ringed; Undo and Hint. 1200 puzzles (Queens 6x6 to 9x9, Star Battle 9x9 and
+10x10), each with one solution reached by reasoning. [More](apps/queens/README.md)
 
 ### Kakuro
 
@@ -497,6 +505,7 @@ python -I apps/cryptogram/test_cryptogram.py
 python -I apps/wordladder/test_wordladder.py
 python -I apps/hashi/test_hashi.py
 python -I apps/kakuro/test_kakuro.py
+python -I apps/queens/test_queens.py
 python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py

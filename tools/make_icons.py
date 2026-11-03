@@ -391,6 +391,20 @@ def checkers(p):
     p.ellipse((62, 62, 74, 74), fill=True)
 
 
+def queens(p):
+    # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
+    p.rect((8, 8, 88, 88), w=4)
+    p.line([(48, 8), (48, 88)], 2)
+    p.line([(8, 48), (88, 48)], 2)
+    p.line([(48, 48), (48, 88)], 6)                        # a region's border
+    p.line([(48, 48), (88, 48)], 6)
+    p.poly([(15, 39), (15, 21), (22, 29), (28, 15), (34, 29), (41, 21), (41, 39)])   # the crown
+    p.rect((15, 37, 41, 42), fill=True)
+    for cx, cy in ((68, 28), (28, 68), (68, 68)):          # crosses: no queen there
+        p.line([(cx - 7, cy - 7), (cx + 7, cy + 7)], 4)
+        p.line([(cx + 7, cy - 7), (cx - 7, cy + 7)], 4)
+
+
 def bookworm(p):
     # a bookworm in round glasses on a closed book
     p.rect((8, 66, 88, 86), w=3, r=3)                      # the book
@@ -678,7 +692,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

@@ -1,0 +1,10 @@
+{
+  "app_id": "queens",
+  "display_name": "Queens",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Queens and Star Battle: place one queen (or two stars) in every row, column and region, none touching. 1200 puzzles in six sizes, each with one solution reached by reasoning.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

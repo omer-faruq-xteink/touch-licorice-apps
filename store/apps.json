@@ -448,5 +448,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-03"
+  },
+  "queens": {
+    "name": "Queens",
+    "app_id": "queens",
+    "listing_id": "",
+    "project_id": "bf6810f5-1e65-4774-8cf2-4428f90b18d5",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-03"
   }
 }
