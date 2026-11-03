@@ -2,7 +2,9 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Added
+
+- **New: the app site** ([omer-faruq-xteink.github.io/touch-licorice-apps](https://omer-faruq-xteink.github.io/touch-licorice-apps/)): every app with its screenshots, search and categories, and a page of its own to share. In Chrome or Edge on a computer, connect the reader in USB mode and choose its SD card: the site copies apps there (install them from All Files) and shows which installed apps have an update. The packages are those of the latest release. The tools moved to [/tools/](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/).
 
 ## Files
 

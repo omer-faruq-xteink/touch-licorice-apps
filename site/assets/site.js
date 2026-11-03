@@ -22,17 +22,24 @@ export const TOOLS = [
     blurb: 'Step by step: your own free Cloudflare Worker for the apps that use one, and what to type on the reader.' },
 ];
 
+// the header and footer of a page: chrome(null) the app list (the home page), chrome('tools') the
+// tools list, chrome('<tool id>') a tool, chrome({ app: name }) an app's page
 export function chrome(id) {
   const tool = TOOLS.find((t) => t.id === id);
-  const root = id ? '../../' : './';
+  const root = id === null ? './' : id === 'tools' ? '../' : '../../';
+  let crumb = '';
+  if (tool) crumb = `<span class="crumb">/ <a href="${root}tools/">Tools</a> / ${esc(tool.title)}</span>`;
+  else if (id && id.app) crumb = `<span class="crumb">/ ${esc(id.app)}</span>`;
+  const here = id === 'tools' || tool ? 'tools' : 'apps';
   const header = document.createElement('header');
   header.className = 'site';
-  header.innerHTML = `<div class="wrap"><a class="home" href="${root}">Touch Licorice tools</a>` +
-    (tool ? `<span class="crumb">/ ${tool.title}</span>` : '') + '</div>';
+  header.innerHTML = `<div class="wrap"><a class="home" href="${root}">Touch Licorice apps</a>${crumb}` +
+    `<nav><a href="${root}"${here === 'apps' ? ' aria-current="page"' : ''}>Apps</a>` +
+    `<a href="${root}tools/"${here === 'tools' ? ' aria-current="page"' : ''}>Tools</a></nav></div>`;
   document.body.prepend(header);
   const footer = document.createElement('footer');
   footer.className = 'site';
-  footer.innerHTML = '<div class="wrap">Tools for the <a href="' + REPO + '">touch-licorice-apps</a> mini apps for the ' +
+  footer.innerHTML = '<div class="wrap">Unofficial <a href="' + REPO + '">touch-licorice-apps</a> mini apps for the ' +
     'Xteink X4 Pro. Everything runs in your browser: your files are not uploaded anywhere.</div>';
   document.body.append(footer);
 }

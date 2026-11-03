@@ -1,11 +1,15 @@
-# The tools site: site/ plus the story pack, published to GitHub Pages
-# (https://omer-faruq-xteink.github.io/touch-licorice-apps/) on every push to main that touches it.
-name: Tools site
+# The site: the app catalog with the latest release's packages, the tools and the story pack,
+# published to GitHub Pages (https://omer-faruq-xteink.github.io/touch-licorice-apps/) on every push
+# to main that touches it. RELEASE_NOTES.md is among those: opening the next release right after one
+# is published pushes it, so the site then picks up the new packages (or run the workflow by hand).
+name: Site
 
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'apps/gamebook/stories/**', 'tools/build_site.py', '.github/workflows/pages.yml']
+    paths: ['site/**', 'apps/gamebook/stories/**', 'apps/*/README.md', 'apps/*/icon.png', 'README.md',
+            'store/apps.json', 'RELEASE_NOTES.md', 'tools/build_site.py', 'tools/site_catalog.py',
+            '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -25,7 +29,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -I tools/build_site.py _site
+      - name: The latest release's packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download --repo "$GITHUB_REPOSITORY" --pattern '*.xtapp' --dir packages
+      - run: python -I tools/build_site.py _site packages
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

@@ -3,29 +3,117 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Touch Licorice tools</title>
-<meta name="description" content="Converters and setup helpers for the touch-licorice-apps mini apps on the Xteink X4 Pro.">
+<title>Touch Licorice apps for the Xteink X4 Pro</title>
+<meta name="description" content="Free games, readers and tools for the Xteink X4 Pro on its stock XTOS Licorice firmware: download, or copy straight to the reader.">
+<meta property="og:title" content="Touch Licorice apps for the Xteink X4 Pro">
+<meta property="og:description" content="Free games, readers and tools for the Xteink X4 Pro on its stock firmware.">
+<meta property="og:image" content="https://omer-faruq-xteink.github.io/touch-licorice-apps/shots/delve-1.png">
+<meta property="og:url" content="https://omer-faruq-xteink.github.io/touch-licorice-apps/">
 <link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/store.css">
 </head>
-<body>
+<body class="store">
 <main class="wrap">
-  <h1>Tools for the reader's mini apps</h1>
-  <p class="lead">Converters and setup helpers for the
-    <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps">touch-licorice-apps</a> mini apps on the
-    Xteink X4 Pro. They run in this browser: nothing you add here is uploaded.</p>
-  <div class="cards" id="tools"></div>
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Apps for your<br>Xteink X4 Pro</h1>
+      <p>Games, puzzles, readers and everyday tools made for the e-ink screen. Free, on the reader's own
+        firmware: no flashing, no account.</p>
+      <ul class="facts" id="facts"></ul>
+      <div class="row">
+        <a class="get big" href="#apps">Browse apps</a>
+        <a class="get big ghost" href="#how">How to install</a>
+      </div>
+    </div>
+    <div class="hero-device"><div class="device"><div class="screen" id="showcase"></div></div></div>
+  </section>
 
-  <h2>Getting files onto the reader</h2>
-  <p>Each app has its own folder on the SD card, <code>AppFiles/&lt;app&gt;/</code>, for example
-    <code>AppFiles/gamebook/</code>. Connect the reader by USB (USB mode), copy the files there, and open the
-    app. Each app's help screen shows its folder (Anki and Dictionary copies installed by hand from a
-    <code>.xtapp</code> file also read <code>XTApps/&lt;app&gt;/files/</code>).</p>
+  <div id="reader"></div>
+
+  <div class="toolbar" id="apps">
+    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="q" placeholder="Search apps" aria-label="Search apps"></label>
+    <div class="pills" id="pills"></div>
+  </div>
+  <div id="list"></div>
+  <p class="empty" id="empty" hidden>No app matches your search.</p>
+
+  <div class="section-head" id="how"><h2>How to install</h2></div>
+  <ol class="how">
+    <li><strong>Copy it to the reader</strong><p>Connect the reader in USB mode and press <b>Copy to reader</b> (Chrome or
+      Edge on a computer), or download the <code>.xtapp</code> and copy it to the SD card yourself.</p></li>
+    <li><strong>Install it on the reader</strong><p>Open <b>All Files</b>, tap the package, then <b>Install</b>. An update
+      installs over the app and keeps its settings: do not uninstall first.</p></li>
+    <li><strong>Open it</strong><p>The apps are in the <b>Ink App</b> row of the drawer. Each one has a help screen.</p></li>
+  </ol>
+  <p class="fine">The packages are those of the <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps/releases/latest">latest
+    release</a>, whose notes say what changed. Many apps are also in <a href="https://xtapp-ai.xteink.cc/store">Xteink's
+    app store</a>, where updates arrive by themselves. <a href="tools/">Tools</a> convert decks, dictionaries and stories
+    for the apps.</p>
 </main>
 <script type="module">
-  import { TOOLS, chrome, esc } from './assets/site.js';
+  import { chrome, esc, bytesText } from './assets/site.js';
+  import { readerPanel, card as reader } from './assets/store.js';
   chrome(null);
-  document.getElementById('tools').innerHTML = TOOLS.map((t) =>
-    `<a class="card" href="tools/${t.id}/"><div class="app">${esc(t.app)}</div><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p></a>`).join('');
+
+  const catalog = await fetch('catalog.json').then((r) => r.json());
+  const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.name]));
+  const list = document.getElementById('list');
+  const q = document.getElementById('q');
+  let cat = '';
+
+  document.getElementById('facts').innerHTML = [`${catalog.apps.length} apps`, 'Free and open source', 'Touch and side buttons']
+    .map((f) => `<li>${f}</li>`).join('');
+
+  // the hero's screen shows a few apps in turn
+  const show = ['delve', 'rss', 'wordhive', 'tasks', 'sudoku', 'gamebook'].filter((id) => catalog.apps.some((a) => a.id === id));
+  const screen = document.getElementById('showcase');
+  screen.innerHTML = show.map((id, i) => `<img src="shots/${id}-1.png" alt=""${i ? ' loading="lazy"' : ' class="on"'}>`).join('');
+  let at = 0;
+  setInterval(() => {
+    const imgs = screen.querySelectorAll('img');
+    imgs[at].classList.remove('on');
+    at = (at + 1) % imgs.length;
+    imgs[at].classList.add('on');
+  }, 3500);
+
+  document.getElementById('pills').innerHTML = [{ id: '', name: 'All' }, ...catalog.categories]
+    .map((c) => `<button type="button" class="pill" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+  const pills = [...document.querySelectorAll('.pill')];
+
+  function tile(a) {
+    const need = a.firmware ? ` <span class="tag" title="Needs firmware XT Licorice ${esc(a.firmware)} or later">FW ${esc(a.firmware)}+</span>` : '';
+    return `<article class="tile">
+      <div class="appicon"><img src="apps/${a.id}/icon.png" alt="" loading="lazy"></div>
+      <h3><a href="apps/${a.id}/">${esc(a.name)}</a>${need}</h3>
+      <p class="sum">${a.summary}</p>
+      <div class="foot">
+        <span class="meta">${esc(catName[a.category])} · ${esc(a.version)} · ${bytesText(a.size)}</span>
+        <span class="status" data-app="${a.id}"></span>
+        <button type="button" class="get copy" data-app="${a.id}" hidden>Copy</button>
+        <a class="get dl" data-app="${a.id}" href="packages/${esc(a.file)}" download>Get</a>
+      </div></article>`;
+  }
+
+  function render() {
+    const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const shown = catalog.apps.filter((a) => (!cat || a.category === cat) &&
+      words.every((w) => (a.name + ' ' + a.summary + ' ' + catName[a.category]).toLowerCase().includes(w)));
+    list.innerHTML = catalog.categories.map((c) => {
+      const l = shown.filter((a) => a.category === c.id);
+      return l.length ? `<div class="section-head"><h2>${esc(c.name)}</h2><span>${l.length} apps</span></div>` +
+        `<div class="tiles">${l.map(tile).join('')}</div>` : '';
+    }).join('');
+    document.getElementById('empty').hidden = shown.length > 0;
+    pills.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+    reader.changed();          // the new tiles' copy buttons and status lines
+  }
+
+  q.addEventListener('input', render);
+  pills.forEach((b) => b.addEventListener('click', () => { cat = b.dataset.cat; render(); }));
+  render();
+  readerPanel(document.getElementById('reader'), './', catalog.apps.map((a) => a.id), catalog);
 </script>
 </body>
 </html>

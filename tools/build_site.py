@@ -1,17 +1,21 @@
-"""Build the tools site (GitHub Pages) into OUT_DIR: site/ without its tests, plus the downloads
-made from the repo, such as the Gamebook story pack and the Zork pack of Text adventures, and an
-OPML file per topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and
-rss/all.opml.
+"""Build the site (GitHub Pages) into OUT_DIR: site/ without its tests; the app catalog and a page
+per app with the packages of PACKAGES_DIR (tools/site_catalog.py); and the downloads made from the
+repo, such as the Gamebook story pack and the Zork pack of Text adventures, and an OPML file per
+topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and rss/all.opml.
 
-  python -I tools/build_site.py [OUT_DIR]          (default: dist/site)
+  python -I tools/build_site.py [OUT_DIR [PACKAGES_DIR]]
+                                    (defaults: dist/site, and the newest release/vX.Y.Z folder)
   python -m http.server 8765 --directory dist/site (to look at it)
 
-The GitHub workflow .github/workflows/pages.yml runs this and publishes OUT_DIR.
+The GitHub workflow .github/workflows/pages.yml runs this with the latest release's packages and
+publishes OUT_DIR.
 """
-import json, os, re, shutil, sys, zipfile
+import glob, json, os, re, shutil, sys, zipfile
 from xml.sax.saxutils import quoteattr, escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+import site_catalog  # noqa: E402
 SITE = os.path.join(ROOT, 'site')
 # the story pack: stories that are not built into the app
 STORIES = os.path.join(ROOT, 'apps', 'gamebook', 'stories')
@@ -91,6 +95,13 @@ def feed_lists(out_dir):
     return len(cats)
 
 
+def newest_release():
+    """the newest release/vX.Y.Z folder, the local stand-in for the latest release"""
+    found = glob.glob(os.path.join(ROOT, 'release', 'v*'))
+    key = lambda p: tuple(int(x) for x in re.findall(r'\d+', os.path.basename(p)))
+    return max(found, key=key) if found else None
+
+
 def main():
     out = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'dist', 'site'))
     if os.path.exists(out):
@@ -100,9 +111,11 @@ def main():
     names = story_pack(os.path.join(out, 'downloads', 'gamebook-stories.zip'))
     games = zork_pack(os.path.join(out, 'downloads', 'zork-pack.zip'))
     topics = feed_lists(os.path.join(out, 'rss'))
+    packages = sys.argv[2] if len(sys.argv) > 2 else newest_release()
+    apps = site_catalog.build(out, packages) if packages else 0
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
-          f'({len(games)} games), rss/*.opml ({topics} topics)')
+          f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}')
 
 
 if __name__ == '__main__':

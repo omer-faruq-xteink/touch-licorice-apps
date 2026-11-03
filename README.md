@@ -4,8 +4,11 @@ Games and tools for the **Xteink X4 Pro** e-reader running its stock **XTOS Lico
 written in Lua for the firmware's built-in mini-app host. No custom firmware, no flashing: you
 copy a package to the SD card and install it from the reader's own file browser. Most of them are
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
-arrive by themselves. The [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)
-converts Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
+arrive by themselves. The [app site](https://omer-faruq-xteink.github.io/touch-licorice-apps/) lists
+every app with its screenshots and, in Chrome or Edge on a computer, copies apps straight to the
+reader's SD card in USB mode and shows which installed apps have an update. Its
+[tools](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/)
+convert Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
 [feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS and the
 [Zork pack](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/) for Text adventures, and walks through
 the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS and Hacker News.
