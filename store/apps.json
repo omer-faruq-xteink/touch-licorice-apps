@@ -84,10 +84,10 @@
     "app_id": "gamebook",
     "listing_id": "u_141e0f7c824e4b9aa42bfa0315dc06b9",
     "project_id": "89c08996-c25d-4eda-9977-a0b19f50e23d",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.0.1",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-30"
+    "submitted": "2026-11-03"
   },
   "hackernews": {
     "name": "Hacker News",
@@ -214,10 +214,10 @@
     "app_id": "notes",
     "listing_id": "u_87bf7fe523124e389f09d97a2956d993",
     "project_id": "10ee478f-e339-4bc9-a0d1-370a22228ec1",
-    "release_version": "1.1.0",
-    "status": "published",
+    "release_version": "1.1.1",
+    "status": "in review",
     "live_version": "1.1.0",
-    "submitted": "2026-10-30"
+    "submitted": "2026-11-03"
   },
   "pegsolitaire": {
     "name": "Peg Solitaire",
