@@ -24,12 +24,12 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `anki` | Anki | `anki` | 0.1.1 | published | 0.1.1 | 2026-10-29 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
+| `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
+| `delve` | Delve | `delve` | 1.0.0 | published | 1.0.0 | 2026-11-01 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `dict` | Dictionary | `dict` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.0 | published | 1.0.0 | 2026-10-30 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
-| `hackernews` | Hacker News | `hackernews` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
-| `instapaper` | Instapaper | `instapaper` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `klondike` | Klondike | `klondike` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cb0f7994-54d7-41a6-963d-fc1fd466c3d6` |
 | `knightstour` | Knight's Tour | `knightstour` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `34c4be95-b474-4ee7-8224-ead826489eb8` |
 | `lightsout` | Lights Out | `lightsout` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `5cc3b0a4-112a-4124-8f3c-9799f92cf3eb` |
@@ -47,20 +47,20 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `suguru` | Suguru | `suguru` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
-| `wallabag` | wallabag | `wallabag` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
-| `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | in review | - | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
-| `delve` | Delve | `delve` | 1.0.0 | in review | - | 2026-11-01 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
+| `hackernews` | Hacker News | `hackernews` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | in review | - | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
+| `instapaper` | Instapaper | `instapaper` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | in review | - | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
-| `readwise` | Readwise | `readwise` | 1.1.0 | in review | 1.0.0 | 2026-11-02 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
-| `rss` | RSS | `rss` | 1.1.1 | in review | 1.0.0 | 2026-11-01 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `readwise` | Readwise | `readwise` | 1.1.1 | in review | 1.0.0 | 2026-11-03 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
+| `rss` | RSS | `rss` | 1.2.0 | in review | 1.0.0 | 2026-11-03 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
 | `tasks` | Tasks | `tasks` | 1.1.0 | in review | 1.0.0 | 2026-11-01 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
+| `wallabag` | wallabag | `wallabag` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-32 published, 10 in review or draft, 42 in all.
+31 published, 11 in review or draft, 42 in all.

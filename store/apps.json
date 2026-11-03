@@ -45,8 +45,8 @@
     "listing_id": "",
     "project_id": "9cf7c2da-b43d-4604-b2a8-20831b432999",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-10-31"
   },
   "dict": {
@@ -94,10 +94,10 @@
     "app_id": "hackernews",
     "listing_id": "u_8b569131c8c94c05830297a26ec72254",
     "project_id": "70abf652-40aa-4091-ac58-9dfa81e818a5",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-03"
   },
   "hashi": {
     "name": "Hashi",
@@ -114,10 +114,10 @@
     "app_id": "instapaper",
     "listing_id": "u_ac3cdd4ad8b447159cc33fe6c138ddaa",
     "project_id": "900b4ce0-352d-4960-98d6-2e8c46978cd9",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-03"
   },
   "kakuro": {
     "name": "Kakuro",
@@ -234,20 +234,20 @@
     "app_id": "readwise",
     "listing_id": "u_4ad5b5be8f5846c082535c2b806e2e67",
     "project_id": "9f9f4778-901e-4a18-b863-033d9384a44c",
-    "release_version": "1.1.0",
+    "release_version": "1.1.1",
     "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-11-02"
+    "submitted": "2026-11-03"
   },
   "rss": {
     "name": "RSS",
     "app_id": "rss",
     "listing_id": "u_ab793ec31bec4a66affe7ec5ba71e9aa",
     "project_id": "89ca4ab2-9fb9-4017-8d88-31973aa0cc7d",
-    "release_version": "1.1.1",
+    "release_version": "1.2.0",
     "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-11-01"
+    "submitted": "2026-11-03"
   },
   "skytonight": {
     "name": "Sky Tonight",
@@ -354,10 +354,10 @@
     "app_id": "wallabag",
     "listing_id": "u_a2c2addaabf84bd8bee91bd4b85c7c37",
     "project_id": "e3ab6293-9ad8-4e80-a5b6-433447d65052",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-03"
   },
   "weather": {
     "name": "Weather",
@@ -415,8 +415,8 @@
     "listing_id": "",
     "project_id": "f48f0c06-c0cf-4cec-a8c9-8c0523c558e6",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-01"
   }
 }
