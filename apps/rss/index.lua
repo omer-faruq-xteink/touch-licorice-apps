@@ -2046,7 +2046,7 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Tags', 'tags' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
+local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
 -- the menu's and Settings' cells: one column in portrait, two in landscape
@@ -2067,13 +2067,36 @@ end
 local function apply_orientation()
   if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
 end
-settings_list = function()
+settings_list = function()            -- Screen goes before the offline copies
   local t = {}
-  for k, v in ipairs(SETTINGS) do t[k] = v end
-  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  for _, v in ipairs(SETTINGS) do if v[1] ~= 'cache' then t[#t + 1] = v end end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
+  for _, v in ipairs(SETTINGS) do if v[1] == 'cache' then t[#t + 1] = v end end
   return t
 end
-setting_rect = function(i) return cell(i, TOP + 20, 96, 96) end
+-- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
+-- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
+local HALF = { full = true, size = true, images = true, screen = true }
+local function setting_rows()
+  local out, row, col = {}, 0, 0
+  local cw = (W - 48) // 2
+  for i, s in ipairs(settings_list()) do
+    if cols() > 1 or HALF[s[1]] then
+      if col == 2 then row, col = row + 1, 0 end
+      out[i] = { 16 + col * (cw + 16), row, cw }
+      col = col + 1
+    else
+      if col > 0 then row, col = row + 1, 0 end
+      out[i] = { 16, row, W - 32 }
+      row = row + 1
+    end
+  end
+  return out, row + (col > 0 and 1 or 0)
+end
+setting_rect = function(i)
+  local r = setting_rows()[i]
+  return r[1], TOP + 20 + r[2] * 96, r[3], 96
+end
 -- "Enter the Worker in Settings" on the full-text page: under the QR code, or in landscape
 -- under the text with the QR code beside it
 local function needworker_btn()
@@ -2280,13 +2303,14 @@ local function draw_settings(gg)
     gg:rect(x, y + 24, w, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
-    if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
-    if s[1] == 'screen' then v = cfg.screen .. '   (tap to change)' end
+    if s[1] == 'size' then v = cfg.size end
+    if s[1] == 'screen' then v = cfg.screen end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
     gg:text(x + 12, y + 36, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
-  if cols() == 1 then gg:text(16, TOP + 20 + #list_ * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small }) end
+  local _, rows = setting_rows()
+  if cols() == 1 then gg:text(16, TOP + 20 + rows * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small }) end
   draw_status(gg)
 end
 

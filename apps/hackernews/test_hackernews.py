@@ -280,11 +280,11 @@ assert 'https://img.example/r?u=2' in requests and '[picture]' in g.texts() and 
 g.tap_label('Back')
 assert L.globals().released == 2 and len(list(A().pics().keys())) == 0
 # pictures off
-g.tap_label('Settings'); g.tap(100, 70 + 4 * 86 + 40)
+g.tap_label('Settings'); g.tap(300, 70 + 3 * 86 + 40)
 assert A().cfg.images == 'off' and 'images=off' in g.store['settings.txt']
 g.tap_label('Back'); g.tap(100, row(1)); answer_all()
 assert not any('images=1' in r for r in requests[-2:]) and 'picture' not in page_text()
-g.tap_label('Back'); g.tap_label('Settings'); g.tap(100, 70 + 4 * 86 + 40); g.tap_label('Back'); g.tap(100, row(1)); answer_all()
+g.tap_label('Back'); g.tap_label('Settings'); g.tap(300, 70 + 3 * 86 + 40); g.tap_label('Back'); g.tap(100, row(1)); answer_all()
 mode['worker'] = 'old'
 g.tap_label('Back'); g.tap(100, row(1)); answer_all()
 assert 'the Worker is older than /api/read; update it' in page_text()
@@ -330,7 +330,8 @@ def overflow(col=400):
     """texts above the buttons past the right edge, or into the next column (10 px a character here)"""
     return [(str(r.s), int(r.x)) for r in g.draw() if int(r.y) < 384 and int(r.x) + 10 * len(str(r.s)) > (col if int(r.x) < col else 800) - 8]
 g.tap_label('Settings')
-assert 'Screen (turns the app)' in g.texts(), g.texts()
+assert 'Screen' in g.texts(), g.texts()
+assert all(int(r.y) + 22 <= 704 for r in g.draw() if str(r.s) != 'Back'), [(str(r.s), int(r.y)) for r in g.draw()]   # the note ends above the button
 g.tap_label('portrait')
 assert A().cfg.screen == 'landscape' and 'screen=landscape' in g.store['settings.txt'] and int(ctx.screen.width) == 800
 assert any(int(r.x) > 400 for r in g.draw()) and not overflow(), overflow()

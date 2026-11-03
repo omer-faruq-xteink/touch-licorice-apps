@@ -308,9 +308,9 @@ key('back')                                            # list -> menu
 t = texts()
 assert t.index('Tags') < t.index('Settings') and 'Add feed' not in t, t   # feeds are added inside My feeds
 tap(100, 100 + 5 * 70 + 10)                            # Settings
-SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
+SIZE_ROW = 56 + 20 + 3 * 96 + 24 + 10            # beside Full text: x 300
 assert any(x.startswith('default') for x in texts()), texts()
-tap(100, SIZE_ROW)
+tap(300, SIZE_ROW)
 assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large\nimages=0\nscreen=portrait'), g.store['config.txt']
 tap(100, 20)                                           # back to the menu
 tap(100, 100 + 10); g.flush()                          # Unread
@@ -323,7 +323,7 @@ assert fonts_of('Summary sentence.') == {'large'}, fonts_of('Summary sentence.')
 tap_label('Close')
 key('back')
 tap(100, 100 + 5 * 70 + 10)
-tap(100, SIZE_ROW)                                     # large -> small
+tap(300, SIZE_ROW)                                     # large -> small
 assert g.store['config.txt'].endswith('size=small\nimages=0\nscreen=portrait')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
@@ -332,7 +332,7 @@ assert fonts_of('First paragraph') == {'small'} and fonts_of('Article 3') == {'m
 tap(50, 20)
 key('back')
 tap(100, 100 + 5 * 70 + 10)
-tap(100, SIZE_ROW)                                     # small -> default again
+tap(300, SIZE_ROW)                                     # small -> default again
 assert g.store['config.txt'].endswith('size=default\nimages=0\nscreen=portrait')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
@@ -345,7 +345,7 @@ responses['/api/article/104'] = {'id': '104', 'title': 'Article 4', 'feed': 'Fee
     'text': 'Before\n\n[[img:1]]\n\nAfter\n\n[[img:2]]\n\nEnd', 'images': [
         {'n': 1, 'w': 456, 'h': 300, 'src': 'https://images.weserv.nl/?url=AAA&w=456&h=300'},
         {'n': 2, 'w': 200, 'h': 100, 'src': 'https://images.weserv.nl/?url=BBB&w=200&h=100'}]}
-IMAGES_ROW = 56 + 20 + 5 * 96 + 24 + 10
+IMAGES_ROW = 56 + 20 + 4 * 96 + 24 + 10
 key('back')
 tap(100, 100 + 5 * 70 + 10)                            # Settings
 assert 'off' in texts()
@@ -671,7 +671,7 @@ idx = str(g.store['cache_idx.txt']).split(chr(10))
 assert 'a103.txt' in idx and idx[-1] == 'a800.txt', idx
 g = restart(); g.flush()
 tap_label('Settings')
-CACHE_ROW = 56 + 20 + 6 * 96 + 24 + 10
+CACHE_ROW = 56 + 20 + 5 * 96 + 24 + 10
 n = len(idx)
 assert any(x.startswith('%d ' % n) for x in texts()), texts()
 tap(100, CACHE_ROW)
@@ -697,10 +697,11 @@ def overflow():
     """texts that run past the right edge, or into the next column (10 px a character here)"""
     return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
 tap_label('Settings')
-assert 'Screen (turns the app)' in texts(), texts()
-x, y = recs()['portrait   (tap to change)']; tap(x + 5, y + 5)
+assert 'Screen' in texts(), texts()
+assert max(int(r.y) for r in draw().values()) <= 800 - 48, [(str(r.s), int(r.y)) for r in draw().values()]   # portrait: it all fits
+x, y = recs()['portrait']; tap(x + 5, y + 5)
 assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
-assert 'landscape   (tap to change)' in texts() and not overflow(), overflow()
+assert 'landscape' in texts() and not overflow(), overflow()
 key('back')
 cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
 assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns
@@ -718,7 +719,7 @@ key('right'); g.flush()                                # the picture takes page 
 img = [u for u in requests[n:] if 'weserv' in u]
 assert len(img) == 1 and '&w=265&h=372&' in img[0], requests[n:]          # 456 x 640 -> one page high
 key('back'); key('back'); key('back'); tap_label('Settings')
-x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+x, y = recs()['landscape']; tap(x + 5, y + 5)
 assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
 g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
 g = restart(); g.flush()

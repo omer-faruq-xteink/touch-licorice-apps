@@ -1142,7 +1142,7 @@ end
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'Archive', 'archive' }, { 'Tags', 'feeds' }, { 'Settings', 'settings' } }
 local SETTINGS = { { 'host', 'Server (app.wallabag.it or your own)' }, { 'client_id', 'Client ID' },
                    { 'client_secret', 'Client secret' }, { 'username', 'Username' }, { 'password', 'Password' },
-                   { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
+                   { 'size', 'Text size' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 local SET_Y, SET_H = TOP + 14, 74
 
@@ -1164,13 +1164,36 @@ end
 local function apply_orientation()
   if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
 end
-settings_list = function()
+settings_list = function()            -- Screen goes before the offline copies
   local t = {}
-  for k, v in ipairs(SETTINGS) do t[k] = v end
-  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  for _, v in ipairs(SETTINGS) do if v[1] ~= 'cache' then t[#t + 1] = v end end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
+  for _, v in ipairs(SETTINGS) do if v[1] == 'cache' then t[#t + 1] = v end end
   return t
 end
-setting_rect = function(i) return cell(i, SET_Y, SET_H, SET_H) end
+-- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
+-- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
+local HALF = { username = true, password = true, size = true, images = true, screen = true }
+local function setting_rows()
+  local out, row, col = {}, 0, 0
+  local cw = (W - 48) // 2
+  for i, s in ipairs(settings_list()) do
+    if cols() > 1 or HALF[s[1]] then
+      if col == 2 then row, col = row + 1, 0 end
+      out[i] = { 16 + col * (cw + 16), row, cw }
+      col = col + 1
+    else
+      if col > 0 then row, col = row + 1, 0 end
+      out[i] = { 16, row, W - 32 }
+      row = row + 1
+    end
+  end
+  return out, row + (col > 0 and 1 or 0)
+end
+setting_rect = function(i)
+  local r = setting_rows()[i]
+  return r[1], SET_Y + r[2] * SET_H, r[3], SET_H
+end
 
 local function bar(gg, labels)
   local F = ctx.fonts
@@ -1323,15 +1346,16 @@ local function draw_settings(gg)
     gg:rect(x, y + 22, w, 44)
     local v = cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
-    if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
-    if s[1] == 'screen' then v = cfg.screen .. '   (tap to change)' end
+    if s[1] == 'size' then v = cfg.size end
+    if s[1] == 'screen' then v = cfg.screen end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'password' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'client_secret' and #v > 10 then v = v:sub(1, 4) .. '...' .. v:sub(-4) end
     gg:text(x + 12, y + 32, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
   if cols() > 1 then draw_status(gg); return end     -- landscape: no room for the note
-  local y = SET_Y + #list_ * SET_H
+  local _, rows = setting_rows()
+  local y = SET_Y + rows * SET_H
   for _, l in ipairs({ 'In wallabag on the web: API clients management,', 'Create a new client; copy its ID and secret. Or',
                        'put host=, client_id=, client_secret=, username=,', 'password= lines in XTApps/wallabag/files/config.txt.' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 22

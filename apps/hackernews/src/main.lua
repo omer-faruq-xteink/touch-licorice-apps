@@ -570,16 +570,34 @@ end
 local function settings_list()
   local t = {}
   for k, v in ipairs(SETTINGS) do t[k] = v end
-  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
   return t
 end
 -- one column in portrait, two in landscape
 local function cols() return W > H and 2 or 1 end
-local function setting_rect(k)
-  local n = cols()
-  local cw = (W - 32 - (n - 1) * 16) // n
-  local r, c = (k - 1) // n, (k - 1) % n
-  return 16 + c * (cw + 16), 70 + r * 86, cw, 86
+local setting_rect
+-- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
+-- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
+local HALF = { size = true, images = true, screen = true }
+local function setting_rows()
+  local out, row, col = {}, 0, 0
+  local cw = (W - 48) // 2
+  for i, s in ipairs(settings_list()) do
+    if cols() > 1 or HALF[s[1]] then
+      if col == 2 then row, col = row + 1, 0 end
+      out[i] = { 16 + col * (cw + 16), row, cw }
+      col = col + 1
+    else
+      if col > 0 then row, col = row + 1, 0 end
+      out[i] = { 16, row, W - 32 }
+      row = row + 1
+    end
+  end
+  return out, row + (col > 0 and 1 or 0)
+end
+setting_rect = function(i)
+  local r = setting_rows()[i]
+  return r[1], 70 + r[2] * 86, r[3], 86
 end
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
@@ -594,7 +612,8 @@ local function draw_settings(gg)
     gg:line(x, y + 78, x + w, y + 78)
   end
   if cols() > 1 then return end                    -- landscape: no room for the note
-  local y = 70 + #list * 86 + 8
+  local _, rows = setting_rows()
+  local y = 70 + rows * 86 + 8
   for _k, l in ipairs(N.wrap('Stories open as text, with their pictures if you like, through your rss-opds Worker (the one RSS '
       .. 'uses, with the same host and login; it needs /api/read, so update it once). Without a Worker a story ends with its '
       .. 'address as a QR code. Tap the left third of a page to go back, elsewhere to go on.', 'small', W - 32)) do

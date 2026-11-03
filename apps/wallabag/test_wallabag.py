@@ -164,7 +164,9 @@ TOP = 56
 row_y = lambda i: TOP + 26 + i * 58 + 5
 BAR = lambda i: (4 + i * 118 + 10, 20)
 MENU = lambda i: (100, 100 + i * 70 + 10)
-SET = lambda i: (100, TOP + 14 + i * 74 + 22 + 10)
+# Settings in portrait: host, client ID, secret one to a row, then username | password side by side
+SET_AT = [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1)]
+SET = lambda i: (100 + 232 * SET_AT[i][1], TOP + 14 + SET_AT[i][0] * 74 + 22 + 10)
 store = g.store
 
 # ---- no settings: the app opens on Settings; typing them in, then Back signs in
@@ -334,10 +336,11 @@ def overflow():
     """texts that run past the right edge, or into the next column (10 px a character here)"""
     return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
 if 'Settings' in texts(): tap_label('Settings')
-assert 'Screen (turns the app)' in texts(), texts()
-x, y = recs()['portrait   (tap to change)']; tap(x + 5, y + 5)
+assert 'Screen' in texts(), texts()
+assert max(int(r.y) for r in draw().values()) <= 800 - 48, [(str(r.s), int(r.y)) for r in draw().values()]   # portrait: it all fits
+x, y = recs()['portrait']; tap(x + 5, y + 5)
 assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
-assert 'landscape   (tap to change)' in texts() and not overflow(), overflow()
+assert 'landscape' in texts() and not overflow(), overflow()
 key('back')
 cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
 assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns
@@ -348,7 +351,7 @@ asked = [c[1] for c in calls[n:]]
 assert any('perPage=6' in u for u in asked), asked
 assert not [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > 800], texts()
 key('back'); tap_label('Settings')
-x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+x, y = recs()['landscape']; tap(x + 5, y + 5)
 assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
 g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
 g = load(); g.flush()
