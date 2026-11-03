@@ -9,7 +9,7 @@
 local S = require('story')
 local W, H = kit.W, kit.H
 
-local SITE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/'
+local SITE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/gamebook/'
 local LANG_NAMES = { en = 'English', tr = 'Türkçe', de = 'Deutsch', fr = 'Français', es = 'Español' }
 
 local WORDS = {
