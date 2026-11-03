@@ -11,7 +11,7 @@ topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and r
 The GitHub workflow .github/workflows/pages.yml runs this with the latest release's packages and
 publishes OUT_DIR.
 """
-import glob, json, os, re, shutil, sys, zipfile
+import glob, hashlib, json, os, re, shutil, sys, zipfile
 from xml.sax.saxutils import quoteattr, escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -97,6 +97,25 @@ def feed_lists(out_dir):
     return len(cats)
 
 
+def stamp_assets(out):
+    """add ?v=<version of assets/> to every address of a file in assets/, in the pages and scripts:
+    GitHub Pages lets browsers keep files 10 minutes, and a new page with an old stylesheet looks broken"""
+    adir = os.path.join(out, 'assets')
+    names = sorted(os.listdir(adir))
+    h = hashlib.sha256()
+    for n in names:
+        h.update(n.encode() + open(os.path.join(adir, n), 'rb').read())
+    v = h.hexdigest()[:10]
+    pat = re.compile(r"""(?<=[/'"])(""" + '|'.join(re.escape(n) for n in names) + r""")(?=['"])""")
+    for path in glob.glob(os.path.join(out, '**', '*.*'), recursive=True):
+        if path.endswith(('.html', '.js')):
+            s = open(path, encoding='utf-8').read()
+            t = pat.sub(lambda m: f'{m.group(1)}?v={v}', s)
+            if t != s:
+                open(path, 'w', encoding='utf-8', newline='\n').write(t)
+    return v
+
+
 def newest_release():
     """the newest release/vX.Y.Z folder, the local stand-in for the latest release"""
     found = glob.glob(os.path.join(ROOT, 'release', 'v*'))
@@ -118,6 +137,7 @@ def main():
     apps = site_catalog.build(out, packages) if packages else 0
     # COMMUNITY_FIXTURES: sample inkapp.json files instead of GitHub's search (tests, previews)
     community = site_community.build(out, os.environ.get('COMMUNITY_FIXTURES'))
+    stamp_assets(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
           f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
