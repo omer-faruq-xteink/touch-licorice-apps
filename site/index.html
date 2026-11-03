@@ -35,7 +35,11 @@
       <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" id="q" placeholder="Search apps" aria-label="Search apps"></label>
     <div class="filter-row">
-      <div class="pills" id="pills"></div>
+      <div class="pill-scroll" id="pillbox">
+        <button type="button" class="scroll-btn left" aria-label="Earlier categories" tabindex="-1">&lsaquo;</button>
+        <div class="pills" id="pills"></div>
+        <button type="button" class="scroll-btn right" aria-label="More categories" tabindex="-1">&rsaquo;</button>
+      </div>
       <div class="seg" id="devices" role="group" aria-label="Device"></div>
     </div>
   </div>
@@ -147,7 +151,38 @@
   }
 
   q.addEventListener('input', render);
-  pills.forEach((b) => b.addEventListener('click', () => { cat = b.dataset.cat; render(); }));
+  pills.forEach((b) => b.addEventListener('click', () => {
+    cat = b.dataset.cat;
+    render();
+    b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  }));
+
+  // the categories stay on one row: when they do not fit, a fade and an arrow show on the side with
+  // more, and the mouse wheel or a drag moves them (touch screens swipe)
+  const box = document.getElementById('pillbox'), row = document.getElementById('pills');
+  const edges = () => {
+    box.classList.toggle('more-left', row.scrollLeft > 2);
+    box.classList.toggle('more-right', row.scrollLeft + row.clientWidth < row.scrollWidth - 2);
+  };
+  row.addEventListener('scroll', edges, { passive: true });
+  new ResizeObserver(edges).observe(row);
+  box.querySelector('.left').addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.7, behavior: 'smooth' }));
+  box.querySelector('.right').addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.7, behavior: 'smooth' }));
+  row.addEventListener('wheel', (e) => {
+    if (row.scrollWidth <= row.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    row.scrollLeft += e.deltaY;
+  }, { passive: false });
+  let drag = null;
+  row.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') drag = { x: e.clientX, left: row.scrollLeft, moved: false }; });
+  addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (Math.abs(e.clientX - drag.x) > 4) drag.moved = true;
+    row.scrollLeft = drag.left - (e.clientX - drag.x);
+  });
+  addEventListener('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
+  row.addEventListener('click', (e) => { if (drag && drag.moved) { e.stopPropagation(); e.preventDefault(); } }, true);
+  edges();
   devs.forEach((b) => b.addEventListener('click', () => { device = b.dataset.dev; render(); }));
   render();
   readerPanel(document.getElementById('reader'), './', catalog.apps.map((a) => a.id), catalog);
