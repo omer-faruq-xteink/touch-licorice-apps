@@ -23,6 +23,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Knight's Tour** | take a knight over every square of a 6x6 or 8x8 board; hint, undo |
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
 | **Chess** | a whole game against the reader at four levels (Beginner to Hard), or two players on one reader; moves marked, undo, hint, the game kept |
+| **Checkers** | English checkers or Turkish draughts (Dama) against the reader at four levels, or two players on one reader; compulsory and longest captures, undo, hint, the game kept |
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
 | **Go problems** | 620 life-and-death problems (tsumego) in three levels, made and checked for the app, and your own SGF files; hint, retry |
 | **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
@@ -144,6 +145,13 @@ A whole game against the reader at four levels (Beginner, Easy, Medium, Hard), o
 one reader. Tap a piece and its moves are marked; Undo takes back your move and the reply, Hint
 frames a good move, and the game is kept when you leave. The reader thinks only on its own move,
 a few seconds at most. [More](apps/chessplay/README.md)
+
+### Checkers
+
+English checkers (diagonal moves on the dark squares) or Turkish draughts, Dama (forward and sideways,
+flying kings, the longest capture compulsory), against the reader at four levels or two players on one
+reader. A capture goes the whole way in one tap; Undo, Hint and the game kept as in Chess.
+[More](apps/checkers/README.md)
 
 ### Chess puzzles
 

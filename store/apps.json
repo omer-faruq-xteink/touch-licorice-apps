@@ -428,5 +428,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-03"
+  },
+  "checkers": {
+    "name": "Checkers",
+    "app_id": "checkers",
+    "listing_id": "",
+    "project_id": "6cea5da4-eaf2-42fe-b5ea-35632a8f74b9",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-03"
   }
 }

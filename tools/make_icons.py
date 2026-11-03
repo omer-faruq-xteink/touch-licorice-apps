@@ -376,6 +376,21 @@ def chessplay(p):
     p.rect((4, 90, 92, 93), fill=True)
 
 
+def checkers(p):
+    # draughts: a solid man and a white king (crowned) on a corner of a board
+    for r in range(2):
+        for c in range(2):
+            if (r + c) % 2 == 0:
+                p.rect((8 + c * 40, 8 + r * 40, 48 + c * 40, 48 + r * 40), w=3)
+    p.rect((8, 8, 88, 88), w=4)
+    p.ellipse((14, 14, 42, 42), fill=True)                 # a black man
+    p.white_ellipse((20, 20, 36, 36))
+    p.ellipse((23, 23, 33, 33), fill=True)
+    p.white_ellipse((54, 54, 82, 82))                      # a white king
+    p.ellipse((54, 54, 82, 82), w=3)
+    p.ellipse((62, 62, 74, 74), fill=True)
+
+
 def calculator(p):
     # a calculator: a display and a grid of keys
     p.rect((16, 6, 80, 90), w=5, r=8)
@@ -648,7 +663,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

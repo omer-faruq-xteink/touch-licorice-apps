@@ -5,6 +5,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Added
 
 - **New: Chess** (`chessplay.xtapp`): a whole game against the reader at four levels (Beginner, Easy, Medium, Hard), or two players on one reader. Tap a piece and its moves are marked; a pawn on the last rank asks what it becomes. Undo takes back your move and the reply, Hint frames a good move, New game picks the opponent and your side (playing Black turns the board). Checkmate, stalemate and the draws (repetition, 50 moves, too little material) end the game; the last moves show in chess notation, and the game is kept when you leave. The reader thinks only on its own move: under a second on Easy, about 3.5 s on Medium, 8 s on Hard (four moves ahead).
+- **New: Checkers** (`checkers.xtapp`): English checkers or Turkish draughts (Dama), against the reader at four levels or two players on one reader. Tap a piece and its moves are marked; a capture goes the whole way in one tap. Captures are compulsory (in Dama the longest line must be taken, kings fly and may not turn back); Undo, Hint, playing either side, and the game kept when you leave. As in Chess, the reader thinks only on its own move.
 - **New: the app site** ([omer-faruq-xteink.github.io/touch-licorice-apps](https://omer-faruq-xteink.github.io/touch-licorice-apps/)): every app with its screenshots, search and categories, and a page of its own to share. In Chrome or Edge on a computer, connect the reader in USB mode and choose its SD card: the site copies apps there (install them from All Files) and shows which installed apps have an update. The packages are those of the latest release. The tools moved to [/tools/](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/). **Community apps** by other developers appear at the bottom, found daily from GitHub repos with the topic `licorice-ink-app` and an `inkapp.json`; they are only linked, never copied or checked ([add your app](https://omer-faruq-xteink.github.io/touch-licorice-apps/developers/)).
 
 ## Changed
@@ -17,6 +18,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 | file | content |
 |---|---|
 | `chessplay.xtapp` | **new**: Chess |
+| `checkers.xtapp` | **new**: Checkers (and Dama) |
 | `gamebook.xtapp` | Gamebook 1.0.1: help QR code opens the story tools |
 | `notes.xtapp` | Notes 0.3.1: a lock screen without the clock refreshes hourly |
 | all other packages | unchanged since v0.17.0 |
