@@ -1,4 +1,7 @@
-# RSS — XTOS Licorice mini app (API 2.9)
+# RSS — XTOS Licorice mini app (API 2.18)
+
+**Needs firmware with API 2.18** (XT Licorice 26110201 or later): older firmware refuses to install it
+and asks for an update.
 
 Reads RSS and Atom feeds on the device, as text, in one of two ways (or both side by side):
 
@@ -23,7 +26,10 @@ CommaFeed, or full text for feeds on the reader:
    after `/k/`) or **user:password**, and switch **Full text** on if the Worker has a sanitizer
    token. Each field opens the firmware's keyboard. **Text size** (small / default / large) sets
    the type of articles and previews; tap it to change. **Images in articles** (off by default)
-   shows article pictures where they are in the text.
+   shows article pictures where they are in the text. **Screen**: portrait
+   or landscape; the app turns at once and opens that way next time. In landscape a list page
+   holds 6 articles (the Worker is asked for 6 at a time), the menu and Settings take two columns,
+   and an open article is laid out again at about the same place.
 3. **Back**: CommaFeed appears in the menu, next to your collections.
 
 The device must be on Wi-Fi; the app asks the host to keep it on while in use.

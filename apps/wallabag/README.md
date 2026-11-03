@@ -1,4 +1,7 @@
-# wallabag — XTOS Licorice mini app (API 2.9)
+# wallabag — XTOS Licorice mini app (API 2.18)
+
+**Needs firmware with API 2.18** (XT Licorice 26110201 or later): older firmware refuses to install it
+and asks for an update.
 
 Reads your [wallabag](https://wallabag.org) articles on the device, as text. wallabag is an open
 read-later service: your own server, or a hosted one (wallabag.it, or a free public instance).
@@ -43,7 +46,7 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
   **Starred** to remove the star).
 - **Text size** and **Images in articles** in Settings, as in Instapaper: pictures come as
   greyscale JPEGs from the free images.weserv.nl resizer, for the page on screen only.
-- **Screen** in Settings (firmware with API 2.18): portrait or landscape. The app turns at once and
+- **Screen** in Settings: portrait or landscape. The app turns at once and
   opens that way next time; in landscape a list page holds 6 rows (the server is asked for 6 at a
   time), the menu and Settings take two columns, and an open article is laid out again at about the
   same place.

@@ -305,18 +305,20 @@ end
 return N
 end
 
--- Hacker News for XTOS Licorice, API 2.9 (uses tools/gamekit and src/hn.lua). Needs Wi-Fi.
+-- Hacker News for XTOS Licorice, API 2.18 (uses tools/gamekit and src/hn.lua). Needs Wi-Fi.
 --
 -- Top, New, Best, Ask and Show in HN's own order, and search (Algolia). A story opens with its
 -- text (Ask HN), or the linked article as text through the user's rss-opds Worker (/api/read, the
 -- same full-text services RSS uses), else its address as a QR code. Comments open level by level:
 -- a page shows the replies to one story or comment in HN's order, loaded one by one while you
--- read; tap a comment's "replies" to go down, Back to come up. Settings: the Worker, text size.
+-- read; tap a comment's "replies" to go down, Back to come up. Settings: the Worker, text size,
+-- pictures, and the screen (API 2.18, which the manifest asks for): portrait (480 x 800) or landscape (800 x 480);
+-- the layout follows ctx.screen's size (sync_screen), and an open page is laid out again in place.
 --
 -- One request at a time (a queue); leaving a screen drops what it still waited for.
 
 local N = require('hn')
-local W, H = kit.W, kit.H
+local W, H = kit.W, kit.H      -- the screen now (sync_screen); the rest follow it
 local BTN_Y, BTN_H = 704, 64
 local LIST_TOP, ROW_H, ROWS = 64, 78, 8
 local DOC_TOP, DOC_BOTTOM = 14, BTN_Y - 30
@@ -326,13 +328,24 @@ local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-a
 local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
 
-local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on' }
+local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait' }
 local screen = 'list'           -- list | story | thread | settings
 local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
 local S = nil                   -- the open story: { row, item, article, article_err, lines, pages, page }
 local levels = {}               -- comment levels, deepest last: { parent, kids, got, next, page, lines, pages }
 local thread_from = 'list'
 local status, ERR = nil, nil
+
+-- a character limit set for the 480 px portrait width, scaled to the screen's width now
+local function wide(n) return math.max(8, n * W // 480) end
+-- s cut to fit maxw pixels in font fname, whole UTF-8 characters, with "~" where it was cut
+local function fit(s, fname, maxw)
+  s = tostring(s)
+  local f = kit.font(fname)
+  if kit.width(f, s) <= maxw then return s end
+  while s ~= '' and kit.width(f, s .. '~') > maxw do s = kit.drop_last(s) end
+  return s .. '~'
+end
 
 local function now_sec()
   local ok, t = pcall(function() return ctx.clock:now() end)
@@ -346,9 +359,10 @@ local function load_cfg()
   for k in pairs(cfg) do if t[k] then cfg[k] = t[k] end end
   if not SIZES[cfg.size] then cfg.size = 'medium' end
   if cfg.images ~= 'off' then cfg.images = 'on' end
+  if cfg.screen ~= 'landscape' then cfg.screen = 'portrait' end
 end
 local function save_cfg()
-  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images)
+  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen)
 end
 local function worker_url(path)
   local host = cfg.host:gsub('^https?://', ''):gsub('/+$', '')
@@ -523,6 +537,11 @@ local function add_text(out, text, cidx, article, images)
     if imgn then
       -- an article picture (Settings: Images): a box of its size, drawn once loaded
       local im = images and images[imgn]
+      local room = DOC_BOTTOM - DOC_TOP - 12            -- a picture fits on one page (landscape: smaller)
+      if im and im.h > room then
+        local w = math.max(16, im.w * room // im.h)
+        im = { n = im.n, w = w, h = room, src = (im.src:gsub('([?&]w=)%d+', '%1' .. w):gsub('([?&]h=)%d+', '%1' .. room)) }
+      end
       if im then out[#out + 1] = { s = '', f = 'small', x = 0, h = im.h + 12, img = im } end
     elseif para:match('%S') then
       local font, x, s = f, 16, para
@@ -709,7 +728,7 @@ local function build_thread(lv)
   out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
   for k, cm in ipairs(lv.got) do
     -- each comment is wrapped once (per text size), not again whenever another one arrives
-    if cm.block_size ~= cfg.size then
+    if cm.block_size ~= cfg.size .. W then
       local b = {}
       local ago = N.ago(cm.time, now)
       add_lines(b, cm.by .. (ago ~= '' and (' · ' .. ago) or ''), 'small', 16, k, { head = true })
@@ -718,7 +737,7 @@ local function build_thread(lv)
         add_lines(b, #cm.kids .. (#cm.kids == 1 and ' reply' or ' replies') .. ' >', 'medium', 260, k, { link = true })
       end
       b[#b + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
-      cm.block, cm.block_size = b, cfg.size
+      cm.block, cm.block_size = b, cfg.size .. W
     end
     for _j, ln in ipairs(cm.block) do out[#out + 1] = ln end
   end
@@ -820,7 +839,7 @@ local function draw_list(gg)
   for k, t in ipairs(TABS) do
     kit.button(gg, 4 + (k - 1) * tw, 4, tw - 4, 48, t[1], { font = 'medium', line_width = L.tab == t[2] and 5 or 1 })
   end
-  if L.tab == 'find' and L.query then gg:text(16, LIST_TOP - 4, kit.short('"' .. L.query .. '"', 40), { font = kit.font('small') }) end
+  if L.tab == 'find' and L.query then gg:text(16, LIST_TOP - 4, kit.short('"' .. L.query .. '"', wide(40)), { font = kit.font('small') }) end
   local now = now_sec()
   for k = 0, ROWS - 1 do
     local r = L.rows[L.top + k]
@@ -835,7 +854,7 @@ local function draw_list(gg)
     local ago = N.ago(r.time, now)
     if ago ~= '' then m = m .. ' · ' .. ago end
     -- the meta line follows the title (no gap after a one-line title) and a double rule ends the story
-    gg:text(16, t[2] and y + 56 or y + 32, kit.short(m, 52), { font = kit.font('small') })
+    gg:text(16, t[2] and y + 56 or y + 32, fit(m, 'small', W - 32), { font = kit.font('small') })
     gg:line(16, y + ROW_H - 2, W - 16, y + ROW_H - 2)
     gg:line(16, y + ROW_H - 1, W - 16, y + ROW_H - 1)
   end
@@ -847,18 +866,42 @@ end
 local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev' }, { 'token', 'Path token (after /k/), or empty' },
                    { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' },
                    { 'images', 'Pictures in articles' } }
+-- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
+local function can_rotate()
+  local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
+  return ok and type(f) == 'function'
+end
+local function apply_orientation()
+  if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
+end
+local function settings_list()
+  local t = {}
+  for k, v in ipairs(SETTINGS) do t[k] = v end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  return t
+end
+-- one column in portrait, two in landscape
+local function cols() return W > H and 2 or 1 end
+local function setting_rect(k)
+  local n = cols()
+  local cw = (W - 32 - (n - 1) * 16) // n
+  local r, c = (k - 1) // n, (k - 1) % n
+  return 16 + c * (cw + 16), 70 + r * 86, cw, 86
+end
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
-  for k, s in ipairs(SETTINGS) do
-    local y = 70 + (k - 1) * 86
+  local list = settings_list()
+  for k, s in ipairs(list) do
+    local x, y, w = setting_rect(k)
     local v = cfg[s[1]]
     if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
-    gg:text(16, y + 8, s[2], { font = kit.font('small') })
-    gg:text(16, y + 36, v ~= '' and kit.short(v, 36) or '(empty)', { font = kit.font('medium') })
-    gg:line(16, y + 78, W - 16, y + 78)
+    gg:text(x, y + 8, fit(s[2], 'small', w), { font = kit.font('small') })
+    gg:text(x, y + 36, v ~= '' and fit(v, 'medium', w) or '(empty)', { font = kit.font('medium') })
+    gg:line(x, y + 78, x + w, y + 78)
   end
-  local y = 70 + #SETTINGS * 86 + 8
+  if cols() > 1 then return end                    -- landscape: no room for the note
+  local y = 70 + #list * 86 + 8
   for _k, l in ipairs(N.wrap('Stories open as text, with their pictures if you like, through your rss-opds Worker (the one RSS '
       .. 'uses, with the same host and login; it needs /api/read, so update it once). Without a Worker a story ends with its '
       .. 'address as a QR code. Tap the left third of a page to go back, elsewhere to go on.', 'small', W - 32)) do
@@ -868,7 +911,10 @@ end
 
 local function buttons()
   if screen == 'list' then return { 'Prev', 'Next', 'Reload', 'Settings' } end
-  if screen == 'story' then return { 'Back', 'Prev', 'Next', S.row.comments .. ' comments' }, { 84, 84, 84, 180 } end
+  if screen == 'story' then
+    local b = 84 * W // 480
+    return { 'Back', 'Prev', 'Next', S.row.comments .. ' comments' }, { b, b, b, W - 48 - 3 * b }
+  end
   if screen == 'thread' then return { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' } end
   return { 'Back' }
 end
@@ -884,9 +930,32 @@ local function button_rects()
   return out
 end
 
+-- the screen's size, read at every callback: after the app turns (Settings), the buttons sit at
+-- the bottom, the list shows the rows that fit, and the story and comment pages are laid out
+-- again at the same share of their pages
+local function sync_screen()
+  local okw, w = pcall(function() return tonumber(ctx.screen.width) end)
+  local okh, h = pcall(function() return tonumber(ctx.screen.height) end)
+  w, h = okw and w or 480, okh and h or 800
+  if w == W and h == H then return end
+  W, H = w, h
+  BTN_Y = H - 96
+  DOC_BOTTOM = BTN_Y - 30
+  ROWS = math.max(3, (BTN_Y - 8 - LIST_TOP) // ROW_H)
+  local function again(doc, build)
+    if not doc or not doc.pages then return end
+    local share = (doc.page - 1) / math.max(1, #doc.pages)
+    build()
+    doc.page = math.min(#doc.pages, math.floor(share * #doc.pages + 0.5) + 1)
+  end
+  if S and S.lines then again(S, build_story); load_pics() end
+  for _k, lv in ipairs(levels) do again(lv, function() build_thread(lv) end) end
+end
+
 function on_draw(c, gg)
   if not gg then return end
   local ok, e = pcall(function()
+    sync_screen()
     gg:clear(0)
     if kit.modal() then kit.draw_modal(gg); return end
     if screen == 'list' then draw_list(gg)
@@ -895,10 +964,10 @@ function on_draw(c, gg)
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
     -- under the buttons: above them it overlapped the last list row
-    if line then gg:text(12, BTN_Y + BTN_H + 6, kit.short(line, 46), { font = kit.font('small') }) end
+    if line then gg:text(12, BTN_Y + BTN_H + 6, fit(line, 'small', W - 24), { font = kit.font('small') }) end
     for _k, r in ipairs(button_rects()) do kit.button(gg, r.x, r.y, r.w, r.h, r.b, { font = 'medium' }) end
   end)
-  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
+  if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), wide(46))) end) end
 end
 
 ------------------------------------------------------------------ input
@@ -980,12 +1049,18 @@ local function tap(x, y, long)
       doc_page(x < W // 3 and -1 or 1)
     end
   elseif screen == 'settings' then
-    local k = (y - 70) // 86 + 1
-    local s = SETTINGS[k]
-    if s and y >= 70 then
-      if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
-      elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
-      else ask(s[2], cfg[s[1]], function(v) if type(v) == 'string' then cfg[s[1]] = (v:gsub('^%s+', ''):gsub('%s+$', '')); save_cfg() end end) end
+    for k, s in ipairs(settings_list()) do
+      local sx, sy, sw, sh = setting_rect(k)
+      if x >= sx and x < sx + sw and y >= sy and y < sy + sh then
+        if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+        elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
+        elseif s[1] == 'screen' then
+          cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
+          save_cfg()
+          apply_orientation()                        -- the next callback sees the new size
+        else ask(s[2], cfg[s[1]], function(v) if type(v) == 'string' then cfg[s[1]] = (v:gsub('^%s+', ''):gsub('%s+$', '')); save_cfg() end end) end
+        return
+      end
     end
   end
 end
@@ -995,6 +1070,7 @@ function on_input(c, ev)
   ERR = nil
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
+    sync_screen()
     pump()
     if ev.type == 'pointer' then
       local x, y = ev.x or 0, ev.y or 0
@@ -1032,7 +1108,11 @@ function on_input(c, ev)
 end
 
 function on_load(c)
-  local ok, e = pcall(function() load_cfg(); open_tab('top') end)
+  local ok, e = pcall(function()
+    load_cfg()
+    if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
+    open_tab('top')
+  end)
   if not ok then ERR = tostring(e) end
 end
 function on_leave()

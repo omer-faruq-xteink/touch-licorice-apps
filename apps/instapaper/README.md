@@ -1,4 +1,7 @@
-# Instapaper — XTOS Licorice mini app (API 2.9)
+# Instapaper — XTOS Licorice mini app (API 2.18)
+
+**Needs firmware with API 2.18** (XT Licorice 26110201 or later): older firmware refuses to install it
+and asks for an update.
 
 Reads your [Instapaper](https://www.instapaper.com) articles on the device, as text. The app talks
 to the Instapaper API v2 directly with a personal access token: no Worker, no other service. It
@@ -37,7 +40,7 @@ The device must be on Wi-Fi; the app keeps it on while in use and lets it go whe
 - The last page shows the article's link as a **QR code** (to open it on a phone), then
   **Archive** (archives it and returns to the list) and **Star**.
 - **Text size** in Settings: small / default / large, as in RSS.
-- **Screen** in Settings (firmware with API 2.18): portrait or landscape. The app turns at once and
+- **Screen** in Settings: portrait or landscape. The app turns at once and
   opens that way next time; in landscape a list page holds 6 rows (the server is asked for 6 at a
   time), the menu and Settings take two columns, and an open article is laid out again at about the
   same place.

@@ -8,7 +8,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Changed
 
-- **Instapaper and wallabag: landscape**: on firmware with API 2.18, Settings has **Screen** (portrait or landscape). In landscape a list page holds 6 articles and the server is asked for 6 at a time, the menu and Settings take two columns, titles and articles use the wider lines, and an open article keeps its place when the app turns. Older firmware shows no Screen setting; everything else is unchanged.
+- **Instapaper, wallabag, RSS and Hacker News: landscape; they now need firmware with API 2.18** (XT Licorice 26110201 or later; older firmware refuses to install them and asks for an update). Settings has **Screen** (portrait or landscape). In landscape a list page holds 6 articles and the server (for RSS, your Worker) is asked for 6 at a time; Hacker News shows 4 stories a page. The menu and Settings take two columns, titles and articles use the wider lines, and an open article keeps its place when the app turns. Pictures in articles are never taller than a page, here and in Readwise (0.3.1). wallabag sends Archive and Star as a real PATCH now, so they work with servers that do not take a POST in its place.
 
 - **Readwise 0.3.0: needs firmware with API 2.18, no Worker**: the reader can now send PATCH, so **Archive**, **Later** / **Inbox**, **tags** and marking a document seen go straight to Readwise with your access token; the Worker fields are gone from Settings. Firmware older than XT Licorice 26110201 refuses to install it and asks for an update. **Landscape**: Settings has **Screen** (portrait or landscape); in landscape a list page holds 6 rows and Reader is asked for 6 at a time, the menu and Settings take two columns, and articles and titles use the wider lines.
 
@@ -24,9 +24,11 @@ Do not uninstall first: that deletes the app's folder (settings, pages, dictiona
 | file | content |
 |---|---|
 | `delve.xtapp` | **new**: Delve |
-| `instapaper.xtapp` | Instapaper 0.2.0: landscape on firmware 2.18 |
-| `wallabag.xtapp` | wallabag 1.1: landscape on firmware 2.18 |
-| `readwise.xtapp` | Readwise 0.3.0: changes straight to Readwise, landscape; needs firmware 2.18 |
+| `instapaper.xtapp` | Instapaper 0.3.0: landscape; needs firmware 2.18 |
+| `wallabag.xtapp` | wallabag 1.2.0: landscape, a real PATCH; needs firmware 2.18 |
+| `rss.xtapp` | RSS 1.2.0: landscape; needs firmware 2.18 |
+| `hackernews.xtapp` | Hacker News 1.1.0: landscape; needs firmware 2.18 |
+| `readwise.xtapp` | Readwise 0.3.1: changes straight to Readwise, landscape; needs firmware 2.18 |
 | `tasks.xtapp` | Tasks 1.1.0: items that repeat |
 | all other `.xtapp` packages, `apkg2cards.py`, `gamebook-stories.zip`, `zork-pack.zip` | unchanged since v0.16.0 |
 | `dict-wordnet-en.zip` | WordNet for Dictionary, unchanged (see v0.3.0) |

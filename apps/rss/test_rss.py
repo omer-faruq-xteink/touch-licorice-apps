@@ -118,7 +118,7 @@ g.pending = L.table()
 tap(100, 56 + 20 + 96 + 24 + 10)     # token field
 g.pending[1](g.ctx, 'secret')
 g.pending = L.table()
-assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default\nimages=0', g.store['config.txt']
+assert g.store['config.txt'] == 'host=rss.example.workers.dev\ntoken=secret\nauth=\nfull=0\nsize=default\nimages=0\nscreen=portrait', g.store['config.txt']
 tap(100, 20)                         # Back
 t = texts()
 assert 'CommaFeed' in t and 'My feeds' in t and 'Settings' in t and 'Add feed' not in t, t
@@ -311,7 +311,7 @@ tap(100, 100 + 5 * 70 + 10)                            # Settings
 SIZE_ROW = 56 + 20 + 4 * 96 + 24 + 10
 assert any(x.startswith('default') for x in texts()), texts()
 tap(100, SIZE_ROW)
-assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large\nimages=0'), g.store['config.txt']
+assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large\nimages=0\nscreen=portrait'), g.store['config.txt']
 tap(100, 20)                                           # back to the menu
 tap(100, 100 + 10); g.flush()                          # Unread
 tap(100, 56 + 26 + 3 * 58 + 5)                         # Article 3 again (cached): laid out with large text
@@ -324,7 +324,7 @@ tap_label('Close')
 key('back')
 tap(100, 100 + 5 * 70 + 10)
 tap(100, SIZE_ROW)                                     # large -> small
-assert g.store['config.txt'].endswith('size=small\nimages=0')
+assert g.store['config.txt'].endswith('size=small\nimages=0\nscreen=portrait')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
@@ -333,7 +333,7 @@ tap(50, 20)
 key('back')
 tap(100, 100 + 5 * 70 + 10)
 tap(100, SIZE_ROW)                                     # small -> default again
-assert g.store['config.txt'].endswith('size=default\nimages=0')
+assert g.store['config.txt'].endswith('size=default\nimages=0\nscreen=portrait')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
@@ -350,7 +350,7 @@ key('back')
 tap(100, 100 + 5 * 70 + 10)                            # Settings
 assert 'off' in texts()
 tap(100, IMAGES_ROW)
-assert g.store['config.txt'].endswith('images=1'), g.store['config.txt']
+assert g.store['config.txt'].endswith('images=1\nscreen=portrait'), g.store['config.txt']
 tap(100, 20)
 tap(100, 100 + 10); g.flush()                          # Unread
 n_req = len(requests)
@@ -377,7 +377,7 @@ tap(50, 20)
 key('back')
 tap(100, 100 + 5 * 70 + 10)
 tap(100, IMAGES_ROW)                                   # images off again
-assert g.store['config.txt'].endswith('images=0')
+assert g.store['config.txt'].endswith('images=0\nscreen=portrait')
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 
@@ -528,7 +528,7 @@ tap(100, 56 + 20 + 2 * 96 + 24 + 10)  # auth field
 g.pending[1](g.ctx, 'me:pw')
 g.pending = L.table()
 tap(100, 56 + 20 + 3 * 96 + 24 + 10)  # full toggle
-assert g.store['config.txt'].endswith('auth=me:pw\nfull=1\nsize=default\nimages=0'), g.store['config.txt']
+assert g.store['config.txt'].endswith('auth=me:pw\nfull=1\nsize=default\nimages=0\nscreen=portrait'), g.store['config.txt']
 tap(100, 20)
 tap(100, 100 + 10); g.flush()
 assert requests[-1].endswith('&full=1') and g.last_headers['Authorization'] == 'Basic B64(me:pw)', (requests[-1], dict(g.last_headers))
@@ -680,4 +680,47 @@ tap(100, CACHE_ROW)
 assert any(x.startswith('0 ') for x in texts()) and 'offline copies deleted' in texts(), texts()
 assert g.store['a103.txt'] is None and g.store['x2_a900.txt'] is None and str(g.store['cache_idx.txt']) == ''
 assert g.store['l_unread_0_1.txt'] is not None and g.store['config.txt'] is not None
+
+# landscape (API 2.18): Settings offers Screen; turning gives 800 x 480, two menu columns, 6 rows
+# a list page (the Worker is asked for 6), pictures no taller than a page, and back to portrait
+L.execute("""
+ctx.screen = { width = 480, height = 800, orientation = 'portrait' }
+function ctx.screen.set_orientation(self, o)
+  if o == 'landscape' then self.width, self.height, self.orientation = 800, 480, 'landscape'
+  else self.width, self.height, self.orientation = 480, 800, 'portrait' end
+  return true
+end
+""")
+g.store['config.txt'] = str(g.store['config.txt']).replace('images=0', 'images=1')
+g = restart(); g.flush()
+def overflow():
+    """texts that run past the right edge, or into the next column (10 px a character here)"""
+    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
+tap_label('Settings')
+assert 'Screen (turns the app)' in texts(), texts()
+x, y = recs()['portrait   (tap to change)']; tap(x + 5, y + 5)
+assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
+assert 'landscape   (tap to change)' in texts() and not overflow(), overflow()
+key('back')
+cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
+assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns
+responses['kind=unread&page=1&n=6&acct=1'] = responses['kind=unread&page=1&n=12&acct=1']
+tap_label('Work'); g.flush(); tap_label('Unread'); g.flush()
+assert 'kind=unread&page=1&n=6&acct=1' in requests[-1] and 'Work story' in texts(), (requests[-1], texts())
+assert not [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > 800], texts()
+responses['/api/article/800'] = {'id': '800', 'title': 'Work story', 'feed': 'News', 'date': '', 'url': 'https://example.com/a',
+                                 'text': 'Before.\n\n[[img:1]]\n\nAfter.',
+                                 'images': [{'n': 1, 'w': 456, 'h': 640, 'src': 'https://images.weserv.nl/?url=AAA&w=456&h=640&fit=contain'}]}
+g.store['a800.txt'] = None
+n = len(requests)
+tap(100, 56 + 26 + 5); g.flush()
+key('right'); g.flush()                                # the picture takes page 2 to itself
+img = [u for u in requests[n:] if 'weserv' in u]
+assert len(img) == 1 and '&w=265&h=372&' in img[0], requests[n:]          # 456 x 640 -> one page high
+key('back'); key('back'); key('back'); tap_label('Settings')
+x, y = recs()['landscape   (tap to change)']; tap(x + 5, y + 5)
+assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['config.txt'])
+g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
+g = restart(); g.flush()
+assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
 print('rss29 tests passed')

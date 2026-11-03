@@ -936,7 +936,7 @@ L.MY = MY
 return L
 end
 
--- RSS reader for XTOS Licorice, API 2.9. Two kinds of sources, side by side in one menu:
+-- RSS reader for XTOS Licorice, API 2.18. Two kinds of sources, side by side in one menu:
 -- CommaFeed accounts through a commafeed-opds Worker's JSON API, and feeds the reader fetches
 -- itself, kept in collections (OPML files in the app's folder on the card; library.lua, feeds.lua).
 -- The Worker, when set, also gives those feeds full text (/api/read) and fetches the very large
@@ -952,9 +952,13 @@ local SITE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/'
 local GUIDE = SITE .. 'tools/worker/?for=rss-local'
 local CATALOG = SITE .. 'rss/catalog.json'
 
+-- Portrait (480 x 800) or landscape (800 x 480), chosen in Settings (the manifest asks for API 2.18):
+-- the layout follows ctx.screen's size, a list page holds the rows that fit (12 or 6) and asks
+-- the Worker for that many, the menu and Settings take two columns, and after turning, the
+-- article and the preview are laid out again at the same place.
 local W, H, TOP = 480, 800, 56
 local QR_PX = 200             -- the source QR code at the end of an article, at most this wide
-local LIST_N = 12
+local LIST_N = 12             -- list rows a page: the rows that fit (sync_screen)
 local LIST_MAX_ITEMS = 240    -- list rows kept in memory as pages are appended
 local TEXT_MAX = 20000
 
@@ -985,6 +989,23 @@ end
 -- run one after the other, images included. A request with no answer within its timeout is
 -- cancelled and reported as failed, and the next one starts.
 local function short(s, n) s = tostring(s); if #s > n then return s:sub(1, n - 1) .. '~' end return s end
+-- a character limit set for the 480 px portrait width, scaled to the screen's width now
+local function wide(n) return math.max(8, math.floor(n * W / 480)) end
+-- s cut to fit maxw pixels in font f, whole UTF-8 characters, with "~" where it was cut
+local function fit(s, f, maxw)
+  s = tostring(s)
+  if not f then return short(s, math.floor(maxw / 11)) end
+  local function wd(t) local ok, m = pcall(function() return f:measure(t) end); return (ok and type(m) == 'number') and m or #t * 11 end
+  if wd(s) <= maxw then return s end
+  local n = utf8.len(s)
+  if not n then return short(s, math.floor(maxw / 11)) end
+  local lo, hi = 0, n - 1                         -- characters kept, found by halving
+  while lo < hi do
+    local mid = (lo + hi + 1) // 2
+    if wd(s:sub(1, (utf8.offset(s, mid + 1) or #s + 1) - 1) .. '~') <= maxw then lo = mid else hi = mid - 1 end
+  end
+  return s:sub(1, (utf8.offset(s, lo + 1) or #s + 1) - 1) .. '~'
+end
 local net_queue, net_active = {}, nil
 local net_pump
 
@@ -1042,7 +1063,7 @@ local function net_submit(opts, label, timeout, on_result)
   net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
   net_pump()
 end
-local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false }
+local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false, screen = 'portrait' }
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -1071,6 +1092,7 @@ local coll_list = {}
 local where, coll = nil, nil
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local draw_source_line                                    -- the source QR block, images section
+local settings_list, setting_rect, sync_screen   -- defined with Settings / before on_input
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
   return ''
@@ -1136,6 +1158,7 @@ local function load_cfg()
       if k == 'full' then cfg.full = (v == '1')
       elseif k == 'images' then cfg.images = (v == '1')
       elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
+      elseif k == 'screen' then cfg.screen = v:match('^landscape') and 'landscape' or 'portrait'
       else cfg[k] = v end
     end
   end
@@ -1143,7 +1166,7 @@ end
 
 local function save_cfg()
   pcall(function()
-    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0'))
+    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0') .. '\nscreen=' .. cfg.screen)
   end)
 end
 
@@ -1321,6 +1344,7 @@ end
 
 -- paragraphs come separated by blank lines; "# " marks a heading, "> " a quote, "• " a list item
 local function layout_article(data)
+  art.data = data               -- kept, so turning the screen can lay it out again
   measure_cache = {}
   local out = {}
   local function gap(h) out[#out + 1] = { s = '', f = 'small', h = h, x = 0 } end
@@ -1342,7 +1366,13 @@ local function layout_article(data)
     if imgn then
       local im = info[imgn]
       if im and tonumber(im.w) and tonumber(im.h) then
-        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), src = tostring(im.src or '') }
+        local iw, ih, isrc = tonumber(im.w), tonumber(im.h), tostring(im.src or '')
+        local room = H - TOP - 52            -- a picture fits on one page (in landscape: smaller)
+        if ih > room then
+          iw, ih = math.max(16, iw * room // ih), room
+          isrc = isrc:gsub('([?&]w=)%d+', '%1' .. iw):gsub('([?&]h=)%d+', '%1' .. ih)
+        end
+        out[#out + 1] = { s = '', f = 'small', h = ih + 12, x = 0, img = imgn, iw = iw, ih = ih, src = isrc }
       end
     elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
@@ -1383,9 +1413,10 @@ end
 -- Worker says there is more, and appends it; the new rows start on the next screen.
 
 local function list_cache_name(page)
+  local n = list.n or LIST_N
   -- a tag name may hold any character: hex for anything but letters and digits
   local id = tostring(list.id or '0'):gsub('[^%w]', function(ch) return string.format('_%02x', ch:byte()) end)
-  return cpre() .. 'l_' .. list.kind .. '_' .. id .. '_' .. page .. '.txt'
+  return cpre() .. 'l_' .. list.kind .. '_' .. id .. '_' .. page .. (n ~= 12 and ('n' .. n) or '') .. '.txt'
 end
 
 
@@ -1436,7 +1467,7 @@ end
 
 -- after(ok) runs once the page is in list.items (from the network or the offline cache)
 local function fetch_page(page, append, after, retried)
-  local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. LIST_N
+  local path = '/api/list?kind=' .. list.kind .. '&page=' .. page .. '&n=' .. (list.n or LIST_N)
   if list.id then path = path .. '&id=' .. urlenc(list.id) end
   if not append then list.err = nil end
   request(path, function(data, err, raw)
@@ -1546,7 +1577,8 @@ local function open_local_list(kind, id, title)
   refresh_local(false)
 end
 
-local function fetch_list() list['local'] = nil; fetch_page(1, false) end   -- first page, or Reload
+-- first page, or Reload; the page size from now on is the rows that fit
+local function fetch_list() list['local'] = nil; list.n = LIST_N; fetch_page(1, false) end
 local function load_more(after)
   if list.has_more and not busy() then fetch_page(list.page + 1, true, after); return true end
   return false
@@ -2017,6 +2049,38 @@ local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' 
 local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size (articles and previews)' }, { 'images', 'Images in articles' },
                    { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
 
+-- the menu's and Settings' cells: one column in portrait, two in landscape
+local function cols() return W > H and 2 or 1 end
+local function cell(i, y0, row_h, h)
+  local n = cols()
+  local cw = math.floor((W - 32 - (n - 1) * 16) / n)
+  local r, c = (i - 1) // n, (i - 1) % n
+  return 16 + c * (cw + 16), y0 + r * row_h, cw, h
+end
+local function menu_rect(i) return cell(i, 100, 70, 58) end
+
+-- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
+local function can_rotate()
+  local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
+  return ok and type(f) == 'function'
+end
+local function apply_orientation()
+  if can_rotate() then pcall(function() ctx.screen:set_orientation(cfg.screen) end) end
+end
+settings_list = function()
+  local t = {}
+  for k, v in ipairs(SETTINGS) do t[k] = v end
+  if can_rotate() then t[#t + 1] = { 'screen', 'Screen (turns the app)' } end
+  return t
+end
+setting_rect = function(i) return cell(i, TOP + 20, 96, 96) end
+-- "Enter the Worker in Settings" on the full-text page: under the QR code, or in landscape
+-- under the text with the QR code beside it
+local function needworker_btn()
+  if W > H then return 16, TOP + 56 + 88 + 24, W - 32 - 236, 58 end
+  return 16, TOP + 56 + 88 + 16 + 220 + 24, W - 32, 58
+end
+
 local function bar(gg, labels)
   local F = ctx.fonts
   local n = #labels
@@ -2042,15 +2106,15 @@ local function draw_empty(gg, y, err, empty_text)
   local F = ctx.fonts
   if not err then gg:text(16, y + 20, empty_text, { font = F and F.medium }); return end
   gg:text(16, y + 20, 'Could not load this list.', { font = F and F.medium })
-  gg:text(16, y + 54, short(err, 46), { font = F and F.small })
+  gg:text(16, y + 54, short(err, wide(46)), { font = F and F.small })
   gg:text(16, y + 80, 'Check Wi-Fi, then tap Reload.', { font = F and F.small })
 end
 
 local function draw_status(gg)
   local F = ctx.fonts
   local s = (busy() and loading) or status
-  if s ~= '' then gg:text(8, H - 26, short(s, 52), { font = F and F.small }) end
-  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, 52), { font = F and F.small }) end
+  if s ~= '' then gg:text(8, H - 26, short(s, wide(52)), { font = F and F.small }) end
+  if ERR then gg:text(8, H - 48, short('ERR ' .. ERR, wide(52)), { font = F and F.small }) end
 end
 
 -- the menu's rows: the sources (CommaFeed accounts and collections), the chosen one's menu, or
@@ -2101,19 +2165,20 @@ local function draw_menu(gg)
   local title = (where == 'cf' and multi() and acct) and ('RSS · ' .. acct_label()) or 'RSS'
   gg:text(16, 20, title, { font = F and F.large })
   local sub = first_run() and 'No feeds yet.' or (cfg.host ~= '' and cfg.host) or ''
-  gg:text(16, 54, short(sub, 50), { font = F and F.small })
+  gg:text(16, 54, short(sub, wide(50)), { font = F and F.small })
   local items = menu_items()
   for i, m in ipairs(items) do
-    local y = 100 + (i - 1) * 70
-    gg:rect(16, y, W - 32, 58)
-    gg:text(36, y + 16, short(m[1], 36), { font = F and F.medium })
+    local x, y, w, h = menu_rect(i)
+    gg:rect(x, y, w, h)
+    gg:text(x + 20, y + 16, fit(m[1], F and F.medium, w - 40), { font = F and F.medium })
   end
   if first_run() then
-    local y = 100 + #items * 70 + 20
+    local y = 100 + ((#items + cols() - 1) // cols()) * 70 + 20
     gg:text(16, y, 'Open My feeds, then Add feed: a site, or one', { font = F and F.small })
     gg:text(16, y + 22, 'from the list. CommaFeed, or full text, needs a', { font = F and F.small })
     gg:text(16, y + 44, 'Worker of your own: scan to set one up.', { font = F and F.small })
-    draw_qr(gg, SITE .. 'tools/worker/', (W - 200) // 2, y + 76, 200)
+    local px = W > H and 150 or 200                -- landscape: room above the status line
+    draw_qr(gg, SITE .. 'tools/worker/', (W - px) // 2, y + 76, px)
   end
   draw_status(gg)
 end
@@ -2151,13 +2216,13 @@ local function draw_list(gg)
   local last = math.min(#list.items, list.top + LIST_N - 1)
   local range = #list.items > 0 and ('  ' .. list.top .. '-' .. last .. ' / ' .. #list.items .. (list.has_more and '+' or '')) or ''
   local who = (multi() and acct) and (acct_label() .. ' · ') or ''
-  gg:text(8, TOP + 2, short(who .. list.title .. range .. (list.cached and '  (offline)' or ''), 44), { font = F and F.small })
+  gg:text(8, TOP + 2, fit(who .. list.title .. range .. (list.cached and '  (offline)' or ''), F and F.small, W - 16), { font = F and F.small })
   local y = TOP + 26
   if #list.items == 0 and not busy() then draw_empty(gg, y, list.err, 'nothing here') end
   for i = list.top, math.min(#list.items, list.top + LIST_N - 1) do
     local it = list.items[i]
-    gg:text(16, y, short(it.title or '', 42), { font = F and F.medium })
-    gg:text(16, y + 26, short((it.read and '' or '* ') .. (it.feed or '') .. '  ' .. (it.date or ''), 50), { font = F and F.small })
+    gg:text(16, y, fit(it.title or '', F and F.medium, W - 32), { font = F and F.medium })
+    gg:text(16, y + 26, fit((it.read and '' or '* ') .. (it.feed or '') .. '  ' .. (it.date or ''), F and F.small, W - 32), { font = F and F.small })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -2173,12 +2238,12 @@ local function draw_feeds(gg)
     local c = cur_coll()
     local head = (c and c.title or '') .. (#feeds.path > 0 and (' / ' .. table.concat(feeds.path, ' / ')) or '')
     if #feeds.items > LIST_N then head = head .. '  ' .. feeds.top .. '-' .. math.min(#feeds.items, feeds.top + LIST_N - 1) .. ' / ' .. #feeds.items end
-    gg:text(8, TOP + 2, short(head, 46), { font = F and F.small })
+    gg:text(8, TOP + 2, fit(head, F and F.small, W - 16), { font = F and F.small })
   end
   local y = TOP + 26
   for i = feeds.top, math.min(#feeds.items, feeds.top + LIST_N - 1) do
     local it = feeds.items[i]
-    gg:text(16, y, short((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), 42), { font = F and F.medium })
+    gg:text(16, y, fit((it.name or '?') .. ((it.unread or 0) > 0 and ('  (' .. it.unread .. ')') or ''), F and F.medium, W - 32), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -2201,25 +2266,27 @@ local function draw_article(gg)
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
-  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, 42), { font = F and F.medium }) end
+  if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, wide(42)), { font = F and F.medium }) end
   draw_status(gg)
 end
 
 local function draw_settings(gg)
   local F = ctx.fonts
   bar(gg, { 'Back' })
-  for i, s in ipairs(SETTINGS) do
-    local y = TOP + 20 + (i - 1) * 96
-    gg:text(16, y, s[2], { font = F and F.small })
-    gg:rect(16, y + 24, W - 32, 48)
+  local list_ = settings_list()
+  for i, s in ipairs(list_) do
+    local x, y, w = setting_rect(i)
+    gg:text(x, y, fit(s[2], F and F.small, w), { font = F and F.small })
+    gg:rect(x, y + 24, w, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size .. '   (tap to change)' end
+    if s[1] == 'screen' then v = cfg.screen .. '   (tap to change)' end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
-    gg:text(28, y + 36, short(v ~= '' and v or '(empty)', 40), { font = F and F.medium })
+    gg:text(x + 12, y + 36, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
   end
-  gg:text(16, TOP + 20 + #SETTINGS * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small })
+  if cols() == 1 then gg:text(16, TOP + 20 + #list_ * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small }) end
   draw_status(gg)
 end
 
@@ -2227,7 +2294,7 @@ local function draw_rows(gg, rows, top, label_of)
   local F = ctx.fonts
   local y = TOP + 26
   for i = top, math.min(#rows, top + LIST_N - 1) do
-    gg:text(16, y, short(label_of(rows[i]), 42), { font = F and F.medium })
+    gg:text(16, y, fit(label_of(rows[i]), F and F.medium, W - 32), { font = F and F.medium })
     gg:line(16, y + 54, W - 16, y + 54)
     y = y + 58
   end
@@ -2244,7 +2311,7 @@ local function draw_add(gg)
   end
   local path = (ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'AppFiles/rss'
   local y = TOP + 60 + #ADD_ROWS * 70 + 16
-  for _, l in ipairs({ short('Feeds you add go into ' .. add_target().title .. '.', 48), 'A site address finds its feed; an OPML address',
+  for _, l in ipairs({ short('Feeds you add go into ' .. add_target().title .. '.', wide(48)), 'A site address finds its feed; an OPML address',
     'becomes a collection of its own. OPML files', 'copied into ' .. path .. '/', 'are collections too (USB mode).' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 22
   end
@@ -2254,7 +2321,7 @@ end
 local function draw_catalog(gg)
   local F = ctx.fonts
   bar(gg, { 'Back', 'Prev', 'Next' })
-  gg:text(8, TOP + 2, short(catalog.cat and (catalog.cat.name .. ': tap to add or remove') or 'Choose a topic', 46), { font = F and F.small })
+  gg:text(8, TOP + 2, fit(catalog.cat and (catalog.cat.name .. ': tap to add or remove') or 'Choose a topic', F and F.small, W - 16), { font = F and F.small })
   local rows = catalog_rows()
   if catalog.cat then
     draw_rows(gg, rows, catalog.top, function(f) return (Lib.has_feed(f.url, add_target().file) and '[x] ' or '[ ] ') .. (f.title or f.url) end)
@@ -2267,7 +2334,7 @@ end
 local function draw_confirm(gg)
   local F = ctx.fonts
   gg:text(16, 120, 'Remove this feed?', { font = F and F.large })
-  gg:text(16, 170, short(removing and removing.name or '', 44), { font = F and F.medium })
+  gg:text(16, 170, short(removing and removing.name or '', wide(44)), { font = F and F.medium })
   gg:text(16, 206, 'Its articles go too.', { font = F and F.small })
   gg:rect(16, 260, (W - 48) // 2, 58); gg:text(40, 276, 'Remove', { font = F and F.medium })
   gg:rect(32 + (W - 48) // 2, 260, (W - 48) // 2, 58); gg:text(56 + (W - 48) // 2, 276, 'Cancel', { font = F and F.medium })
@@ -2281,13 +2348,14 @@ local function draw_needworker(gg)
   for _, l in ipairs({ 'Many feeds carry only a summary. The whole', 'article comes through a small server of your', 'own (free, about 10 minutes). Scan to set it', 'up, then enter it in Settings:' }) do
     gg:text(16, y, l, { font = F and F.small }); y = y + 22
   end
-  draw_qr(gg, GUIDE, (W - 220) // 2, y + 16, 220)
-  y = y + 16 + 220 + 24
-  gg:rect(16, y, W - 32, 58); gg:text(36, y + 16, 'Enter the Worker in Settings', { font = F and F.medium })
+  if W > H then draw_qr(gg, GUIDE, W - 16 - 220, TOP + 16, 220) else draw_qr(gg, GUIDE, (W - 220) // 2, y + 16, 220) end
+  local bx, by, bw, bh = needworker_btn()
+  gg:rect(bx, by, bw, bh); gg:text(bx + 20, by + 16, 'Enter the Worker in Settings', { font = F and F.medium })
   draw_status(gg)
 end
 
 local function draw_impl(gg)
+  sync_screen()
   gg:clear(0)
   if screen == 'menu' then draw_menu(gg)
   elseif screen == 'list' then draw_list(gg)
@@ -2305,13 +2373,13 @@ function on_draw(c, gg)
   if not G then return end
   local ok, e = pcall(draw_impl, G)
   -- a drawing error is painted for this frame only; the next good frame no longer shows it
-  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), 46)) end) end
+  if not ok then pcall(function() G:text(6, H - 70, short('draw ERR ' .. tostring(e), wide(46))) end) end
 end
 
 ------------------------------------------------------------------ input
 
 local function edit_setting(i)
-  local s = SETTINGS[i]
+  local s = settings_list()[i]
   if not s then return end
   if s[1] == 'cache' then
     if #copies() == 0 then clear_armed = false; note('nothing saved offline'); return end
@@ -2327,6 +2395,12 @@ local function edit_setting(i)
     return
   end
   if s[1] == 'images' then cfg.images = not cfg.images; save_cfg(); return end
+  if s[1] == 'screen' then
+    cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
+    save_cfg()
+    apply_orientation()           -- the next callback sees the new size (sync_screen)
+    return
+  end
   if s[1] == 'size' then
     local nxt = 1
     for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
@@ -2376,8 +2450,8 @@ end
 local function tap(x, y)
   if screen == 'menu' then
     for i, m in ipairs(menu_items()) do
-      local y0 = 100 + (i - 1) * 70
-      if x >= 16 and x < W - 16 and y >= y0 and y < y0 + 58 then
+      local mx, my, mw, mh = menu_rect(i)
+      if x >= mx and x < mx + mw and y >= my and y < my + mh then
         if m[2] == 'src' then
           if m[3].kind == 'cf' then where, acct, coll = 'cf', m[3].id, nil
           else where, acct, coll = 'local', nil, Lib.collection(m[3].file); open_local_feeds() end
@@ -2392,9 +2466,9 @@ local function tap(x, y)
     end
   elseif screen == 'settings' then
     if y < 46 then screen = 'menu'; clear_armed = false; load_accounts(); reload_colls(); return end
-    for i = 1, #SETTINGS do
-      local y0 = TOP + 20 + (i - 1) * 96 + 24
-      if y >= y0 and y < y0 + 48 then edit_setting(i); return end
+    for i = 1, #settings_list() do
+      local sx, sy, sw = setting_rect(i)
+      if x >= sx and x < sx + sw and y >= sy + 24 and y < sy + 72 then edit_setting(i); return end
     end
   elseif screen == 'list' then
     if y < 46 then
@@ -2469,7 +2543,8 @@ local function tap(x, y)
     end
   elseif screen == 'needworker' then
     if y < 46 then screen = 'settings'; return end
-    if y > TOP + 56 + 88 + 16 + 220 + 24 then screen = 'settings'; edit_setting(1) end
+    local bx, by, bw, bh = needworker_btn()
+    if x >= bx and x < bx + bw and y >= by and y < by + bh then screen = 'settings'; edit_setting(1) end
   end
 end
 
@@ -2638,10 +2713,34 @@ local function preview_tap(x, y)
   end
 end
 
+-- the screen's size, read at every callback: after the app turns (Settings), the lists show the
+-- rows that fit (a list fetched from now on asks for that many), the article is laid out again
+-- at the same share of its pages, the preview box again for its article
+sync_screen = function()
+  local okw, w = pcall(function() return tonumber(ctx.screen.width) end)
+  local okh, h = pcall(function() return tonumber(ctx.screen.height) end)
+  w, h = okw and w or 480, okh and h or 800
+  if w == W and h == H then return end
+  W, H = w, h
+  LIST_N = math.max(3, math.floor((H - TOP - 26 - 22) / 58))
+  PREVIEW_BOTTOM = H - 64
+  list.top = window_of(list.top or 1)
+  feeds.top, tags.top, catalog.top = window_of(feeds.top or 1), window_of(tags.top or 1), window_of(catalog.top or 1)
+  if art.data and #art.lines > 0 then
+    local share = (art.page - 1) / math.max(1, art.pages)
+    release_images()
+    layout_article(art.data)
+    art.page = math.min(art.pages, math.floor(share * art.pages + 0.5) + 1)
+    load_page_images()
+  end
+  if preview then open_preview(preview.item) end
+end
+
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
   keep_wifi()   -- still in use: Wi-Fi stays up (at most one call per 30 s)
   local ok, e = pcall(function()
+    sync_screen()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
       -- a long press (the host reports a "hold" phase and / or a "long" gesture) opens the preview
@@ -2706,6 +2805,7 @@ end
 
 function on_load(c)
   load_cfg()
+  if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
   read_accounts(cache_read('accounts.txt'))   -- the saved list draws the folders at once
   Lib.init({ submit = net_submit, worker = function(path, cb, label) request(path, cb, label) end,
              has_worker = function() return base_url() ~= nil end })

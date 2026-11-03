@@ -37,11 +37,11 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Sokoban** | 385 levels in five classic packs, undo, pack list, position kept per pack; add your own packs |
 | **Merchant** | a turn-based trading game in four settings (caravan, star trader, clipper, antiques); seven languages |
 | **Notes** | freehand drawing, typed text and QR codes on eight pages; one page becomes the lock screen (an ID card with a contact QR), with clock and battery |
-| **RSS** | RSS and Atom feeds as text over Wi-Fi: fetched on the reader with no account, or your CommaFeed articles through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache |
-| **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star; landscape on firmware 2.18 |
-| **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; landscape on firmware 2.18 |
+| **RSS** | RSS and Atom feeds as text over Wi-Fi: fetched on the reader with no account, or your CommaFeed articles through the [rss-opds](https://github.com/omer-faruq-xteink/rss-opds) Worker; offline cache; portrait or landscape; needs firmware 2.18 |
+| **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star; portrait or landscape; needs firmware 2.18 |
+| **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; portrait or landscape; needs firmware 2.18 |
-| **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker |
+| **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; needs firmware 2.18 |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |

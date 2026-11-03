@@ -1,4 +1,4 @@
--- wallabag for XTOS Licorice, API 2.9. Talks to a wallabag server's API v2 directly over HTTPS
+-- wallabag for XTOS Licorice, API 2.18. Talks to a wallabag server's API v2 directly over HTTPS
 -- (ctx.net): the user's own server or a hosted one. Signs in with OAuth (the API client's id and
 -- secret, made in wallabag's "API clients management", plus the username and password once;
 -- then refresh tokens), turns the saved article HTML into styled text on the device and keeps an
@@ -9,7 +9,7 @@
 -- preview), article (paged, ends with the source QR code, Archive and Star), tags, settings.
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
--- Portrait (480 x 800) or, on firmware with API 2.18, landscape (800 x 480), chosen in Settings:
+-- Portrait (480 x 800) or landscape (800 x 480), chosen in Settings (the manifest asks for API 2.18):
 -- the layout follows ctx.screen's size, a list page holds the rows that fit (12 or 6) and asks
 -- for that many, the menu and Settings take two columns, and after turning, the article and the
 -- preview are laid out again at the same place.
@@ -497,7 +497,13 @@ local function layout_article(data)
     if imgn then
       local im = info[imgn]
       if im and tonumber(im.w) and tonumber(im.h) then
-        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), src = tostring(im.src or '') }
+        local iw, ih, isrc = tonumber(im.w), tonumber(im.h), tostring(im.src or '')
+        local room = H - TOP - 52            -- a picture fits on one page (in landscape: smaller)
+        if ih > room then
+          iw, ih = math.max(16, iw * room // ih), room
+          isrc = isrc:gsub('([?&]w=)%d+', '%1' .. iw):gsub('([?&]h=)%d+', '%1' .. ih)
+        end
+        out[#out + 1] = { s = '', f = 'small', h = ih + 12, x = 0, img = imgn, iw = iw, ih = ih, src = isrc }
       end
     elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
@@ -958,16 +964,14 @@ local function remove_from_list(id)
   if list.top > #list.items and list.top > 1 then list.top = math.max(1, list.top - LIST_N) end
 end
 
--- Change an entry: PATCH /api/entries/<id>. The reader's network never answers a PATCH (the
--- request hangs until its timeout, probed on 26102401), so it goes as a POST that asks to be
--- taken as a PATCH: _method=PATCH in the body and the X-HTTP-Method-Override header, which
--- wallabag's Symfony honours. The entry the server sends back says whether it took the change.
--- done(ok, err)
+-- Change an entry: PATCH /api/entries/<id> (API 2.18 sends PATCH; before it the app sent a POST
+-- with _method=PATCH, which only servers with Symfony's method override took). The entry the
+-- server sends back says whether it took the change. done(ok, err)
 local function patch_entry(id, fields, label, changed, done)
   request('/api/entries/' .. id .. '.json', function(data, err)
     if data and changed(data) then done(true); return end
     done(false, err or 'the server did not take the change')
-  end, label, 'POST', '_method=PATCH&' .. fields, false, { ['X-HTTP-Method-Override'] = 'PATCH' })
+  end, label, 'PATCH', fields)
 end
 
 local function bookmark_action(act, item)
@@ -1152,7 +1156,7 @@ local function cell(i, y0, row_h, h)
 end
 local function menu_rect(i) return cell(i, 100, 70, 58) end
 
--- landscape needs ctx.screen:set_orientation (API 2.18); Settings offers it only then
+-- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
 local function can_rotate()
   local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
   return ok and type(f) == 'function'

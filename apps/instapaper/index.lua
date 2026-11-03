@@ -1,4 +1,4 @@
--- Instapaper for XTOS Licorice, API 2.9. Talks to the Instapaper API v2 directly over HTTPS
+-- Instapaper for XTOS Licorice, API 2.18. Talks to the Instapaper API v2 directly over HTTPS
 -- (ctx.net) with a personal access token, turns the article HTML into styled text on the device
 -- and keeps an offline cache in ctx.storage. Built from the RSS app: same list, preview and
 -- article screens, plus reading progress (resumed and sent back), Archive and Star.
@@ -7,7 +7,7 @@
 -- preview), article (paged, ends with the source QR code, Archive and Star), folders, settings.
 -- Every ctx.* function is a method on this API: colon calls everywhere.
 
--- Portrait (480 x 800) or, on firmware with API 2.18, landscape (800 x 480), chosen in Settings:
+-- Portrait (480 x 800) or landscape (800 x 480), chosen in Settings (the manifest asks for API 2.18):
 -- the layout follows ctx.screen's size, a list page holds the rows that fit (12 or 6) and asks
 -- for that many, the menu and Settings take two columns, and after turning, the article and the
 -- preview are laid out again at the same place.
@@ -418,7 +418,13 @@ local function layout_article(data)
     if imgn then
       local im = info[imgn]
       if im and tonumber(im.w) and tonumber(im.h) then
-        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), src = tostring(im.src or '') }
+        local iw, ih, isrc = tonumber(im.w), tonumber(im.h), tostring(im.src or '')
+        local room = H - TOP - 52            -- a picture fits on one page (in landscape: smaller)
+        if ih > room then
+          iw, ih = math.max(16, iw * room // ih), room
+          isrc = isrc:gsub('([?&]w=)%d+', '%1' .. iw):gsub('([?&]h=)%d+', '%1' .. ih)
+        end
+        out[#out + 1] = { s = '', f = 'small', h = ih + 12, x = 0, img = imgn, iw = iw, ih = ih, src = isrc }
       end
     elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do
@@ -1122,7 +1128,7 @@ local function cell(i, y0, row_h, h)
 end
 local function menu_rect(i) return cell(i, 100, 70, 58) end
 
--- landscape needs ctx.screen:set_orientation (API 2.18); Settings offers it only then
+-- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
 local function can_rotate()
   local ok, f = pcall(function() return ctx.screen and ctx.screen.set_orientation end)
   return ok and type(f) == 'function'

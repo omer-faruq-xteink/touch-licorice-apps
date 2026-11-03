@@ -1,4 +1,7 @@
-# Hacker News — XTOS Licorice mini app (API 2.9)
+# Hacker News — XTOS Licorice mini app (API 2.18)
+
+**Needs firmware with API 2.18** (XT Licorice 26110201 or later): older firmware refuses to install it
+and asks for an update.
 
 [Hacker News](https://news.ycombinator.com) on the reader. Needs Wi-Fi; read-only (no login, no
 voting).
@@ -24,6 +27,9 @@ voting).
   a trailing `/` may be typed too; they are left out).
 - **Path token** (the part after `/k/`) or **user:password** for Basic auth, whichever your Worker
   uses (`OPDS_TOKEN`, or `OPDS_USER` / `OPDS_PASS`); the other stays empty.
+- **Screen**: portrait or landscape. The app turns at once and opens that
+  way next time; in landscape a list page shows 4 stories, Settings takes two columns, and an
+  open story or comment page is laid out again at about the same place.
 
 The [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) page walks through a Worker for Hacker News alone (no CommaFeed account
 needed) and works out these two values. The article text needs the Worker's `/api/read` route (rss-opds after October 2026: `git pull`,

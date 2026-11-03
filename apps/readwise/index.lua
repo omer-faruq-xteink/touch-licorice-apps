@@ -418,7 +418,13 @@ local function layout_article(data)
     if imgn then
       local im = info[imgn]
       if im and tonumber(im.w) and tonumber(im.h) then
-        out[#out + 1] = { s = '', f = 'small', h = tonumber(im.h) + 12, x = 0, img = imgn, iw = tonumber(im.w), ih = tonumber(im.h), src = tostring(im.src or '') }
+        local iw, ih, isrc = tonumber(im.w), tonumber(im.h), tostring(im.src or '')
+        local room = H - TOP - 52            -- a picture fits on one page (in landscape: smaller)
+        if ih > room then
+          iw, ih = math.max(16, iw * room // ih), room
+          isrc = isrc:gsub('([?&]w=)%d+', '%1' .. iw):gsub('([?&]h=)%d+', '%1' .. ih)
+        end
+        out[#out + 1] = { s = '', f = 'small', h = ih + 12, x = 0, img = imgn, iw = iw, ih = ih, src = isrc }
       end
     elseif para ~= '' then
       for line in (para .. '\n'):gmatch('([^\n]*)\n') do

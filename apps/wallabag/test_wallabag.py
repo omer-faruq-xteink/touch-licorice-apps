@@ -3,7 +3,7 @@ answers like a wallabag server (OAuth token endpoint and API v2) and records eve
 Covers signing in from Settings (password grant), the refresh grant when the hour is up and the
 password again when the refresh token is gone, a 401 that signs in once more, the lists (unread,
 starred, archive, a tag) and paging, an article and its position kept on the reader, Star / unstar
-and Archive (a POST taken as a PATCH: the reader never answers a PATCH), a long article that falls back to the plain-text export, the offline copies.
+and Archive (PATCH, API 2.18), a long article that falls back to the plain-text export, the offline copies.
 
   python -I apps/wallabag/test_wallabag.py
 """
@@ -86,9 +86,7 @@ def fake_request(method, url, body, auth):
         return 200, 'Story 5\r\n\r\nFirst line of the long story.\r\nSecond line of it.\r\n'
     if path.startswith('/api/entries/') and path.endswith('.json'):
         i = int(path.split('/')[3].split('.')[0])
-        if method == 'POST' and parse_qs(body or '').get('_method') == ['PATCH'] and not state.get('no_override'):
-            method = 'PATCH'                            # Symfony's method override
-        elif method == 'POST':
+        if method == 'POST' or (method == 'PATCH' and state.get('no_patch')):
             return 405, '{"code":405,"message":"No route found: Method Not Allowed (Allow: GET, PATCH, DELETE)"}'
         if method == 'PATCH':
             f = parse_qs(body or '')
@@ -132,7 +130,6 @@ ctx = {
   qr = M({ encode = function(t) return setmetatable({}, { __index = { width = 33, height = 33, release = function() end } }) end }),
   net = M({ keep_wifi = function() end, request = function(opts, fn)
     local st, body = py_request(opts.method, opts.url, opts.body, opts.headers and opts.headers['Authorization'])
-    if opts.method == 'PATCH' then return M({ cancel = function() end }) end   -- as on the reader: no answer, ever
     pending[#pending + 1] = function() fn(ctx, { status = st, body = body, headers = {} }) end
     return M({ cancel = function() end })
   end }),
@@ -218,9 +215,9 @@ assert len(calls) == n and has('cached') and has(f'3/{pages}'), texts()   # offl
 # Star, then unstar, on the last page
 for _ in range(pages): key('right')
 tap_label('Star')
-assert calls[-1][0] == 'POST' and calls[-1][1] == BASE + '/api/entries/1001.json' and calls[-1][2] == '_method=PATCH&starred=1', calls[-1]
+assert calls[-1][0] == 'PATCH' and calls[-1][1] == BASE + '/api/entries/1001.json' and calls[-1][2] == 'starred=1', calls[-1]
 tap_label('Starred')
-assert calls[-1][2] == '_method=PATCH&starred=0' and 1001 not in starred
+assert calls[-1][2] == 'starred=0' and 1001 not in starred
 tap_label('Star')
 key('back')
 
@@ -229,7 +226,7 @@ assert 'a1001.txt' in store
 long_press(100, row_y(0))
 assert has('6 min read · Tags: Tech'), texts()
 tap_label('Archive')
-assert calls[-1][0] == 'POST' and calls[-1][2] == '_method=PATCH&archive=1' and 1001 in archived
+assert calls[-1][0] == 'PATCH' and calls[-1][2] == 'archive=1' and 1001 in archived
 key('back')
 assert 'Story 1' not in texts() and store['a1001.txt'] is None
 key('back')
@@ -296,17 +293,17 @@ t = texts()
 assert any('(offline)' in s for s in t) and 'Story 2' in t, t
 state['down'] = False
 
-# ---- a server that does not take the method override: the line says so and nothing moves
-state['no_override'] = True
+# ---- a server that refuses the change: the line says so and nothing moves
+state['no_patch'] = True
 g = load()
 tap(*MENU(0)); g.flush()
 n = len(calls)
 long_press(100, row_y(0))
 tap_label('Archive')
-assert [(c[0], c[2]) for c in calls[n:]] == [('POST', '_method=PATCH&archive=1')] and 1002 not in archived, calls[n:]
+assert [(c[0], c[2]) for c in calls[n:]] == [('PATCH', 'archive=1')] and 1002 not in archived, calls[n:]
 key('back')
 assert 'Story 2' in texts() and any(s.startswith('archive: HTTP 405') for s in texts()), texts()
-state['no_override'] = False
+state['no_patch'] = False
 key('back')
 
 # ---- a server that sends the texts with the list: asked 3 at a time

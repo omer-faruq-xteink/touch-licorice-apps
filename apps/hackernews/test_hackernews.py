@@ -72,7 +72,8 @@ def answer(url):
                 'text': '# The essay\n\nLisp is a family of languages.\n\n> A quote.\n\n' + ('[[img:1]]\n\n' if 'images' in q else '')
                         + 'More text. ' * 300 + ('\n\n[[img:2]]\n\nThe end.' if 'images' in q else '')}
         if 'images' in q:
-            body['images'] = [{'n': 1, 'w': 456, 'h': 304, 'src': 'https://img.example/r?u=1'},
+            body['images'] = [{'n': 1, 'w': 456, 'h': 304, 'src': 'https://img.example/r?u=1'} if not mode.get('tall') else
+                              {'n': 1, 'w': 456, 'h': 640, 'src': 'https://img.example/r?u=1&w=456&h=640'},
                               {'n': 2, 'w': 300, 'h': 200, 'src': 'https://img.example/r?u=2'}]
         return {'status': 200, 'body': json.dumps(body)}
     if u.netloc == 'img.example':
@@ -313,5 +314,45 @@ assert A().queue() >= 1
 g.tap_label('Back')
 answer_all()
 assert screen() == 'list'
+g.no_err()
+
+# landscape (API 2.18): Settings offers Screen; turning gives 800 x 480: the buttons at the bottom,
+# 4 stories a page, Settings in two columns, a story's pages and pictures no taller than a page
+L.execute("""
+ctx.screen = { width = 480, height = 800 }
+function ctx.screen.set_orientation(self, o)
+  if o == 'landscape' then self.width, self.height = 800, 480 else self.width, self.height = 480, 800 end
+  return true
+end
+""")
+g.restart(); answer_all()
+def overflow(col=400):
+    """texts above the buttons past the right edge, or into the next column (10 px a character here)"""
+    return [(str(r.s), int(r.x)) for r in g.draw() if int(r.y) < 384 and int(r.x) + 10 * len(str(r.s)) > (col if int(r.x) < col else 800) - 8]
+g.tap_label('Settings')
+assert 'Screen (turns the app)' in g.texts(), g.texts()
+g.tap_label('portrait')
+assert A().cfg.screen == 'landscape' and 'screen=landscape' in g.store['settings.txt'] and int(ctx.screen.width) == 800
+assert any(int(r.x) > 400 for r in g.draw()) and not overflow(), overflow()
+assert g.recs()['Back'][1] >= 480 - 96, g.recs()['Back']
+g.tap_label('Back'); answer_all()
+shown = [t for t in g.texts() if t.startswith('Story number') or t == 'An essay about Lisp']
+assert 1 <= len(shown) <= 4 and g.recs()['Next'][1] >= 384 and not overflow(800), (shown, overflow(800))
+top = lst().top
+g.tap_label('Next')
+assert lst().top == top + 4, lst().top
+g.tap_label('Prev')
+mode['worker'], mode['tall'] = 'ok', True
+g.tap(100, 64 + 20); answer_all()
+assert screen() == 'story' and all(int(r.y) < 384 - 26 for r in g.draw() if str(r.s) not in ('Back', 'Prev', 'Next') and 'comments' not in str(r.s) and '/' not in str(r.s)[-6:]), [(str(r.s), int(r.y)) for r in g.draw()]
+assert not overflow(800), overflow(800)
+pics = [ln for ln in A().S().lines.values() if ln.img]
+tall = [ln.img for ln in pics if 'u=1' in str(ln.img.src)]
+assert tall and (int(tall[0].w), int(tall[0].h)) == (233, 328) and str(tall[0].src).endswith('&w=233&h=328'), [(int(i.w), int(i.h), str(i.src)) for i in tall]
+g.tap_label('Back'); g.tap_label('Settings'); g.tap_label('landscape')
+assert int(ctx.screen.width) == 480 and 'screen=portrait' in g.store['settings.txt']
+g.store['settings.txt'] = g.store['settings.txt'].replace('screen=portrait', 'screen=landscape')
+g.restart(); answer_all()
+assert int(ctx.screen.width) == 800 and lst().rows
 g.no_err()
 print('hackernews tests passed')
