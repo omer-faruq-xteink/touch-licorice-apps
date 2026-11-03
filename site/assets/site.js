@@ -23,11 +23,12 @@ export const TOOLS = [
 ];
 
 // the header and footer of a page: chrome(null) the app list (the home page), chrome('tools') the
-// tools list, chrome('<tool id>') a tool, chrome({ app: name }) an app's page
+// tools list, chrome('developers') the page for app makers, chrome('<tool id>') a tool,
+// chrome({ app: name }) an app's page
 export function chrome(id) {
   const tool = TOOLS.find((t) => t.id === id);
-  const root = id === null ? './' : id === 'tools' ? '../' : '../../';
-  let crumb = '';
+  const root = id === null ? './' : id === 'tools' || id === 'developers' ? '../' : '../../';
+  let crumb = id === 'developers' ? '<span class="crumb">/ Add your app</span>' : '';
   if (tool) crumb = `<span class="crumb">/ <a href="${root}tools/">Tools</a> / ${esc(tool.title)}</span>`;
   else if (id && id.app) crumb = `<span class="crumb">/ ${esc(id.app)}</span>`;
   const here = id === 'tools' || tool ? 'tools' : 'apps';
@@ -40,7 +41,8 @@ export function chrome(id) {
   const footer = document.createElement('footer');
   footer.className = 'site';
   footer.innerHTML = '<div class="wrap">Unofficial <a href="' + REPO + '">touch-licorice-apps</a> mini apps for the ' +
-    'Xteink X4 Pro. Everything runs in your browser: your files are not uploaded anywhere.</div>';
+    'Xteink X4 Pro. Everything runs in your browser: your files are not uploaded anywhere. ' +
+    `Made an app? <a href="${root}developers/">Add it to the list</a>.</div>`;
   document.body.append(footer);
 }
 

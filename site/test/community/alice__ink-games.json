@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "apps": [
+    {
+      "app_id": "reversi",
+      "name": "Reversi",
+      "version": "1.2.0",
+      "description": "The classic disc-flipping game against the reader, three levels.",
+      "devices": ["X4 Pro", "X4 Classic"],
+      "category": "games",
+      "package": "dist/reversi.xtapp",
+      "icon": "icons/reversi.png",
+      "screenshots": ["shots/reversi-1.png"],
+      "license": "MIT"
+    },
+    {
+      "app_id": "Bad-Id",
+      "name": "Broken",
+      "version": "1",
+      "devices": ["X4 Pro"],
+      "package": "x.xtapp"
+    }
+  ]
+}

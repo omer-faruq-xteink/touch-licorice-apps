@@ -34,10 +34,20 @@
     <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
       <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" id="q" placeholder="Search apps" aria-label="Search apps"></label>
-    <div class="pills" id="pills"></div>
+    <div class="filter-row">
+      <div class="pills" id="pills"></div>
+      <div class="seg" id="devices" role="group" aria-label="Device"></div>
+    </div>
   </div>
   <div id="list"></div>
   <p class="empty" id="empty" hidden>No app matches your search.</p>
+
+  <section class="community" id="community">
+    <div class="section-head"><h2>Community apps</h2><a class="contribute" href="developers/">How to contribute &rarr;</a></div>
+    <p class="community-note">Made by other developers and listed from their GitHub repos once a day. They are not checked
+      here: you download them from their authors and install them at your own risk.</p>
+    <div id="community-list"></div>
+  </section>
 
   <div class="section-head" id="how"><h2>How to install</h2></div>
   <ol class="how">
@@ -58,10 +68,11 @@
   chrome(null);
 
   const catalog = await fetch('catalog.json').then((r) => r.json());
+  const community = await fetch('community.json').then((r) => r.json()).then((c) => c.apps).catch(() => []);
   const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.name]));
   const list = document.getElementById('list');
   const q = document.getElementById('q');
-  let cat = '';
+  let cat = '', device = '';
 
   document.getElementById('facts').innerHTML = [`${catalog.apps.length} apps`, 'Free and open source', 'Touch and side buttons']
     .map((f) => `<li>${f}</li>`).join('');
@@ -81,6 +92,9 @@
   document.getElementById('pills').innerHTML = [{ id: '', name: 'All' }, ...catalog.categories]
     .map((c) => `<button type="button" class="pill" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
   const pills = [...document.querySelectorAll('.pill')];
+  document.getElementById('devices').innerHTML = ['All devices', 'X4 Pro', 'X4 Classic']
+    .map((d, i) => `<button type="button" data-dev="${i ? d : ''}">${d}</button>`).join('');
+  const devs = [...document.querySelectorAll('#devices button')];
 
   function tile(a) {
     const need = a.firmware ? ` <span class="tag" title="Needs firmware XT Licorice ${esc(a.firmware)} or later">FW ${esc(a.firmware)}+</span>` : '';
@@ -96,10 +110,31 @@
       </div></article>`;
   }
 
+  // a community app: by its author, from its own repo; a download and its source, never a copy
+  function ctile(a) {
+    // the first letter, under the icon, shows when there is none or it does not load
+    const icon = `<span class="letter">${esc(a.name[0])}</span>` + (a.icon ?
+      `<img src="${esc(a.icon)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '');
+    const need = a.firmware ? ` <span class="tag" title="Needs firmware XT Licorice ${esc(a.firmware)} or later">FW ${esc(a.firmware)}+</span>` : '';
+    return `<article class="tile">
+      <div class="appicon">${icon}</div>
+      <h3><a href="${esc(a.homepage)}" rel="noopener nofollow">${esc(a.name)}</a>${need}</h3>
+      <p class="sum">${esc(a.summary)}</p>
+      <div class="foot">
+        <span class="meta">by <b>${esc(a.owner)}</b> · ${esc(a.version)} · ${esc(a.devices.join(', '))}</span>
+        <a class="get" href="${esc(a.package)}" rel="noopener nofollow">Get</a>
+      </div></article>`;
+  }
+
+  const matches = (a, words) => (!cat || a.category === cat) && (!device || (a.devices || []).includes(device)) &&
+    words.every((w) => (a.name + ' ' + a.summary + ' ' + (catName[a.category] || '') + ' ' + (a.owner || '')).toLowerCase().includes(w));
+
   function render() {
     const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
-    const shown = catalog.apps.filter((a) => (!cat || a.category === cat) &&
-      words.every((w) => (a.name + ' ' + a.summary + ' ' + catName[a.category]).toLowerCase().includes(w)));
+    const shown = catalog.apps.filter((a) => matches(a, words));
+    const others = community.filter((a) => matches(a, words));
+    document.getElementById('community-list').innerHTML = others.length ? `<div class="tiles">${others.map(ctile).join('')}</div>` :
+      `<p class="empty">${community.length ? 'No community app matches.' : 'None yet. Made an app for the X4? <a href="developers/">Add it here</a>.'}</p>`;
     list.innerHTML = catalog.categories.map((c) => {
       const l = shown.filter((a) => a.category === c.id);
       return l.length ? `<div class="section-head"><h2>${esc(c.name)}</h2><span>${l.length} apps</span></div>` +
@@ -107,11 +142,13 @@
     }).join('');
     document.getElementById('empty').hidden = shown.length > 0;
     pills.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+    devs.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.dev === device)));
     reader.changed();          // the new tiles' copy buttons and status lines
   }
 
   q.addEventListener('input', render);
   pills.forEach((b) => b.addEventListener('click', () => { cat = b.dataset.cat; render(); }));
+  devs.forEach((b) => b.addEventListener('click', () => { device = b.dataset.dev; render(); }));
   render();
   readerPanel(document.getElementById('reader'), './', catalog.apps.map((a) => a.id), catalog);
 </script>

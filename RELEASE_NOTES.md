@@ -4,7 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Added
 
-- **New: the app site** ([omer-faruq-xteink.github.io/touch-licorice-apps](https://omer-faruq-xteink.github.io/touch-licorice-apps/)): every app with its screenshots, search and categories, and a page of its own to share. In Chrome or Edge on a computer, connect the reader in USB mode and choose its SD card: the site copies apps there (install them from All Files) and shows which installed apps have an update. The packages are those of the latest release. The tools moved to [/tools/](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/).
+- **New: the app site** ([omer-faruq-xteink.github.io/touch-licorice-apps](https://omer-faruq-xteink.github.io/touch-licorice-apps/)): every app with its screenshots, search and categories, and a page of its own to share. In Chrome or Edge on a computer, connect the reader in USB mode and choose its SD card: the site copies apps there (install them from All Files) and shows which installed apps have an update. The packages are those of the latest release. The tools moved to [/tools/](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/). **Community apps** by other developers appear at the bottom, found daily from GitHub repos with the topic `licorice-ink-app` and an `inkapp.json`; they are only linked, never copied or checked ([add your app](https://omer-faruq-xteink.github.io/touch-licorice-apps/developers/)).
 
 ## Changed
 

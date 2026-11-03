@@ -1,0 +1,2 @@
+{ "format": 1, "apps": [ { "app_id": "spam", "name": "Spam", "version": "1.0", "devices": ["X4 Pro"],
+  "package": "https://example.com/spam.xtapp" } ] }

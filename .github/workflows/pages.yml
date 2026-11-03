@@ -2,6 +2,8 @@
 # published to GitHub Pages (https://omer-faruq-xteink.github.io/touch-licorice-apps/) on every push
 # to main that touches it. RELEASE_NOTES.md is among those: opening the next release right after one
 # is published pushes it, so the site then picks up the new packages (or run the workflow by hand).
+# It also runs daily, for the community apps (repos with the topic licorice-ink-app, read by
+# tools/site_community.py).
 name: Site
 
 on:
@@ -9,13 +11,16 @@ on:
     branches: [main]
     paths: ['site/**', 'apps/gamebook/stories/**', 'apps/*/README.md', 'apps/*/icon.png', 'README.md',
             'store/apps.json', 'RELEASE_NOTES.md', 'tools/build_site.py', 'tools/site_catalog.py',
-            '.github/workflows/pages.yml']
+            'site/community-blocklist.txt', 'tools/site_community.py', '.github/workflows/pages.yml']
+  schedule:
+    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write       # the keep-alive below
 
 concurrency:
   group: pages
@@ -34,6 +39,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release download --repo "$GITHUB_REPOSITORY" --pattern '*.xtapp' --dir packages
       - run: python -I tools/build_site.py _site packages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}      # the community search
+      # GitHub turns a schedule off after 60 days without activity in the repo; enabling the workflow
+      # again on every scheduled run keeps it on, without commits
+      - name: Keep the daily run on
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/enable"
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

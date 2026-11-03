@@ -237,6 +237,7 @@ def build(out, packages):
             'file': os.path.basename(path), 'size': size, 'size_text': size_text(size),
             'shots': shot_files(app),
             'store': bool(s.get('live_version')),
+            'devices': ['X4 Pro'],          # every app here is made for touch
         }
         entries.append(e)
         shutil.copyfile(path, os.path.join(out, 'packages', e['file']))
@@ -251,7 +252,7 @@ def build(out, packages):
     catalog = {
         'categories': [{'id': k, 'name': n} for k, n, _ in CATEGORIES],
         'apps': [{k: e[k] for k in ('id', 'app_id', 'name', 'version', 'api', 'firmware', 'summary', 'category',
-                                    'file', 'size', 'store')} | {'summary': inline(e['summary'])} for e in entries],
+                                    'file', 'size', 'store', 'devices')} | {'summary': inline(e['summary'])} for e in entries],
     }
     with open(os.path.join(out, 'catalog.json'), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(catalog, f, ensure_ascii=False, indent=1)

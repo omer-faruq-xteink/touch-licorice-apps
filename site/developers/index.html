@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add your app</title>
+<meta name="description" content="List your own Xteink X4 app on the Touch Licorice app site: a GitHub topic and one JSON file.">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/store.css">
+<style>
+  .dev { max-width: 820px; }
+  .dev h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); letter-spacing: -0.02em; margin: 28px 0 8px; }
+  .dev .prose { padding: 14px 24px; margin: 0 0 8px; }
+  .dev table { font-size: 0.9rem; }
+  .dev td:first-child { white-space: nowrap; }
+</style>
+</head>
+<body class="store">
+<main class="wrap dev">
+  <h1>Add your app to the list</h1>
+  <p class="lead">Made an app for the Xteink X4 Pro or X4 Classic? Put it on GitHub with a topic and one small file,
+    and it shows up under <a href="../#community">Community apps</a> by the next day, with your name and a link to your repo.</p>
+
+  <div class="section-head"><h2>Three steps</h2></div>
+  <ol class="how">
+    <li><strong>Publish it on GitHub</strong><p>A public repo with your app's <code>.xtapp</code>: in a release, or
+      committed in the repo.</p></li>
+    <li><strong>Add the topic</strong><p>On the repo's page: the gear next to <b>About</b>, then add the topic
+      <code>licorice-ink-app</code>.</p></li>
+    <li><strong>Add <code>inkapp.json</code></strong><p>At the root of the repo's default branch, in the format below.
+      The list is rebuilt once a day.</p></li>
+  </ol>
+
+  <div class="section-head"><h2>inkapp.json</h2></div>
+<pre><code>{
+  "format": 1,
+  "apps": [
+    {
+      "app_id": "reversi",
+      "name": "Reversi",
+      "version": "1.2.0",
+      "description": "The classic disc-flipping game against the reader, three levels.",
+      "devices": ["X4 Pro", "X4 Classic"],
+      "category": "games",
+      "package": "https://github.com/you/ink-games/releases/latest/download/reversi.xtapp",
+      "icon": "icons/reversi.png",
+      "screenshots": ["shots/reversi-1.png"],
+      "homepage": "https://github.com/you/ink-games",
+      "license": "MIT"
+    }
+  ]
+}</code></pre>
+  <div class="prose table-scroll">
+    <table>
+      <tr><th>field</th><th></th></tr>
+      <tr><td><code>format</code></td><td>Always <code>1</code>.</td></tr>
+      <tr><td><code>apps</code></td><td>One entry per app; a repo can list up to 20.</td></tr>
+      <tr><td><code>app_id</code></td><td>The <code>app_id</code> of your manifest: lower-case letters only.</td></tr>
+      <tr><td><code>name</code>, <code>version</code></td><td>Up to 40 characters; a dotted version such as <code>1.2.0</code>.
+        Keep it the same as in your package.</td></tr>
+      <tr><td><code>description</code></td><td>One or two sentences, up to 200 characters.</td></tr>
+      <tr><td><code>devices</code></td><td><code>"X4 Pro"</code> (touch), <code>"X4 Classic"</code> (keys), or both.</td></tr>
+      <tr><td><code>category</code></td><td>Optional: <code>read</code>, <code>tools</code>, <code>learn</code>, <code>stories</code>,
+        <code>daily</code>, <code>puzzles</code> or <code>games</code> (default <code>tools</code>).</td></tr>
+      <tr><td><code>package</code></td><td>Where the <code>.xtapp</code> is: an <code>https://</code> address (a release download works
+        well) or a path in the repo.</td></tr>
+      <tr><td><code>icon</code>, <code>screenshots</code></td><td>Optional pictures, as paths in the repo or <code>https://</code>
+        addresses: a square icon, and up to 6 screenshots.</td></tr>
+      <tr><td><code>firmware</code></td><td>Optional: the oldest firmware build it needs, such as <code>"26110201"</code>.</td></tr>
+      <tr><td><code>homepage</code>, <code>license</code></td><td>Optional: a page for the app (default: the repo), and its license.</td></tr>
+    </table>
+  </div>
+  <p class="fine">Paths are read from the repo's default branch. An entry with a missing or wrong field is left out; the
+    others in the file still count.</p>
+
+  <div class="section-head"><h2>Good to know</h2></div>
+  <div class="prose">
+    <ul>
+      <li>The site does not copy, host or check your package: visitors download it from your repo, and the list says so.</li>
+      <li>Repos are listed by stars, then by name. Your GitHub name and repo are shown with each app.</li>
+      <li>To leave the list, remove the topic. Repos that cause trouble can be left out by the site's maintainer.</li>
+      <li>Xteink also has its own app store, with review: <a href="https://xtapp-ai.xteink.cc">xtapp-ai.xteink.cc</a>.</li>
+    </ul>
+  </div>
+  <p class="fine">Questions or a problem with your listing: <a href="https://github.com/omer-faruq-xteink/touch-licorice-apps/issues">open an issue</a>.</p>
+</main>
+<script type="module">
+  import { chrome } from '../assets/site.js';
+  chrome('developers');
+</script>
+</body>
+</html>

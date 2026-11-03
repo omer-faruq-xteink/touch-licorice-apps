@@ -180,3 +180,23 @@ body.store footer.site { border-top: 0; }
 .gallery img.photo { flex: none; width: 230px; height: auto; border-radius: 18px; scroll-snap-align: start;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22); }
 .get:disabled { opacity: 1; cursor: default; color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+
+/* the device filter, and the community apps */
+.filter-row { display: flex; align-items: center; gap: 12px; }
+.filter-row .pills { flex: 1; min-width: 0; }
+.seg { flex: none; display: inline-flex; background: var(--s-card); border-radius: 999px; padding: 3px; box-shadow: var(--s-shadow);
+  margin-top: 8px; }
+.seg button { font: inherit; font-size: 0.85rem; font-weight: 600; border: 0; border-radius: 999px; padding: 5px 12px;
+  background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--s-soft); color: var(--ink); }
+.community { margin-top: 44px; padding-top: 8px; border-top: 1px solid var(--line); }
+.community .contribute { font-weight: 700; text-decoration: none; color: var(--s-get); }
+.community-note { color: var(--muted); font-size: 0.93rem; margin: -4px 0 14px; max-width: 46em; }
+.community .empty { text-align: left; padding: 10px 0 0; }
+.appicon .letter { font-size: 1.8rem; font-weight: 800; color: #1d1d1b; }
+@media (max-width: 760px) {
+  .filter-row { flex-direction: column; align-items: stretch; gap: 0; }
+  .seg { align-self: flex-start; }
+}
+.appicon > * { grid-area: 1 / 1; }
+.appicon img { background: #fff; }

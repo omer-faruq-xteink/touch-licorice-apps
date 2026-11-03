@@ -1,5 +1,6 @@
 """Build the site (GitHub Pages) into OUT_DIR: site/ without its tests; the app catalog and a page
-per app with the packages of PACKAGES_DIR (tools/site_catalog.py); and the downloads made from the
+per app with the packages of PACKAGES_DIR (tools/site_catalog.py); the community apps found on
+GitHub (tools/site_community.py); and the downloads made from the
 repo, such as the Gamebook story pack and the Zork pack of Text adventures, and an OPML file per
 topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and rss/all.opml.
 
@@ -16,6 +17,7 @@ from xml.sax.saxutils import quoteattr, escape
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import site_catalog  # noqa: E402
+import site_community  # noqa: E402
 SITE = os.path.join(ROOT, 'site')
 # the story pack: stories that are not built into the app
 STORIES = os.path.join(ROOT, 'apps', 'gamebook', 'stories')
@@ -106,16 +108,20 @@ def main():
     out = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'dist', 'site'))
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(SITE, out, ignore=shutil.ignore_patterns('test', '__pycache__', '*.py', '*.mjs'))
+    shutil.copytree(SITE, out, ignore=shutil.ignore_patterns('test', '__pycache__', '*.py', '*.mjs',
+                                                                    'community-blocklist.txt'))
     os.makedirs(os.path.join(out, 'downloads'), exist_ok=True)
     names = story_pack(os.path.join(out, 'downloads', 'gamebook-stories.zip'))
     games = zork_pack(os.path.join(out, 'downloads', 'zork-pack.zip'))
     topics = feed_lists(os.path.join(out, 'rss'))
     packages = sys.argv[2] if len(sys.argv) > 2 else newest_release()
     apps = site_catalog.build(out, packages) if packages else 0
+    # COMMUNITY_FIXTURES: sample inkapp.json files instead of GitHub's search (tests, previews)
+    community = site_community.build(out, os.environ.get('COMMUNITY_FIXTURES'))
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
-          f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}')
+          f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
+          f'{community} community apps')
 
 
 if __name__ == '__main__':

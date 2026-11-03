@@ -1,0 +1,2 @@
+# Community repos or owners the site leaves out, one per line: owner/repo or owner.
+# Read by tools/site_community.py when the site is built (daily); not published.
