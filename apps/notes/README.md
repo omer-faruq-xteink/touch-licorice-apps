@@ -25,7 +25,8 @@ and opens a list to pick another: **Draw S / M / L**, **Erase**, **Text S / M / 
 - **Lock**: the app asks **With clock**, **No clock** or **Cancel**; the first time the firmware
   then asks **Set as lock screen**. From then on the chosen page is drawn whenever the device
   locks or sleeps. With the clock (and the battery level) it is redrawn once a minute
-  (`interval_sec` in the manifest); without it the app asks the host to stop the minute redraw.
+  (`interval_sec` in the manifest); without it the page wakes only once an hour, the longest the
+  firmware allows (`ctx.lock:set_interval(3600)` on every wake).
   Lock again on another page, or to switch the clock on or off, at any time. Settings → Display → Off wallpaper must stay on
   **Default** (the lock-screen app route; the "Custom" image slot is a different mechanism).
 

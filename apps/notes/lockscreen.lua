@@ -131,17 +131,17 @@ function on_draw(c, gg)
   if not ok then pcall(function() gg:text(10, 760, 'lock error: ' .. tostring(err):sub(1, 40)) end) end
 end
 
--- Without the clock nothing changes on the lock screen, so try to switch the periodic redraw
--- (manifest interval_sec) off. The host's lock-timer API is not documented for API 2.9: each
--- call is tried and ignored when it is missing.
+-- Without the clock nothing changes on the lock screen, so it wakes as seldom as the host allows:
+-- ctx.lock:set_interval takes 30-3600 s (0 or more than 3600 is refused) and the host goes back to
+-- the manifest's 60 each time the reader locks, so every session sets it again. Measured on
+-- 26110201: set in the first session, it applies from the next sleep, and wakes fall on whole
+-- multiples of the interval in local time.
+local SLOWEST = 3600
+
 function on_load()
   local lock = read('lock.txt') or ''
-  if not lock:find('noclock', 1, true) then return end
-  for _, t in ipairs({ ctx.lockscreen, ctx.lock }) do
-    if t then
-      pcall(function() t:set_interval(0) end)
-      pcall(function() t:set_interval(86400) end)
-    end
+  if lock:find('noclock', 1, true) and ctx.lock then
+    pcall(function() ctx.lock:set_interval(SLOWEST) end)
   end
 end
 function on_tick() end

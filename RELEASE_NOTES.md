@@ -9,12 +9,14 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Changed
 
 - **Gamebook 1.0.1**: the QR code on its help screen (More stories) now opens the story tools (the story pack and the Twine, Ink and Project Aon converters) instead of the site's home page, which is now the app list.
+- **Notes 0.3.1**: a lock-screen page without the clock now refreshes once an hour instead of every minute. Turning the refresh off is not possible, so it asks for the longest interval the firmware allows; before, its request was refused and the page kept refreshing every minute.
 
 ## Files
 
 | file | content |
 |---|---|
 | `gamebook.xtapp` | Gamebook 1.0.1: help QR code opens the story tools |
+| `notes.xtapp` | Notes 0.3.1: a lock screen without the clock refreshes hourly |
 | all other packages | unchanged since v0.17.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

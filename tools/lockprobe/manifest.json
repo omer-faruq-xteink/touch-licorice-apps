@@ -1,0 +1,11 @@
+{
+  "app_id": "lockprobe",
+  "display_name": "Lock Probe",
+  "version": "1.0",
+  "author": "omer-faruq",
+  "description": "Developer tool: logs every sleep-screen wake and tries ctx.lock:set_interval with the interval chosen in the app",
+  "entry": "index.lua",
+  "api": "2.9",
+  "permissions": [],
+  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 60 }
+}

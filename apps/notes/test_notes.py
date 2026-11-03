@@ -39,8 +39,11 @@ ctx = {
   input = M({ text = function(opts, fn) pending[#pending + 1] = fn end }),
   dialog = M({ confirm = function(opts, fn) error('the firmware dialog is not used any more') end }),
   lockscreen = M({ set_default = function() set_default_calls = (set_default_calls or 0) + 1; is_def = true end,
-                   is_default = function() return is_def == true end,
-                   set_interval = function(n) intervals = (intervals or '') .. n .. ' ' end }),
+                   is_default = function() return is_def == true end }),
+  -- the lock session's ctx.lock: 30-3600 s, anything else refused (as the firmware does)
+  lock = M({ set_interval = function(n)
+    assert(math.type(n) == 'integer' and n >= 30 and n <= 3600, 'set_interval out of range: ' .. tostring(n))
+    intervals = (intervals or '') .. n .. ' ' end }),
   clock = M({ now = function() return { hour = 9, minute = 5 } end }),
   device = M({ battery = function() return { percent = 77 } end, }),
   qr = M({ encode = function(text, opts)
@@ -252,10 +255,10 @@ assert g.intervals is None                       # with the clock the minute red
 draw()
 texts = list(g.drawn.values())
 assert 'good morning' in texts and '09:05' in texts and '77%' in texts, texts
-# without the clock: no time, no battery, and the periodic redraw is switched off where possible
+# without the clock: no time, no battery, and the reader wakes once an hour, the longest it allows
 g.store['lock.txt'] = '1\nnoclock'
 g.on_load()
-assert g.intervals is not None and g.intervals.startswith('0'), g.intervals
+assert g.intervals == '3600 ', g.intervals
 draw()
 texts = list(g.drawn.values())
 assert 'good morning' in texts and '09:05' not in texts and '77%' not in texts, texts

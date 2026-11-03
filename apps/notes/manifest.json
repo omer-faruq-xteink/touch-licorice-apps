@@ -1,7 +1,7 @@
 {
   "app_id": "notes",
   "display_name": "Notes",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "omer-faruq",
   "description": "Draw, type and add QR codes on pages; show one as the lock screen",
   "entry": "index.lua",
