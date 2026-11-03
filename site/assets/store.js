@@ -111,7 +111,7 @@ export const card = {
     this.changed();
   },
   async copy(root, app) {
-    const res = await fetch(root + 'packages/' + app.file);
+    const res = await fetch(root + 'packages/' + app.file, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`could not download ${app.file} (${res.status})`);
     const bytes = new Uint8Array(await res.arrayBuffer());
     const fh = await this.handle.getFileHandle(app.file, { create: true });
@@ -131,7 +131,7 @@ export const card = {
 // the panel that connects the card; apps: the ids this page offers (one on an app page, all on the
 // home page), whose .copy buttons and .status lines it keeps up to date
 export async function readerPanel(el, root, ids, catalog) {
-  catalog = catalog || await fetch(root + 'catalog.json').then((r) => r.json());
+  catalog = catalog || await fetch(root + 'catalog.json', { cache: 'no-cache' }).then((r) => r.json());
   const byId = new Map(catalog.apps.map((a) => [a.id, a]));
   const msg = document.createElement('p');
   msg.className = 'msg';

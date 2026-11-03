@@ -71,8 +71,9 @@
   import { readerPanel, card as reader } from './assets/store.js';
   chrome(null);
 
-  const catalog = await fetch('catalog.json').then((r) => r.json());
-  const community = await fetch('community.json').then((r) => r.json()).then((c) => c.apps).catch(() => []);
+  // no-cache: the catalog keeps its name from release to release, so ask the server each time
+  const catalog = await fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json());
+  const community = await fetch('community.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => c.apps).catch(() => []);
   const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.name]));
   const list = document.getElementById('list');
   const q = document.getElementById('q');
