@@ -660,6 +660,17 @@ local function short(s, n)
 end
 L.short = short
 
+-- only the lines whose fields are all known (a book has no page number before it is paginated)
+function L.known(list, f)
+  local out = {}
+  for _, s in ipairs(list) do
+    local ok = true
+    for k in s:gmatch('{(%a+)}') do if f[k] == nil or f[k] == '' then ok = false end end
+    if ok then out[#out + 1] = s end
+  end
+  return #out > 0 and out or list
+end
+
 -- one line of list, by seed, with its fields filled in
 function L.pick(list, seed, f)
   if not list or #list == 0 then return '' end
@@ -819,11 +830,19 @@ function A.worm(gg, stage, hx, hy, mood, phase, taste)
   end
   if stage == 'hatchling' then
     -- the bottom half of its shell still around the tail
-    local tx = pts[1][1]
-    gg:polygon({ tx - 30, hy + 4, tx - 22, hy + 28, tx + 22, hy + 28, tx + 30, hy + 4, tx + 18, hy + 12, tx + 6, hy + 2,
-                 tx - 6, hy + 12, tx - 18, hy + 2 }, WHITE)
-    gg:polygon({ tx - 30, hy + 4, tx - 22, hy + 28, tx + 22, hy + 28, tx + 30, hy + 4, tx + 18, hy + 12, tx + 6, hy + 2,
-                 tx - 6, hy + 12, tx - 18, hy + 2 }, { line_width = 3 })
+    -- a round cup with a small jagged rim, and two speckles, like the egg
+    local tx, ty, w, d = pts[1][1], hy + 10, 26, 22
+    local shell = {}
+    for i = 0, 12 do                                          -- the round bottom, right to left
+      local a = i * math.pi / 12
+      shell[#shell + 1] = tx + math.floor(math.cos(a) * w); shell[#shell + 1] = ty + math.floor(math.sin(a) * d)
+    end
+    for i = 1, 5 do                                           -- the broken rim, left to right
+      shell[#shell + 1] = tx - w + i * 2 * w // 6; shell[#shell + 1] = ty - (i % 2 == 1 and 5 or 0)
+    end
+    gg:polygon(shell, WHITE)
+    gg:polygon(shell, { line_width = 3 })
+    gg:circle(tx - 9, ty + 9, 3, BLACK); gg:circle(tx + 10, ty + 13, 2, BLACK)
   end
 end
 
@@ -941,7 +960,7 @@ local function draw(gg)
   else
     A.asleep(gg, view.stage_key, W // 2, 520, view.taste)
     local seed = (data.today or 0) + (data.hour or 0)
-    dream = L.pick((view.hunger == 'hungry' or view.hunger == 'sulky') and L.DREAM_HUNGRY or L.DREAM, seed, f)
+    dream = L.pick(L.known((view.hunger == 'hungry' or view.hunger == 'sulky') and L.DREAM_HUNGRY or L.DREAM, f), seed, f)
   end
   if s.hatched and view.hunger ~= 'hiding' then
     -- the dream in a thought bubble over its head

@@ -151,6 +151,17 @@ local function short(s, n)
 end
 L.short = short
 
+-- only the lines whose fields are all known (a book has no page number before it is paginated)
+function L.known(list, f)
+  local out = {}
+  for _, s in ipairs(list) do
+    local ok = true
+    for k in s:gmatch('{(%a+)}') do if f[k] == nil or f[k] == '' then ok = false end end
+    if ok then out[#out + 1] = s end
+  end
+  return #out > 0 and out or list
+end
+
 -- one line of list, by seed, with its fields filled in
 function L.pick(list, seed, f)
   if not list or #list == 0 then return '' end

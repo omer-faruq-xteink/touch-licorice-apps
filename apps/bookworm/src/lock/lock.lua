@@ -36,7 +36,7 @@ local function draw(gg)
   else
     A.asleep(gg, view.stage_key, W // 2, 520, view.taste)
     local seed = (data.today or 0) + (data.hour or 0)
-    dream = L.pick((view.hunger == 'hungry' or view.hunger == 'sulky') and L.DREAM_HUNGRY or L.DREAM, seed, f)
+    dream = L.pick(L.known((view.hunger == 'hungry' or view.hunger == 'sulky') and L.DREAM_HUNGRY or L.DREAM, f), seed, f)
   end
   if s.hatched and view.hunger ~= 'hiding' then
     -- the dream in a thought bubble over its head

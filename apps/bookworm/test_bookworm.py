@@ -191,7 +191,7 @@ lock.execute(f"dofile([[{os.path.join(HERE, 'lockscreen.lua').replace(os.sep, '/
 lock.execute('R.total = R.total + 11 * 60; R.today = 11 * 60')
 lock.execute('''
   said = {}
-  local rec = setmetatable({}, { __index = function(_, k) return function(_, ...)
+  rec = setmetatable({}, { __index = function(_, k) return function(_, ...)
     local a = { ... }
     if k == 'text' then said[#said + 1] = a[3] elseif k == 'text_box' then said[#said + 1] = a[5] end
     return gg[k](gg, ...)
@@ -203,6 +203,8 @@ drawn = [str(v) for v in lock.eval('said').values()]
 assert any(S().name in s for s in drawn) and any('dreaming' in s or 'resting' in s for s in drawn), drawn
 assert S().hatched, 'the reading before sleep hatched the new egg'
 assert int(lock.eval('saves')) == 1 and int(lock.eval('commands')) < 900, (lock.eval('saves'), lock.eval('commands'))
+# a book not paginated yet has no page number: no dream of "page …"
+lock.execute('R.current.page = nil; for h = 0, 23 do NOW.hour = h; said = {}; on_draw(ctx, rec) ; for _, s in ipairs(said) do assert(not tostring(s):find("page"), s) end end')
 
 # a reader that keeps its statistics to itself
 L.execute('ctx.reader = nil; ctx.state = {}')
