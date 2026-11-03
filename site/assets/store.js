@@ -147,7 +147,9 @@ export async function readerPanel(el, root, ids, catalog) {
     } else if (card.handle) {
       cls = ' on';
       const updates = ids.map((id) => byId.get(id)).filter((a) => a && card.state(a)?.update);
-      title = 'Reader connected' + (card.handle.name ? ` <span class="note">· ${esc(card.handle.name)}</span>` : '');
+      // the card's root (it holds XTApps/) is named just "\" by the browser
+      const name = card.apps ? 'SD card' : card.handle.name;
+      title = `Reader connected <span class="note">· ${esc(name)}</span>`;
       text = card.apps ? `${card.apps.size} apps installed` +
         (updates.length ? `, <b>${updates.length} with an update</b>.` : ', all up to date.') :
         'A folder on the card: choose the card itself to see which apps are installed.';
