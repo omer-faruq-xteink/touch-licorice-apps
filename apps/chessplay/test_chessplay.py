@@ -126,7 +126,6 @@ assert 'The reader is thinking…' in g.texts()
 run()
 assert len(A().history()) == 2 and not A().thinking() and A().pos().side == 1, len(A().history())
 assert g.store['game.txt'].count(' ') >= 1 and 'e2e4' in g.store['game.txt'], g.store['game.txt']
-assert 'move level=2 depth=2' in g.store['think.txt'], g.store['think.txt']
 g.no_err()
 
 # a wrong tap: a square the piece cannot reach drops the selection

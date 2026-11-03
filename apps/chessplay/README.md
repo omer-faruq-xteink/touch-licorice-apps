@@ -22,5 +22,6 @@ Files: `src/rules.lua` (the rules: legal moves, check, mate, the draws, notation
 (alpha-beta search with iterative deepening and a quiescence search, material and piece-square
 evaluation), `src/pieces.lua` (the drawn pieces, as in Chess puzzles), `src/main.lua` (on
 `tools/gamekit`), `bundle.py`, `test_chessplay.py` (`python -I apps/chessplay/test_chessplay.py`:
-perft of standard positions, the draws, notation, the engine, and the game by taps). Each think is
-noted in `think.txt` (level, depth reached, time), in the app's private folder.
+perft of standard positions, the draws, notation, the engine, and the game by taps). Measured on the
+reader (XT Licorice 26110201): about 2,400-3,500 positions a second, so Easy looks two moves ahead,
+Medium three and Hard four in their times.

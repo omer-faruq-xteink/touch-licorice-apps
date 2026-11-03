@@ -126,24 +126,10 @@ end
 
 ------------------------------------------------------------------ the reader thinking
 
--- how deep the reader got and how long it took, the last 40 times: think.txt in the app's private
--- folder (XTApps/chessplay/files/ on the card), to tune the levels to the reader's speed
-local function note_think(th, best, score, depth, nodes)
-  local ms = (kit.now_ms() or 0) - th.started
-  local line = string.format('%s level=%d depth=%s nodes=%s ms=%d score=%s move=%s', th.kind, th.level,
-    tostring(depth), tostring(nodes), ms, tostring(score), best and R.uci(best) or '-')
-  local old = kit.read('think.txt') or ''
-  local lines = {}
-  for l in old:gmatch('[^\n]+') do lines[#lines + 1] = l end
-  lines[#lines + 1] = line
-  while #lines > 40 do table.remove(lines, 1) end
-  kit.write('think.txt', table.concat(lines, '\n') .. '\n')
-end
-
 local function step(c)
   local th = think
   if not th then return end
-  local ok, best, score, depth, nodes = coroutine.resume(th.co)
+  local ok, best = coroutine.resume(th.co)
   if think ~= th then return end                     -- Undo or New game while it thought
   if not ok then think = nil; ERR = tostring(best); kit.refresh(); return end
   if coroutine.status(th.co) ~= 'dead' then
@@ -151,7 +137,6 @@ local function step(c)
     return
   end
   think = nil
-  pcall(note_think, th, best, score, depth, nodes)
   if not best then kit.refresh(); return end
   -- best is a move of the copy: the same number in the real position
   if th.kind == 'move' then
@@ -171,7 +156,7 @@ start_thinking = function(kind)
   local co = coroutine.create(function()
     return E.think(copy, lv, { clock = function() return kit.now_ms() or 0 end, slice_ms = SLICE_MS, limit_ms = limit })
   end)
-  think = { co = co, kind = kind, level = lv, started = kit.now_ms() or 0 }
+  think = { co = co, kind = kind }
   pcall(function() ctx:after(30, step) end)
 end
 
