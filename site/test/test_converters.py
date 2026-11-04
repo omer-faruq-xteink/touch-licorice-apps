@@ -111,6 +111,7 @@ csv_ = os.path.join(TMP, 'words.csv')
 open(csv_, 'w', encoding='utf-8', newline='').write('a,b\n"c, d","e ""quoted"""\nf,g,h\r\ni,"j\r\nk"\n')
 compare_anki(csv_)
 print('anki: .tsv and .csv lists: same files')
+print(run(NODE, os.path.join(HERE, 'test_translit.mjs')).strip())      # the Arabic pronunciation (browser only)
 
 # ------------------------------------------------------------------ StarDict
 

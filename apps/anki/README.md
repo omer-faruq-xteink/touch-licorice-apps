@@ -66,6 +66,12 @@ PNG per drawn line), so a deck grows: *Qur'anic Vocabulary: all word forms* from
 becomes about 10 MB in 154 files. `apkg2cards.py` warns about such decks instead (Pillow cannot
 join Arabic letters without extra libraries). Needs Anki 1.1.
 
+For Arabic with vowel marks (as in Quran decks), the converter also offers the **pronunciation**
+on the first line of the back, worked out by rules from the marks (`site/tools/anki/translit.js`):
+*min*, *allâhi*, *alladhîna*, *wash-shamsi*. Long vowels are written â î û, hamza ’ and ʿayn ‘;
+the emphatic letters (ص ض ط ظ ح) are plain s d t z h, since the reader's fonts may lack dotted
+letters.
+
 A plain list works too: a `.tsv` file with `front<TAB>back` per line, copied into
 `XTApps/anki/files/` as it is (up to 300 KB), or converted like an `.apkg` (`.tsv`, `.csv`).
 

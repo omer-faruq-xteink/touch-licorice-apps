@@ -42,6 +42,10 @@
         <div class="row">
           <label class="check"><input type="checkbox" id="reverse"> Also back-to-front cards</label>
         </div>
+        <div class="row" id="readrow" hidden>
+          <label class="check"><input type="checkbox" id="reading" checked> Pronunciation of the Arabic on the back
+            (worked out from the vowel marks: <em>allâhi</em>, <em>wash-shamsi</em>)</label>
+        </div>
         <details>
           <summary>Updating a deck you already study?</summary>
           <p class="note">Add the files of the earlier conversion (the zip from this page, or the
@@ -110,6 +114,8 @@
       const names = [...new Set(sum.flatMap((m) => m.fields.map((x) => x.name)))];
       $('front').innerHTML = '<option value="">(default)</option>' + names.map((n) => `<option>${esc(n)}</option>`).join('');
       $('back').innerHTML = names.map((n) => `<option>${esc(n)}</option>`).join('');
+      // Arabic on the cards: offer its pronunciation (worked out from the vowel marks, as in Quran decks)
+      $('readrow').hidden = !notes.some(([, fields]) => Object.values(fields).some((v) => /[ء-ي]/u.test(v)));
       const d = deckNames(f.name);
       $('name').value = d.name;
       $('prefix').value = d.prefix;
@@ -143,6 +149,7 @@
         name: $('name').value.trim(), prefix: $('prefix').value.trim(), front: $('front').value || undefined,
         back: back || undefined, reverse: $('reverse').checked, maxChars: parseInt($('maxc').value, 10) || 800,
         update: old.size > 0,
+        reading: !$('readrow').hidden && $('reading').checked,
         picture: rtl ? await makePicturer() : undefined,
         progress: async (n, total) => {
           message($('result'), `Drawing the right-to-left text: ${n} of about ${total} cards …`);
@@ -151,7 +158,8 @@
       }, old);
       await downloadZip(`${r.prefix}-cards.zip`, r.files);
       const u = r.update ? ` ${r.update.kept} cards kept their places, ${r.update.removed} removed, ${r.update.added} new.` : '';
-      const p = r.pictured ? ` Right-to-left text drawn as pictures on ${r.pictured} cards.` : '';
+      const p = (r.pictured ? ` Right-to-left text drawn as pictures on ${r.pictured} cards.` : '') +
+        (r.read ? ` Pronunciation added to ${r.read} cards.` : '');
       message($('result'), `${r.name}: ${r.cards} cards in ${r.shards} file${r.shards > 1 ? 's' : ''}, prefix ${r.prefix}.${u}${p}`, 'ok');
     } catch (e) {
       message($('result'), e.message, 'err');

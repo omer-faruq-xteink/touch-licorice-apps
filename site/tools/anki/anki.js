@@ -12,6 +12,7 @@
 
 import { readZip } from '../../assets/zip.js';
 import { unescapeHtml } from '../../assets/unescape.js';
+import { arabicReading } from './translit.js';
 
 export const MAX_SHARDS = 300;
 const NAME_RE = /[^A-Za-z0-9]+/g;
@@ -261,17 +262,24 @@ function stamp(d = new Date()) {
 }
 
 const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u;
+const ARABIC = /[\u0621-\u064A\u0671]/u;
 
-// o: { name, prefix, front, back, reverse, maxChars, update, picture, progress }; oldFiles: Map name -> text
-// picture (browser, pictures.js) draws the right-to-left paragraphs of a side, which the reader
-// cannot draw as text; a card with pictures gets two more fields: the front's and the back's pictures
+// o: { name, prefix, front, back, reverse, maxChars, update, reading, picture, progress };
+// oldFiles: Map name -> text. reading: the pronunciation of an Arabic front (translit.js) goes on
+// the first line of the back. picture (browser, pictures.js) draws the right-to-left paragraphs of
+// a side, which the reader cannot draw as text; a card with pictures gets two more fields: the
+// front's and the back's pictures
 export async function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   const { name, prefix } = deckNames(fileName, o);
   const cards = makeCards(notes, o);
   if (!cards.length) throw new Error('no cards: pick other fields for the front and the back');
-  let rtl = 0, pictured = 0;
+  let rtl = 0, pictured = 0, read = 0;
   for (let k = 0; k < cards.length; k++) {
-    const c = cards[k];
+    let c = cards[k];
+    if (o.reading && ARABIC.test(c[1])) {
+      const r = arabicReading(c[1]);
+      if (r) { c = cards[k] = [c[0], c[1], r + '\n' + c[2]]; read++; }
+    }
     if (!RTL.test(c[1]) && !RTL.test(c[2])) continue;
     rtl++;
     if (!o.picture) continue;
@@ -311,7 +319,7 @@ export async function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   files.push({ name: `${prefix}_info.txt`, data: `name=${name}\ncards=${live}\nshards=${shards}\nper=${per}\nsource=${source}\nbuilt=${o.built || stamp()}\n` });
   const removed = oldIds.length ? slots.slice(0, oldIds.length).filter((c) => !c[1]).length : 0;
   return {
-    files, name, prefix, cards: live, shards, rtl, pictured,
+    files, name, prefix, cards: live, shards, rtl, pictured, read,
     update: oldIds.length ? { kept: oldIds.length - removed, removed, added: slots.length - oldIds.length } : null,
   };
 }
