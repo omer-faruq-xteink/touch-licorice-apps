@@ -24,8 +24,11 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 2. `python -I tools/store_export.py <app>` writes `dist/store/<app>/<app>.zip`. Keep the app's
    `app_id`: the store kept ours (checked on Mahjong's live package), and a new one would install
    as a different app without the saved data.
-3. Studio: open the app's project (Studio project id below), More (...) > Import backup with the
-   zip; the project keeps its id. Save.
+3. Studio: the listing reads the package from the app's own project (Studio project id below), and
+   Import backup always makes a NEW project (found on Anki, 2026-11-04). So open the app's project
+   (My projects > the app > Studio), replace the changed files in the editor (index.lua,
+   lockscreen.lua, manifest.json from the export or the pushed repo), save each file, then the
+   top Save (the cloud copy). Data files only when they changed.
 4. Developer Center > the app > Release new version: a higher release version, release notes,
    new screenshots if the screens changed. Submit for review.
 5. In `store/apps.json`: the new `release_version`, `status: "in review"`, `submitted`; after

@@ -9,8 +9,11 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 2. `python -I tools/store_export.py <app>` writes `dist/store/<app>/<app>.zip`. Keep the app's
    `app_id`: the store kept ours (checked on Mahjong's live package), and a new one would install
    as a different app without the saved data.
-3. Studio: open the app's project (Studio project id below), More (...) > Import backup with the
-   zip; the project keeps its id. Save.
+3. Studio: the listing reads the package from the app's own project (Studio project id below), and
+   Import backup always makes a NEW project (found on Anki, 2026-11-04). So open the app's project
+   (My projects > the app > Studio), replace the changed files in the editor (index.lua,
+   lockscreen.lua, manifest.json from the export or the pushed repo), save each file, then the
+   top Save (the cloud copy). Data files only when they changed.
 4. Developer Center > the app > Release new version: a higher release version, release notes,
    new screenshots if the screens changed. Submit for review.
 5. In `store/apps.json`: the new `release_version`, `status: "in review"`, `submitted`; after
@@ -21,7 +24,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | app | store name | app_id | release | status | live | submitted | Studio project |
 |---|---|---|---|---|---|---|---|
 | `game2048` | 2048 | `twentyfortyeight` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d2ef365a-0cbc-486a-9188-f2a3588bc7ca` |
-| `anki` | Anki | `anki` | 0.1.1 | published | 0.1.1 | 2026-10-29 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
@@ -49,6 +51,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
+| `anki` | Anki | `anki` | 1.1.0 | in review | 0.1.1 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `bookworm` | Bookworm | `bookworm` | 1.0.0 | in review | - | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `checkers` | Checkers | `checkers` | 1.0.0 | in review | - | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
@@ -67,4 +70,4 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wallabag` | wallabag | `wallabag` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-29 published, 17 in review or draft, 46 in all.
+28 published, 18 in review or draft, 46 in all.

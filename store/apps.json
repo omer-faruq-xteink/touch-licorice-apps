@@ -4,10 +4,10 @@
     "app_id": "anki",
     "listing_id": "u_fe86de11270e4d7fabc3c8169eddb3cc",
     "project_id": "d5ba24db-e60d-4be6-a0d8-2ed2a7896d48",
-    "release_version": "0.1.1",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "0.1.1",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-04"
   },
   "calculator": {
     "name": "Calculator",
