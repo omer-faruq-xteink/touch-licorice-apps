@@ -5,6 +5,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Changed
 
 - **Anki 1.1.0: Arabic, Persian, Urdu and Hebrew decks.** The reader cannot lay out right-to-left text, so the [Anki converter](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) on the tools site now draws it as pictures (letters joined, vowel marks placed), and Anki shows them, on the lock screen too: for example AnkiWeb's *Qur'anic Vocabulary: all word forms, translations & examples* (15,346 words in order of frequency, about 10 MB on the card). `apkg2cards.py` points such decks to the tools site. For Arabic with vowel marks (Quran decks) the converter can also put the **pronunciation** on the first line of the back (*allâhi*, *wash-shamsi*), worked out by rules from the marks. Back now closes a box, leaves a study session for the deck list, and on the deck list lets the reader offer to exit.
+- **Sky Tonight 1.0.1: no more "App error, closed" at start.** On some readers the first frame (five font sizes, 900 stars) took longer than the 1.5 seconds the reader gives a frame, and the reader closed the app. Sky Tonight now asks for more time, and an error at start is shown on the screen instead of closing the app.
 
 ## Files
 
@@ -12,6 +13,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 |---|---|
 | `anki.xtapp` | Anki 1.1.0: right-to-left decks as pictures; Back |
 | `apkg2cards.py` | warns about right-to-left decks |
+| `skytonight.xtapp` | Sky Tonight 1.0.1: no longer closes at start on slower first frames |
 | all other packages | unchanged since v0.18.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

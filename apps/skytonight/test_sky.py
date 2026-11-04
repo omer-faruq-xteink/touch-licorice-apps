@@ -9,6 +9,8 @@ import calendar, math, os, struct, sys
 from lupa import lua54
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from bundle import debug_source  # noqa: E402
 fails = []
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -186,7 +188,9 @@ ctx = {
   input = { text = function(self, o, fn) PENDING = fn end },
   after = function(self, ms, fn) local tm = { ms = ms, fn = fn, cancel = function(t) t.dead = true end }; timers[#timers + 1] = tm; return tm end,
   invalidate = function(self) end,
+  budget = { extend = function(self) extends = extends + 1; return true end },
 }
+extends = 0
 local function rec(kind) return function(self, ...) cmds[#cmds + 1] = { kind, ... } end end
 gg = { clear = function(self) cmds = {} end, text = rec('text'), rect = rec('rect'), circle = rec('circle'),
        line = rec('line'), polyline = rec('polyline'), polygon = rec('polygon') }
@@ -194,7 +198,7 @@ gg = { clear = function(self) cmds = {} end, text = rec('text'), rect = rec('rec
 DATA = {n: open(os.path.join(HERE, 'data', n), encoding='utf-8').read() for n in ('stars.txt', 'lines.txt', 'names.txt', 'stars_named.txt')}
 
 
-def host(entry, epoch_sec, offset_min, locale='en', store=None):
+def host(entry, epoch_sec, offset_min, locale='en', store=None, debug=False):
     L = lua54.LuaRuntime(unpack_returned_tuples=True)
     L.execute(STUBS)
     L.globals().DATA = L.table_from(DATA)
@@ -202,7 +206,8 @@ def host(entry, epoch_sec, offset_min, locale='en', store=None):
     if store:
         for k, v in store.items():
             L.globals().store[k] = v
-    L.execute(open(os.path.join(HERE, entry), encoding='utf-8').read())
+    src = open(os.path.join(HERE, entry), encoding='utf-8').read()
+    L.execute(debug_source(src) if debug else src)
     L.execute('on_load(ctx)')
     return L
 
@@ -325,6 +330,12 @@ if OUT:
     tap(L, 420, 760)
     render(frame(L), os.path.join(OUT, 'sky_place.png'))
 
+# settings.txt written by hand on a PC (Windows line ends): an own place name and coordinates
+own = {'settings.txt': 'place=Home\r\nlat=48.14\r\nlon=11.58\r\nlang=de\r\n'}
+for entry in ('index.lua', 'lockscreen.lua'):
+    tx = texts(frame(host(entry, ist(2026, 10, 29, 23), 60, 'en', own)))
+    check(tx[0] == 'Home' and 'jetzt' in tx[2], f'{entry}: a hand-written settings.txt is read: {tx[:3]}')
+
 # the language button on the Place page: English -> Türkçe, kept with the place, the lock follows
 L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
 tap(L, 420, 760)
@@ -335,6 +346,34 @@ st = L.eval('store["settings.txt"]')
 check('lang=tr' in st, f'and keeps it: {st!r}')
 Lk = host('lockscreen.lua', ist(2026, 10, 29, 23), 180, 'en', {'settings.txt': st})
 check('şimdi' in texts(frame(Lk))[2], 'the lock screen follows the picked language')
+
+# an error at start is shown in full instead of closing the app ("App-Fehler, beendet" on a German
+# reader, 2026-11-04): here the clock has no time zone, so working out tonight fails
+for entry, title in (('index.lua', 'Sky Tonight could not start:'), ('lockscreen.lua', 'Sky Tonight lock screen error:')):
+    L = host(entry, ist(2026, 10, 29, 14), 'nil', 'de')
+    tx = texts(frame(L))
+    check(tx and tx[0] == title and any('offset_minutes' in t or 'nil' in t for t in tx[1:]),
+          f'{entry}: an error at start is shown on the screen: {tx[:3]}')
+
+# the debug build (bundle.py --debug) writes each step to debug.txt / debug_lock.txt
+for entry, fn in (('index.lua', 'debug.txt'), ('lockscreen.lua', 'debug_lock.txt')):
+    L = host(entry, ist(2026, 10, 29, 23), 180, 'de', debug=True)
+    frame(L)
+    log = L.eval(f'store["{fn}"]') or ''
+    check('place: Berlin' in log or 'lock view: Berlin' in log, f'{entry}: the debug log names the place')
+    check(log.rstrip().endswith('draw done'), f'{entry}: and ends with the finished frame: {log.splitlines()[-1:]}')
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'de')
+frame(L)
+check(L.eval('store["debug.txt"]') is None, 'the normal build writes no debug log')
+
+# the first frame opens five font sizes, which with a user-chosen font took the German reader past
+# on_draw's 1500 ms: the app asks for more time in on_load, on_draw and on_input
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'de')
+n0 = L.eval('extends')
+frame(L)
+n1 = L.eval('extends')
+tap(L, 420, 760)
+check(n0 == 1 and n1 == 2 and L.eval('extends') == 3, f'the app extends its time budget: {n0}, {n1}, {L.eval("extends")}')
 
 
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))

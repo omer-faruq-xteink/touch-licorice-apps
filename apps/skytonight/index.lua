@@ -308,7 +308,8 @@ local function word(k) return WORDS[LANG][k] or WORDS.en[k] end
 
 local function sread(name)
   local ok, s = pcall(function() return ctx.storage:read(name) end)
-  return (ok and type(s) == 'string') and s or nil
+  if not (ok and type(s) == 'string') then return nil end
+  return (s:gsub('\r', ''))                      -- settings.txt edited on a PC: Windows line ends
 end
 local function swrite(name, s) pcall(function() ctx.storage:write(name, s) end) end
 
@@ -340,6 +341,48 @@ local function save_settings(p)
     .. (LANG_PICKED and ('lang=' .. LANG_PICKED .. '\n') or ''))
 end
 local save_place = save_settings
+
+------------------------------------------------------------------ errors and the debug log
+
+-- DEBUG (set by `bundle.py --debug`): each step is written to DEBUG_FILE as it happens, with the
+-- milliseconds since start and the heap, so a step the host kills the app in is still on the card
+-- (AppFiles/skytonight/debug.txt). An error at start is shown on the screen in full either way.
+local DEBUG = false
+local DEBUG_FILE = 'debug.txt'
+local dbg_t0, dbg_log = nil, {}
+local function dbg(msg)
+  if not DEBUG then return end
+  pcall(function()
+    local ok, ms = pcall(function() return ctx.clock:millis() end)
+    ms = (ok and math.type(ms) == 'integer') and ms or 0
+    dbg_t0 = dbg_t0 or ms
+    local okm, kb = pcall(function() return ctx.gc:count() // 1024 end)
+    dbg_log[#dbg_log + 1] = tostring((ms - dbg_t0) & 0x7FFFFFFF) .. ' ms  ' .. (okm and tostring(kb) or '?') .. ' KB  ' .. tostring(msg)
+    swrite(DEBUG_FILE, table.concat(dbg_log, '\n') .. '\n')
+  end)
+end
+
+-- the error message with the call chain when the host has debug.traceback
+local function trace(e)
+  local ok, tb = pcall(function() return debug.traceback(tostring(e), 2) end)
+  return (ok and type(tb) == 'string') and tb or tostring(e)
+end
+
+-- an error in full on the screen, cut into lines that fit
+local function draw_error(g, title, msg, y)
+  y = y or 40
+  pcall(function() g:text(10, y, title) end)
+  y = y + 30
+  for raw in (msg .. '\n'):gmatch('([^\n]*)\n') do
+    local line = raw:gsub('\t', '  ')
+    while #line > 0 and y < H - 80 do
+      local part = line:sub(1, 46)
+      pcall(function() g:text(10, y, part) end)
+      line = line:sub(47); y = y + 22
+    end
+  end
+  return y
+end
 
 -- the next language (English, Türkçe, Deutsch), kept with the place
 local function next_lang(p)
@@ -541,7 +584,9 @@ end
 -- view = { s, label, place, off, hour12, start_ms, budget_ms }: with a budget (the lock screen's
 -- two seconds) the faint stars stop when time runs short. Returns the number of commands used.
 local function draw_sky(g, view, y_end)
+  dbg('draw_sky ' .. tostring(view.place and view.place.name) .. ' s=' .. tostring(view.s) .. ' off=' .. tostring(view.off))
   load_data()
+  dbg('data: ' .. #STARS .. ' stars, ' .. #LINES .. ' lines, ' .. #CNAMES .. ' names')
   HOUR12 = view.hour12 and true or false
   local s, place, off = view.s, view.place, view.off
   local lat, lon = place.lat, place.lon
@@ -604,6 +649,7 @@ local function draw_sky(g, view, y_end)
   end
 
   -- the constellation figures, cut at the horizon
+  dbg('figures (' .. n .. ' commands)')
   for _, pts in ipairs(LINES) do
     local out, px, py, palt = {}, nil, nil, nil
     local function flush()
@@ -638,6 +684,7 @@ local function draw_sky(g, view, y_end)
   end
 
   -- the sun, the moon and the planets first, so their labels win
+  dbg('sun, moon, planets (' .. n .. ' commands)')
   local _, sra, sdec = A.sun(s)
   local salt, saz = A.horizon(sra, sdec, lst, lat)
   local _, _, mra, mdec, mpar = A.moon(s)
@@ -673,6 +720,7 @@ local function draw_sky(g, view, y_end)
   end
 
   -- named stars, then constellation names (best known first)
+  dbg('names (' .. n .. ' commands)')
   for _, st in ipairs(SNAMES) do
     local x, y, u = xy(st[1], st[2])
     if u > 0.05 then
@@ -692,6 +740,7 @@ local function draw_sky(g, view, y_end)
   end
 
   -- the stars, brightest first, as many as the frame has room for (the facts below need ~40)
+  dbg('stars (' .. n .. ' commands)')
   local room = MAX_CMDS - 60
   if y_end < H then room = room - 10 end
   for i, st in ipairs(STARS) do
@@ -716,6 +765,7 @@ local function draw_sky(g, view, y_end)
   end
 
   -- under the chart: the moon, then the night's times, then the planets that are up
+  dbg('facts (' .. n .. ' commands)')
   local y = CY + R + 26
   local nt = night_times(s, place, off)
   moon_disc(g, 46, y + 30, 26, lit, waxing, lat < 0, false)
@@ -757,11 +807,12 @@ local function draw_sky(g, view, y_end)
     end
   end
   c(16)
+  dbg('draw_sky done (' .. n .. ' commands)')
   return n
 end
 
 if rawget(_G, '__TEST') then
-  __TEST.sky = { civil = civil, next_phase = next_phase, default_view = default_view, night_times = night_times, project = project,
+  __TEST.sky = { civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
                  load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end }
 end
 
@@ -776,8 +827,13 @@ local place, base, label, step = nil, nil, nil, 0
 local page = 1
 local PER_PAGE, ROW_Y, ROW_H = 10, 92, 54
 local timer = nil
+local load_err = nil                             -- an error at start, shown instead of the sky
 
 local function refresh() pcall(function() ctx:invalidate() end) end
+-- the host gives on_draw 1500 ms and on_load 2000 ms; the first frame opens five font sizes, and
+-- with a user-chosen font that alone can take most of it (a German reader closed the app with
+-- "App-Fehler, beendet" at 1520 ms into the frame, 2026-11-04): ask for 11 s each time
+local function extend() pcall(function() ctx.budget:extend() end) end
 
 local function is_lock()
   local ok, v = pcall(function() return ctx.lockscreen and ctx.lockscreen:is_default() end)
@@ -900,21 +956,39 @@ local function tap_place(x, y)
 end
 
 function on_load(c)
-  set_lang()
-  local t = clock_now()
-  place = load_place(t and t.offset_minutes)
-  reset_view(false)
-  schedule()
+  extend()
+  local ok, e = xpcall(function()
+    set_lang()
+    dbg('start: lang ' .. LANG .. ', api ' .. tostring(ctx.api and ctx.api.minor)
+        .. ', firmware ' .. tostring(ctx.device and ctx.device.firmware))
+    local t = clock_now()
+    dbg('clock: ' .. (t and (tostring(t.epoch_sec) .. ' off ' .. tostring(t.offset_minutes)) or 'not set'))
+    place = load_place(t and t.offset_minutes)
+    dbg('place: ' .. tostring(place and place.name) .. ' ' .. tostring(place and place.lat) .. ' ' .. tostring(place and place.lon))
+    reset_view(false)
+    dbg('view: ' .. tostring(base) .. ' ' .. tostring(label))
+    schedule()
+  end, trace)
+  if not ok then load_err = tostring(e); dbg('ERROR ' .. load_err) end
 end
 
 function on_resume(c)
+  extend()
   if screen == 'sky' and label == 'now' and step == 0 then reset_view(true) end
   refresh(); schedule()
 end
 
 function on_draw(c, g)
   if not g then return end
-  local ok, e = pcall(function()
+  extend()
+  if load_err then
+    g:clear(0)
+    draw_error(g, 'Sky Tonight could not start:', load_err)
+    g:text(10, H - 60, 'Please send a photo of this screen.')
+    return
+  end
+  dbg('draw ' .. screen)
+  local ok, e = xpcall(function()
     g:clear(0)
     if screen == 'place' then
       draw_place(g)
@@ -933,12 +1007,17 @@ function on_draw(c, g)
       g:rect(x, y, bw, bh, { radius = 8 })
       g:text(x + bw // 2, y + bh // 2, b[1], { font = f, align = 'center', valign = 'middle' })
     end
-  end)
-  if not ok then pcall(function() g:text(10, H - 100, 'draw error: ' .. tostring(e):sub(1, 40)) end) end
+  end, trace)
+  if not ok then
+    dbg('DRAW ERROR ' .. tostring(e))
+    g:clear(0)
+    draw_error(g, 'draw error:', tostring(e))
+  else dbg('draw done') end
 end
 
 function on_input(c, ev)
   if type(ev) ~= 'table' then return false end
+  extend()
   if ev.type == 'pointer' and ev.phase == 'up' then
     local x, y = ev.x or 0, ev.y or 0
     local bs = buttons()

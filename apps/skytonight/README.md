@@ -16,6 +16,19 @@ Under the chart: the moon's phase, how much of it is lit, when it rises and sets
 - English, Türkçe and Deutsch (constellation names too): the system language at first, then the
   language button on the Place page, which the lock screen follows.
 
+On a computer the place can also be set in `settings.txt` in the app's folder on the SD card
+(`XTApps/skytonight/files/`, the store's app: `AppFiles/<app id>/`), any name you like:
+
+```text
+place=Home
+lat=48.14
+lon=11.58
+lang=de
+```
+
+Latitude north and longitude east are positive (south and west negative); `lang` (en, tr, de) is
+optional.
+
 ## How it is worked out
 
 Everything is computed on the device each time, in `src/astro.lua`: the sun and the moon with the
@@ -41,6 +54,13 @@ places) and, with a folder argument, draws each frame to a PNG.
 chart shows), `src/astro.lua`, `src/places.lua`, `src/sky.lua` (settings, words, the chart),
 `src/app.lua`, `src/lock.lua`, `bundle.py` (makes `index.lua` and `lockscreen.lua`),
 `test_sky.py` (`python -I apps/skytonight/test_sky.py [PNG_DIR]`).
+
+The first frame opens five font sizes and draws up to 900 stars, which can take longer than the
+1.5 s the host gives `on_draw` (a German reader closed the app at 1.52 s), so the app calls
+`ctx.budget:extend()` in its callbacks. The lock screen cannot extend its 2 s and stops drawing the
+faint stars after 1.5 s instead. An error at start is shown in full on the screen.
+`python -I apps/skytonight/bundle.py --debug OUT.xtapp` packs a build that logs each step, with
+the time and the heap, to `debug.txt` (the lock screen: `debug_lock.txt`) in the app's folder.
 
 ## Data and credits
 

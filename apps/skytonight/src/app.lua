@@ -8,8 +8,13 @@ local place, base, label, step = nil, nil, nil, 0
 local page = 1
 local PER_PAGE, ROW_Y, ROW_H = 10, 92, 54
 local timer = nil
+local load_err = nil                             -- an error at start, shown instead of the sky
 
 local function refresh() pcall(function() ctx:invalidate() end) end
+-- the host gives on_draw 1500 ms and on_load 2000 ms; the first frame opens five font sizes, and
+-- with a user-chosen font that alone can take most of it (a German reader closed the app with
+-- "App-Fehler, beendet" at 1520 ms into the frame, 2026-11-04): ask for 11 s each time
+local function extend() pcall(function() ctx.budget:extend() end) end
 
 local function is_lock()
   local ok, v = pcall(function() return ctx.lockscreen and ctx.lockscreen:is_default() end)
@@ -132,21 +137,39 @@ local function tap_place(x, y)
 end
 
 function on_load(c)
-  set_lang()
-  local t = clock_now()
-  place = load_place(t and t.offset_minutes)
-  reset_view(false)
-  schedule()
+  extend()
+  local ok, e = xpcall(function()
+    set_lang()
+    dbg('start: lang ' .. LANG .. ', api ' .. tostring(ctx.api and ctx.api.minor)
+        .. ', firmware ' .. tostring(ctx.device and ctx.device.firmware))
+    local t = clock_now()
+    dbg('clock: ' .. (t and (tostring(t.epoch_sec) .. ' off ' .. tostring(t.offset_minutes)) or 'not set'))
+    place = load_place(t and t.offset_minutes)
+    dbg('place: ' .. tostring(place and place.name) .. ' ' .. tostring(place and place.lat) .. ' ' .. tostring(place and place.lon))
+    reset_view(false)
+    dbg('view: ' .. tostring(base) .. ' ' .. tostring(label))
+    schedule()
+  end, trace)
+  if not ok then load_err = tostring(e); dbg('ERROR ' .. load_err) end
 end
 
 function on_resume(c)
+  extend()
   if screen == 'sky' and label == 'now' and step == 0 then reset_view(true) end
   refresh(); schedule()
 end
 
 function on_draw(c, g)
   if not g then return end
-  local ok, e = pcall(function()
+  extend()
+  if load_err then
+    g:clear(0)
+    draw_error(g, 'Sky Tonight could not start:', load_err)
+    g:text(10, H - 60, 'Please send a photo of this screen.')
+    return
+  end
+  dbg('draw ' .. screen)
+  local ok, e = xpcall(function()
     g:clear(0)
     if screen == 'place' then
       draw_place(g)
@@ -165,12 +188,17 @@ function on_draw(c, g)
       g:rect(x, y, bw, bh, { radius = 8 })
       g:text(x + bw // 2, y + bh // 2, b[1], { font = f, align = 'center', valign = 'middle' })
     end
-  end)
-  if not ok then pcall(function() g:text(10, H - 100, 'draw error: ' .. tostring(e):sub(1, 40)) end) end
+  end, trace)
+  if not ok then
+    dbg('DRAW ERROR ' .. tostring(e))
+    g:clear(0)
+    draw_error(g, 'draw error:', tostring(e))
+  else dbg('draw done') end
 end
 
 function on_input(c, ev)
   if type(ev) ~= 'table' then return false end
+  extend()
   if ev.type == 'pointer' and ev.phase == 'up' then
     local x, y = ev.x or 0, ev.y or 0
     local bs = buttons()
