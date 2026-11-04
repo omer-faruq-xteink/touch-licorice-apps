@@ -1318,13 +1318,14 @@ local function status()
   return who .. ' move'
 end
 
-local function header()
-  local t = {}
-  if match_len > 0 then t[#t + 1] = 'Match to ' .. match_len .. (crawford_game and ' (Crawford)' or '') .. ':' end
-  t[#t + 1] = score_line()
-  t[#t + 1] = '  pips ' .. R.pips(b, 1) .. '-' .. R.pips(b, -1)
-  if cube_on and cube > 1 then t[#t + 1] = '  cube ' .. cube end
-  return table.concat(t, ' ')
+-- the second line: the score, the pips and the cube, shortened to fit (the pips go first)
+local function header(f)
+  local sc = mode == 'ai' and ('You ' .. score[me] .. ', reader ' .. score[-me]) or ('White ' .. score[1] .. ', Black ' .. score[-1])
+  local head = match_len > 0 and ('To ' .. match_len .. (crawford_game and ' (Crawford)' or '') .. ': ' .. sc) or sc
+  local cube_t = (cube_on and cube > 1) and ('   cube ' .. cube) or ''
+  local full = head .. '   pips ' .. R.pips(b, 1) .. '-' .. R.pips(b, -1) .. cube_t
+  if kit.width(f, full) <= W - 24 then return full end
+  return kit.short(head .. cube_t, 46)
 end
 
 function on_draw(c, gg)
@@ -1335,7 +1336,7 @@ function on_draw(c, gg)
     local lvl = mode == 'ai' and E.LEVELS[level].name or 'Two players'
     local f = kit.font('small')
     gg:text(W - 12 - kit.width(f, lvl), 18, lvl, { font = f })
-    gg:text(12, 48, kit.short(header(), 52), { font = f })
+    gg:text(12, 48, header(f), { font = f })
     gg:line(0, 78, W, 78)
     if kit.modal() then kit.draw_modal(gg); return end
     gg:text(12, 84, status(), { font = kit.font('medium') })
