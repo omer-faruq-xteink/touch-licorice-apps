@@ -1,0 +1,10 @@
+{
+  "app_id": "backgammon",
+  "display_name": "Backgammon",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Backgammon (tavla) against the reader at four levels, or two players on one reader. Single games or a match to 3, 5 or 7 points, gammons and backgammons, an optional doubling cube. Undo, hint, the game kept.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

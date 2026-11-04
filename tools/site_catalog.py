@@ -29,7 +29,7 @@ CATEGORIES = [
     ('daily', 'Daily puzzles', ['wordhive', 'cryptogram', 'wordladder']),
     ('puzzles', 'Puzzles', ['sudoku', 'queens', 'nonogram', 'kakuro', 'hashi', 'suguru', 'minesweeper', 'lightsout',
                             'knightstour', 'pegsolitaire', 'slidepuzzle', 'sokoban', 'chess', 'tsumego']),
-    ('games', 'Games', ['chessplay', 'checkers', 'delve', 'game2048', 'klondike', 'freecell', 'mahjong', 'merchant']),
+    ('games', 'Games', ['chessplay', 'checkers', 'backgammon', 'delve', 'game2048', 'klondike', 'freecell', 'mahjong', 'merchant']),
 ]
 
 # more than the package: (label, href, note); href is relative to the app's page

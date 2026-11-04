@@ -391,6 +391,23 @@ def checkers(p):
     p.ellipse((62, 62, 74, 74), fill=True)
 
 
+def backgammon(p):
+    # a corner of a backgammon board: points from both edges, a stack of each colour, a die
+    p.rect((8, 8, 88, 88), w=4)
+    for k in range(3):
+        x = 12 + k * 18
+        p.poly([(x, 12), (x + 16, 12), (x + 8, 44)], fill=k % 2 == 0, w=2)
+        p.poly([(x, 84), (x + 16, 84), (x + 8, 52)], fill=k % 2 == 1, w=2)
+    for cy in (20, 34):                                     # Black's stack, on a white point
+        p.ellipse((22, cy - 7, 36, cy + 7), fill=True)
+    for cy in (76, 62):                                     # White's, on a black point
+        p.white_ellipse((22, cy - 7, 36, cy + 7))
+        p.ellipse((22, cy - 7, 36, cy + 7), w=2)
+    p.rect((64, 36, 84, 56), w=3, r=3)                      # a die showing five
+    for dx, dy in ((-5, -5), (5, -5), (0, 0), (-5, 5), (5, 5)):
+        p.ellipse((74 + dx - 2, 46 + dy - 2, 74 + dx + 2, 46 + dy + 2), fill=True)
+
+
 def queens(p):
     # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
     p.rect((8, 8, 88, 88), w=4)
@@ -692,7 +709,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

@@ -24,6 +24,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Minesweeper** | never needs a guess: every board can be cleared by logic; 8x10, 9x11, 10x13; flags, hint, undo |
 | **Chess** | a whole game against the reader at four levels (Beginner to Hard), or two players on one reader; moves marked, undo, hint, the game kept |
 | **Checkers** | English checkers or Turkish draughts (Dama) against the reader at four levels, or two players on one reader; compulsory and longest captures, undo, hint, the game kept |
+| **Backgammon** | backgammon (tavla) against the reader at four levels, or two players; single games or a match to 3, 5 or 7, gammons, an optional doubling cube; undo with the same dice, hint, the game kept |
 | **Chess puzzles** | 2400 tactics puzzles from Lichess: mate in 1, mate in 2 and four levels by rating; hint, show the move |
 | **Go problems** | 620 life-and-death problems (tsumego) in three levels, made and checked for the app, and your own SGF files; hint, retry |
 | **Text adventures** | plays Z-machine story files (Zork, Infocom and Inform games) with tappable directions and words; Zork I built in, II and III free as a pack |
@@ -154,6 +155,14 @@ English checkers (diagonal moves on the dark squares) or Turkish draughts, Dama 
 flying kings, the longest capture compulsory), against the reader at four levels or two players on one
 reader. A capture goes the whole way in one tap; Undo, Hint and the game kept as in Chess.
 [More](apps/checkers/README.md)
+
+### Backgammon
+
+Backgammon (tavla) against the reader at four levels (Hard looks one roll ahead) or two players on
+one reader. Tap Roll, then a checker: the points it can reach are marked, combined moves too. Single
+games or a match to 3, 5 or 7 points with gammons and backgammons; the doubling cube is optional (off,
+it plays like tavla) with the Crawford rule. Undo takes back a checker or the whole turn with the same
+dice, Hint frames a good play, the game is kept. [More](apps/backgammon/README.md)
 
 ### Chess puzzles
 

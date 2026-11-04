@@ -2,6 +2,10 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
+## Added
+
+- **New: Backgammon** (`backgammon.xtapp`): backgammon (tavla) against the reader at four levels (Beginner, Easy, Medium, Hard; Hard looks one roll ahead), or two players on one reader. Tap Roll, then a checker: the points it can reach are marked, combined moves too; a checker on the bar is picked by itself. Single games or a match to 3, 5 or 7 points, gammons and backgammons, and an optional doubling cube (off, it plays like Turkish tavla) with the Crawford rule. Undo takes back a checker or the whole turn, with the same dice again; Hint frames a good play; the game is kept when you leave.
+
 ## Changed
 
 - **Anki 1.1.0: Arabic, Persian, Urdu and Hebrew decks.** The reader cannot lay out right-to-left text, so the [Anki converter](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) on the tools site now draws it as pictures (letters joined, vowel marks placed), and Anki shows them, on the lock screen too: for example AnkiWeb's *Qur'anic Vocabulary: all word forms, translations & examples* (15,346 words in order of frequency, about 10 MB on the card). `apkg2cards.py` points such decks to the tools site. For Arabic with vowel marks (Quran decks) the converter can also put the **pronunciation** on the first line of the back (*allâhi*, *wash-shamsi*), worked out by rules from the marks. Back now closes a box, leaves a study session for the deck list, and on the deck list lets the reader offer to exit.
@@ -11,6 +15,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 | file | content |
 |---|---|
+| `backgammon.xtapp` | new: Backgammon |
 | `anki.xtapp` | Anki 1.1.0: right-to-left decks as pictures; Back |
 | `apkg2cards.py` | warns about right-to-left decks |
 | `skytonight.xtapp` | Sky Tonight 1.0.1: no longer closes at start on slower first frames; reads a settings.txt edited on Windows |
