@@ -64,7 +64,10 @@
     </li>
   </ol>
   <p class="note">Only text is kept: pictures and sounds are left out (the reader has no sound), which is why a
-    200 MB deck usually becomes a few hundred kilobytes. Cloze cards show [...] on the front and the full text on
+    200 MB deck usually becomes a few hundred kilobytes. The reader cannot draw right-to-left text (Arabic,
+    Persian, Urdu, Hebrew), so this page draws it as pictures, with the
+    <a href="https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic">Noto Naskh Arabic</a> and Noto Sans Hebrew
+    fonts (loaded from Google Fonts); such decks need Anki 1.1 or later on the reader. Cloze cards show [...] on the front and the full text on
     the back. Reading <code>.apkg</code> files loads <a href="https://github.com/sql-js/sql.js">sql.js</a> (and, for
     newer exports, <a href="https://github.com/101arrowz/fzstd">fzstd</a>) from a public CDN; your deck stays in
     this browser.</p>
@@ -73,6 +76,7 @@
   import { chrome, dropZone, downloadZip, message, esc, loadScript } from '../../assets/site.js';
   import { readZip } from '../../assets/zip.js';
   import { readDeck, fieldsSummary, makeFiles, deckNames, isList } from './anki.js';
+  import { makePicturer, hasRtl } from './pictures.js';
   chrome('anki');
 
   const SQLJS = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/';
@@ -132,14 +136,23 @@
   $('go').addEventListener('click', async () => {
     try {
       const back = [...$('back').selectedOptions].map((o) => o.value).join(',');
-      const r = makeFiles(deckFile, notes, {
+      // Arabic, Hebrew and other right-to-left text becomes pictures (the reader draws text left to right only)
+      const rtl = notes.some(([, fields]) => Object.values(fields).some(hasRtl));
+      if (rtl) message($('result'), 'Drawing the right-to-left text …');
+      const r = await makeFiles(deckFile, notes, {
         name: $('name').value.trim(), prefix: $('prefix').value.trim(), front: $('front').value || undefined,
         back: back || undefined, reverse: $('reverse').checked, maxChars: parseInt($('maxc').value, 10) || 800,
         update: old.size > 0,
+        picture: rtl ? await makePicturer() : undefined,
+        progress: async (n, total) => {
+          message($('result'), `Drawing the right-to-left text: ${n} of about ${total} cards …`);
+          await new Promise((ok) => setTimeout(ok, 0));
+        },
       }, old);
       await downloadZip(`${r.prefix}-cards.zip`, r.files);
       const u = r.update ? ` ${r.update.kept} cards kept their places, ${r.update.removed} removed, ${r.update.added} new.` : '';
-      message($('result'), `${r.name}: ${r.cards} cards in ${r.shards} file${r.shards > 1 ? 's' : ''}, prefix ${r.prefix}.${u}`, 'ok');
+      const p = r.pictured ? ` Right-to-left text drawn as pictures on ${r.pictured} cards.` : '';
+      message($('result'), `${r.name}: ${r.cards} cards in ${r.shards} file${r.shards > 1 ? 's' : ''}, prefix ${r.prefix}.${u}${p}`, 'ok');
     } catch (e) {
       message($('result'), e.message, 'err');
     }

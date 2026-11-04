@@ -29,7 +29,7 @@ if (what === 'anki') {
   const notes = await readDeck(basename(src), new Uint8Array(readFileSync(src)), { openDb, zstd: (b) => new Uint8Array(zstdDecompressSync(b)) });
   const old = new Map();
   if (flag('--update')) for (const f of readdirSync(out)) old.set(f, readFileSync(join(out, f), 'utf8'));
-  const r = makeFiles(basename(src), notes, { name: opt('--name'), prefix: opt('--prefix'), front: opt('--front'), back: opt('--back'),
+  const r = await makeFiles(basename(src), notes, { name: opt('--name'), prefix: opt('--prefix'), front: opt('--front'), back: opt('--back'),
     reverse: flag('--reverse'), update: flag('--update'), maxChars: opt('--max-chars') && +opt('--max-chars'), built: 'X' }, old);
   for (const f of readdirSync(out)) if (new RegExp(`^${r.prefix}_c\\d{3}\\.txt$`).test(f)) rmSync(join(out, f));
   for (const f of r.files) writeFileSync(join(out, f.name), f.data);

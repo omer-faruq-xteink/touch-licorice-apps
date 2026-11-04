@@ -396,7 +396,9 @@ Anki). Ships with 1438 English words (B2-C1) with example sentences; add and del
 cards on the reader. Any Anki deck (`.apkg`, e.g. from [AnkiWeb's shared decks](https://ankiweb.net/shared/decks))
 converts into small text files for the app's folder on the
 [tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) or with
-`apps/anki/apkg2cards.py`: only the text is kept, so even large decks fit. [More](apps/anki/README.md)
+`apps/anki/apkg2cards.py`: only the text is kept, so even large decks fit. Arabic, Persian and
+Hebrew decks convert on the tools site, which draws the right-to-left text as pictures (the
+reader cannot lay it out). [More](apps/anki/README.md)
 
 ### Dictionary
 

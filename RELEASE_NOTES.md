@@ -2,13 +2,17 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Changed
+
+- **Anki 1.1.0: Arabic, Persian, Urdu and Hebrew decks.** The reader cannot lay out right-to-left text, so the [Anki converter](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/) on the tools site now draws it as pictures (letters joined, vowel marks placed), and Anki shows them, on the lock screen too: for example AnkiWeb's *Qur'anic Vocabulary: all word forms, translations & examples* (15,346 words in order of frequency, about 10 MB on the card). `apkg2cards.py` points such decks to the tools site. Back now closes a box, leaves a study session for the deck list, and on the deck list lets the reader offer to exit.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.18.0 |
+| `anki.xtapp` | Anki 1.1.0: right-to-left decks as pictures; Back |
+| `apkg2cards.py` | warns about right-to-left decks |
+| all other packages | unchanged since v0.18.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

@@ -56,6 +56,16 @@ of 200 MB usually becomes a few hundred kilobytes. To update a deck you study, c
 export with `--update` into the same `out` folder (with the old files in it) and copy again:
 cards keep their places, so progress is kept.
 
+**Arabic, Persian, Urdu and Hebrew** (right-to-left text): the reader draws text left to right
+only and refuses a right-to-left line, so convert such decks on the
+[tools site](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/). It draws each
+right-to-left line as a small black-and-white picture (with the Noto Naskh Arabic and Noto Sans
+Hebrew fonts, letters joined and vowel marks placed), and the app shows the pictures: the front
+centred and larger, the back aligned right. Every card keeps its pictures in its own line (a 1-bit
+PNG per drawn line), so a deck grows: *Qur'anic Vocabulary: all word forms* from AnkiWeb (15,346 words)
+becomes about 10 MB in 154 files. `apkg2cards.py` warns about such decks instead (Pillow cannot
+join Arabic letters without extra libraries). Needs Anki 1.1.
+
 A plain list works too: a `.tsv` file with `front<TAB>back` per line, copied into
 `XTApps/anki/files/` as it is (up to 300 KB), or converted like an `.apkg` (`.tsv`, `.csv`).
 

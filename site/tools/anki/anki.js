@@ -4,7 +4,8 @@
 //
 //   const notes = await readDeck(fileName, bytes, { openDb, zstd })
 //   fieldsSummary(notes)                          the note types, fields and the default front / back
-//   makeFiles(fileName, notes, opts, oldFiles)    -> { files: [{ name, data }], name, prefix, cards, ... }
+//   await makeFiles(fileName, notes, opts, oldFiles) -> { files: [{ name, data }], name, prefix, cards, ... }
+//   (opts.picture: right-to-left text as pictures, see pictures.js; browser only)
 //
 // openDb(bytes) -> { all(sql) -> rows as arrays, close() }  (sql.js in the browser, node:sqlite in tests)
 // zstd(bytes) -> bytes, for newer Anki exports (collection.anki21b)
@@ -259,11 +260,26 @@ function stamp(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// o: { name, prefix, front, back, reverse, maxChars, update }; oldFiles: Map name -> text
-export function makeFiles(fileName, notes, o = {}, oldFiles = null) {
+const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/u;
+
+// o: { name, prefix, front, back, reverse, maxChars, update, picture, progress }; oldFiles: Map name -> text
+// picture (browser, pictures.js) draws the right-to-left paragraphs of a side, which the reader
+// cannot draw as text; a card with pictures gets two more fields: the front's and the back's pictures
+export async function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   const { name, prefix } = deckNames(fileName, o);
   const cards = makeCards(notes, o);
   if (!cards.length) throw new Error('no cards: pick other fields for the front and the back');
+  let rtl = 0, pictured = 0;
+  for (let k = 0; k < cards.length; k++) {
+    const c = cards[k];
+    if (!RTL.test(c[1]) && !RTL.test(c[2])) continue;
+    rtl++;
+    if (!o.picture) continue;
+    const f = await o.picture(c[1], true), b = await o.picture(c[2], false);
+    cards[k] = [c[0], f ? f.text : c[1], b ? b.text : c[2], f ? f.pics : '', b ? b.pics : ''];
+    pictured++;
+    if (o.progress && pictured % 250 === 0) await o.progress(pictured, cards.length);
+  }
   const [oldIds, oldPer] = o.update ? readOld(oldFiles, prefix) : [[], null];
   let slots, per;
   if (oldIds.length) {
@@ -274,6 +290,11 @@ export function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   } else {
     slots = cards;
     per = Math.max(100, Math.ceil(cards.length / MAX_SHARDS));
+    if (pictured) {
+      // pictures make long lines: a card file stays near 150 KB (the app reads a whole one)
+      const bytes = cards.reduce((n, c) => n + c[1].length + c[2].length + (c[3] || '').length + (c[4] || '').length + 20, 0);
+      per = Math.max(Math.ceil(cards.length / MAX_SHARDS), Math.min(per, Math.floor(150000 * cards.length / bytes)));
+    }
   }
   const shards = Math.ceil(slots.length / per);
   if (shards > MAX_SHARDS) {
@@ -281,7 +302,8 @@ export function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   }
   const files = [];
   for (let s = 0; s < shards; s++) {
-    const body = slots.slice(s * per, (s + 1) * per).map(([cid, f, b]) => `${esc(cid)}\t${esc(f)}\t${esc(b)}\n`).join('');
+    const body = slots.slice(s * per, (s + 1) * per).map(([cid, f, b, fs, bs]) =>
+      `${esc(cid)}\t${esc(f)}\t${esc(b)}${fs || bs ? `\t${fs}\t${bs}` : ''}\n`).join('');
     files.push({ name: `${prefix}_c${String(s).padStart(3, '0')}.txt`, data: body });
   }
   const live = slots.filter((c) => c[1]).length;
@@ -289,7 +311,7 @@ export function makeFiles(fileName, notes, o = {}, oldFiles = null) {
   files.push({ name: `${prefix}_info.txt`, data: `name=${name}\ncards=${live}\nshards=${shards}\nper=${per}\nsource=${source}\nbuilt=${o.built || stamp()}\n` });
   const removed = oldIds.length ? slots.slice(0, oldIds.length).filter((c) => !c[1]).length : 0;
   return {
-    files, name, prefix, cards: live, shards,
+    files, name, prefix, cards: live, shards, rtl, pictured,
     update: oldIds.length ? { kept: oldIds.length - removed, removed, added: slots.length - oldIds.length } : null,
   };
 }

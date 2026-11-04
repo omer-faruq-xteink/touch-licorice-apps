@@ -10,6 +10,8 @@ Copy the files it writes into XTApps/anki/files/ on the SD card (USB mode); the 
 deck it finds there. Shared decks: https://ankiweb.net/shared/decks (export or download the
 .apkg, convert it here).
 
+Right-to-left text (Arabic, Hebrew ...) needs the tools site's converter, which draws it as
+pictures (the reader draws text left to right only); this script warns when a deck has some.
 Only text is kept: HTML becomes plain text; pictures and sounds are left out (the reader has no
 sound, and the decks' media is what makes them large). Cloze cards show "[...]" on the front and
 the full text on the back. A simple list converts too: one card per line, front and back
@@ -25,6 +27,7 @@ import argparse, csv, html, json, os, re, sqlite3, sys, tempfile, time, zipfile
 
 MAX_SHARDS = 300          # the app's storage holds 512 files, shared by every deck and progress
 NAME_RE = re.compile(r'[^A-Za-z0-9]+')
+RTL = re.compile('[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]')
 
 
 # ------------------------------------------------------------------ text
@@ -255,6 +258,11 @@ def main():
         note = f'; {len(old_ids) - removed} cards kept their places, {removed} removed, {len(slots) - len(old_ids)} new'
     print(f'{name}: {live} cards in {shards} files ({size // 1024} KB), prefix {prefix}{note}')
     print(f'copy {a.out}{os.sep}{prefix}_* into XTApps/anki/files/ on the SD card')
+    rtl = sum(1 for c in cards if RTL.search(c[1]) or RTL.search(c[2]))
+    if rtl:
+        print(f'note: {rtl} cards have right-to-left text (Arabic, Hebrew ...), which the reader cannot draw as '
+              'text; convert this deck on the tools site instead, which draws it as pictures: '
+              'https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/anki/')
 
 
 if __name__ == '__main__':

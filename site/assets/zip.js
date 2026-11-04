@@ -16,7 +16,7 @@ export const deflateRaw = (b) => pipe(b, new CompressionStream('deflate-raw'));
 export const gunzip = (b) => pipe(b, new DecompressionStream('gzip'));
 
 let CRC;
-function crc32(b) {
+export function crc32(b) {
   if (!CRC) {
     CRC = new Uint32Array(256);
     for (let n = 0; n < 256; n++) {

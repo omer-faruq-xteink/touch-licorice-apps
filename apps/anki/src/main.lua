@@ -206,8 +206,9 @@ local function shard(d, s)
       if f:sub(1, 1) == '#' then f = '' end
       rows[#rows + 1] = { id = 'L' .. (#rows + 1), f = unesc(f), b = unesc(b) }
     else
-      local id, f, b = line:match('^([^\t]*)\t([^\t]*)\t?(.*)$')
-      rows[#rows + 1] = { id = id or '', f = f and unesc(f) or '', b = b and unesc(b) or '' }
+      -- "id<TAB>front<TAB>back", then the pictures of a card with pictures (see "pictures")
+      local id, f, b, fs, bs = line:match('^([^\t]*)\t([^\t]*)\t?([^\t]*)\t?([^\t]*)\t?([^\t]*)')
+      rows[#rows + 1] = { id = id or '', f = f and unesc(f) or '', b = b and unesc(b) or '', fs = fs, bs = bs }
     end
   end
   cache.key, cache.rows = ck, rows
@@ -468,7 +469,8 @@ end
 ------------------------------------------------------------------ lock screen
 
 -- lock_cards.txt for lockscreen.lua: the lock deck's name, then up to LOCK_CARDS cards as
--- "front<TAB>back": those due within a day, then the next new ones. Written when the deck list
+-- "front<TAB>back" (then the pictures of a card with pictures): those due within a day, then the
+-- next new ones. Written when the deck list
 -- shows and when the app is left, so the lock screen follows the studying.
 local LOCK_CARDS = 30
 local function write_lock_cards()
@@ -483,10 +485,15 @@ local function write_lock_cards()
   end
   local deleted = {}
   for line in lines(sread(d.key .. '_del.txt') or '') do deleted[line] = true end
-  local function add(f, b) if f and f ~= '' and #out < LOCK_CARDS then out[#out + 1] = f .. '\t' .. b end end
+  local function add(f, b, fs, bs)
+    if f and f ~= '' and #out < LOCK_CARDS then
+      local pic = (fs or '') ~= '' or (bs or '') ~= ''
+      out[#out + 1] = f .. '\t' .. b .. (pic and ('\t' .. fs .. '\t' .. bs) or '')
+    end
+  end
   local function base(sh, l)
     local c = shard(d, sh)[l + 1]
-    if c then add(esc(c.f), esc(c.b)) end
+    if c then add(esc(c.f), esc(c.b), c.fs, c.bs) end
   end
   local due = {}
   for k, m in pairs(s.mins) do
@@ -633,25 +640,96 @@ end
 
 ------------------------------------------------------------------ drawing
 
--- the card as rows of text: { text, font name, centred } and a divider (false) before the back
+-- pictures: the reader draws text left to right only and refuses right-to-left text (Arabic,
+-- Hebrew ...), so the converter on the tools site draws it. A drawn line of a side is "\1k,h,w,a"
+-- (the side's k-th picture, its height and width; a = r / l: right or left aligned), and the
+-- card's line carries two more fields, the front's and the back's pictures: 1-bit PNGs in base64,
+-- comma separated. One picture per line, drawn whole (the reader refuses g:image's src on a
+-- decoded picture). The host keeps 8 decoded pictures at most: only those of the shown card's
+-- visible lines are kept, and when the 8 are taken the ones not on screen are let go.
+local pics = { card = nil, img = {} }    -- img['f' .. k] / img['b' .. k] = picture or false
+local function pics_release(keep)
+  for key, im in pairs(pics.img) do
+    if not (keep and keep[key]) then
+      if im then pcall(function() im:release() end) end
+      pics.img[key] = nil
+    end
+  end
+end
+-- the card on screen: the pictures of the one before are let go
+local function pics_for(c)
+  if pics.card ~= c then pics_release(nil); pics.card = c end
+end
+local function nth(list, k)
+  local i = 0
+  for b64 in (list or ''):gmatch('[^,]+') do
+    i = i + 1
+    if i == k then return b64 end
+  end
+end
+local function decode(b64)
+  local ok, im, err = pcall(function()
+    local bytes = ctx.base64:decode(b64)
+    if not bytes then return nil, 'invalid_argument' end
+    return ctx.image:decode(bytes, { max_w = 480, max_h = 1024 })
+  end)
+  if ok then return im, err end
+  return nil, 'error'
+end
+-- the k-th picture of a side of card c; frame: the pictures drawn in this frame
+local function picture(c, side, k, frame)
+  pics_for(c)
+  local key = side .. k
+  local v = pics.img[key]
+  if v == nil then
+    v = false
+    local b64 = nth(side == 'f' and c.fs or c.bs, k)
+    if b64 and ctx.image and ctx.base64 then
+      local im, err = decode(b64)
+      if not im and err == 'limit_exceeded' then pics_release(frame); im = decode(b64) end
+      v = im or false
+    end
+    pics.img[key] = v
+  end
+  frame[key] = true
+  return v or nil
+end
+local function pic_mark(l)
+  local k, h, w, a = l:match('^\1(%d+),(%d+),(%d+),([lr])$')
+  if k then return { k = tonumber(k), h = tonumber(h), w = tonumber(w), a = a } end
+end
+
+-- the card as rows of text: { text, font name, centred } (with pic and side for a drawn line)
+-- and a divider (false) before the back
 local function card_rows(c, with_back)
   local rows, maxw = {}, W - 40
   local first = true
   for para in (c.f .. '\n'):gmatch('([^\n]*)\n') do
     local fname = first and 'large' or 'medium'
-    for _k, l in ipairs(kit.wrap(para, fname, maxw)) do rows[#rows + 1] = { l, fname, true } end
+    local m = pic_mark(para)
+    if m then rows[#rows + 1] = { '', fname, true, pic = m, side = 'f' }
+    else
+      for _k, l in ipairs(kit.wrap(para, fname, maxw)) do rows[#rows + 1] = { l, fname, true } end
+    end
     first = false
   end
   if with_back then
     rows[#rows + 1] = false
     for para in (c.b .. '\n'):gmatch('([^\n]*)\n') do
-      for _k, l in ipairs(kit.wrap(para, 'medium', maxw)) do rows[#rows + 1] = { l, 'medium' } end
+      local m = pic_mark(para)
+      if m then rows[#rows + 1] = { '', 'medium', false, pic = m, side = 'b' }
+      else
+        for _k, l in ipairs(kit.wrap(para, 'medium', maxw)) do rows[#rows + 1] = { l, 'medium' } end
+      end
     end
   end
   return rows
 end
 
-local function row_h(r) return r and (kit.line_h(r[2]) + 4) or 22 end
+local function row_h(r)
+  if not r then return 22 end
+  return r.pic and r.pic.h or (kit.line_h(r[2]) + 4)
+end
 
 local function draw_study(gg)
   local e = queue[1]
@@ -662,28 +740,48 @@ local function draw_study(gg)
     if #queue == 0 then screen = 'done' end
     return
   end
+  pics_for(c)
+  local frame = {}
   local rows = card_rows(c, shown)
   local area = BTN_Y - 16 - TOP
   local total = 0
   for _k, r in ipairs(rows) do total = total + row_h(r) end
   max_scroll = 0
   -- skip whole rows from the top while scrolled
-  local first, skipped = 1, 0
-  while first <= #rows and skipped < scroll and total - skipped > area do
-    skipped = skipped + row_h(rows[first]); first = first + 1
+  local first, skipped, npics = 1, 0, 0
+  for _k, r in ipairs(rows) do if r and r.pic then npics = npics + 1 end end
+  while first <= #rows and skipped < scroll and (total - skipped > area or npics > 8) do
+    local r = rows[first]
+    if r and r.pic then npics = npics - 1 end
+    skipped = skipped + row_h(r); first = first + 1
   end
+  -- the rows that fit, with at most 8 pictures (the host's limit; the rest come with a swipe), and
+  -- the pictures of the rows before let go first, so the new ones can be decoded
+  local vis, n = {}, 0
   local y = TOP + 8
   for k = first, #rows do
     local r = rows[k]
-    if y + row_h(r) > TOP + area then max_scroll = scroll + 1; break end
-    if r then
+    if y + row_h(r) > TOP + area or (r and r.pic and n == 8) then max_scroll = scroll + 1; break end
+    if r and r.pic then n = n + 1; frame[r.side .. r.pic.k] = true end
+    vis[#vis + 1] = { r, y }
+    y = y + row_h(r)
+  end
+  pics_release(frame)
+  for _k, v in ipairs(vis) do
+    local r, y = v[1], v[2]
+    if r and r.pic then
+      local p = r.pic
+      local im = picture(c, r.side, p.k, frame)
+      local x = r[3] and (W - p.w) // 2 or (p.a == 'r' and W - 20 - p.w or 20)
+      if im then gg:image(im, x, y)
+      else gg:text(20, y, '(a picture this reader cannot show)', { font = kit.font('small') }) end
+    elseif r then
       local f = kit.font(r[2])
       local x = r[3] and (W - kit.width(f, r[1])) // 2 or 20
       gg:text(x, y, r[1], { font = f })
     else
       gg:line(20, y + 10, W - 20, y + 10)
     end
-    y = y + row_h(r)
   end
   if max_scroll > scroll then gg:text(W - 120, BTN_Y - 30, 'more: swipe up', { font = kit.font('small') }) end
   if scroll > 0 then gg:text(W - 120, TOP + 2, 'swipe down: top', { font = kit.font('small') }) end
@@ -854,8 +952,19 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
+    if ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release: closes a box, leaves a study session for the deck list, and on
+      -- the deck list is left to the host (which offers to exit)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      if kit.modal() then
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif screen ~= 'decks' then show_decks()
+      else handled = false end
+      return
+    end
     if ev.type == 'pointer' then
       local x, y = ev.x or 0, ev.y or 0
       if ev.phase == 'down' then long_done = false end
@@ -882,7 +991,7 @@ function on_input(c, ev)
       tap(x, y)
     elseif ev.type == 'key' and kit.key_accepted(ev) then
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+        return
       elseif screen == 'study' then
         if ev.key == 'down' or ev.key == 'right' then
           if not shown then shown = true elseif max_scroll > scroll then scroll = scroll + 200 end
@@ -894,7 +1003,7 @@ function on_input(c, ev)
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

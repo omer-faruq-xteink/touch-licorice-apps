@@ -291,4 +291,105 @@ hold(*deck_row('English words B2-C1'))
 g.tap_label('Lock screen off')
 assert 'lock_cards.txt' not in g.store and list(g.L.eval('lock_calls').values()) == ['set', 'clear']
 g.no_err()
+
+# right-to-left text as pictures (drawn by the tools site's converter, site/tools/anki/pictures.js):
+# a side's line "\x01k,h,w,a" is that side's k-th picture; the card's 4th and 5th fields hold them
+# (base64 PNGs, comma separated), each drawn whole: the reader refuses src on a decoded picture
+import base64, io
+from PIL import Image
+
+
+def png(w, h):
+    buf = io.BytesIO()
+    Image.new('1', (w, h), 1).save(buf, 'PNG')
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+F1, B1, B2 = png(120, 98), png(90, 56), png(60, 56)
+g.store['arab_info.txt'] = 'name=Quran words\ncards=2\nshards=1\nper=100\n'
+g.store['arab_c000.txt'] = (f'1\t\x011,98,120,r\tfrom\\n\x011,56,90,r\\nand\\n\x012,56,60,l\t{F1}\t{B1},{B2}\n'
+                            '2\tplain\tcard\n')
+g.L.execute('''decoded, images, live = {}, {}, 0
+ctx.base64 = { decode = function(self, s) return s end }
+ctx.image = { decode = function(self, b, o)
+  if live >= 8 then return nil, 'limit_exceeded' end
+  live = live + 1
+  local im = { released = false, b = b, o = o }
+  im.release = function(me) if not me.released then live = live - 1 end; me.released = true; return true end
+  decoded[#decoded + 1] = im; return im end }
+rawset(gg, 'image', function(self, im, x, y, o) images[#images + 1] = { b = im.b, x = x, y = y, o = o } end)''')
+pics = lambda: [(int(i.x), int(i.y), str(i.b), i.o) for i in g.L.eval('images').values()]
+g.restart()
+g.tap(*deck_row('Quran words'))
+g.L.execute('images = {}'); g.draw()
+p = pics()
+assert len(p) == 1 and p[0][0] == 180 and p[0][2] == F1 and p[0][3] is None, p          # centred, whole
+assert int(g.L.eval('#decoded')) == 1 and int(g.L.eval('decoded[1].o.max_h')) == 1024
+g.tap(240, 300)
+g.L.execute('images = {}'); g.draw()
+p = pics()
+assert [x[2] for x in p] == [F1, B1, B2], p
+assert p[1][0] == 480 - 20 - 90 and p[2][0] == 20, p                                    # right / left aligned
+assert p[1][1] >= p[0][1] + 98 and p[2][1] > p[1][1] + 56 and 'from' in g.texts() and 'and' in g.texts(), (p, g.texts())
+assert int(g.L.eval('#decoded')) == 3                      # each picture decoded once
+rate(3)
+g.draw()
+assert front() == 'plain' and int(g.L.eval('live')) == 0   # the next card: the pictures let go
+g.tap(400, 30); g.tap_label('Decks')
+
+# more lines than the host's 8 decoded pictures: the ones scrolled away are let go
+many = ','.join(png(50 + k, 56) for k in range(12))
+back = '\\n'.join(f'\x01{k + 1},56,{50 + k},r' for k in range(12))
+g.store['arab_c000.txt'] = f'3\tlong\t{back}\t\t{many}\n'
+g.store['arab_info.txt'] = 'name=Quran words 2\ncards=1\nshards=1\nper=100\n'
+advance_days(1)                                   # a new day: new cards again
+g.restart()
+g.tap(*deck_row('Quran words 2'))
+g.tap(240, 300)
+g.L.execute('images = {}'); g.draw()
+first = pics()
+assert 8 <= len(first) <= 10 and int(g.L.eval('live')) <= 8, (len(first), g.L.eval('live'))
+for _ in range(6):                                # swipe to the end
+    g.L.execute("on_input(ctx, {type='pointer', phase='up', gesture='swipe_up', x=240, y=400})")
+    g.L.execute('images = {}'); g.draw()
+later = pics()
+assert later and later[-1][2] == many.split(',')[-1] and int(g.L.eval('live')) <= 8, (len(later), g.L.eval('live'))
+g.no_err()
+
+# a reader without picture decoding says so instead
+g.L.execute('ctx.image = nil')
+g.tap(400, 30); g.tap_label('Decks')
+g.store['arab_c000.txt'] = f'4\t\x011,98,120,r\tback\t{F1}\t\n'
+g.store['arab_info.txt'] = 'name=Quran words 3\ncards=1\nshards=1\nper=100\n'
+g.restart()
+g.tap(*deck_row('Quran words 3'))
+assert '(a picture this reader cannot show)' in g.texts(), g.texts()
+g.L.execute('ctx.image = { decode = function(self, b, o) return { release = function() return true end } end }')
+# the lock screen keeps the pictures and draws them
+g.tap(400, 30); g.tap_label('Decks')
+hold(*deck_row('Quran words 3'))
+g.tap_label('Lock screen')
+lc = g.store['lock_cards.txt'].split('\n')
+assert lc[1] == f'\x011,98,120,r\tback\t{F1}\t', lc
+L2.globals().store['lock_cards.txt'] = g.store['lock_cards.txt']
+L2.execute('''lock_images = {}
+ctx.base64 = { decode = function(self, s) return s end }
+ctx.image = { decode = function(self, b, o) return { b = b } end }
+rawset(gg, 'image', function(self, im, x, y, o) lock_images[#lock_images + 1] = { b = im.b, x = x, y = y, o = o } end)''')
+t3 = list(draw().values())
+li = list(L2.eval('lock_images').values())
+assert len(li) == 1 and int(li[0].x) == 180 and int(li[0].y) == 140 and str(li[0].b) == F1 and li[0].o is None, li
+assert 'back' in t3 and not any('error' in x for x in t3), t3
+g.no_err()
+
+# Back: closes a box, leaves a study session for the deck list; on the deck list it is the host's
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap(*deck_row('Quran words 3'))
+assert str(A().screen()) != 'decks'
+g.tap(400, 30)                                    # Menu
+back('down')
+assert back('up') is True and str(A().screen()) != 'decks'
+assert back('up') is True and str(A().screen()) == 'decks'
+assert back('up') is False, 'Back on the deck list leaves it to the host'
+g.no_err()
 print('anki tests passed')

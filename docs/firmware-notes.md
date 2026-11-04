@@ -366,3 +366,13 @@ needs no feature bit or manifest key. `xtpack.py` packs `APP_DIR/icon.png` into 
 - **Tested on the device (1 bpp, rows MSB first):** a **set bit is drawn black**. The icon is
   **scaled to the slot** (64×64 and 96×96 showed at the same size) and clipped to its rounded
   corners.
+
+## Right-to-left text and partial images (2026-11-04, build 26110201)
+
+- `g:text` refuses a string with a right-to-left letter (Arabic, Hebrew ...), as the API
+  documents: nothing is drawn. Anki's converter therefore draws such lines as pictures.
+- `ctx.image:decode` decodes small PNGs fine: 1-bit gray, 8-bit gray and RGB (a 184x98 word
+  picture) all came back at their own size, with or without `max_w` / `max_h`.
+- **`g:image(img, x, y, { src = { 0, 0, w, h } })` on a decoded (runtime) picture returns
+  `nil, "invalid_argument"`**, even for the whole picture. Draw runtime pictures whole: Anki keeps
+  one picture per line instead of a sheet of lines. (Probe: `tools/imgprobe`, removed after use.)
