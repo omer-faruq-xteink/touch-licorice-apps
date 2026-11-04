@@ -53,6 +53,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `anki` | Anki | `anki` | 1.1.0 | in review | 0.1.1 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
+| `backgammon` | Backgammon | `backgammon` | 1.0.0 | in review | - | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
 | `bookworm` | Bookworm | `bookworm` | 1.0.0 | in review | - | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calendar` | Calendar | `calendar` | 1.1.0 | in review | 1.0.0 | 2026-10-31 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `checkers` | Checkers | `checkers` | 1.0.0 | in review | - | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
@@ -72,4 +73,4 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wallabag` | wallabag | `wallabag` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-27 published, 19 in review or draft, 46 in all.
+27 published, 20 in review or draft, 47 in all.

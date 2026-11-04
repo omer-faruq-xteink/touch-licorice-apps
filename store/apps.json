@@ -458,5 +458,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-03"
+  },
+  "backgammon": {
+    "name": "Backgammon",
+    "app_id": "backgammon",
+    "listing_id": "",
+    "project_id": "eca078ae-b008-4f88-bc03-92f201b1714c",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-04"
   }
 }
