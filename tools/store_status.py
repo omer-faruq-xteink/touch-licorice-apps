@@ -29,8 +29,10 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
    (My projects > the app > Studio), replace the changed files in the editor (index.lua,
    lockscreen.lua, manifest.json from the export or the pushed repo), save each file, then the
    top Save (the cloud copy). Data files only when they changed.
-4. Developer Center > the app > Release new version: a higher release version, release notes,
-   new screenshots if the screens changed. Submit for review.
+4. Developer Center > the app > Release new version: a higher release version (the field comes
+   filled with the old one: replace it), release notes, new screenshots if the screens changed.
+   Orientation can come back empty (Sky Tonight 1.0.1): set it, or the submit does nothing.
+   Submit for review.
 5. In `store/apps.json`: the new `release_version`, `status: "in review"`, `submitted`; after
    the review `status: "published"` and `live_version`. Run `tools/store_status.py`, commit.
 

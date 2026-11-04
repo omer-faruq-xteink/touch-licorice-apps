@@ -14,8 +14,10 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
    (My projects > the app > Studio), replace the changed files in the editor (index.lua,
    lockscreen.lua, manifest.json from the export or the pushed repo), save each file, then the
    top Save (the cloud copy). Data files only when they changed.
-4. Developer Center > the app > Release new version: a higher release version, release notes,
-   new screenshots if the screens changed. Submit for review.
+4. Developer Center > the app > Release new version: a higher release version (the field comes
+   filled with the old one: replace it), release notes, new screenshots if the screens changed.
+   Orientation can come back empty (Sky Tonight 1.0.1): set it, or the submit does nothing.
+   Submit for review.
 5. In `store/apps.json`: the new `release_version`, `status: "in review"`, `submitted`; after
    the review `status: "published"` and `live_version`. Run `tools/store_status.py`, commit.
 
@@ -40,7 +42,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
-| `skytonight` | Sky Tonight | `skytonight` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
@@ -65,9 +66,10 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `readwise` | Readwise | `readwise` | 1.1.1 | in review | 1.0.0 | 2026-11-03 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.2.0 | in review | 1.0.0 | 2026-11-03 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | in review | - | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
 | `tasks` | Tasks | `tasks` | 1.1.0 | in review | 1.0.0 | 2026-11-01 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `wallabag` | wallabag | `wallabag` | 1.1.0 | in review | 1.0.0 | 2026-11-03 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | in review | - | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 
-28 published, 18 in review or draft, 46 in all.
+27 published, 19 in review or draft, 46 in all.
