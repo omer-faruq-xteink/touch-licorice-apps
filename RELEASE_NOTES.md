@@ -1,3 +1,17 @@
+# v0.21.0
+
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
+
+Nothing yet.
+
+## Files
+
+| file | content |
+|---|---|
+| all packages | unchanged since v0.20.0 |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.20.0
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
