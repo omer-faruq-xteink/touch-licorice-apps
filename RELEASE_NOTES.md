@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Changed
+
+- **Calendar 1.1.1: a calendar without a calendar file.** With no iCal address added, the app now opens on its views (Day, Week, Month, Agenda) instead of a page of instructions, with a short hint at the bottom; + adds events to My calendar on the reader as before. Back on the main view now lets the reader offer to exit.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.19.0 |
+| `calendar.xtapp` | Calendar 1.1.1: the views without a calendar file; Back |
+| all other packages | unchanged since v0.19.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

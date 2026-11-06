@@ -4,7 +4,9 @@ Your Google Calendar (or any calendar with an iCal address), read-only, and **My
 events you add on the reader, in **Day**, **Week**, **Month** and **Agenda** views, and on the
 **lock screen**. A port of
 [calendar.koplugin](https://github.com/omer-faruq/calendar.koplugin) for KOReader, laid out for
-the X4 Pro's 480x800 screen. Needs Wi-Fi to sync; works offline afterwards.
+the X4 Pro's 480x800 screen. Needs Wi-Fi to sync; works offline afterwards. Without any
+calendar added it is still a calendar: the four views show from the start, and + adds events
+to My calendar.
 
 ## Adding a calendar
 

@@ -1562,7 +1562,7 @@ local function sync(force, only)
     if force then
       local net = false
       for _k, c in ipairs(cals) do if not is_local(c) then net = true end end
-      status = #cals == 0 and 'No calendars: add one in Settings.' or not net and 'My calendar is on the reader: nothing to sync.'
+      status = #cals == 0 and 'No calendars: More > Add takes an iCal address.' or not net and 'My calendar is on the reader: nothing to sync.'
         or 'No calendar is shown.'
     end
     return
@@ -1966,19 +1966,6 @@ local function draw_main(gg)
     kit.button(gg, (k - 1) * tw + 4, 4, tw - 8, TAB_H - 8, MODE_LABEL[m], { line_width = m == mode and 4 or 1 })
   end
   kit.button(gg, PLUS_X, PLUS_Y, PLUS_W, PLUS_H, '+', { font = 'large' })
-  if #cals == 0 then
-    gg:text(16, 70, 'Calendar', { font = kit.font('large') })
-    local y = 130
-    for _k, l in ipairs(kit.wrap('No calendars yet. The + above adds an event to My calendar, kept on this reader. '
-        .. 'To show a Google or other calendar, tap More, then Add, and type its secret iCal address '
-        .. '(Google Calendar on the web: Settings > your calendar > Integrate calendar > Secret address in iCal format). '
-        .. 'Or copy a calendars.txt with "Name|address" lines into XTApps/calendar/files/ over USB.', 'medium', W - 32)) do
-      gg:text(16, y, l, { font = kit.font('medium') })
-      y = y + kit.line_h('medium') + 2
-    end
-    hits = {}
-    return
-  end
   local title = V.title(mode, mode == 'agenda' and ag.first or anchor, cfg.ws)
   gg:text(12, 62, kit.short(title, 30), { font = kit.font('large') })
   local first, n = V.window(mode, mode == 'agenda' and ag.first or anchor, cfg.ws)
@@ -2115,6 +2102,8 @@ function on_draw(c, gg)
     local line = (reading and ('Reading ' .. kit.short(reading.c.name, 20) .. '... ' ..
                     (reading.p.pos * 100 // math.max(1, reading.p.size)) .. '%'))
       or (sync_cur and ('Syncing ' .. kit.short(sync_cur.name, 24) .. '...')) or status or ERR
+      -- no calendar yet: the views still show (+ adds to My calendar); how to add one
+      or ((screen == 'main' and #cals == 0) and 'No calendar added: More > Add (an iCal address)' or nil)
     if line then gg:text(12, BTN_Y - 26, kit.short(line, 48), { font = kit.font('small') }) end
     local bs = buttons()
     for k, b in ipairs(bs) do
@@ -2198,6 +2187,8 @@ local function tap(x, y)
   end
 end
 
+-- Back: closes a box, leaves Settings or the form, returns to the view a day was opened from;
+-- on the main view it is left to the host, which offers to exit (false)
 local function go_back()
   if kit.modal() then
     if kit.modal().cancel then kit.modal().cancel() end
@@ -2206,11 +2197,15 @@ local function go_back()
   elseif back_mode then
     local m = back_mode
     set_mode(m)
+  else
+    return false
   end
+  return true
 end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     watchdog()
     if type(ev) ~= 'table' then return end
@@ -2221,9 +2216,12 @@ function on_input(c, ev)
       elseif gest == nil or gest == 'tap' then
         tap(ev.x or 0, ev.y or 0)
       end
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (kit.key_accepted drops releases)
+      if ev.phase ~= nil and ev.phase ~= 'up' then return end
+      handled = go_back()
     elseif ev.type == 'key' and kit.key_accepted(ev) then
-      if ev.key == 'back' then go_back()
-      elseif not kit.modal() and screen == 'main' then
+      if not kit.modal() and screen == 'main' then
         if ev.key == 'left' or ev.key == 'up' then step(-1)
         elseif ev.key == 'right' or ev.key == 'down' then step(1) end
       end
@@ -2231,7 +2229,7 @@ function on_input(c, ev)
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)
