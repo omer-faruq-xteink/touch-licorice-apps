@@ -24,10 +24,10 @@
     "app_id": "calendar",
     "listing_id": "u_b67d945db0ab44a997f49f7b59ac2d1b",
     "project_id": "ac2744ef-3e9d-494c-8ee4-3a9ca918932f",
-    "release_version": "1.1.0",
+    "release_version": "1.1.1",
     "status": "in review",
-    "live_version": "1.0.0",
-    "submitted": "2026-10-31"
+    "live_version": "1.1.0",
+    "submitted": "2026-11-06"
   },
   "chess": {
     "name": "Chess puzzles",
@@ -95,8 +95,8 @@
     "listing_id": "u_8b569131c8c94c05830297a26ec72254",
     "project_id": "70abf652-40aa-4091-ac58-9dfa81e818a5",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-03"
   },
   "hashi": {
@@ -105,8 +105,8 @@
     "listing_id": "",
     "project_id": "5bc739e3-198a-45ec-adec-c670eb0f2dae",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-01"
   },
   "instapaper": {
@@ -115,8 +115,8 @@
     "listing_id": "u_ac3cdd4ad8b447159cc33fe6c138ddaa",
     "project_id": "900b4ce0-352d-4960-98d6-2e8c46978cd9",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-03"
   },
   "kakuro": {
@@ -125,8 +125,8 @@
     "listing_id": "",
     "project_id": "81dbbe6a-3f72-438f-9db8-5c105c5328f4",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-01"
   },
   "klondike": {
@@ -235,8 +235,8 @@
     "listing_id": "u_4ad5b5be8f5846c082535c2b806e2e67",
     "project_id": "9f9f4778-901e-4a18-b863-033d9384a44c",
     "release_version": "1.1.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.1",
     "submitted": "2026-11-03"
   },
   "rss": {
@@ -245,8 +245,8 @@
     "listing_id": "u_ab793ec31bec4a66affe7ec5ba71e9aa",
     "project_id": "89ca4ab2-9fb9-4017-8d88-31973aa0cc7d",
     "release_version": "1.2.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.2.0",
     "submitted": "2026-11-03"
   },
   "skytonight": {
@@ -305,8 +305,8 @@
     "listing_id": "",
     "project_id": "e505686d-eb7a-4648-a224-859c17aa76f2",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-01"
   },
   "tasks": {
@@ -315,8 +315,8 @@
     "listing_id": "u_85cae7d4e8a84cbe902b72067623adaa",
     "project_id": "547d9981-6d6c-43a4-878d-612452ce57f0",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-01"
   },
   "tbr": {
@@ -355,8 +355,8 @@
     "listing_id": "u_a2c2addaabf84bd8bee91bd4b85c7c37",
     "project_id": "e3ab6293-9ad8-4e80-a5b6-433447d65052",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-03"
   },
   "weather": {
@@ -405,8 +405,8 @@
     "listing_id": "",
     "project_id": "0975b389-101d-444e-9d66-ee8856c15112",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-01"
   },
   "delve": {
