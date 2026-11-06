@@ -135,14 +135,14 @@ e, off = C.clock()
 assert e == NOW and off == OFF, (e, off)
 
 # ---- nothing yet: the views show all the same (no iCal address needed), with a hint at the bottom
-assert has('No calendar added: More > Add') and any(d in ' '.join(texts()) for d in ('Oct', 'Nov', '2026')), texts()
+assert has('No calendar added yet: More > Add') and any(d in ' '.join(texts()) for d in ('Oct', 'Nov', '2026')), texts()
 g.tap_label('Month')
-assert A().mode() == 'month' and has('No calendar added: More > Add'), texts()
+assert A().mode() == 'month' and has('No calendar added yet: More > Add'), texts()
 g.tap_label('Week')
 back = g.L.eval("function(ph) return on_input(ctx, { type = 'key', key = 'back', phase = ph }) end")
 assert back('up') is False, 'Back on the main view: the host offers to exit'
 g.tap_label('Sync')
-assert A().status() == 'No calendars: More > Add takes an iCal address.'
+assert A().status() == 'Nothing to sync: More > Add a calendar.'
 
 # ---- add two calendars in Settings (webcal:// becomes https://)
 g.tap_label('More')

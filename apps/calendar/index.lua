@@ -1562,7 +1562,7 @@ local function sync(force, only)
     if force then
       local net = false
       for _k, c in ipairs(cals) do if not is_local(c) then net = true end end
-      status = #cals == 0 and 'No calendars: More > Add takes an iCal address.' or not net and 'My calendar is on the reader: nothing to sync.'
+      status = #cals == 0 and 'Nothing to sync: More > Add a calendar.' or not net and 'My calendar is on the reader: nothing to sync.'
         or 'No calendar is shown.'
     end
     return
@@ -2103,7 +2103,7 @@ function on_draw(c, gg)
                     (reading.p.pos * 100 // math.max(1, reading.p.size)) .. '%'))
       or (sync_cur and ('Syncing ' .. kit.short(sync_cur.name, 24) .. '...')) or status or ERR
       -- no calendar yet: the views still show (+ adds to My calendar); how to add one
-      or ((screen == 'main' and #cals == 0) and 'No calendar added: More > Add (an iCal address)' or nil)
+      or ((screen == 'main' and #cals == 0) and 'No calendar added yet: More > Add' or nil)
     if line then gg:text(12, BTN_Y - 26, kit.short(line, 48), { font = kit.font('small') }) end
     local bs = buttons()
     for k, b in ipairs(bs) do
