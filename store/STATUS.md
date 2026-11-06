@@ -69,7 +69,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `checkers` | Checkers | `checkers` | 1.0.0 | in review | - | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
 | `chessplay` | Chess | `chessplay` | 1.0.0 | in review | - | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.1 | in review | 1.0.0 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
-| `notebook` | Notebook | `notebook` | 1.0.0 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
+| `notebook` | Notebook | `notebook` | 1.0.1 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
 | `notes` | Notes | `notes` | 1.1.1 | in review | 1.1.0 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
