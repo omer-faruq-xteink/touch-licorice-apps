@@ -279,8 +279,9 @@ step_search = function()
   while s.at < #entries do
     s.at = s.at + 1
     local e = entries[s.at]
-    local text = B.read(e.name) or ''
-    local line = B.find(text, s.f)
+    -- the title and the text, not the folder / tags / date lines (the filters cover those)
+    local n = B.parse(B.read(e.name) or '')
+    local line = B.find(n.title .. '\n' .. table.concat(n.paras, '\n'), s.f)
     if line then s.hits[e.name] = line end
     if (kit.now_ms() or 0) - t0 > 300 then break end
   end

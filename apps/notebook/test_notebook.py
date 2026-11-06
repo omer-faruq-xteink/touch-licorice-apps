@@ -193,6 +193,16 @@ check(vis == ['İş planı'] and any('İSTANBUL' in t for t in g.texts()), f'a s
 check(any(t.startswith('Found in 1 of 3') for t in g.texts()), 'how many notes have it')
 g.tap_label('Clear')
 check(A().search() is None and len(A().visible()) == 3, 'Clear ends the search')
+g.tap_label('Search')
+typed('weekly')
+L.eval('run_timers')()
+check(len(A().visible()) == 0, 'search looks in titles and text, not in the folder / tags / date lines')
+g.tap_label('Clear')
+g.tap_label('Search')
+typed('SHOPPING')
+L.eval('run_timers')()
+check([str(e.title) for e in A().visible().values()] == ['Shopping list'], 'and finds a title')
+g.tap_label('Clear')
 
 # rename and delete
 g.tap_label('Books to read')
