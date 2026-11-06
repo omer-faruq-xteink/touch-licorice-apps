@@ -34,6 +34,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Hashi** | Bridges: join the numbered islands, no crossings; 600 puzzles in three levels |
 | **Queens** | Queens and Star Battle: one queen (or two stars) in every row, column and region, none touching; dots for ruled-out cells; 1200 puzzles |
 | **Case Files** | logic-grid mysteries: read the clues, cross and tick the grids, work out who had what; six settings, 600 cases in three levels |
+| **Lamplighter** | turn the tiles until power from the source reaches every lamp: one network, no loose ends; lock mode; 600 puzzles in three sizes |
 | **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
@@ -225,6 +226,13 @@ Logic-grid mysteries: at a hotel, on a night train, at a bake-off... each person
 every group, and the clues settle who has what. Tap a cell for a cross, again for a tick; a grid
 for each pair of groups, chosen by tabs; tap a clue to cross it out. Undo, Hint, Check. 600 cases
 (Easy, Medium, Hard), each with one answer reached by reasoning. [More](apps/casefiles/README.md)
+
+### Lamplighter
+
+A wiring puzzle: turn the tiles until power from the source reaches every lamp, all the wires in
+one network with no loose ends or loops. Tap a tile to turn it; lit wires are thick; Lock frames the
+tiles you are sure of. Undo and Hint. 600 puzzles (5x5, 7x7, 9x9), each with one solution reached
+by reasoning. [More](apps/lamplighter/README.md)
 
 ### Kakuro
 
@@ -534,6 +542,7 @@ python -I apps/hashi/test_hashi.py
 python -I apps/kakuro/test_kakuro.py
 python -I apps/queens/test_queens.py
 python -I apps/casefiles/test_casefiles.py
+python -I apps/lamplighter/test_lamplighter.py
 python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py

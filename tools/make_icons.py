@@ -433,6 +433,20 @@ def casefiles(p):
     p.line([(73, 73), (89, 89)], 8)                                        # its handle
 
 
+def lamplighter(p):
+    # the source (a framed square) wired to two lamps, one lit (filled) and one not
+    p.rect((34, 34, 62, 62), fill=True)
+    p.white_rect((39, 39, 57, 57))
+    p.rect((43, 43, 53, 53), fill=True)
+    p.rect((62, 44, 80, 52), fill=True)                     # a lit wire, thick, to a lit lamp
+    p.ellipse((70, 34, 92, 56), fill=True)
+    p.line([(48, 34), (48, 14)], 3)                        # an unlit wire, thin
+    p.line([(48, 14), (22, 14)], 3)
+    p.line([(22, 14), (22, 70)], 3)
+    p.white_ellipse((10, 66, 34, 90))
+    p.ellipse((10, 66, 34, 90), w=4)                       # an unlit lamp
+
+
 def queens(p):
     # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
     p.rect((8, 8, 88, 88), w=4)
@@ -734,7 +748,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'lamplighter': lamplighter, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

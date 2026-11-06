@@ -1,0 +1,10 @@
+{
+  "app_id": "lamplighter",
+  "display_name": "Lamplighter",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Turn the tiles until power from the source reaches every lamp: one network, no loose ends. 600 puzzles in three sizes, each with one solution reached by reasoning.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
