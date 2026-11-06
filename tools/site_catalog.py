@@ -27,7 +27,7 @@ CATEGORIES = [
     ('learn', 'Learning', ['anki', 'dict', 'tarot']),
     ('stories', 'Stories', ['gamebook', 'textadv']),
     ('daily', 'Daily puzzles', ['wordhive', 'cryptogram', 'wordladder']),
-    ('puzzles', 'Puzzles', ['sudoku', 'queens', 'nonogram', 'kakuro', 'hashi', 'suguru', 'minesweeper', 'lightsout',
+    ('puzzles', 'Puzzles', ['sudoku', 'queens', 'casefiles', 'nonogram', 'kakuro', 'hashi', 'suguru', 'minesweeper', 'lightsout',
                             'knightstour', 'pegsolitaire', 'slidepuzzle', 'sokoban', 'chess', 'tsumego']),
     ('games', 'Games', ['chessplay', 'checkers', 'backgammon', 'delve', 'game2048', 'klondike', 'freecell', 'mahjong', 'merchant']),
 ]

@@ -418,6 +418,21 @@ def notebook(p):
     p.rect((82, 18, 90, 36), fill=True)                     # a tab
 
 
+def casefiles(p):
+    # a logic grid with a tick and crosses, and a magnifying glass over its corner
+    p.rect((8, 8, 64, 64), w=3)
+    for v in (26, 45):
+        p.line([(v, 8), (v, 64)], 2)
+        p.line([(8, v), (64, v)], 2)
+    p.line([(11, 17), (15, 22)], 3); p.line([(15, 22), (23, 12)], 3)      # a tick
+    for cx, cy in ((36, 17), (54, 17), (17, 36), (17, 54)):                # crosses
+        p.line([(cx - 4, cy - 4), (cx + 4, cy + 4)], 2)
+        p.line([(cx + 4, cy - 4), (cx - 4, cy + 4)], 2)
+    p.white_ellipse((40, 40, 78, 78))                                      # the glass
+    p.ellipse((40, 40, 78, 78), w=5)
+    p.line([(73, 73), (89, 89)], 8)                                        # its handle
+
+
 def queens(p):
     # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
     p.rect((8, 8, 88, 88), w=4)
@@ -719,7 +734,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,

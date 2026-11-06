@@ -4,6 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 ## Added
 
+- **New: Case Files** (`casefiles.xtapp`): logic-grid mysteries. Each person in a case has one item of every group (a floor, an arrival time, a lost item...) and the clues settle who has what: tap the grids for a cross or a tick, one grid for each pair of groups, and tap a clue to cross it out. A tick dots the rest of its row and column; Undo, Hint and Check. Six settings, 600 cases in three levels (3 groups of 4 people up to 4 groups of 5), each with one answer reached by reasoning.
 - **New: Notebook** (`notebook.xtapp`): plain text notes written in blocks of up to 512 characters (the docked keyboard's limit). Tap a block to edit it with the keyboard docked at the bottom: Enter makes a new line, Save and Cancel are at the top, a blank line splits it, an empty one is deleted. Writing on past 500 characters goes on in a new block by itself, the keyboard staying open. Folders and tags filter the list, which sorts by last edited, title or date; Search looks through every note and shows the line it found (Turkish letters too). Each note is a `.txt` file in `AppFiles/notebook/`, readable and writable on a computer.
 
 ## Changed
@@ -14,6 +15,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 | file | content |
 |---|---|
+| `casefiles.xtapp` | new: Case Files |
 | `notebook.xtapp` | new: Notebook |
 | `calendar.xtapp` | Calendar 1.1.1: the views without a calendar file; Back |
 | all other packages | unchanged since v0.19.0 |

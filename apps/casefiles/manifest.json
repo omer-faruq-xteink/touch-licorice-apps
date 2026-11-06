@@ -1,0 +1,10 @@
+{
+  "app_id": "casefiles",
+  "display_name": "Case Files",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Logic-grid mysteries: read the clues, tick and cross the grids, and work out who had what. 600 cases in three sizes, each with one answer reached by reasoning.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

@@ -33,6 +33,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Word Ladder** | a daily ladder from one word to another, one letter at a time; par, hints, 730 ladders |
 | **Hashi** | Bridges: join the numbered islands, no crossings; 600 puzzles in three levels |
 | **Queens** | Queens and Star Battle: one queen (or two stars) in every row, column and region, none touching; dots for ruled-out cells; 1200 puzzles |
+| **Case Files** | logic-grid mysteries: read the clues, cross and tick the grids, work out who had what; six settings, 600 cases in three levels |
 | **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
@@ -217,6 +218,13 @@ Queens (one queen a row, column and region) and Star Battle (two stars): no two 
 even diagonally. Tap a cell for a cross, again for a piece; the cells your pieces rule out are
 dotted, mistakes ringed; Undo and Hint. 1200 puzzles (Queens 6x6 to 9x9, Star Battle 9x9 and
 10x10), each with one solution reached by reasoning. [More](apps/queens/README.md)
+
+### Case Files
+
+Logic-grid mysteries: at a hotel, on a night train, at a bake-off... each person has one item of
+every group, and the clues settle who has what. Tap a cell for a cross, again for a tick; a grid
+for each pair of groups, chosen by tabs; tap a clue to cross it out. Undo, Hint, Check. 600 cases
+(Easy, Medium, Hard), each with one answer reached by reasoning. [More](apps/casefiles/README.md)
 
 ### Kakuro
 
@@ -525,6 +533,7 @@ python -I apps/wordladder/test_wordladder.py
 python -I apps/hashi/test_hashi.py
 python -I apps/kakuro/test_kakuro.py
 python -I apps/queens/test_queens.py
+python -I apps/casefiles/test_casefiles.py
 python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
