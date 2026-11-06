@@ -22,7 +22,7 @@ FIRMWARE = {'2.18': '26110201'}
 
 CATEGORIES = [
     ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'wikipedia', 'bookworm']),
-    ('tools', 'Tools and lock screens', ['tasks', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
+    ('tools', 'Tools and lock screens', ['tasks', 'notebook', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
                                          'skytonight', 'litclock', 'wordclock']),
     ('learn', 'Learning', ['anki', 'dict', 'tarot']),
     ('stories', 'Stories', ['gamebook', 'textadv']),

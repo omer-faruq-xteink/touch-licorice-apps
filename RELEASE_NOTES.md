@@ -2,6 +2,10 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
+## Added
+
+- **New: Notebook** (`notebook.xtapp`): plain text notes written paragraph by paragraph. Tap a paragraph to edit it with the keyboard docked at the bottom: Enter makes a new line, Save and Cancel are at the top, a blank line splits it, an empty one is deleted. Folders and tags filter the list, which sorts by last edited, title or date; Search looks through every note and shows the line it found (Turkish letters too). Each note is a `.txt` file in `AppFiles/notebook/`, readable and writable on a computer.
+
 ## Changed
 
 - **Calendar 1.1.1: a calendar without a calendar file.** With no iCal address added, the app now opens on its views (Day, Week, Month, Agenda) instead of a page of instructions, with a short hint at the bottom; + adds events to My calendar on the reader as before. Back on the main view now lets the reader offer to exit.
@@ -10,6 +14,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 | file | content |
 |---|---|
+| `notebook.xtapp` | new: Notebook |
 | `calendar.xtapp` | Calendar 1.1.1: the views without a calendar file; Back |
 | all other packages | unchanged since v0.19.0 |
 

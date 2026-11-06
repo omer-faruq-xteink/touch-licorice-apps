@@ -1,0 +1,10 @@
+{
+  "app_id": "notebook",
+  "display_name": "Notebook",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Plain text notes written paragraph by paragraph: folders, tags, sorting and a search through all notes. Kept as .txt files on the card, readable on a computer.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

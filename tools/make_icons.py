@@ -408,6 +408,16 @@ def backgammon(p):
         p.ellipse((74 + dx - 2, 46 + dy - 2, 74 + dx + 2, 46 + dy + 2), fill=True)
 
 
+def notebook(p):
+    # a notebook: a ring-bound cover with written lines and a tab
+    p.rect((16, 8, 82, 88), w=4, r=4)
+    for y in (20, 36, 52, 68):                              # the rings on the left edge
+        p.ellipse((9, y - 4, 23, y + 4), w=3)
+    for y, x1 in ((28, 70), (40, 74), (52, 62), (64, 72), (76, 56)):   # lines of writing
+        p.line([(32, y), (x1, y)], 3)
+    p.rect((82, 18, 90, 36), fill=True)                     # a tab
+
+
 def queens(p):
     # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
     p.rect((8, 8, 88, 88), w=4)
@@ -709,7 +719,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
