@@ -468,5 +468,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-04"
+  },
+  "notebook": {
+    "name": "Notebook",
+    "app_id": "notebook",
+    "listing_id": "",
+    "project_id": "bfdb56a1-5848-4583-8085-63262ad00636",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-06"
   }
 }
