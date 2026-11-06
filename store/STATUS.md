@@ -27,11 +27,14 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 |---|---|---|---|---|---|---|---|
 | `game2048` | 2048 | `twentyfortyeight` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d2ef365a-0cbc-486a-9188-f2a3588bc7ca` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
+| `checkers` | Checkers | `checkers` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
+| `chessplay` | Chess | `chessplay` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
 | `delve` | Delve | `delve` | 1.0.0 | published | 1.0.0 | 2026-11-01 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `dict` | Dictionary | `dict` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
+| `gamebook` | Gamebook | `gamebook` | 1.0.1 | published | 1.0.1 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
 | `hackernews` | Hacker News | `hackernews` | 1.1.0 | published | 1.1.0 | 2026-11-03 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
@@ -45,6 +48,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `merchant` | Merchant | `merchant` | 2.0.2 | published | 2.0.2 | 2026-10-29 | `42e7380e-eef7-40ee-aa93-1736c028bd0b` |
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
+| `notes` | Notes | `notes` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
 | `readwise` | Readwise | `readwise` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.2.0 | published | 1.2.0 | 2026-11-03 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
@@ -66,12 +70,9 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `backgammon` | Backgammon | `backgammon` | 1.0.0 | in review | - | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
 | `bookworm` | Bookworm | `bookworm` | 1.0.0 | in review | - | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calendar` | Calendar | `calendar` | 1.1.1 | in review | 1.1.0 | 2026-11-06 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
-| `checkers` | Checkers | `checkers` | 1.0.0 | in review | - | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
-| `chessplay` | Chess | `chessplay` | 1.0.0 | in review | - | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
-| `gamebook` | Gamebook | `gamebook` | 1.0.1 | in review | 1.0.0 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
+| `casefiles` | Case Files | `casefiles` | 1.0.0 | in review | - | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
 | `notebook` | Notebook | `notebook` | 1.0.1 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
-| `notes` | Notes | `notes` | 1.1.1 | in review | 1.1.0 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 
-37 published, 11 in review or draft, 48 in all.
+41 published, 8 in review or draft, 49 in all.
