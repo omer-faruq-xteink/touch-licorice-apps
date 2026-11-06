@@ -488,5 +488,15 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-06"
+  },
+  "lamplighter": {
+    "name": "Lamplighter",
+    "app_id": "lamplighter",
+    "listing_id": "",
+    "project_id": "735ff7d3-4a31-4246-8daa-2473307dbe83",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": null,
+    "submitted": "2026-11-06"
   }
 }

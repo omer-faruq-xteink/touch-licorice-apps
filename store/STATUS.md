@@ -71,8 +71,9 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `bookworm` | Bookworm | `bookworm` | 1.0.0 | in review | - | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calendar` | Calendar | `calendar` | 1.1.1 | in review | 1.1.0 | 2026-11-06 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `casefiles` | Case Files | `casefiles` | 1.0.0 | in review | - | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
+| `lamplighter` | Lamplighter | `lamplighter` | 1.0.0 | in review | - | 2026-11-06 | `735ff7d3-4a31-4246-8daa-2473307dbe83` |
 | `notebook` | Notebook | `notebook` | 1.0.1 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
 | `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 
-41 published, 8 in review or draft, 49 in all.
+41 published, 9 in review or draft, 50 in all.
