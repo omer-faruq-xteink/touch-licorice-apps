@@ -1,6 +1,6 @@
 # Notebook — XTOS Licorice mini app (API 2.9)
 
-Plain text notes, written paragraph by paragraph, with folders, tags, sorting and a search through
+Plain text notes, written block by block, with folders, tags, sorting and a search through
 all notes. Each note is a `.txt` file in `AppFiles/notebook/` on the SD card, so you can also read
 and write your notes on a computer.
 
@@ -16,12 +16,17 @@ and write your notes on a computer.
     found in. **Clear** ends the search.
 
   The filters and the order are kept for the next time. **New note** asks for a title and opens the
-  note on a first paragraph (in the folder and with the tag the list is filtered on, if any).
-- **A note**: its paragraphs, a page at a time. **Tap a paragraph to edit it**: the keyboard opens
-  at the bottom, the paragraph above it, and **Enter starts a new line**; **Save** and **Cancel** are
-  at the top. A blank line splits it into two paragraphs; saved empty, it is deleted. Back while
-  typing asks whether to keep a change. **Add** puts a new one at the end. A paragraph holds up to
-  512 characters (the keyboard's limit); a note can have as many as you like.
+  note on a first block (in the folder and with the tag the list is filtered on, if any).
+- **A note**: its blocks of text, a page at a time. A block is what the keyboard edits at once: up
+  to 512 characters, the firmware's limit for its docked keyboard, as many lines and paragraphs as
+  fit. **Tap a block to edit it**: the keyboard opens at the bottom, the block above it, and
+  **Enter starts a new line**; **Save** and **Cancel** are at the top. A blank line splits it into
+  two blocks; saved empty, it is deleted. Back while typing asks whether to keep a change. **Add**
+  puts a new one at the end. A note can have as many blocks as you like.
+- **Writing on**: when a block you are writing at its end reaches 500 characters, it is kept and
+  the writing goes on in a new block right below it, the keyboard staying open; the cut is at the
+  last space or line break, so the word you are typing moves along whole. (Typing in the middle of
+  a full block just stops at 512.)
 - **Menu** (top right of a note): **Rename**, **Folder** (one of yours, none, or a new one),
   **Tags** (with commas between them), **Delete** (asks first).
 - Back leaves a note for the list, ends a search, and on the list lets the reader offer to exit.
@@ -42,9 +47,9 @@ Olive oil from the market on Saturday
 ```
 
 The first line is the title, then the optional folder and tags lines and the dates the app writes,
-a blank line, and the paragraphs with a blank line between them. Any `.txt` file you copy into the
-folder is a note too: its first line is the title and the rest its text (a paragraph longer than
-512 characters is cut in two at a space when it is edited). The file name comes from the title. The
+a blank line, and the blocks with a blank line between them. Any `.txt` file you copy into the
+folder is a note too: its first line is the title and the rest its text (a block longer than 512
+characters is cut at a space when the note is opened). The file name comes from the title. The
 reader's app folder has no subfolders, so a note's folder is its `folder:` line. Up to about 500
 notes (the folder holds 512 files).
 

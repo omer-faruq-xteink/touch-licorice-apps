@@ -1,7 +1,7 @@
 """Offline test of Notebook (gamekit harness; the app folder, the clock and the docked keyboard
-stood in): the note format (title, folder, tags, dates, paragraphs; a file written on a computer
-without them; a paragraph too long for the keyboard cut), file names from titles, search folding
-(Turkish İ / I / ı), and the app by taps: a new note, paragraphs written with Enter as a new line
+stood in): the note format (title, folder, tags, dates, blocks; a file written on a computer
+without them; a block too long for the keyboard cut), file names from titles, search folding
+(Turkish İ / I / ı), and the app by taps: a new note, blocks written with Enter as a new line
 and Save, a blank line splitting one, an empty one deleted, Back while typing asking to save,
 folder and tags, sorting, the folder and tag filters, a search through all notes, renaming,
 deleting, the index kept between starts, Back and the draw commands.
@@ -101,14 +101,14 @@ def tap_para(k):
 # ---------------------------------------------------------------- the format
 n = B.parse('Shopping list\nfolder: Home\ntags: weekly, Market, weekly\nedited: 2026-11-06 14:30\n\nMilk\nBread\n\n\nEggs\n')
 check(n.title == 'Shopping list' and n.folder == 'Home' and list(n.tags.values()) == ['weekly', 'Market']
-      and list(n.paras.values()) == ['Milk\nBread', 'Eggs'], 'a note file: title, folder, tags (no doubles), paragraphs')
+      and list(n.paras.values()) == ['Milk\nBread', 'Eggs'], 'a note file: title, folder, tags (no doubles), blocks')
 check(str(B.format(n)).startswith('Shopping list\nfolder: Home\ntags: weekly, Market\nedited: 2026-11-06 14:30\n\nMilk\nBread\n\nEggs\n'),
       'written back the same way')
 n = B.parse('Ideas from the PC\r\nfirst line\r\n\r\nsecond')
 check(n.title == 'Ideas from the PC' and list(n.paras.values()) == ['first line', 'second'], 'a file written elsewhere (no header, CRLF)')
 long = ' '.join(['word%03d' % i for i in range(150)])
-ps = list(B.paragraphs(long).values())
-check(len(ps) == 3 and all(len(p) <= 512 for p in ps) and ' '.join(ps) == long, f'a paragraph over 512 characters is cut at spaces: {[len(p) for p in ps]}')
+ps = list(B.blocks(long).values())
+check(len(ps) == 3 and all(len(p) <= 512 for p in ps) and ' '.join(ps) == long, f'a block over 512 characters is cut at spaces: {[len(p) for p in ps]}')
 check(B.fold('İSTANBUL Işık ÇĞÖŞÜ') == 'istanbul işik çğöşü', 'search folds Turkish capitals and the dotless i')
 taken = L.eval("function(t) local s = {} for _, v in ipairs(t) do s[v] = true end return function(n) return s[n] end end")
 check(B.file_name('a/b: c? <d>', taken(L.table_from([]))) == 'a b c d.txt', 'a file name from a title: only letters the card takes')
@@ -119,21 +119,21 @@ check(B.file_name('con', taken(L.table_from([]))) == 'con_.txt', 'a reserved nam
 check('No notes yet: tap New note.' in g.texts(), 'an empty notebook says how to start')
 g.tap_label('New note')
 typed('Shopping list')
-check(A().screen() == 'edit' and A().edit().i is None, 'a new note opens a new paragraph to write')
+check(A().screen() == 'edit' and A().edit().i is None, 'a new note opens a new block to write')
 L.eval('type_text')('Milk\nBread')
 save()
 check(A().screen() == 'note' and paras() == ['Milk\nBread'] and 'Shopping list.txt' in files(),
-      'Save keeps the paragraph, with its new line, in Shopping list.txt')
+      'Save keeps the block, with its new line, in Shopping list.txt')
 check('edited: 2026-11-06 14:' in files()['Shopping list.txt'] and 'created: 2026-11-06 14:' in files()['Shopping list.txt'], 'dates written')
 g.tap_label('Add')
 L.eval('type_text')('Eggs\n\nButter')
 save()
-check(paras() == ['Milk\nBread', 'Eggs', 'Butter'], 'a blank line in a paragraph makes two')
+check(paras() == ['Milk\nBread', 'Eggs', 'Butter'], 'a blank line in a block makes two')
 tap_para(1)
-check(A().screen() == 'edit' and A().edit().i == 1 and str(A().edit().text) == 'Milk\nBread', 'tap a paragraph to edit it')
+check(A().screen() == 'edit' and A().edit().i == 1 and str(A().edit().text) == 'Milk\nBread', 'tap a block to edit it')
 L.eval('type_text')('')
 save()
-check(paras() == ['Eggs', 'Butter'] and A().msg() == 'Paragraph deleted.', 'saved empty: the paragraph is deleted')
+check(paras() == ['Eggs', 'Butter'] and A().msg() == 'Block deleted.', 'saved empty: the block is deleted')
 tap_para(2)
 L.eval('type_text')('Butter, salted')
 L.eval('press_back')()
@@ -143,6 +143,26 @@ check(paras() == ['Eggs', 'Butter, salted'], 'and Save keeps it')
 tap_para(1)
 cancel()
 check(paras() == ['Eggs', 'Butter, salted'] and A().screen() == 'note', 'Cancel leaves it as it was')
+
+# writing on past 500 characters at the end of a block goes on in a new block below it
+g.tap_label('Add')
+words = ' '.join('word%03d' % k for k in range(70))            # 559 characters, typed a few at a time
+for k in range(0, len(words), 7):
+    L.eval('type_text')(str(L.eval('current_ed').cur) + words[k:k + 7])
+ps = paras()
+check(len(ps) == 3 and 450 < len(ps[2]) <= 512 and ps[2].endswith('word') is False and A().screen() == 'edit' and A().edit().after == 3,
+      f'past 500 characters the block is kept and writing goes on in a new one below it: {[len(p) for p in ps]}')
+on_keyboard = str(L.eval('current_ed').cur)
+check(ps[2] + ' ' + on_keyboard == words, f'cut at a space, the unfinished word carried on: "{on_keyboard}"')
+save()
+ps = paras()
+check(len(ps) == 4 and ps[2] + ' ' + ps[3] == words and all(len(p) <= 512 for p in ps),
+      f'saved: two blocks, all the text in order: {[len(p) for p in ps]}')
+tap_para(1)
+L.eval('type_text')('E' + 'x' * 506 + 'ggs')                    # typing in the middle of a block: it stays one block
+check(A().edit().i == 1 and len(paras()) == 4, 'a block edited in the middle does not move on by itself')
+cancel()
+g.tap(430, 20); g.tap_label('Close')
 
 # folder and tags
 g.tap(430, 20)                                     # Menu
@@ -226,7 +246,7 @@ check('Title' in g.texts() and 'Folders' in g.texts() and 'Tags' in g.texts(), '
 idx = str(L.eval('store["index.txt"]'))
 check('Shopping list.txt\t' in idx and 'Home' in idx, 'the index keeps titles, folders and tags')
 g.tap_label('Ideas')
-check(len(A().cur().n.paras) == 3, 'its long paragraph is cut for the keyboard (720 characters: two parts, then "short")')
+check(len(A().cur().n.paras) == 3, 'its long block is cut for the keyboard (720 characters: two parts, then "short")')
 check(back('up') is True and A().screen() == 'list', 'Back leaves a note for the list')
 check(back('up') is False, 'Back on the list returns false: the host offers to exit')
 

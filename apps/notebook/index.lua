@@ -178,8 +178,8 @@ __mods['book'] = function()
 --   tags: weekly, market          optional
 --   edited: 2026-11-06 14:30      written by the app
 --   created: 2026-11-06 14:02     written by the app
---                                 a blank line, then the paragraphs, one blank line between them
---   First paragraph...
+--                                 a blank line, then the blocks, one blank line between them
+--   First block...
 --
 -- A file without these lines works too: its first line is the title, the rest the text. The
 -- folder cannot have subfolders (ctx.files), so a note's folder is the "folder:" line.
@@ -190,7 +190,7 @@ __mods['book'] = function()
 
 local B = {}
 
-B.MAX_PARA = 512                  -- characters per paragraph (the docked keyboard's limit)
+B.MAX_BLOCK = 512                 -- characters per block (the docked keyboard's limit)
 B.MAX_FILE = 200000               -- bytes a note may grow to (a write takes at most 262144)
 local HEAD_BYTES = 4096
 
@@ -252,10 +252,10 @@ end
 local function trim(s) return (s:gsub('^%s+', ''):gsub('%s+$', '')) end
 B.trim = trim
 
--- a paragraph longer than the keyboard takes is cut at a line break or a space before the limit
+-- a block longer than the keyboard takes is cut at a line break or a space before the limit
 local function cut(p, out)
-  while utf8.len(p) and utf8.len(p) > B.MAX_PARA do
-    local stop = utf8.offset(p, B.MAX_PARA + 1) - 1
+  while utf8.len(p) and utf8.len(p) > B.MAX_BLOCK do
+    local stop = utf8.offset(p, B.MAX_BLOCK + 1) - 1
     local head = p:sub(1, stop)
     local at = head:match('^.*()\n') or head:match('^.*() ')
     if not at or at < stop // 2 then at = stop + 1 end
@@ -265,8 +265,8 @@ local function cut(p, out)
   if p ~= '' then out[#out + 1] = p end
 end
 
--- the paragraphs of a text: blank lines part them
-function B.paragraphs(text)
+-- the blocks of a text: blank lines part them
+function B.blocks(text)
   local out = {}
   text = (text or ''):gsub('\r', '')
   for raw in (text .. '\n\n'):gmatch('(.-)\n%s*\n') do
@@ -294,7 +294,7 @@ function B.parse(s)
     else break end
     rest = after
   end
-  n.paras = B.paragraphs(rest)
+  n.paras = B.blocks(rest)
   if n.title == '' then n.title = 'Untitled' end
   return n
 end
@@ -415,11 +415,11 @@ return B
 end
 
 -- Notebook for XTOS Licorice (uses tools/gamekit): plain text notes kept as .txt files in
--- AppFiles/notebook/ on the card (book.lua has the format), written paragraph by paragraph.
+-- AppFiles/notebook/ on the card (book.lua has the format), written block by block.
 --
 -- The list: every note with its folder, tags, date and first words; Folder and Tag filter it,
 -- Sort orders it (last edited, title, created), Search looks through all notes and shows the
--- line it found. A note: its paragraphs, a page at a time; tap one to edit it in place with the
+-- line it found. A note: its blocks, a page at a time; tap one to edit it in place with the
 -- docked keyboard (2.9), where Enter makes a new line and Save / Cancel sit above the keyboard
 -- (a blank line splits it in two, an empty one is deleted); Add puts one at the end.
 -- Menu: rename, folder, tags, delete.
@@ -440,7 +440,7 @@ local sort = 'edited'
 local page = 1
 local search = nil              -- { q, hits = { [name] = line }, done, at, n }
 local cur = nil                 -- the open note: { name, n, page }
-local edit = nil                -- { i (paragraph, nil: new), text, start, ed }
+local edit = nil                -- { i (block, nil: new), after, text, start, prev, ed }
 local pick = nil                -- { title, items = { {label, fn} }, page }
 local msg, ERR = nil, nil
 
@@ -568,7 +568,7 @@ end
 
 ------------------------------------------------------------------ laying out a note
 
--- the note's pages: each a list of { i (paragraph), lines, y }; a paragraph taller than a page
+-- the note's pages: each a list of { i (block), lines, y }; a block taller than a page
 -- goes on over several
 local function note_pages()
   local f = 'medium'
@@ -594,30 +594,44 @@ local function note_pages()
   return out
 end
 
------------------------------------------------------------------- editing a paragraph
+------------------------------------------------------------------ editing a block
+
+-- A note is a list of blocks (n.paras) of at most 512 characters: the docked keyboard takes no
+-- more in one edit. Writing on at the end of a block that reaches CONTINUE_AT goes on in a new
+-- block below it, the keyboard kept open, cut at the last space or line break so that no word is
+-- split. (Typing in the middle of a full block just stops at 512.)
+local CONTINUE_AT = 500
+
+-- put the edited text into the note (a blank line makes two blocks, empty removes the block) and
+-- write the note; returns the index of the last block written (or the one before) and whether
+-- anything changed
+local function put_block(e, text)
+  local n = cur.n
+  local new = B.blocks(text or '')
+  local at
+  if e.i then
+    if #new == 1 and new[1] == n.paras[e.i] then return e.i, false end
+    table.remove(n.paras, e.i)
+    at = e.i
+  else
+    if #new == 0 then return e.after or #n.paras, false end
+    at = (e.after or #n.paras) + 1
+  end
+  for j = #new, 1, -1 do table.insert(n.paras, at, new[j]) end
+  n.edited = now_text()
+  local ok, err = store_note(cur.name, n)
+  msg = ok and ((e.i and #new == 0) and 'Block deleted.' or 'Saved.') or err
+  return at + #new - 1, true
+end
 
 local function finish_edit(text, keep)
   local e = edit
   edit = nil
   screen = 'note'
   if not keep or not cur then return end
-  local n = cur.n
-  local new = B.paragraphs(text or '')
-  local changed = true
-  if e.i then
-    if #new == 1 and new[1] == n.paras[e.i] then changed = false end
-    table.remove(n.paras, e.i)
-    for j = #new, 1, -1 do table.insert(n.paras, e.i, new[j]) end
-  else
-    if #new == 0 then changed = false end
-    for _j, p in ipairs(new) do n.paras[#n.paras + 1] = p end
-  end
+  local target, changed = put_block(e, text)
   if not changed then return end
-  n.edited = now_text()
-  local ok, err = store_note(cur.name, n)
-  msg = ok and ((e.i and #new == 0) and 'Paragraph deleted.' or 'Saved.') or err
-  -- show the page with the paragraph just written
-  local target = e.i or #n.paras
+  -- show the page with the block just written
   for k, pg in ipairs(note_pages()) do
     for _j, b in ipairs(pg) do if b.i == target then cur.page = k; return end end
   end
@@ -628,16 +642,40 @@ local function edit_rect()
   return { x = 16, y = TOP_H + 14, w = W - 32, h = math.max(40, bottom - TOP_H - 14) }
 end
 
-local function start_edit(i)
-  local text = i and cur.n.paras[i] or ''
-  edit = { i = i, text = text, start = text }
+local start_edit
+
+-- the block being written at its end is nearly full: keep it (up to its last space or line
+-- break) and go on in a new block below with the rest, the keyboard staying up
+local function continue_block()
+  local e = edit
+  local t = e.text
+  local cut = t:match('^.*()[ \n]')
+  local head, carry = t, ''
+  if cut and cut > #t // 2 then head, carry = t:sub(1, cut - 1), t:sub(cut + 1) end
+  pcall(function() e.ed:close() end)
+  e.ed, edit = nil, nil
+  local last = put_block(e, head)
+  start_edit(nil, last, carry)
+end
+
+-- edit block i, or (i nil) a new block after block `after` (nil: at the end), starting with carry
+start_edit = function(i, after, carry)
+  local text = i and cur.n.paras[i] or (carry or '')
+  edit = { i = i, after = after, text = text, start = i and text or '', prev = text }
   screen = 'edit'
   msg = nil
   local ok, ed = pcall(function()
     return ctx.input:edit({
-      rect = edit_rect(), text = text, max_chars = B.MAX_PARA, multiline = true, enter = 'newline',
+      rect = edit_rect(), text = text, max_chars = B.MAX_BLOCK, multiline = true, enter = 'newline',
       placeholder = i and '' or 'Write here. Enter starts a new line.',
-      on_change = function(c, t) if edit then edit.text = t end; kit.refresh() end,
+      on_change = function(c, t)
+        local e = edit
+        if not e then return end
+        local appended = #t > #e.prev and t:sub(1, #e.prev) == e.prev
+        e.text, e.prev = t, t
+        if appended and (utf8.len(t) or 0) >= CONTINUE_AT then continue_block() end
+        kit.refresh()
+      end,
       on_end = function(c, t, how)
         -- Back ends the editing: keep the text if it changed, after asking
         if not edit then return end
@@ -652,7 +690,10 @@ local function start_edit(i)
       end,
     })
   end)
-  if ok and ed then edit.ed = ed
+  if ok and ed then
+    edit.ed = ed
+    -- carried-over text: the cursor goes to its end
+    if not i and text ~= '' then pcall(function() ed:set_text(text) end) end
   else
     edit, screen = nil, 'note'
     msg = 'The keyboard could not open.'
@@ -952,11 +993,11 @@ local function draw_edit(gg)
   local fs = kit.font('small')
   kit.button(gg, 12, 6, 110, 40, 'Cancel', { font = 'medium' })
   kit.button(gg, W - 122, 6, 110, 40, 'Save', { font = 'medium', line_width = 3 })
-  local what = edit.i and ('Paragraph ' .. edit.i .. ' of ' .. #cur.n.paras) or 'New paragraph'
+  local what = edit.i and ('Block ' .. edit.i .. ' of ' .. #cur.n.paras) or 'New block'
   gg:text((W - kit.width(fs, what)) // 2, 18, what, { font = fs })
   local r = edit_rect()
   gg:rect(r.x - 4, r.y - 4, r.w + 8, r.h + 8, { line_width = 1 })
-  local count = (utf8.len(edit.text) or #edit.text) .. '/' .. B.MAX_PARA .. '   Enter: new line'
+  local count = (utf8.len(edit.text) or #edit.text) .. '/' .. B.MAX_BLOCK .. '   Enter: new line'
   gg:text(r.x, r.y + r.h + 6, count, { font = fs })
 end
 

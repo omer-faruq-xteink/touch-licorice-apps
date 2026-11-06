@@ -6,8 +6,8 @@
 --   tags: weekly, market          optional
 --   edited: 2026-11-06 14:30      written by the app
 --   created: 2026-11-06 14:02     written by the app
---                                 a blank line, then the paragraphs, one blank line between them
---   First paragraph...
+--                                 a blank line, then the blocks, one blank line between them
+--   First block...
 --
 -- A file without these lines works too: its first line is the title, the rest the text. The
 -- folder cannot have subfolders (ctx.files), so a note's folder is the "folder:" line.
@@ -18,7 +18,7 @@
 
 local B = {}
 
-B.MAX_PARA = 512                  -- characters per paragraph (the docked keyboard's limit)
+B.MAX_BLOCK = 512                 -- characters per block (the docked keyboard's limit)
 B.MAX_FILE = 200000               -- bytes a note may grow to (a write takes at most 262144)
 local HEAD_BYTES = 4096
 
@@ -80,10 +80,10 @@ end
 local function trim(s) return (s:gsub('^%s+', ''):gsub('%s+$', '')) end
 B.trim = trim
 
--- a paragraph longer than the keyboard takes is cut at a line break or a space before the limit
+-- a block longer than the keyboard takes is cut at a line break or a space before the limit
 local function cut(p, out)
-  while utf8.len(p) and utf8.len(p) > B.MAX_PARA do
-    local stop = utf8.offset(p, B.MAX_PARA + 1) - 1
+  while utf8.len(p) and utf8.len(p) > B.MAX_BLOCK do
+    local stop = utf8.offset(p, B.MAX_BLOCK + 1) - 1
     local head = p:sub(1, stop)
     local at = head:match('^.*()\n') or head:match('^.*() ')
     if not at or at < stop // 2 then at = stop + 1 end
@@ -93,8 +93,8 @@ local function cut(p, out)
   if p ~= '' then out[#out + 1] = p end
 end
 
--- the paragraphs of a text: blank lines part them
-function B.paragraphs(text)
+-- the blocks of a text: blank lines part them
+function B.blocks(text)
   local out = {}
   text = (text or ''):gsub('\r', '')
   for raw in (text .. '\n\n'):gmatch('(.-)\n%s*\n') do
@@ -122,7 +122,7 @@ function B.parse(s)
     else break end
     rest = after
   end
-  n.paras = B.paragraphs(rest)
+  n.paras = B.blocks(rest)
   if n.title == '' then n.title = 'Untitled' end
   return n
 end

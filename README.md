@@ -52,7 +52,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
-| **Notebook** | plain text notes written paragraph by paragraph (Enter makes a new line), folders, tags, sorting and a search through all notes; kept as .txt files you can also edit on a computer |
+| **Notebook** | plain text notes written in blocks (Enter makes a new line; a long text goes on into the next block by itself), folders, tags, sorting and a search through all notes; kept as .txt files you can also edit on a computer |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
@@ -362,8 +362,8 @@ opens on a list of sources. [More](apps/wikipedia/README.md)
 
 ### Notebook
 
-Plain text notes, written a paragraph at a time with the docked keyboard: Enter makes a new line,
-Save and Cancel sit above it. Folders and tags, filtered from the list; sorted by last edited, title or
+Plain text notes, written in blocks of up to 512 characters (the docked keyboard's limit): Enter
+makes a new line, Save and Cancel sit above it, and a long text goes on into a new block by itself. Folders and tags, filtered from the list; sorted by last edited, title or
 date; Search looks through every note and shows the line it found. Each note is a `.txt` file in
 `AppFiles/notebook/`, readable and writable on a computer. [More](apps/notebook/README.md)
 
