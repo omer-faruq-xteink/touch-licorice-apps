@@ -1,7 +1,7 @@
 # Xteink Licorice mini apps
 
 Games and tools for the **Xteink X4 Pro** e-reader running its stock **XTOS Licorice** firmware,
-written in Lua for the firmware's built-in mini-app host. No custom firmware, no flashing: you
+written in Lua for the firmware's built-in mini-app host: **InkApps**, as Xteink calls them. No custom firmware, no flashing: you
 copy a package to the SD card and install it from the reader's own file browser. Most of them are
 also on Xteink's own app store ([xtapp-ai.xteink.cc](https://xtapp-ai.xteink.cc)), where updates
 arrive by themselves. The [app site](https://omer-faruq-xteink.github.io/touch-licorice-apps/) lists

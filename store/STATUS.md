@@ -75,5 +75,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `notebook` | Notebook | `notebook` | 1.0.1 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
 | `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
+| `timekeeper` | Timekeeper | `timekeeper` | 1.0.0 | in review | - | 2026-11-07 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 
-41 published, 9 in review or draft, 50 in all.
+41 published, 10 in review or draft, 51 in all.

@@ -148,9 +148,9 @@ def app_page(e, about):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{H(e["name"])} for the Xteink X4 Pro</title>
+<title>{H(e["name"])}: InkApp for the Xteink X4 Pro</title>
 <meta name="description" content="{H(e["plain"])}">
-<meta property="og:title" content="{H(e["name"])} for the Xteink X4 Pro">
+<meta property="og:title" content="{H(e["name"])}: InkApp for the Xteink X4 Pro">
 <meta property="og:description" content="{H(e["plain"])}">
 <meta property="og:image" content="{og_img}">
 <meta property="og:url" content="{SITE_URL}apps/{e["id"]}/">
@@ -163,7 +163,7 @@ def app_page(e, about):
     <div class="appicon big"><img src="icon.png" alt=""></div>
     <div>
       <h1>{H(e["name"])}</h1>
-      <p class="sub">{H(e["category_name"])} &middot; for the Xteink X4 Pro</p>
+      <p class="sub">{H(e["category_name"])} &middot; InkApp for the Xteink X4 Pro</p>
       <div class="acts">
         <button type="button" class="get primary big copy" data-app="{H(e["id"])}" hidden>Copy to reader</button>
         <a class="get big" href="../../packages/{H(e["file"])}" download>{DOWNLOAD} Download</a>
