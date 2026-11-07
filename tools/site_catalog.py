@@ -191,7 +191,7 @@ def app_page(e, about):
       <p class="sub">{H(e["category_name"])} &middot; InkApp for the Xteink X4 Pro</p>
       <div class="acts">
         <button type="button" class="get primary big copy" data-app="{H(e["id"])}" hidden>Copy to reader</button>
-        <a class="get big" href="../../packages/{H(e["file"])}" download>{DOWNLOAD} Download</a>
+        <a class="get big" data-app="{H(e["id"])}" href="../../packages/{H(e["file"])}" download>{DOWNLOAD} Download</a>
         <span class="status" data-app="{H(e["id"])}"></span>
       </div>
     </div>

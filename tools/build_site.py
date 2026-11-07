@@ -134,6 +134,63 @@ def add_analytics(out):
     return n
 
 
+# a download counted by a path of its own (site.js count()): apps/<id>/got/ for each app, got/ for
+# any other file. The beacon waits for the first paint, since Cloudflare drops views with none;
+# in a 1-pixel frame the text moves into the corner the frame shows, so that paint happens.
+COUNTER = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Download counted</title>
+<style>
+  body { font: 16px/1.6 system-ui, sans-serif; margin: 0; padding: 2rem; }
+  @media (max-width: 8px) { body { padding: 0; } }
+</style>
+</head>
+<body>
+<p>This page counts downloads{what}; nothing about who downloaded is kept.</p>
+<p><a href="{home}">{back}</a></p>
+<script>
+  (function () {
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      var s = document.createElement('script');
+      s.type = 'module';
+      s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+      s.setAttribute('data-cf-beacon', '{beacon}');
+      document.body.appendChild(s);
+    }
+    try {
+      new PerformanceObserver(function (list) {
+        if (list.getEntriesByName('first-contentful-paint').length) start();
+      }).observe({ type: 'paint', buffered: true });
+    } catch (err) { start(); }
+    setTimeout(start, 3000);
+  })();
+</script>
+</body>
+</html>
+"""
+
+
+def counter_pages(out):
+    """apps/<id>/got/ for every app page, and got/; the count of pages"""
+    beacon = re.search(r"data-cf-beacon='([^']+)'", BEACON).group(1)
+    pages = [(os.path.join(out, 'got'), '', '../', 'Touch Licorice apps')]
+    for page in sorted(glob.glob(os.path.join(out, 'apps', '*', 'index.html'))):
+        d = os.path.dirname(page)
+        pages.append((os.path.join(d, 'got'), ' of ' + os.path.basename(d), '../', 'Back to the app'))
+    for d, what, home, back in pages:
+        os.makedirs(d, exist_ok=True)
+        open(os.path.join(d, 'index.html'), 'w', encoding='utf-8', newline='\n').write(
+            COUNTER.replace('{what}', what).replace('{home}', home).replace('{back}', back).replace('{beacon}', beacon))
+    return len(pages)
+
+
 def newest_release():
     """the newest release/vX.Y.Z folder, the local stand-in for the latest release"""
     found = glob.glob(os.path.join(ROOT, 'release', 'v*'))
@@ -156,11 +213,12 @@ def main():
     # COMMUNITY_FIXTURES: sample inkapp.json files instead of GitHub's search (tests, previews)
     community = site_community.build(out, os.environ.get('COMMUNITY_FIXTURES'))
     stamp_assets(out)
+    counters = counter_pages(out)
     pages = add_analytics(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
           f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
-          f'{community} community apps, analytics on {pages} pages')
+          f'{community} community apps, analytics on {pages} pages, {counters} download counters')
 
 
 if __name__ == '__main__':

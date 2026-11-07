@@ -4,7 +4,7 @@
 // package, Install. Browsers cannot reach the reader by USB themselves (WebUSB leaves storage alone),
 // so without the API a page only offers the download.
 
-import { esc } from './site.js';
+import { esc, count } from './site.js';
 
 const USB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
   'stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9 6h6M9 9.5h6M9 13h4"/>' +
@@ -187,6 +187,7 @@ export async function readerPanel(el, root, ids, catalog) {
         msg.className = 'msg';
         msg.textContent = `Copying ${a.file}…`;
         await card.copy(root, a);
+        count(root, `apps/${a.id}/got/`);
         copied.add(a.id);
         sync();
       }

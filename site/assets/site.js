@@ -44,6 +44,32 @@ export function chrome(id) {
     'Xteink X4 Pro. Everything runs in your browser: your files are not uploaded anywhere. ' +
     `Made an app? <a href="${root}developers/">Add it to the list</a>.</div>`;
   document.body.append(footer);
+  // downloads: a package counts for its app, any other file (packs, feed lists, dictionaries) for got/
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    const pkg = href.match(/(?:^|\/)packages\/([\w-]+)\.xtapp$/);
+    if (pkg) count(root, `apps/${a.dataset.app || pkg[1]}/got/`);
+    else if (a.hasAttribute('download') || /\.(zip|opml)$/.test(href)) count(root, 'got/');
+  });
+}
+
+// Count a download without telling anything about it: Cloudflare's beacon keeps only a page's
+// path (it drops the query), so a hidden 1-pixel frame loads a page of its own, apps/<id>/got/,
+// whose beacon reports one view of that path. Built by tools/build_site.py; never in the way.
+export function count(root, path) {
+  try {
+    const f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true');
+    f.setAttribute('tabindex', '-1');
+    f.setAttribute('title', '');
+    f.setAttribute('referrerpolicy', 'no-referrer');
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0.01;pointer-events:none';
+    f.src = root + path;         // set before it is added: no history entry
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 15000);
+  } catch (err) { /* counting never stops a download */ }
 }
 
 // a drop zone: el is a .drop element holding an <input type=file>
