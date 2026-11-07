@@ -116,6 +116,24 @@ def stamp_assets(out):
     return v
 
 
+# Cloudflare Web Analytics (no cookies): page views, put into every page as it is built
+BEACON = ("<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' "
+          "data-cf-beacon='{\"token\": \"3dfe5ef58dd642deb0588cb81fc6f979\"}'></script><!-- End Cloudflare Web Analytics -->")
+
+
+def add_analytics(out):
+    """the beacon before </body> of every page; the count of pages"""
+    n = 0
+    for path in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
+        s = open(path, encoding='utf-8').read()
+        if 'cloudflareinsights.com' in s or '</body>' not in s:
+            continue
+        i = s.rindex('</body>')
+        open(path, 'w', encoding='utf-8', newline='\n').write(s[:i] + BEACON + '\n' + s[i:])
+        n += 1
+    return n
+
+
 def newest_release():
     """the newest release/vX.Y.Z folder, the local stand-in for the latest release"""
     found = glob.glob(os.path.join(ROOT, 'release', 'v*'))
@@ -138,10 +156,11 @@ def main():
     # COMMUNITY_FIXTURES: sample inkapp.json files instead of GitHub's search (tests, previews)
     community = site_community.build(out, os.environ.get('COMMUNITY_FIXTURES'))
     stamp_assets(out)
+    pages = add_analytics(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
           f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
-          f'{community} community apps')
+          f'{community} community apps, analytics on {pages} pages')
 
 
 if __name__ == '__main__':
