@@ -11,9 +11,12 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
    as a different app without the saved data.
 3. Studio: the listing reads the package from the app's own project (Studio project id below), and
    Import backup always makes a NEW project (found on Anki, 2026-11-04). So open the app's project
-   (My projects > the app > Studio), replace the changed files in the editor (index.lua,
-   lockscreen.lua, manifest.json from the export or the pushed repo), save each file, then the
-   top Save (the cloud copy). Data files only when they changed.
+   (My projects > the app > Studio) and either use More > Overwrite current project with the
+   export (replaces the files and keeps the listing; Bookworm 1.1.0, 2026-11-08), or replace the
+   changed files in the editor (index.lua, lockscreen.lua, manifest.json from the export or the
+   pushed repo) and save each file. Then the top Save (the cloud copy). Data files only when they
+   changed. A later cloud save may raise the manifest's version by itself (1.1.0 became 1.1.1):
+   check manifest.json and set it back if it does.
 4. Developer Center > the app > Release new version: a higher release version (the field comes
    filled with the old one: replace it), release notes, new screenshots if the screens changed.
    Orientation can come back empty (Sky Tonight 1.0.1): set it, or the submit does nothing.
