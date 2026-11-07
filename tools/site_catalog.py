@@ -74,6 +74,7 @@ def inline(md):
     s = H(md, quote=False)
     s = re.sub(r'`([^`]+)`', r'<code>\1</code>', s)
     s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)
+    s = re.sub(r'(?<![\w*])\*([^*\s][^*]*?)\*(?![\w*])', r'<em>\1</em>', s)
     s = re.sub(r'\[([^\]]+)\]\(([^)\s]+)\)', lambda m: f'<a href="{H(m.group(2))}">{m.group(1)}</a>', s)
     return s
 
@@ -82,8 +83,13 @@ def plain(md):
     return re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', md).replace('**', '').replace('`', '')
 
 
+# sections of an app's README shown on its page after the introduction (set-up a user can't find
+# on the reader)
+SECTIONS = {'calendar': ['Adding a calendar']}
+
+
 def intro(app):
-    """the app README's text before its first section, as HTML paragraphs and lists"""
+    """the app README's text before its first section, and its SECTIONS, as HTML"""
     path = os.path.join(ROOT, 'apps', app, 'README.md')
     if not os.path.exists(path):
         return ''
@@ -93,7 +99,17 @@ def intro(app):
         if line.startswith('## '):
             break
         body.append(line)
-    out, para, items = [], [], []
+    out = [render(body)]
+    for title in SECTIONS.get(app, []):
+        start = lines.index('## ' + title) + 1
+        end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
+        out.append(f'<h3>{H(title)}</h3>' + render(lines[start:end]))
+    return '\n'.join(out)
+
+
+def render(body):
+    """lines of markdown: paragraphs, lists and ``` blocks, as HTML"""
+    out, para, items, code = [], [], [], None
 
     def flush():
         if para and not para[0].startswith('**Needs firmware'):    # the page has its own notice
@@ -104,7 +120,16 @@ def intro(app):
             items.clear()
     for line in body:
         t = line.strip()
-        if not t:
+        if t.startswith('```'):
+            if code is None:
+                flush()
+                code = []
+            else:
+                out.append('<pre><code>' + H('\n'.join(code)) + '</code></pre>')
+                code = None
+        elif code is not None:
+            code.append(t)
+        elif not t:
             flush()
         elif t.startswith('- '):
             if para:

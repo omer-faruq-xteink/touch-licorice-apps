@@ -27,7 +27,15 @@ offer a similar "publish" or "subscribe" address; `webcal://` works too.
 
   A line with just the address also works (the host becomes its name). `off` hides it.
 
-The address is a password to your calendar: don't share `calendars.txt`.
+Google's public holiday calendars work the same way, for example Turkey's:
+
+```
+Holidays|https://calendar.google.com/calendar/ical/tr.turkish%23holiday%40group.v.calendar.google.com/public/basic.ics|on
+```
+
+(other countries: `en.usa`, `en.uk`, `de.german`, … in place of `tr.turkish`).
+
+The secret address of your own calendar is a password to it: don't share `calendars.txt`.
 
 ## My calendar: events added on the reader
 
