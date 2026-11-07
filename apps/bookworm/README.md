@@ -19,6 +19,13 @@ reader, and it does not see the text of your books.
   helmet...), jokes about it and reviews those books in kind.
 - **It talks** about the book it is eating, your day's reading, books you finish (it reviews
   them), the stage it reached. Tap it to pet it.
+- **It has company** (1.1.0). Under **Family**, an **ink octopus** and a **shelf dragon** can
+  share the reader with the bookworm, one awake at a time. The octopus's egg comes with the first
+  hatching, the dragon's with the first finished book; tap one to hatch or wake it and the one
+  awake goes to sleep. A sleeping one does not eat, grow or get hungry: the reading done while it
+  slept is not its food. Each has its own drawings, its own voice for everything it says (the
+  octopus a dreamy scribbler with eight arms and three hearts, the dragon a proud hoarder of
+  books who never breathes fire near the shelf), its own names and its own line of generations.
 - **Diary**: the last two weeks, a bar a day with the book you read most. **Awards**: twelve
   milestones (hatching, books finished, streaks, a long sitting, hours, night owl, three books in a
   week, a new generation). **More**: rename it, make it the sleep screen, how it works.
@@ -26,8 +33,10 @@ reader, and it does not see the text of your books.
   it brings itself up to date with the reading done before the reader slept, and wakes once an
   hour (the longest the reader allows).
 
-An original character and drawings (circles and arcs, no image files), lines written for it.
-Files: `src/pet.lua` (its life: stages, hunger, character, awards, generations), `src/taste.lua` (guessing the kind of book), `src/lines.lua`
-(what it says), `src/art.lua` (its pictures), `src/main.lua` (on `tools/gamekit`), `src/lock/lock.lua`
+Original characters and drawings (circles, arcs and strokes, no image files), lines written for
+them. Files: `src/pet.lua` (their life: stages, hunger, character, awards, generations, the
+brood), `src/taste.lua` (guessing the kind of book), `src/lines.lua` (what the bookworm says;
+`lines_ink.lua` and `lines_dragon.lua` the others, loaded only while that one is awake),
+`src/art.lua` (their pictures), `src/main.lua` (on `tools/gamekit`), `src/lock/lock.lua`
 (the sleep screen), `bundle.py` (index.lua and lockscreen.lua), `test_bookworm.py`
 (`python -I apps/bookworm/test_bookworm.py`, with a stand-in for the reading statistics).

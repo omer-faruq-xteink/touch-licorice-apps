@@ -1,9 +1,9 @@
 {
   "app_id": "bookworm",
   "display_name": "Bookworm",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "omer-faruq",
-  "description": "A little bookworm that lives on your reading: it hatches, grows and gets hungry with the time you spend in books, and sleeps on your sleep screen.",
+  "description": "A little bookworm that lives on your reading: it hatches, grows and gets hungry with the time you spend in books, and sleeps on your sleep screen. An ink octopus and a shelf dragon can join it.",
   "entry": "index.lua",
   "api": "2.9",
   "requires": ["reader"],

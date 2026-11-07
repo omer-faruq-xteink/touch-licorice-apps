@@ -1,5 +1,5 @@
 """Bundle Bookworm: index.lua (tools/gamekit/gamekit.lua + src/*.lua, main.lua last) and
-lockscreen.lua (src/taste.lua, src/pet.lua, src/lines.lua and src/art.lua behind a require, with P, L, A global,
+lockscreen.lua (src/taste.lua, src/pet.lua, src/lines*.lua and src/art.lua behind a require, with P, L, A global,
 then src/lock/lock.lua;
 the sleep screen has no gamekit). Each entry loads on its own.
 
@@ -25,7 +25,7 @@ local function require(n)
   return v
 end
 ''')
-    for name in ('taste', 'pet', 'lines', 'art'):
+    for name in ('taste', 'pet', 'lines', 'lines_ink', 'lines_dragon', 'art'):
         body = open(os.path.join(HERE, 'src', name + '.lua'), encoding='utf-8').read().rstrip('\n')
         parts.append(f"\n__mods['{name}'] = function()\n{body}\nend\n")
     parts.append("\nP, L, A = require('pet'), require('lines'), require('art')\n")

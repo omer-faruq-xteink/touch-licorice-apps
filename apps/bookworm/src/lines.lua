@@ -60,8 +60,8 @@ L.HATCHED = {
   'Out of the egg and straight into {title}.',
 }
 L.GREW = {
-  'I grew! I am a {other} now.',
-  'Look at me: a {other}. All that reading.',
+  'I grew! I am {other} now.',
+  'Look at me: {other}. All that reading.',
 }
 L.FINISHED = {
   'We finished {other}! Four crumbs out of five.',
@@ -73,6 +73,11 @@ L.MOTH = {
   '{other} spun a cocoon and flew off as a moth. I am the new one.',
   'My mother {other} left me this shelf. I will look after it.',
 }
+L.WOKE = {
+  'Oh! I was dreaming of crumbs. What did I miss?',
+  'Awake again. Is that a new book?',
+}
+L.HIDE_NOTE = { '(hiding in a book until you read again)' }
 
 L.TRAIT = {
   owl = { 'Reading by moonlight again? Same.', 'The best pages are after ten.' },
@@ -140,6 +145,16 @@ L.DREAM = {
 }
 L.DREAM_HUNGRY = { 'dreaming of snacks…', 'dreaming of a very long book…' }
 L.DREAM_EGG = { 'an egg, resting' }
+
+-- the lines of a kind of creature (pet.lua SPECIES): the bookworm's are these, the others' are a
+-- module each (lines_<key>.lua), loaded only when that one is awake; anything they lack is the
+-- bookworm's
+local voices = {}
+function L.voice(key)
+  if not key or key == 'worm' then return L end
+  if not voices[key] then voices[key] = setmetatable(require('lines_' .. key), { __index = L }) end
+  return voices[key]
+end
 
 local function short(s, n)
   s = tostring(s or '')

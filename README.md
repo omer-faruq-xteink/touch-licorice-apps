@@ -51,7 +51,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; portrait or landscape; needs firmware 2.18 |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; needs firmware 2.18 |
-| **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen |
+| **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen; an ink octopus and a shelf dragon can join it |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Timekeeper** | timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer for exercise, counters and a log of focus time; whole minutes to save power, a flash when time is up; can be the lock screen |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
@@ -367,7 +367,8 @@ as the hours add up, and at 100 hours leaves an egg for the next generation. It 
 without a book, takes after how you read (night owl, marathon reader, butterfly...) and what you read (a candle
 for a horror fan, a magnifier for mysteries, a wizard's hat for fantasy...), talks about
 the book it is eating, keeps a diary and awards, and sleeps on the sleep screen dreaming of your
-book. [More](apps/bookworm/README.md)
+book. An ink octopus and a shelf dragon can join it, one awake at a time, each with its own
+drawings and voice. [More](apps/bookworm/README.md)
 
 ### Wikipedia
 

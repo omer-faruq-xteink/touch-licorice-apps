@@ -186,6 +186,95 @@ g.tap_label('Back')
 g.restart()
 assert S().gen == 2 and len(S().lineage) == 1
 
+# the brood: a new reader has only the bookworm; the octopus's egg comes with the first hatching,
+# the dragon's with the first finished book (both earned above)
+brood = lambda expr='ctx.state': L.eval(f'(function() local o = {{}}; for _, c in ipairs(__TEST.api.P.brood({expr})) do o[#o + 1] = c.state end; return table.concat(o, " ") end)()')
+assert brood('{ bw = __TEST.api.P.new(__TEST.api.P.read_data(ctx.reader, NOW)) }') == 'awake locked locked'
+assert brood() == 'awake egg egg', brood()
+CARD = lambda k: (12 + (k - 1) * 154 + 70, 200)          # the middle of the k-th card on Family
+worm_name = S().name
+g.tap_label('Family')
+g.no_err()
+g.tap(*CARD(2))
+assert 'Hatch an ink octopus egg?' in texts(), texts()
+g.tap_label('Hatch')
+assert S().species == 'ink' and not S().hatched and A().screen() == 'home', S().species
+assert S().name in list(P.SP.ink.names.values()) and A().msg() == worm_name + ' is asleep now.', (S().name, A().msg())
+assert L.eval('ctx.state.brood.worm.slept_total') is not None and brood() == 'asleep awake egg', brood()
+assert any(w in A().line() for w in ('inky', 'sloshes', 'blot')), A().line()
+assert g.commands() < 900
+# it hatches on twelve minutes, in its own voice, and has its own pats
+read(12, day=29, title='Moby Dick', book='b3')
+assert S().hatched and V().species == 'ink' and 'Moby Dick' in A().line(), A().line()
+g.tap(240, 260)
+assert A().line() in list(A().L.voice('ink').PET.values()), A().line()
+g.no_err()
+# the bookworm wakes: what the octopus ate is not its food, and it says it woke
+g.tap_label('Family')
+g.tap(*CARD(1))
+assert f'Wake {worm_name}?' in texts(), texts()
+g.tap_label('Wake')
+assert S().species == 'worm' and S().name == worm_name and not S().hatched and V().food < 60, (S().name, V().food)
+assert any(w in A().line() for w in ('crumbs', 'new book')), A().line()
+# the dragon: it grows, and says so with the right article
+g.tap_label('Family')
+g.tap(*CARD(3))
+assert 'Hatch a shelf dragon egg?' in texts(), texts()
+g.tap_label('Hatch')
+assert S().species == 'dragon' and any(w in A().line() for w in ('scales', 'guarding', 'smoke')), A().line()
+read(130, day=29)
+assert V().stage_key == 'young' and 'a young shelf dragon' in A().line(), (V().stage_key, A().line())
+assert 'to grown' in texts() and g.commands() < 900, texts()
+g.tap_label('Family')
+assert brood() == 'asleep asleep awake', brood()
+g.no_err()
+assert g.commands() < 900, g.commands()
+g.tap_label('Back')
+# a locked kind says what brings its egg
+L.execute('saved_brood = ctx.state.brood; ctx.state.brood = {}; for _, a in ipairs({"hatch", "book1"}) do ctx.state.bw.awards[a] = nil end')
+g.tap_label('Family')
+g.tap(*CARD(2))
+assert 'comes with the first hatching' in texts(), texts()
+g.tap_label('Close')
+L.execute('ctx.state.brood = saved_brood; ctx.state.bw.awards.hatch, ctx.state.bw.awards.book1 = 1, 1')
+g.tap_label('Back')
+# back to the bookworm, and the brood is kept over a restart
+g.tap_label('Family'); g.tap(*CARD(1)); g.tap_label('Wake')
+assert S().species == 'worm' and not S().hatched
+g.restart()
+assert brood() == 'awake asleep asleep' and S().gen == 2, brood()
+
+# every kind at every stage, with every taste and mood, its egg, hiding and asleep: drawn with
+# whole numbers and point lists the host takes
+L.execute('''
+  local function int(v, what) assert(math.type(v) == 'integer', what .. ' not a whole number: ' .. tostring(v)) end
+  chk = setmetatable({}, { __index = function(_, k) return function(_, ...)
+    local a = { ... }
+    if k == 'polyline' or k == 'polygon' then
+      local n = #a[1]
+      assert(n % 2 == 0 and n // 2 >= (k == 'polyline' and 2 or 3) and n // 2 <= 128, k .. ' with ' .. n)
+      for _, v in ipairs(a[1]) do int(v, k) end
+    elseif k == 'arc' then for i = 1, 5 do int(a[i], 'arc') end
+    elseif k == 'circle' then for i = 1, 3 do int(a[i], 'circle') end
+    elseif k == 'line' or k == 'rect' then for i = 1, 4 do int(a[i], k) end end
+  end end })
+  local A = __TEST.api.A
+  for _, sp in ipairs({ 'worm', 'ink', 'dragon' }) do
+    for _, st in ipairs({ 'hatchling', 'young', 'grown', 'elder' }) do
+      for _, t in ipairs({ false, 'horror', 'mystery', 'romance', 'fantasy', 'scifi', 'adventure', 'classic', 'nonfiction' }) do
+        for _, m in ipairs({ 'full', 'peckish', 'hungry', 'sulky', 'pet', 'asleep' }) do
+          local hx, hy = A.pose(sp, st, 240, 330)
+          int(hx, 'pose'); int(hy, 'pose')
+          A.creature(chk, sp, st, hx, hy, m, 1, t or nil)
+        end
+      end
+      A.asleep(chk, sp, st, 240, 520, 'fantasy')
+    end
+    A.egg(chk, 240, 330, 4, sp); A.egg(chk, 240, 330, 0, sp, 60); A.hiding(chk, 240, 330, sp)
+  end
+  A.egg(chk, 240, 330, 0, 'locked', 60)
+''')
+
 # the sleep screen: its own entry (lockscreen.lua) loaded over the app, with the same saved state
 # and the reading done since; it sets the hourly wake, draws the bookworm and saves the state
 lock = L
@@ -208,6 +297,11 @@ assert S().hatched, 'the reading before sleep hatched the new egg'
 assert int(lock.eval('saves')) == 1 and int(lock.eval('commands')) < 900, (lock.eval('saves'), lock.eval('commands'))
 # a book not paginated yet has no page number: no dream of "page …"
 lock.execute('R.current.page = nil; for h = 0, 23 do NOW.hour = h; said = {}; on_draw(ctx, rec) ; for _, s in ipairs(said) do assert(not tostring(s):find("page"), s) end end')
+# the sleep screen shows whichever creature is awake, dreaming in its own words
+lock.execute('local P = __TEST.api.P; P.switch(ctx.state, "dragon", P.read_data(ctx.reader, NOW)); said = {}; commands = 0; on_draw(ctx, rec)')
+drawn = [str(v) for v in lock.eval('said').values()]
+assert any('young shelf dragon' in s for s in drawn) and int(lock.eval('commands')) < 900, drawn
+lock.execute('local P = __TEST.api.P; P.switch(ctx.state, "worm", P.read_data(ctx.reader, NOW))')
 
 # a reader that keeps its statistics to itself
 L.execute('ctx.reader = nil; ctx.state = {}')

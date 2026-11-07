@@ -185,6 +185,35 @@ local NAMES = { 'Pip', 'Moss', 'Quill', 'Biscuit', 'Inky', 'Nib', 'Fern', 'Waffl
                 'Juniper', 'Dot', 'Margo', 'Comma', 'Pebble', 'Toffee', 'Wren', 'Orla', 'Basil', 'Clover', 'Mango',
                 'Ziggy', 'Noodle', 'Hazel', 'Otto', 'Sprout', 'Twig', 'Lumen', 'Folio' }
 
+-- the kinds of creature (the brood): one awake at a time, the others asleep in ctx.state.brood.
+-- The bookworm comes first; the others' eggs come with an award (unlock) of any of them.
+P.SPECIES = {
+  { key = 'worm', name = 'Bookworm', kind = 'bookworm', names = NAMES,
+    stages = { 'egg', 'hatchling', 'young bookworm', 'grown bookworm', 'elder bookworm' },
+    leave = 'cocoon', left = 'flew off as a moth',
+    ends = 'spins a cocoon and flies off as a moth' },
+  { key = 'ink', name = 'Ink octopus', kind = 'ink octopus', unlock = 'hatch', hint = 'comes with the first hatching',
+    card = 'Egg after the first hatch',
+    names = { 'Inka', 'Squiggle', 'Blot', 'Sepia', 'Marlow', 'Octavia', 'Smudge', 'Ripple', 'Nautilus', 'Cuttle',
+              'Splotch', 'Wisp', 'Coral', 'Doodle', 'Indigo', 'Quilla', 'Drift', 'Murex' },
+    stages = { 'egg', 'hatchling', 'young ink octopus', 'grown ink octopus', 'elder ink octopus' },
+    leave = 'the sea', left = 'swam off to sea',
+    ends = 'slips off into the sea of stories' },
+  { key = 'dragon', name = 'Shelf dragon', kind = 'shelf dragon', unlock = 'book1', hint = 'comes with the first finished book',
+    card = 'Egg after a finished book',
+    names = { 'Ember', 'Cinder', 'Gilda', 'Tinder', 'Flint', 'Scorch', 'Brass', 'Penny', 'Bellows', 'Rumble',
+              'Sizzle', 'Ducat', 'Marigold', 'Sootling', 'Copper', 'Garnet', 'Nugget', 'Smolder' },
+    stages = { 'egg', 'hatchling', 'young shelf dragon', 'grown shelf dragon', 'elder shelf dragon' },
+    leave = 'its own hoard', left = 'flew off to its own hoard',
+    ends = 'flies off to start a hoard of its own' },
+}
+P.SP = {}
+for _, sp in ipairs(P.SPECIES) do P.SP[sp.key] = sp end
+function P.species_of(st)
+  local k = st and st.species or 'worm'
+  return P.SP[k] and k or 'worm'
+end
+
 ------------------------------------------------------------------ dates
 
 -- days since 1970-01-01 <-> a civil date (Howard Hinnant's algorithms)
@@ -263,7 +292,8 @@ end
 
 local function new_egg(st, data, random)
   random = random or math.random
-  st.name = NAMES[random(#NAMES)]
+  local names = P.SP[P.species_of(st)].names
+  st.name = names[random(#names)]
   st.gen = (st.gen or 0) + 1
   st.born = data.today
   st.base = data.total
@@ -275,8 +305,8 @@ local function new_egg(st, data, random)
 end
 
 -- a fresh state: the first egg, the books already finished not counting as food
-function P.new(data, random)
-  local st = { v = 1, awards = {}, lineage = {}, seen = {}, finished = 0, tod = { night = 0, morning = 0, day = 0, evening = 0 },
+function P.new(data, random, species)
+  local st = { v = 1, species = species or 'worm', awards = {}, lineage = {}, seen = {}, finished = 0, tod = { night = 0, morning = 0, day = 0, evening = 0 },
                first_total = data.total, last_total = data.total, events = {}, tasted = {} }
   for _, b in ipairs(data.books) do if b.finished and b.id then st.seen[b.id] = true end end
   new_egg(st, data, random)
@@ -371,7 +401,7 @@ P.AWARDS = {
   { id = 'h100', name = 'A hundred hours', text = 'Fed a hundred hours of reading.' },
   { id = 'owl', name = 'Night owl', text = 'Read mostly at night.' },
   { id = 'shelf', name = 'Three at once', text = 'Read three books in one week.' },
-  { id = 'moth', name = 'A new generation', text = 'A bookworm became a moth and left an egg.' },
+  { id = 'moth', name = 'A new generation', text = 'Grew up, left at ' .. P.COCOON_HOURS .. ' hours and laid an egg.' },
 }
 
 -- its taste: the reading of each book on each day (book_days), by the book's guessed kind, added
@@ -463,7 +493,10 @@ function P.update(st, data, random)
     food = 0
   end
   local stage = stage_of(st, food)
-  if stage > (st.stage or 1) and stage > 2 then event(st, 'grew', P.STAGES[stage].name, today) end
+  if stage > (st.stage or 1) and stage > 2 then
+    local nm = P.SP[P.species_of(st)].stages[stage]             -- "a young …", "an elder …"
+    event(st, 'grew', (nm:match('^[aeiou]') and 'an ' or 'a ') .. nm, today)
+  end
   st.stage = stage
   -- awards
   if st.finished >= 1 then earn(st, 'book1', today, earned) end
@@ -479,17 +512,73 @@ function P.update(st, data, random)
   if tr == 'owl' then earn(st, 'owl', today, earned) end
   if tr == 'butterfly' then earn(st, 'shelf', today, earned) end
   local taste = st.hatched and P.taste_of(st) or nil
-  local stg = P.STAGES[stage]
+  local stg, sp = P.STAGES[stage], P.SP[P.species_of(st)]
   local nexth = P.STAGES[stage + 1] and P.STAGES[stage + 1].hours or P.COCOON_HOURS
   return {
-    stage = stage, stage_key = stg.key, stage_name = stg.name, food = food,
+    stage = stage, stage_key = stg.key, stage_name = sp.stages[stage], food = food, species = sp.key,
     to_next = st.hatched and math.max(0, nexth * 3600 - food) or math.max(0, P.HATCH_SEC - food),
-    next_name = st.hatched and (P.STAGES[stage + 1] and P.STAGES[stage + 1].name or 'cocoon') or 'hatch',
+    next_name = st.hatched and (P.STAGES[stage + 1] and P.STAGES[stage + 1].key or sp.leave) or 'hatch',
     hunger = hunger(st, data), trait = tr, trait_name = tr and P.TRAITS[tr] or nil,
     taste = taste, taste_name = taste and T.NAMES[taste] or nil,
     book = data.current, today_sec = data.today_sec, streak = data.streak, earned = earned,
     reading = data.ok,
   }
+end
+
+------------------------------------------------------------------ the brood
+
+-- an award of any creature of the brood (the other kinds' eggs come with one)
+function P.has_award(root, id)
+  if root.bw and root.bw.awards and root.bw.awards[id] then return true end
+  for _, c in pairs(root.brood or {}) do if c.awards and c.awards[id] then return true end end
+  return false
+end
+
+-- each kind: { sp, state = 'awake' | 'asleep' | 'egg' (ready to hatch) | 'locked', st }
+function P.brood(root)
+  local out, awake = {}, P.species_of(root.bw)
+  for _, kind in ipairs(P.SPECIES) do
+    local c = (root.brood or {})[kind.key]
+    local state
+    if kind.key == awake then state, c = 'awake', root.bw
+    elseif c then state = 'asleep'
+    elseif not kind.unlock or P.has_award(root, kind.unlock) then state = 'egg'
+    else state = 'locked' end
+    out[#out + 1] = { sp = kind, state = state, st = c }
+  end
+  return out
+end
+
+-- a creature waking: what was read while it slept is not its food, nor its time of day, taste or
+-- finished books; it says it woke. A sleeping one does not eat, grow or get older.
+function P.wake(st, data)
+  local shift = math.max(0, data.total - (st.slept_total or data.total))
+  st.base = (st.base or 0) + shift
+  st.first_total = (st.first_total or 0) + shift
+  st.last_total = data.total
+  st.slept_total = nil
+  st.seen = st.seen or {}
+  for _, b in ipairs(data.books) do if b.finished and b.id then st.seen[b.id] = true end end
+  st.tasted = {}
+  for _, r in ipairs(data.book_days) do
+    if r.date then st.tasted[r.date .. '|' .. tostring(r.id or r.title or '')] = tonumber(r.sec) or 0 end
+  end
+  event(st, 'woke', nil, data.today)
+end
+
+-- the creature of kind key wakes (or hatches from a new egg) and the awake one goes to sleep
+function P.switch(root, key, data, random)
+  root.brood = root.brood or {}
+  local cur = root.bw
+  local ck = P.species_of(cur)
+  if ck == key or not P.SP[key] then return cur end
+  cur.slept_total = data.total
+  root.brood[ck] = cur
+  local nxt = root.brood[key]
+  root.brood[key] = nil
+  if nxt then P.wake(nxt, data) else nxt = P.new(data, random, key) end
+  root.bw = nxt
+  return nxt
 end
 
 -- the reading days of the last two weeks, newest first: { day, sec, title }
@@ -573,8 +662,8 @@ L.HATCHED = {
   'Out of the egg and straight into {title}.',
 }
 L.GREW = {
-  'I grew! I am a {other} now.',
-  'Look at me: a {other}. All that reading.',
+  'I grew! I am {other} now.',
+  'Look at me: {other}. All that reading.',
 }
 L.FINISHED = {
   'We finished {other}! Four crumbs out of five.',
@@ -586,6 +675,11 @@ L.MOTH = {
   '{other} spun a cocoon and flew off as a moth. I am the new one.',
   'My mother {other} left me this shelf. I will look after it.',
 }
+L.WOKE = {
+  'Oh! I was dreaming of crumbs. What did I miss?',
+  'Awake again. Is that a new book?',
+}
+L.HIDE_NOTE = { '(hiding in a book until you read again)' }
 
 L.TRAIT = {
   owl = { 'Reading by moonlight again? Same.', 'The best pages are after ten.' },
@@ -654,6 +748,16 @@ L.DREAM = {
 L.DREAM_HUNGRY = { 'dreaming of snacks…', 'dreaming of a very long book…' }
 L.DREAM_EGG = { 'an egg, resting' }
 
+-- the lines of a kind of creature (pet.lua SPECIES): the bookworm's are these, the others' are a
+-- module each (lines_<key>.lua), loaded only when that one is awake; anything they lack is the
+-- bookworm's
+local voices = {}
+function L.voice(key)
+  if not key or key == 'worm' then return L end
+  if not voices[key] then voices[key] = setmetatable(require('lines_' .. key), { __index = L }) end
+  return voices[key]
+end
+
 local function short(s, n)
   s = tostring(s or '')
   if utf8.len(s) and utf8.len(s) > n then
@@ -694,21 +798,295 @@ end
 return L
 end
 
+__mods['lines_ink'] = function()
+-- What the ink octopus says: a dreamy scribbler with eight arms and three hearts, always drafting
+-- a novel it never finishes, taking notes on everything you read. The keys are those of
+-- lines.lua (the bookworm's); L.voice('ink') loads this only while the octopus is awake.
+
+return {
+  EGG = {
+    'An egg with inky swirls. Something inside is drafting its first sentence.',
+    'The egg sloshes softly. Ten minutes of reading should do it.',
+    'A little blot of ink seeped out when you opened a book.',
+  },
+  FULL = {
+    'Eight arms, and every one of them holding {title}.',
+    '{pct}% of {title}. I underlined the good parts. In ink.',
+    'Today was {min} minutes of {title}. I took notes.',
+    'I wrote a footnote to your footnote.',
+    'Full of {title}. My ink is a deeper blue today.',
+    'That chapter deserves a sonnet. I am working on it.',
+    'Do not tell me the ending. I want to guess it wrong myself.',
+    'I hold the page with one arm and the plot with the other seven.',
+    'Every word you read, I copy into my diary. Slowly.',
+    'Margins are just the sea between paragraphs.',
+  },
+  PECKISH = {
+    'My ink is running a little dry.',
+    'Peckish. {title} is calling from the shore.',
+    'Yesterday was a blank page. Just saying.',
+    'One chapter would fill my inkwell again.',
+  },
+  HUNGRY = {
+    'My ink has faded to a whisper.',
+    'Even a footnote would do. I am not proud.',
+    'I can smell {title} from here. Is it still open?',
+    'Hungry. All eight arms agree.',
+    'I tried to read my own handwriting. Not filling.',
+  },
+  SULKY = {
+    'Hmph. (a small cloud of ink)',
+    'Oh. A reader. I had forgotten what they look like.',
+    'I am writing a tragedy. It is about you.',
+    'I am curled up in a corner of the page. Do not look.',
+    'My ink has gone grey. Grey!',
+    'Days. Days of blank pages.',
+  },
+  HIDING = {
+    '(an inky smudge between the pages of {title})',
+    '(a tiny voice from the margins: read me)',
+    '(the octopus is hiding until you read again)',
+  },
+  HIDE_NOTE = { '(hiding in a book, leaving ink on the pages)' },
+  HATCHED = {
+    'Hello! I hatched on {title}. Everything is so wet and wonderful.',
+    'Out of the egg, and already taking notes on {title}.',
+  },
+  GREW = {
+    'I grew! I am {other} now. More ink for the margins.',
+    'Look at me: {other}. All those words went somewhere.',
+  },
+  FINISHED = {
+    'We finished {other}! I wrote "the end" in my own ink, just to be sure.',
+    'The end of {other}. Eight arms of applause.',
+    '{other}: done. I am drafting a sequel nobody asked for.',
+    'Finished {other}. I need a quiet reef and another book.',
+  },
+  MOTH = {
+    '{other} slipped off into the sea of stories. I am the new one.',
+    'My mother {other} left me her inkwell. I will keep it full.',
+  },
+  WOKE = {
+    'Oh! I was dreaming in ink. What did I miss?',
+    'Awake again. My arms remember where we were.',
+  },
+  TRAIT = {
+    owl = { 'Reading by moonlight. The tide likes it too.', 'Ink looks darker after ten. I like that.' },
+    lark = { 'Morning pages. The best kind.', 'Up early, ink fresh, book open.' },
+    marathon = { 'Such long sittings. I have run out of margin.', 'One more chapter. I will hold the page.' },
+    nibbler = { 'A paragraph a day. A haiku of a diet.', 'Small sips of story. Very civilised.' },
+    steady = { 'Every day, like the tide. You are my moon.', 'Another day, another page. I write it all down.' },
+    butterfly = { 'Three books at once? I have arms for eight.', 'One book per arm. We have room for more.' },
+    loyal = { 'Just {title}, day after day. A love story.', 'We are faithful to {title}. I wrote it a letter.' },
+    finisher = { 'You finish what you start. I never finish my novel.', 'Another ending. I keep them in a jar.' },
+    curious = { 'What shall we read next? I have arms free.', 'I wonder what the next book smells like. Salty?' },
+  },
+  TASTE = {
+    horror = { 'Something is moving in the deep end of this book.', 'I inked the windows shut. Just in case.',
+               'I am reading this one through all eight arms.', 'The cellar door creaked. My ink went white.' },
+    mystery = { 'I wrote every suspect on a different arm.', 'It was the quiet one. It is always the quiet one.',
+                'Clue, clue, red herring. I can smell herring.', 'I have drawn a map of the house. Twice.' },
+    romance = { 'They held hands. I held four.', 'I blushed so hard I turned purple. Octopuses can.',
+                'A letter, a misunderstanding, a ball. I am writing it all down.', 'My hearts are fluttering. All three of them.' },
+    fantasy = { 'I would like to be the kraken in this one. A polite kraken.', 'There is a map at the front. I added a sea.',
+                'Book one of nine? Ink for a year.', 'Every wizard needs a scribe. I volunteer.' },
+    scifi = { 'I suspect the aliens are octopuses. Good for them.', 'Zero gravity sounds like home.',
+              'If the ship\'s computer is polite, worry.', 'I drew the star map with my left arms.' },
+    adventure = { 'A ship! At last, a book with sea in it.', 'I am the knot expert on this voyage.',
+                  'Storm, map, treasure. I brought ink for the logbook.', 'Onward! (Turn the page. I will hold the other one.)' },
+    classic = { 'This one smells of old ink. Delicious.', 'A thousand pages. I approve of the effort.',
+                'One does not skim a classic. One copies it out by hand.', 'Everyone in it writes such long letters. I love them.' },
+    nonfiction = { 'Did you know octopuses have three hearts? Now you do.', 'I am an expert now. On page 40.',
+                   'Facts are best written down. I wrote them all down.', 'I underlined that. And that. And that.' },
+  },
+  REVIEW = {
+    horror = { 'Finished {other}. I am sleeping inside the inkwell tonight.', '{other}: done. Five shivers out of five.' },
+    mystery = { 'Finished {other}. I had it on arm number six. Nearly.', '{other}: solved. I am writing my own now.' },
+    romance = { 'Finished {other}. All three hearts are full.', '{other}: done. I cried ink.' },
+    fantasy = { 'Finished {other}. Is there a sea in the next one?', '{other}: done. I will draw the dragon from memory.' },
+    scifi = { 'Finished {other}. The stars look closer now.', '{other}: done. My suckers are still tingling.' },
+    adventure = { 'Finished {other}. Home port at last.', '{other}: done. I would sail with them again, as the cook.' },
+    classic = { 'Finished {other}. I feel old and well read.', '{other}: done. I copied out my favourite line.' },
+    nonfiction = { 'Finished {other}. I have notes. Many notes.', '{other}: done. Ask me anything in it. Anything.' },
+  },
+  ELDER = {
+    'In my day, books came with proper margins.', 'My glasses need glasses. Both pairs.',
+    'I have written forty novels. All unfinished.', 'Young octopuses these days. Typewriters.',
+    'I remember when ink came in wells, not cartridges.',
+  },
+  PET = {
+    'Hehe. Mind the ink.',
+    'Pat pat. Now you have a blue hand.',
+    'All eight arms say thank you.',
+    'Careful, I squirt when I giggle.',
+    'Again! On the other side.',
+  },
+  DREAM = {
+    'dreaming of {title}…',
+    'dreaming of page {page}…',
+    'dreaming of a library under the sea…',
+    'dreaming of writing the next chapter…',
+  },
+  DREAM_HUNGRY = { 'dreaming of a full inkwell…', 'dreaming of a very long book…' },
+  DREAM_EGG = { 'an egg, swirling softly' },
+}
+end
+
+__mods['lines_dragon'] = function()
+-- What the shelf dragon says: a proud little hoarder whose treasure is books, who calls every
+-- page gold and never, ever breathes fire near the shelf. The keys are those of lines.lua (the
+-- bookworm's); L.voice('dragon') loads this only while the dragon is awake.
+
+return {
+  EGG = {
+    'An egg with little scales. It is warm, as dragon eggs are.',
+    'The egg is guarding itself. Ten minutes of reading should hatch it.',
+    'A puff of smoke rose from the egg when you opened a book.',
+  },
+  FULL = {
+    '{title}. Mine. Well, ours. Mostly mine.',
+    '{pct}% of {title} added to the hoard.',
+    '{min} minutes of treasure today. I counted every page.',
+    'I sleep on a pile of books. The best bed there is.',
+    'Full of {title}. I shall guard the rest of it.',
+    'That chapter shone like gold.',
+    'I never breathe fire near the shelf. Never.',
+    'Every page you read goes on the pile. The pile is magnificent.',
+    'A dragon is only as rich as its library.',
+    'Do not tell me the ending. I want to win it fairly.',
+  },
+  PECKISH = {
+    'The hoard has not grown since yesterday.',
+    'Peckish. {title} is unguarded over there.',
+    'A dragon needs its daily treasure.',
+    'One chapter. One shiny chapter.',
+  },
+  HUNGRY = {
+    'My hoard is shrinking. I can feel it.',
+    'Even a footnote would do. Footnotes are coins too.',
+    'Is {title} still open? Do not let anyone take it.',
+    'Hungry. I am growling, and not majestically.',
+    'I counted my pages three times. Still the same number.',
+  },
+  SULKY = {
+    'Hmph. (a small puff of smoke)',
+    'Oh, the keeper returns. The hoard noticed you were gone.',
+    'I am not speaking to people who neglect hoards.',
+    'I have been guarding an empty shelf. For days.',
+    'Fine. I will sit on the dictionary and sulk.',
+    'Days without treasure. Days.',
+  },
+  HIDING = {
+    '(a tail sticks out of {title})',
+    '(a small smoky voice from between the pages: read me)',
+    '(the dragon is hiding until you read again)',
+  },
+  HIDE_NOTE = { '(hiding in a book, guarding it until you read again)' },
+  HATCHED = {
+    'Hello! I hatched on {title}. I claim it.',
+    'Out of the egg and onto the hoard. Is this {title}? Mine.',
+  },
+  GREW = {
+    'I grew! I am {other} now. The hoard grew too.',
+    'Behold: {other}. All that treasure went to my wings.',
+  },
+  FINISHED = {
+    'We finished {other}! It goes on top of the pile.',
+    'The end of {other}. Another treasure, won.',
+    '{other}: done. I am curling up on it tonight.',
+    'Finished {other}. A fine piece for the hoard.',
+  },
+  MOTH = {
+    '{other} flew off to start a hoard of their own. I am the new one.',
+    'My mother {other} left me this shelf of treasure. I will guard it.',
+  },
+  WOKE = {
+    'Who goes there? Oh, it is you. Is the hoard safe?',
+    'Awake. I counted the books in my sleep. All here.',
+  },
+  TRAIT = {
+    owl = { 'Night is when dragons count their treasure.', 'The best pages glitter after ten.' },
+    lark = { 'Morning reading. The hoard shines at dawn.', 'Up with the sun, like a proper dragon.' },
+    marathon = { 'Such long sittings. The pile is taller than me.', 'One more chapter. A dragon never stops at one coin.' },
+    nibbler = { 'A page at a time. A careful hoarder.', 'Small coins add up. I would know.' },
+    steady = { 'Every day, the hoard grows. You are a good keeper.', 'Another day, another page on the pile.' },
+    butterfly = { 'Three books at once? A dragon after my own heart.', 'More books, more hoard. I approve.' },
+    loyal = { 'Just {title}, day after day. A treasure worth keeping.', 'We guard {title} together. Nobody else touches it.' },
+    finisher = { 'You finish what you start. That is how hoards are built.', 'Another ending. Another trophy.' },
+    curious = { 'What treasure shall we find next?', 'I wonder what the next book is worth.' },
+  },
+  TASTE = {
+    horror = { 'I am a dragon. I am not scared. (I am a little scared.)', 'I slept with one eye open. Both, actually.',
+               'If that book has a cellar, I am staying on the hoard.', 'Every creak is a thief. Or worse.' },
+    mystery = { 'Someone stole the jewels. Not me. I would have taken the books.', 'I suspect the butler. I suspect everyone near treasure.',
+                'Nobody leaves this shelf until I find the thief.', 'A locked room? I know all about locked rooms.' },
+    romance = { 'They are in love. I am in love with the hardback.', 'I sighed a smoke ring shaped like a heart.',
+                'A dragon understands longing. I long for the next chapter.', 'Two people, one inn. I have seen how this ends.' },
+    fantasy = { 'A dragon in a book? Finally, some realism.', 'There is a map at the front. I marked my cave.',
+                'Book one of nine? A hoard for a year.', 'The knights are the villains. Obviously.' },
+    scifi = { 'Space dragons. I want to be a space dragon.', 'If the robot asks about the hoard, it is a trap.',
+              'I calculated the orbit. My wings could do it.', 'Lift-off! I will guard the shelf from orbit.' },
+    adventure = { 'X marks the spot. I marked it with a scorch.', 'Treasure maps are my favourite literature.',
+                  'A storm, a ship, a chest of gold. Perfect.', 'Onward! (Turn the page.)' },
+    classic = { 'This one is older than my grandmother. Priceless.', 'A thousand pages. A whole hoard in one volume.',
+                'One does not skim a classic. One guards it.', 'Old books glitter differently. More dust, more gold.' },
+    nonfiction = { 'Did you know? I know. I hoard facts too.', 'I am an expert now. Up to page 40.',
+                   'Facts are coins. I am rich.', 'I underlined that. With a claw. Carefully.' },
+  },
+  REVIEW = {
+    horror = { 'Finished {other}. I am sleeping under the hoard tonight.', '{other}: done. Five scorch marks out of five.' },
+    mystery = { 'Finished {other}. I knew the thief all along. (I did not.)', '{other}: solved. The treasure is safe.' },
+    romance = { 'Finished {other}. They lived happily. I sniffled. Smoke, only smoke.', '{other}: done. A golden ending.' },
+    fantasy = { 'Finished {other}. The dragon deserved better.', '{other}: done. When does the next one hatch?' },
+    scifi = { 'Finished {other}. Earth looks small from my pile.', '{other}: done. My scales are still buzzing.' },
+    adventure = { 'Finished {other}. They found the treasure. Good.', '{other}: done. I would fly with them again.' },
+    classic = { 'Finished {other}. It goes in the middle of the hoard, with the best ones.', '{other}: done. A treasure for a reason.' },
+    nonfiction = { 'Finished {other}. My hoard of facts grows.', '{other}: done. Ask me anything in it.' },
+  },
+  ELDER = {
+    'In my day, hoards were made of hardbacks.', 'My glasses need glasses. And polishing.',
+    'I remember when this shelf held three books. Three!', 'Young dragons these days. They hoard bookmarks.',
+    'I have guarded books longer than you have read them.',
+  },
+  PET = {
+    'Hehe. Mind the scales.',
+    'Pat pat. Warm, isn\'t it?',
+    'I purr like a small furnace.',
+    'Careful, I sneeze smoke.',
+    'Again! Behind the horns.',
+  },
+  DREAM = {
+    'dreaming of {title}…',
+    'dreaming of page {page}…',
+    'dreaming of a mountain of books…',
+    'dreaming of the next chapter…',
+  },
+  DREAM_HUNGRY = { 'dreaming of treasure…', 'dreaming of a very long book…' },
+  DREAM_EGG = { 'an egg, warm in the hoard' },
+}
+end
+
 __mods['art'] = function()
--- The bookworm's pictures, drawn from circles, arcs and lines (no image files): an egg, the worm
--- at each stage (more and bigger segments as it grows; round glasses once grown, a scholar's cap
--- for the elder), its face by mood, the book it sits on, a book it hides in, and its sleeping
--- pose. Every function takes the canvas and where to draw; they serve the app and the sleep screen.
+-- The brood's pictures, drawn from circles, arcs and lines (no image files): an egg for each kind,
+-- the creature at each stage (bigger as it grows; round glasses once grown; an elder's hat), its
+-- face by mood, the book it sits on, a book it hides in, and its sleeping pose. The kinds:
+--   worm    the bookworm: a row of segments, antennae, a scholar's cap when elder
+--   ink     the ink octopus: a tall dome with ink spots, arms curling out below, a beret when elder
+--   dragon  the shelf dragon: a body, folded wing, tail with a spade, horns and snout, a crown
+-- Every function takes the canvas and where to draw; they serve the app and the sleep screen.
 
 local A = {}
 
 local WHITE = { fill = true, color = 0 }
 local BLACK = { fill = true }
 
--- the segments of each stage: how many, their radius
+-- the size of each stage: the worm's segments (how many, their radius), the others' head radius
 A.BODY = { hatchling = { 3, 13 }, young = { 4, 17 }, grown = { 5, 20 }, elder = { 6, 22 } }
+A.INK = { hatchling = 24, young = 29, grown = 34, elder = 38 }
+A.DRAGON = { hatchling = 16, young = 20, grown = 24, elder = 27 }
 
 local function ring(gg, x, y, r, w) gg:circle(x, y, r, WHITE); gg:circle(x, y, r, { line_width = w or 3 }) end
+local function shape(gg, pts, w) gg:polygon(pts, WHITE); gg:polygon(pts, { line_width = w or 3 }) end
 
 -- the face on a head of radius r at (x, y): eyes, and a mouth by mood
 local function face(gg, x, y, r, mood, glasses)
@@ -734,23 +1112,13 @@ local function face(gg, x, y, r, mood, glasses)
   elseif mood == 'asleep' then gg:circle(x + r // 6, my, 2, BLACK) end
 end
 
--- how far the worm reaches left of its head, and the x of a head that centres it on cx
-function A.length(stage)
-  local b = A.BODY[stage] or A.BODY.young
-  return b[1] * b[2] * 17 // 10
-end
-function A.head_x(stage, cx)
-  local b = A.BODY[stage] or A.BODY.young
-  return cx + (A.length(stage) + b[2] * 13 // 10) // 2
-end
-
 -- what its taste makes it wear or carry, on a head of radius hr at (hx, hy); returns true for a
--- hat (no scholar's cap then)
-local function accessory(gg, taste, hx, hy, hr)
+-- hat (no elder's hat then)
+local function accessory(gg, taste, hx, hy, hr, side)
+  local sx = hx + (side or 0)                        -- what it carries goes beside sx
   local top = hy - hr
   if taste == 'fantasy' then                         -- a wizard's hat with a star
-    gg:polygon({ hx - hr - 4, top + 6, hx + 6, top - 46, hx + hr + 4, top + 6 }, WHITE)
-    gg:polygon({ hx - hr - 4, top + 6, hx + 6, top - 46, hx + hr + 4, top + 6 }, { line_width = 3 })
+    shape(gg, { hx - hr - 4, top + 6, hx + 6, top - 46, hx + hr + 4, top + 6 })
     gg:polygon({ hx - 2, top - 14, hx + 2, top - 22, hx + 6, top - 14, hx + 2, top - 8 }, BLACK)
     return true
   elseif taste == 'classic' then                     -- a top hat
@@ -762,16 +1130,16 @@ local function accessory(gg, taste, hx, hy, hr)
     gg:circle(hx, hy, hr + 9, { line_width = 2 })
     gg:arc(hx, hy, hr + 4, 200, 250, { line_width = 2 })
   elseif taste == 'mystery' then                     -- a magnifying glass
-    local cx, cy = hx + hr + 22, hy + 4
+    local cx, cy = sx + hr + 22, hy + 4
     gg:circle(cx, cy, 13, WHITE); gg:circle(cx, cy, 13, { line_width = 3 })
     gg:polygon({ cx - 6, cy + 11, cx - 2, cy + 13, cx - 10, cy + 30, cx - 15, cy + 28 }, BLACK)
   elseif taste == 'horror' then                      -- a candle, its flame shaking
-    local cx, cy = hx + hr + 22, hy + 6
+    local cx, cy = sx + hr + 22, hy + 6
     gg:rect(cx - 6, cy - 4, 12, 26, WHITE); gg:rect(cx - 6, cy - 4, 12, 26, { line_width = 2 })
     gg:polygon({ cx, cy - 24, cx + 6, cy - 10, cx, cy - 5, cx - 6, cy - 10 }, BLACK)
     gg:rect(cx - 12, cy + 22, 24, 4, BLACK)
   elseif taste == 'romance' then                     -- a heart floating up
-    local cx, cy = hx + hr + 18, top - 4
+    local cx, cy = sx + hr + 18, top - 4
     gg:circle(cx - 6, cy, 7, BLACK); gg:circle(cx + 6, cy, 7, BLACK)
     gg:polygon({ cx - 13, cy + 2, cx + 13, cy + 2, cx, cy + 17 }, BLACK)
   elseif taste == 'adventure' then                   -- an eyepatch
@@ -779,9 +1147,8 @@ local function accessory(gg, taste, hx, hy, hr)
     gg:line(hx - hr + 4, ey - hr // 2, hx + hr - 2, ey + 2)
     gg:circle(ex, ey, hr // 5 + 4, BLACK)
   elseif taste == 'nonfiction' then                  -- a quill
-    local cx, cy = hx + hr + 16, hy - 6
-    gg:polygon({ cx, cy + 28, cx + 4, cy + 22, cx + 16, cy - 18, cx + 8, cy - 22 }, WHITE)
-    gg:polygon({ cx, cy + 28, cx + 4, cy + 22, cx + 16, cy - 18, cx + 8, cy - 22 }, { line_width = 2 })
+    local cx, cy = sx + hr + 16, hy - 6
+    shape(gg, { cx, cy + 28, cx + 4, cy + 22, cx + 16, cy - 18, cx + 8, cy - 22 }, 2)
     gg:line(cx + 2, cy + 25, cx + 12, cy - 20)
   end
   return false
@@ -796,12 +1163,25 @@ local function storm(gg, hx, top)
   gg:polygon({ cx - 2, cy + 10, cx + 4, cy + 10, cx, cy + 18, cx + 6, cy + 18, cx - 4, cy + 30, cx - 1, cy + 20, cx - 6, cy + 20 }, BLACK)
 end
 
--- the worm, head at (hx, hy) facing right, body trailing left along a gentle wave; phase shifts
--- the wave (a wiggle when it is petted); taste adds what it wears
-function A.worm(gg, stage, hx, hy, mood, phase, taste)
+-- the bottom half of a shell (a hatchling's) at (tx, ty): a round cup, a jagged rim, two speckles
+local function shell(gg, tx, ty, w, d)
+  local pts = {}
+  for i = 0, 12 do                                          -- the round bottom, right to left
+    local a = i * math.pi / 12
+    pts[#pts + 1] = tx + math.floor(math.cos(a) * w); pts[#pts + 1] = ty + math.floor(math.sin(a) * d)
+  end
+  for i = 1, 5 do                                           -- the broken rim, left to right
+    pts[#pts + 1] = tx - w + i * 2 * w // 6; pts[#pts + 1] = ty - (i % 2 == 1 and 5 or 0)
+  end
+  shape(gg, pts)
+  gg:circle(tx - 9, ty + 9, 3, BLACK); gg:circle(tx + 10, ty + 13, 2, BLACK)
+end
+
+------------------------------------------------------------------ the bookworm
+
+local function worm(gg, stage, hx, hy, mood, phase, taste)
   local b = A.BODY[stage] or A.BODY.young
   local n, r = b[1], b[2]
-  phase = phase or 0
   local pts = {}
   for i = n, 1, -1 do
     local x = hx - (i * r * 17) // 10
@@ -832,42 +1212,213 @@ function A.worm(gg, stage, hx, hy, mood, phase, taste)
     gg:rect(hx - hr // 2, top - 6, hr, 10, BLACK)
     gg:line(hx + hr + 4, top - 8, hx + hr + 6, top + 14); gg:circle(hx + hr + 6, top + 16, 3, BLACK)
   end
-  if stage == 'hatchling' then
-    -- the bottom half of its shell still around the tail
-    -- a round cup with a small jagged rim, and two speckles, like the egg
-    local tx, ty, w, d = pts[1][1], hy + 10, 26, 22
-    local shell = {}
-    for i = 0, 12 do                                          -- the round bottom, right to left
-      local a = i * math.pi / 12
-      shell[#shell + 1] = tx + math.floor(math.cos(a) * w); shell[#shell + 1] = ty + math.floor(math.sin(a) * d)
-    end
-    for i = 1, 5 do                                           -- the broken rim, left to right
-      shell[#shell + 1] = tx - w + i * 2 * w // 6; shell[#shell + 1] = ty - (i % 2 == 1 and 5 or 0)
-    end
-    gg:polygon(shell, WHITE)
-    gg:polygon(shell, { line_width = 3 })
-    gg:circle(tx - 9, ty + 9, 3, BLACK); gg:circle(tx + 10, ty + 13, 2, BLACK)
-  end
+  if stage == 'hatchling' then shell(gg, pts[1][1], hy + 10, 26, 22) end
 end
 
--- the egg, standing on (x, y): an oval with speckles
-function A.egg(gg, x, y, wobble)
+------------------------------------------------------------------ the ink octopus
+
+-- how thick its arms are, and how far they reach below the dome's centre
+local function ink_reach(R)
+  local w = math.max(6, R * 30 // 100)
+  return w, R * 14 // 10 + w // 2
+end
+
+-- one arm: down from under the dome, bending outwards along the ground, its tip curling up
+local function ink_arm(tx, sy, gy, dir, r1, wig)
+  local pts = { tx, sy }
+  local cy = gy - r1
+  if cy > sy then pts[#pts + 1] = tx + wig; pts[#pts + 1] = cy end
+  local cx = tx + dir * r1
+  for i = 1, 6 do                                     -- a quarter circle down to the ground
+    local a = math.rad((dir == 1 and 180 or 0) + dir * -i * 15)
+    pts[#pts + 1] = cx + math.floor(math.cos(a) * r1 + 0.5); pts[#pts + 1] = cy + math.floor(math.sin(a) * r1 + 0.5)
+  end
+  local r2 = r1 * 45 // 100
+  for i = 1, 6 do                                     -- the tip, curling up and back
+    local a = math.rad(90 - dir * i * 40)
+    pts[#pts + 1] = cx + math.floor(math.cos(a) * r2 + 0.5); pts[#pts + 1] = gy - r2 + math.floor(math.sin(a) * r2 + 0.5)
+  end
+  return pts
+end
+
+local function ink(gg, stage, hx, hy, mood, phase, taste)
+  local R = A.INK[stage]
+  local w, reach = ink_reach(R)
+  local gy = hy + reach - w // 2
+  local n = stage == 'hatchling' and 4 or 5
+  for i = 1, n do                                     -- the arms, behind the dome: a white tube, outlined
+    local off = 2 * i - n - 1                         -- -4 .. 4 (or -3 .. 3)
+    local dir = off < 0 and -1 or (off > 0 and 1 or (phase % 2 == 0 and 1 or -1))
+    local r1 = R * (24 + 7 * math.abs(off)) // 100
+    local pts = ink_arm(hx + off * R * 18 // 100, hy + R * 6 // 10, gy, dir, r1, math.floor(math.sin(i + phase) * 2))
+    gg:polyline(pts, { line_width = w })
+    if w >= 7 then gg:polyline(pts, { line_width = w - 4, color = 0 }) end
+  end
+  -- the dome: round below, taller above
   local pts = {}
-  local w, h = 46, 62
+  for i = 0, 23 do
+    local a = i * math.pi * 2 / 24
+    local s = math.sin(a)
+    pts[#pts + 1] = hx + math.floor(math.cos(a) * R)
+    pts[#pts + 1] = hy + math.floor(s * (s < 0 and R * 13 // 10 or R * 9 // 10))
+  end
+  shape(gg, pts)
+  local top = hy - R * 13 // 10
+  for _, s in ipairs({ { -4, -9, 3 }, { 2, -11, 2 }, { 5, -6, 2 } }) do         -- ink spots
+    gg:circle(hx + s[1] * R // 10, hy + s[2] * R // 10, s[3], BLACK)
+  end
+  face(gg, hx, hy, R, mood, stage == 'grown' or stage == 'elder')
+  local hat = stage ~= 'hatchling' and taste and accessory(gg, taste, hx, top + R, R)
+  if mood == 'sulky' then storm(gg, hx, top) end
+  if stage == 'elder' and not hat then
+    -- a beret, tilted, with its little stalk
+    local bp = {}
+    for i = 0, 15 do
+      local a = i * math.pi * 2 / 16
+      bp[#bp + 1] = hx - R // 5 + math.floor(math.cos(a) * R * 8 // 10)
+      bp[#bp + 1] = top + 3 + math.floor(math.sin(a) * R // 4)
+    end
+    gg:polygon(bp, BLACK)
+    gg:rect(hx - R // 5 - 2, top - R // 4 - 6, 4, 8, BLACK)
+  end
+  if stage == 'hatchling' then shell(gg, hx, hy + R + 6, 26, 18) end
+end
+
+------------------------------------------------------------------ the shelf dragon
+
+-- a thick stroke with a white inside, like the octopus's arms
+local function tube(gg, pts, w)
+  gg:polyline(pts, { line_width = w })
+  if w >= 7 then gg:polyline(pts, { line_width = w - 4, color = 0 }) end
+end
+
+-- its body's centre and size, from the head's: the body sits behind and below the head
+local function dragon_body(hr, hx, hy)
+  local br = hr * 13 // 10
+  return hx - hr * 20 // 10, hy + br * 13 // 10, br
+end
+
+local function dragon(gg, stage, hx, hy, mood, phase, taste)
+  local hr = A.DRAGON[stage]
+  local bx, by, br = dragon_body(hr, hx, hy)
+  local rx = br * 12 // 10
+  -- the wing, folded on its back, three fingers with a scalloped edge (behind the body)
+  local f = { { 45, -75 }, { 0, -250 }, { -40, -150 }, { -95, -210 }, { -100, -120 }, { -150, -150 }, { -95, -55 } }
+  local wing = {}
+  for _, p in ipairs(f) do wing[#wing + 1] = bx + br * p[1] // 100; wing[#wing + 1] = by + br * p[2] // 100 end
+  shape(gg, wing)
+  local wx, wy = bx - br * 15 // 100, by - br * 70 // 100
+  for _, k in ipairs({ 2, 4, 6 }) do
+    gg:line(wx, wy, bx + br * f[k][1] // 100 + 2, by + br * f[k][2] // 100 + 4, { line_width = 2 })
+  end
+  -- the tail, out along the ground and up at its tip, with a spade
+  local sx, sy, wig = bx - rx * 8 // 10, by + br * 4 // 10, (phase % 2 == 1) and br // 6 or 0
+  local tail = {}
+  for i = 0, 8 do
+    local t = i / 8
+    tail[#tail + 1] = sx - math.floor(t * br * 22 // 10)
+    tail[#tail + 1] = sy + math.floor(math.sin(t * math.pi) * (br * 2 // 10 + wig) - t * t * br * 9 // 10)
+  end
+  local ex, ey = tail[#tail - 1], tail[#tail]
+  gg:polygon({ ex + 4, ey + 2, ex - br * 4 // 10, ey - br * 3 // 10, ex - 2, ey - br * 45 // 100 }, BLACK)
+  tube(gg, tail, math.max(6, br * 32 // 100))
+  -- legs, the body with a striped belly, the neck
+  local lw = math.max(4, br // 5)
+  gg:line(bx - br // 2, by + br - 6, bx - br // 2 - 4, by + br + 8, { line_width = lw })
+  gg:line(bx + br // 2, by + br - 6, bx + br // 2 + 4, by + br + 8, { line_width = lw })
+  local body = {}
+  for i = 0, 23 do
+    local a = i * math.pi * 2 / 24
+    body[#body + 1] = bx + math.floor(math.cos(a) * rx); body[#body + 1] = by + math.floor(math.sin(a) * br)
+  end
+  shape(gg, body)
+  gg:arc(bx + br // 5, by + 2, br * 7 // 10, 30, 150, { line_width = 2 })
+  gg:arc(bx + br // 5, by + 2, br * 45 // 100, 40, 140, { line_width = 2 })
+  tube(gg, { bx + rx * 5 // 10, by - br * 5 // 10, hx - hr * 5 // 10, hy + hr * 5 // 10 }, math.max(10, hr))
+  -- horns swept back, the head, a long muzzle in front of it
+  local top = hy - hr
+  shape(gg, { hx - hr * 6 // 10, top + hr * 4 // 10, hx - hr * 2 // 10, top + 2, hx - hr * 15 // 10, top - hr * 6 // 10 }, 2)
+  shape(gg, { hx, top + 2, hx + hr * 4 // 10, top + hr * 3 // 10, hx - hr * 5 // 10, top - hr * 9 // 10 }, 2)
+  ring(gg, hx, hy, hr, 3)
+  local nw, nh = hr * 15 // 10, hr * 8 // 10
+  local nx, ny = hx + hr * 3 // 10, hy + hr * 1 // 10
+  gg:rect(nx, ny, nw, nh, { fill = true, color = 0 }); gg:rect(nx, ny, nw, nh, { line_width = 3, radius = nh // 2 })
+  gg:circle(nx + nw - nh // 2, ny + nh // 3, 2, BLACK); gg:circle(nx + nw - nh // 5, ny + nh // 3, 2, BLACK)
+  -- eyes above the muzzle, the mouth along it
+  local fr = hr * 8 // 10
+  face(gg, hx - hr * 1 // 10, hy - hr * 2 // 10, fr, mood, stage == 'grown' or stage == 'elder')
+  local hat = stage ~= 'hatchling' and taste and accessory(gg, taste, hx - hr // 10, hy - hr * 2 // 10, fr, hr * 9 // 10)
+  if mood == 'sulky' then storm(gg, hx, top) end
+  if stage == 'elder' and not hat then
+    -- a little crown between the horns
+    local w = hr * 45 // 100
+    gg:polygon({ hx - w, top + 3, hx - w, top - 12, hx - w // 2, top - 4, hx, top - 15, hx + w // 2, top - 4,
+                 hx + w, top - 12, hx + w, top + 3 }, BLACK)
+  end
+  if stage == 'hatchling' then shell(gg, bx - rx // 2, by + br - 8, 24, 16) end
+end
+
+------------------------------------------------------------------ placing and drawing
+
+-- where its head goes for a creature of kind sp at stage, centred on cx, standing on ground
+function A.pose(sp, stage, cx, ground)
+  if sp == 'ink' then
+    local _rs, reach = ink_reach(A.INK[stage] or A.INK.young)
+    return cx, ground - reach
+  elseif sp == 'dragon' then
+    local hr = A.DRAGON[stage] or A.DRAGON.young
+    -- from the tail's spade to the snout: about 6.3 and 1.4 head radii either side of the head
+    local _bx, by, br = dragon_body(hr, 0, 0)
+    return cx + hr * 26 // 10, ground - 8 - br - by
+  end
+  local b = A.BODY[stage] or A.BODY.young
+  local length = b[1] * b[2] * 17 // 10
+  return cx + (length + b[2] * 13 // 10) // 2, ground - b[2] * 4 // 3 - 2
+end
+
+-- the creature, head at (hx, hy); phase shifts its wiggle (a pat); taste adds what it wears
+function A.creature(gg, sp, stage, hx, hy, mood, phase, taste)
+  phase = phase or 0
+  if sp == 'ink' then ink(gg, stage, hx, hy, mood, phase, taste)
+  elseif sp == 'dragon' then dragon(gg, stage, hx, hy, mood, phase, taste)
+  else worm(gg, stage, hx, hy, mood, phase, taste) end
+end
+
+-- the egg of kind sp, standing on (x, y): an oval with speckles, swirls or scales; size in percent
+function A.egg(gg, x, y, wobble, sp, size)
+  size = size or 100
+  local pts = {}
+  local w, h = 46 * size // 100, 62 * size // 100
   for i = 0, 23 do
     local a = i * math.pi * 2 / 24
     local rx = w * (1 - 0.12 * math.sin(a))
     pts[#pts + 1] = x + math.floor(math.cos(a) * rx + (wobble or 0) * math.sin(a))
     pts[#pts + 1] = y - h + math.floor(math.sin(a) * h)
   end
-  gg:polygon(pts, WHITE)
-  gg:polygon(pts, { line_width = 3 })
-  for _, s in ipairs({ { -16, -88, 6 }, { 14, -70, 5 }, { -6, -40, 4 }, { 22, -30, 4 }, { -24, -58, 3 } }) do
-    gg:circle(x + s[1], y + s[2], s[3], BLACK)
+  shape(gg, pts)
+  local k = size
+  if sp == 'locked' then
+    gg:text_box(x - w, y - h - 18, 2 * w, 36, '?', { font = ctx.fonts and ctx.fonts.large, align = 'center' })
+  elseif sp == 'ink' then                            -- inky swirls
+    gg:arc(x - 6 * k // 100, y - 84 * k // 100, 16 * k // 100, 20, 200, { line_width = 3 })
+    gg:arc(x + 8 * k // 100, y - 52 * k // 100, 20 * k // 100, 200, 380, { line_width = 3 })
+    gg:circle(x - 18 * k // 100, y - 30 * k // 100, math.max(2, 5 * k // 100), BLACK)
+  elseif sp == 'dragon' then                         -- rows of scales
+    for row, dy in ipairs({ 92, 70, 48, 26 }) do
+      local n = (row == 1 or row == 4) and 2 or 3
+      for j = 1, n do
+        local sx = x + (j - (n + 1) / 2) * 24 * k // 100
+        gg:arc(math.floor(sx), y - dy * k // 100, 9 * k // 100, 20, 160, { line_width = 2 })
+      end
+    end
+  else                                               -- the bookworm's speckles
+    for _, s in ipairs({ { -16, -88, 6 }, { 14, -70, 5 }, { -6, -40, 4 }, { 22, -30, 4 }, { -24, -58, 3 } }) do
+      gg:circle(x + s[1] * k // 100, y + s[2] * k // 100, math.max(2, s[3] * k // 100), BLACK)
+    end
   end
 end
 
--- a closed book lying flat, its top at y: what the worm sits on
+-- a closed book lying flat, its top at y: what the creature sits on
 function A.book(gg, x, y, w)
   gg:rect(x, y, w, 26, WHITE)
   gg:rect(x, y, w, 26, { line_width = 3, radius = 3 })
@@ -879,20 +1430,25 @@ end
 function A.open_book(gg, x, y, w)
   local h = 40
   for _, s in ipairs({ -1, 1 }) do
-    local pts = { x, y, x + s * w // 2, y - 10, x + s * w // 2, y + h, x, y + h + 8 }
-    gg:polygon(pts, WHITE)
-    gg:polygon(pts, { line_width = 3 })
+    shape(gg, { x, y, x + s * w // 2, y - 10, x + s * w // 2, y + h, x, y + h + 8 })
     for i = 1, 3 do gg:line(x + s * 14, y + 8 * i + 2, x + s * (w // 2 - 14), y + 8 * i - 4) end
   end
 end
 
--- a book standing up with two eyes in the gap of its pages: the bookworm hiding
-function A.hiding(gg, x, y)
+-- a book standing up with two eyes in the gap of its pages: the creature hiding (an octopus
+-- leaves ink drops, a dragon's tail sticks out)
+function A.hiding(gg, x, y, sp)
   gg:rect(x - 50, y - 130, 100, 130, WHITE)
   gg:rect(x - 50, y - 130, 100, 130, { line_width = 4, radius = 4 })
   gg:rect(x - 50, y - 130, 18, 130, BLACK)
   gg:rect(x + 10, y - 80, 30, 14, BLACK)
   gg:circle(x + 18, y - 73, 4, WHITE); gg:circle(x + 32, y - 73, 4, WHITE)
+  if sp == 'ink' then
+    gg:circle(x + 62, y - 6, 6, BLACK); gg:circle(x + 78, y - 3, 4, BLACK); gg:circle(x + 58, y - 22, 3, BLACK)
+  elseif sp == 'dragon' then
+    ring(gg, x + 58, y - 8, 7, 2); ring(gg, x + 72, y - 12, 5, 2)
+    gg:polygon({ x + 76, y - 22, x + 92, y - 16, x + 78, y - 6 }, BLACK)
+  end
 end
 
 -- a thought bubble with the dream in it, its little circles leading down to (tx, ty)
@@ -908,17 +1464,18 @@ function A.dream(gg, x, y, w, h, tx, ty, text, font)
   gg:text_box(x + 18, y + (h - lines * 26) // 2, w - 36, lines * 26 + 4, text, { font = font, align = 'center' })
 end
 
--- asleep: curled up on an open book, with z's
-function A.asleep(gg, stage, x, y, taste)
+-- asleep: curled up on an open book, with z's; returns the x of its head
+function A.asleep(gg, sp, stage, x, y, taste)
   A.open_book(gg, x, y, 300)
-  if stage == 'egg' then A.egg(gg, x, y + 4); return end
-  local hx = A.head_x(stage, x)
-  A.worm(gg, stage, hx, y - 34, 'asleep', 2, taste)
+  if stage == 'egg' then A.egg(gg, x, y + 4, 0, sp); return x end
+  local hx, hy = A.pose(sp, stage, x, y - 4)
+  A.creature(gg, sp, stage, hx, hy, 'asleep', 2, taste)
   -- the z's rise from its head (kept on the screen)
-  local zx = math.min(hx + 8, 400)
+  local zx, zy = math.min(hx + 24, 400), math.min(y - 110, hy - 80)
   local small = ctx.fonts and ctx.fonts.medium
-  gg:text(zx, y - 110, 'z', { font = small }); gg:text(zx + 16, y - 136, 'z', { font = small })
-  gg:text(zx + 36, y - 166, 'Z', { font = ctx.fonts and ctx.fonts.large })
+  gg:text(zx, zy, 'z', { font = small }); gg:text(zx + 16, zy - 26, 'z', { font = small })
+  gg:text(zx + 36, zy - 56, 'Z', { font = ctx.fonts and ctx.fonts.large })
+  return hx
 end
 
 return A
@@ -926,12 +1483,13 @@ end
 
 P, L, A = require('pet'), require('lines'), require('art')
 
--- Bookworm's sleep screen: one session per wake (section 15). It brings the bookworm up to date
--- with the reading done before the reader went to sleep (and when it was: its night-owl count),
--- saves that (a lock-screen session does not save ctx.state by itself), and draws it asleep on an
--- open book, dreaming of the book being read; an egg rests, a hungry one hides. Nothing changes
--- between wakes but the date, so it wakes once an hour, the longest the host allows, set on every
--- session because the host goes back to the manifest's interval each time the reader locks.
+-- Bookworm's sleep screen: one session per wake (section 15). It brings the awake creature of the
+-- brood up to date with the reading done before the reader went to sleep (and when it was: its
+-- night-owl count), saves that (a lock-screen session does not save ctx.state by itself), and
+-- draws it asleep on an open book, dreaming of the book being read; an egg rests, a hungry one
+-- hides. Nothing changes between wakes but the date, so it wakes once an hour, the longest the
+-- host allows, set on every session because the host goes back to the manifest's interval each
+-- time the reader locks.
 
 local W = 480
 
@@ -945,30 +1503,35 @@ local function draw(gg)
     ctx.state.bw = s
   end
   local view = P.update(s, data)
+  local sp = P.species_of(s)
+  local V = L.voice(sp)
   pcall(function() ctx:save_state() end)
   gg:clear(0)
   local F = ctx.fonts or {}
   local title = s.name .. (s.hatched and ('  ·  ' .. view.stage_name) or '  ·  an egg')
-  gg:text(24, 40, title, { font = F.large })
+  local tf = F.large
+  local okw, tw = pcall(function() return tf:measure(title) end)
+  if okw and type(tw) == 'number' and tw > W - 48 then tf = F.medium end     -- a long name: smaller
+  gg:text(24, 40, title, { font = tf })
   if view.taste_name then gg:text(24, 84, view.taste_name, { font = F.small }) end
   local b = view.book
   local f = { title = b and L.short(b.title, 30) or nil, page = b and b.page }
-  local dream
+  local dream, hx
   if view.hunger == 'hiding' then
-    A.hiding(gg, W // 2, 500)
-    dream = '(hiding in a book until you read again)'
+    A.hiding(gg, W // 2, 500, sp)
+    dream = L.pick(V.HIDE_NOTE, 0, f)
   elseif not s.hatched then
     A.open_book(gg, W // 2, 470, 300)
-    A.egg(gg, W // 2, 474)
-    dream = L.pick(L.DREAM_EGG, 0, f)
+    A.egg(gg, W // 2, 474, 0, sp)
+    dream = L.pick(V.DREAM_EGG, 0, f)
   else
-    A.asleep(gg, view.stage_key, W // 2, 520, view.taste)
+    hx = A.asleep(gg, sp, view.stage_key, W // 2, 520, view.taste)
     local seed = (data.today or 0) + (data.hour or 0)
-    dream = L.pick(L.known((view.hunger == 'hungry' or view.hunger == 'sulky') and L.DREAM_HUNGRY or L.DREAM, f), seed, f)
+    dream = L.pick(L.known((view.hunger == 'hungry' or view.hunger == 'sulky') and V.DREAM_HUNGRY or V.DREAM, f), seed, f)
   end
-  if s.hatched and view.hunger ~= 'hiding' then
+  if hx then
     -- the dream in a thought bubble over its head
-    A.dream(gg, 40, 190, W - 80, 100, A.head_x(view.stage_key, W // 2) - 10, 400, dream, F.medium)
+    A.dream(gg, 40, 190, W - 80, 100, hx - 10, 400, dream, F.medium)
   else
     gg:text_box(24, 600, W - 48, 90, dream, { font = F.medium, align = 'center' })
   end

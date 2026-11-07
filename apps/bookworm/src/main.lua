@@ -4,8 +4,9 @@
 -- hunger, character, awards, the family line), lines.lua what it says, art.lua its pictures; the
 -- sleep screen (lockscreen.lua) shows it asleep and dreaming of your book.
 --
--- Home: the bookworm on its book, what it says, today's reading and how far to its next stage.
--- Tap it to pet it. Diary: the last two weeks; Awards; Family: the bookworms before it; More:
+-- Home: the awake creature of the brood on its book, what it says, today's reading and how far to its next stage.
+-- Tap it to pet it. Diary: the last two weeks; Awards; Family: the brood (a bookworm, an ink octopus
+-- and a shelf dragon, one awake at a time) and the generations before; More:
 -- rename it, make it the sleep screen, how it works.
 
 local P = require('pet')
@@ -24,6 +25,8 @@ local phase = 0
 local msg, ERR = nil, nil
 
 local function st() return ctx.state.bw end
+local function sp() return P.SP[P.species_of(st())] end
+local function voice() return L.voice(P.species_of(st())) end
 
 ------------------------------------------------------------------ the state
 
@@ -40,26 +43,26 @@ end
 
 -- what it says now: news first (hatched, grew, a book finished, a new generation), then by mood
 local function choose_line()
-  local s, f = st(), fields()
+  local s, f, V = st(), fields(), voice()
   local ev = s.events[#s.events]
   if ev and not ev.told then
     ev.told = true
-    local list = ({ hatched = L.HATCHED, grew = L.GREW, finished = L.FINISHED, moth = L.MOTH })[ev.kind]
-    if ev.kind == 'finished' and ev.taste and L.REVIEW[ev.taste] then list = L.REVIEW[ev.taste] end
+    local list = ({ hatched = V.HATCHED, grew = V.GREW, finished = V.FINISHED, moth = V.MOTH, woke = V.WOKE })[ev.kind]
+    if ev.kind == 'finished' and ev.taste and V.REVIEW[ev.taste] then list = V.REVIEW[ev.taste] end
     f.other = ev.kind == 'finished' and L.short(ev.text, 26) or ev.text
     if list then return L.pick(list, seed(), f) end
   end
   local h = view.hunger
-  if h == 'egg' then return L.pick(L.EGG, seed(), f) end
+  if h == 'egg' then return L.pick(V.EGG, seed(), f) end
   if h == 'full' then
     -- in turn: its taste, its character, an elder's grumble, the plain pleasure of eating
     local turn = seed() % 4
-    if turn == 1 and view.taste then return L.pick(L.TASTE[view.taste], seed() // 4, f) end
-    if turn == 2 and view.trait then return L.pick(L.TRAIT[view.trait], seed() // 4, f) end
-    if turn == 3 and view.stage_key == 'elder' then return L.pick(L.ELDER, seed() // 4, f) end
+    if turn == 1 and view.taste then return L.pick(V.TASTE[view.taste], seed() // 4, f) end
+    if turn == 2 and view.trait then return L.pick(V.TRAIT[view.trait], seed() // 4, f) end
+    if turn == 3 and view.stage_key == 'elder' then return L.pick(V.ELDER, seed() // 4, f) end
   end
-  local list = ({ full = L.FULL, peckish = L.PECKISH, hungry = L.HUNGRY, sulky = L.SULKY, hiding = L.HIDING })[h]
-  return L.pick(list or L.FULL, seed(), f)
+  local list = ({ full = V.FULL, peckish = V.PECKISH, hungry = V.HUNGRY, sulky = V.SULKY, hiding = V.HIDING })[h]
+  return L.pick(list or V.FULL, seed(), f)
 end
 
 local function refresh_data()
@@ -105,16 +108,16 @@ local function bubble(gg, text, tx)
   end
 end
 
--- the bookworm on its book; returns the x of its head (for the bubble's tail)
+-- the creature on its book; returns the x of its head (for the bubble's tail)
 local function draw_pet(gg)
   local s = st()
   local mood = mood_override or view.hunger
+  local k = P.species_of(s)
   A.book(gg, 90, BOOK_Y, 300)
-  if view.hunger == 'hiding' then A.hiding(gg, 240, BOOK_Y); return 260 end
-  if not s.hatched then A.egg(gg, 240, BOOK_Y, phase % 2 == 1 and 4 or 0); return 240 end
-  local r = A.BODY[view.stage_key][2]
-  local hx = A.head_x(view.stage_key, 240)
-  A.worm(gg, view.stage_key, hx, BOOK_Y - r * 4 // 3 - 2, mood, phase, view.taste)
+  if view.hunger == 'hiding' then A.hiding(gg, 240, BOOK_Y, k); return 260 end
+  if not s.hatched then A.egg(gg, 240, BOOK_Y, phase % 2 == 1 and 4 or 0, k); return 240 end
+  local hx, hy = A.pose(k, view.stage_key, 240, BOOK_Y)
+  A.creature(gg, k, view.stage_key, hx, hy, mood, phase, view.taste)
   return hx
 end
 
@@ -224,17 +227,47 @@ local function draw_awards(gg)
   back_button(gg)
 end
 
+-- the brood: a card for each kind, awake, asleep, an egg to hatch or still locked
+local CARD_Y, CARD_H = 100, 206
+local function card_rect(k)
+  local cw = (W - 24 - 16) // 3
+  return 12 + (k - 1) * (cw + 8), CARD_Y, cw, CARD_H
+end
+
+local CARD_STATE = { awake = 'awake', asleep = 'asleep: tap to wake', egg = 'an egg: tap to hatch' }
+
+local function draw_card(gg, k, c)
+  local x, y, w, h = card_rect(k)
+  local small = kit.font('small')
+  gg:rect(x, y, w, h, { line_width = c.state == 'awake' and 4 or 1, radius = 8 })
+  local name = c.st and c.st.name or c.sp.name
+  gg:text_box(x + 4, y + 8, w - 8, 24, kit.short(name, 12), { font = small, align = 'center' })
+  local cx, ground = x + w // 2, y + 130
+  if c.state == 'locked' then A.egg(gg, cx, ground, 0, 'locked', 60)
+  elseif not c.st or not c.st.hatched then A.egg(gg, cx, ground, 0, c.sp.key, 60)
+  else
+    local hx, hy = A.pose(c.sp.key, 'hatchling', cx, ground)
+    A.creature(gg, c.sp.key, 'hatchling', hx, hy, c.state == 'awake' and 'full' or 'asleep', 0, nil)
+  end
+  local text = c.state == 'locked' and c.sp.card or (c.sp.name .. ', ' .. CARD_STATE[c.state])
+  for j, l in ipairs(kit.wrap(text, 'small', w - 12)) do
+    if j > 3 then break end
+    gg:text_box(x + 4, y + 140 + (j - 1) * 20, w - 8, 20, l, { font = small, align = 'center' })
+  end
+end
+
 local function draw_family(gg)
-  local s = st()
-  header(gg, 'Family', 'The bookworms of this reader')
+  local s, kind = st(), sp()
+  header(gg, 'Family', 'One awake at a time; the others sleep')
   local small, medium = kit.font('small'), kit.font('medium')
-  local y = 104
-  gg:text(12, y, s.name .. ', generation ' .. s.gen .. ' (now)', { font = medium })
+  for k, c in ipairs(P.brood(ctx.state)) do draw_card(gg, k, c) end
+  local y = CARD_Y + CARD_H + 16
+  gg:text(12, y, kit.short(s.name .. ', generation ' .. s.gen .. ' (now)', 40), { font = medium })
   gg:text(12, y + 28, (s.hatched and a(view.stage_name) or 'still an egg') .. (s.born and (', laid ' .. P.label(s.born)) or ''), { font = small })
   y = y + 64
   if #s.lineage == 0 then
-    for k, l in ipairs(kit.wrap('At ' .. P.COCOON_HOURS .. ' hours of reading a bookworm spins a cocoon and flies off as a moth, leaving an egg. ' ..
-        'The ones before will be listed here.', 'small', W - 24)) do
+    for k, l in ipairs(kit.wrap('At ' .. P.COCOON_HOURS .. ' hours of reading ' .. a(kind.kind) .. ' ' .. kind.ends ..
+        ', leaving an egg. The ones before will be listed here.', 'small', W - 24)) do
       gg:text(12, y + (k - 1) * 22, l, { font = small })
     end
   end
@@ -242,7 +275,7 @@ local function draw_family(gg)
     local e = s.lineage[i]
     gg:text(12, y, e.name .. ', generation ' .. e.gen, { font = medium })
     gg:text(12, y + 28, kit.short(e.hours .. ' h, ' .. e.books .. ' books, ' .. (P.TRAITS[e.trait] or '') ..
-      (e.left and ('; flew off ' .. P.label(e.left)) or ''), 52), { font = small })
+      (e.left and ('; ' .. kind.left .. ' ' .. P.label(e.left)) or ''), 52), { font = small })
     y = y + 60
     if y > BTN_Y - 60 then break end
   end
@@ -255,6 +288,9 @@ local HELP = {
     ' hours it spins a cocoon, flies off as a moth and leaves an egg: the next generation.',
   'Days without reading make it peckish, hungry, then sulky; after a week it hides in a book until you read again.',
   'Its character comes from how you read: at night, in the morning, long sittings, little bites, many books or one.',
+  'Family: more creatures can share the reader, one awake at a time. The first hatching brings an ink octopus egg, ' ..
+    'the first finished book a shelf dragon egg. Tap one to hatch or wake it; the one awake goes to sleep, and a sleeping ' ..
+    'one does not eat, grow or get hungry.',
   'Make it the sleep screen (More) to see it asleep, dreaming of your book. It wakes once an hour.',
   'It only reads the reader\'s own reading statistics; nothing leaves the reader.',
 }
@@ -295,7 +331,7 @@ end
 
 local function rename()
   pcall(function()
-    ctx.input:text({ title = 'Name your bookworm', text = st().name, max_bytes = 24 }, function(c, text)
+    ctx.input:text({ title = 'Name your ' .. sp().kind, text = st().name, max_bytes = 24 }, function(c, text)
       if text and text:match('%S') then st().name = text:gsub('^%s+', ''):gsub('%s+$', ''); line = 'Hello! I am ' .. st().name .. '.' end
       kit.refresh()
     end)
@@ -315,8 +351,39 @@ local function more()
     { { 'Close', kit.close } } }, cancel = kit.close })
 end
 
+-- the kind key wakes or hatches; the one awake goes to sleep
+local function switch_to(key)
+  local old = st().name
+  P.switch(ctx.state, key, data)
+  view = P.update(st(), data)
+  line = choose_line()
+  msg = old .. ' is asleep now.'
+  screen = 'home'
+end
+
+local function tap_card(c)
+  local s = st()
+  if c.state == 'awake' then msg = nil; return end
+  if c.state == 'locked' then
+    kit.show({ title = c.sp.name, lines = { 'Its egg ' .. c.sp.hint .. '.' }, rows = { { { 'Close', kit.close } } }, cancel = kit.close })
+    return
+  end
+  local title = c.state == 'asleep' and ('Wake ' .. c.st.name .. '?') or ('Hatch ' .. a(c.sp.kind) .. ' egg?')
+  kit.show({ title = title,
+    lines = { s.name .. ' goes to sleep until you wake it again. A sleeping one does not eat, grow or get hungry.' },
+    rows = { { { c.state == 'asleep' and 'Wake' or 'Hatch', function() kit.close(); switch_to(c.sp.key) end },
+               { 'Cancel', kit.close } } },
+    cancel = kit.close })
+end
+
 local function tap(x, y)
   if kit.tap_modal(x, y) then return end
+  if screen == 'family' then
+    for k, c in ipairs(P.brood(ctx.state)) do
+      local cx, cy, cw, ch = card_rect(k)
+      if x >= cx and x < cx + cw and y >= cy and y < cy + ch then tap_card(c); return end
+    end
+  end
   if screen ~= 'home' then
     local bx, by, bw, bh = button_rect(1, 1)
     if y >= by and y < by + bh then screen = 'home' end
@@ -335,9 +402,10 @@ local function tap(x, y)
     s.pets = (s.pets or 0) + 1
     phase = phase + 1
     msg = nil
-    if not s.hatched then line = L.pick(L.EGG, seed(), fields())
-    elseif view.hunger == 'hiding' then line = L.pick(L.HIDING, seed(), fields())
-    else mood_override = 'pet'; line = L.pick(L.PET, seed(), fields()) end
+    local V = voice()
+    if not s.hatched then line = L.pick(V.EGG, seed(), fields())
+    elseif view.hunger == 'hiding' then line = L.pick(V.HIDING, seed(), fields())
+    else mood_override = 'pet'; line = L.pick(V.PET, seed(), fields()) end
   end
 end
 
@@ -377,6 +445,6 @@ function on_resume(c)
 end
 
 if rawget(_G, '__TEST') then
-  __TEST.api = { P = P, L = L, state = function() return ctx.state.bw end, view = function() return view end,
+  __TEST.api = { P = P, L = L, A = A, go = function(s) screen = s end, msg = function() return msg end, state = function() return ctx.state.bw end, view = function() return view end,
                  line = function() return line end, screen = function() return screen end, refresh = refresh_data }
 end

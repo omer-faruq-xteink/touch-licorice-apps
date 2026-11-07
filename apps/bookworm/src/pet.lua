@@ -29,6 +29,35 @@ local NAMES = { 'Pip', 'Moss', 'Quill', 'Biscuit', 'Inky', 'Nib', 'Fern', 'Waffl
                 'Juniper', 'Dot', 'Margo', 'Comma', 'Pebble', 'Toffee', 'Wren', 'Orla', 'Basil', 'Clover', 'Mango',
                 'Ziggy', 'Noodle', 'Hazel', 'Otto', 'Sprout', 'Twig', 'Lumen', 'Folio' }
 
+-- the kinds of creature (the brood): one awake at a time, the others asleep in ctx.state.brood.
+-- The bookworm comes first; the others' eggs come with an award (unlock) of any of them.
+P.SPECIES = {
+  { key = 'worm', name = 'Bookworm', kind = 'bookworm', names = NAMES,
+    stages = { 'egg', 'hatchling', 'young bookworm', 'grown bookworm', 'elder bookworm' },
+    leave = 'cocoon', left = 'flew off as a moth',
+    ends = 'spins a cocoon and flies off as a moth' },
+  { key = 'ink', name = 'Ink octopus', kind = 'ink octopus', unlock = 'hatch', hint = 'comes with the first hatching',
+    card = 'Egg after the first hatch',
+    names = { 'Inka', 'Squiggle', 'Blot', 'Sepia', 'Marlow', 'Octavia', 'Smudge', 'Ripple', 'Nautilus', 'Cuttle',
+              'Splotch', 'Wisp', 'Coral', 'Doodle', 'Indigo', 'Quilla', 'Drift', 'Murex' },
+    stages = { 'egg', 'hatchling', 'young ink octopus', 'grown ink octopus', 'elder ink octopus' },
+    leave = 'the sea', left = 'swam off to sea',
+    ends = 'slips off into the sea of stories' },
+  { key = 'dragon', name = 'Shelf dragon', kind = 'shelf dragon', unlock = 'book1', hint = 'comes with the first finished book',
+    card = 'Egg after a finished book',
+    names = { 'Ember', 'Cinder', 'Gilda', 'Tinder', 'Flint', 'Scorch', 'Brass', 'Penny', 'Bellows', 'Rumble',
+              'Sizzle', 'Ducat', 'Marigold', 'Sootling', 'Copper', 'Garnet', 'Nugget', 'Smolder' },
+    stages = { 'egg', 'hatchling', 'young shelf dragon', 'grown shelf dragon', 'elder shelf dragon' },
+    leave = 'its own hoard', left = 'flew off to its own hoard',
+    ends = 'flies off to start a hoard of its own' },
+}
+P.SP = {}
+for _, sp in ipairs(P.SPECIES) do P.SP[sp.key] = sp end
+function P.species_of(st)
+  local k = st and st.species or 'worm'
+  return P.SP[k] and k or 'worm'
+end
+
 ------------------------------------------------------------------ dates
 
 -- days since 1970-01-01 <-> a civil date (Howard Hinnant's algorithms)
@@ -107,7 +136,8 @@ end
 
 local function new_egg(st, data, random)
   random = random or math.random
-  st.name = NAMES[random(#NAMES)]
+  local names = P.SP[P.species_of(st)].names
+  st.name = names[random(#names)]
   st.gen = (st.gen or 0) + 1
   st.born = data.today
   st.base = data.total
@@ -119,8 +149,8 @@ local function new_egg(st, data, random)
 end
 
 -- a fresh state: the first egg, the books already finished not counting as food
-function P.new(data, random)
-  local st = { v = 1, awards = {}, lineage = {}, seen = {}, finished = 0, tod = { night = 0, morning = 0, day = 0, evening = 0 },
+function P.new(data, random, species)
+  local st = { v = 1, species = species or 'worm', awards = {}, lineage = {}, seen = {}, finished = 0, tod = { night = 0, morning = 0, day = 0, evening = 0 },
                first_total = data.total, last_total = data.total, events = {}, tasted = {} }
   for _, b in ipairs(data.books) do if b.finished and b.id then st.seen[b.id] = true end end
   new_egg(st, data, random)
@@ -215,7 +245,7 @@ P.AWARDS = {
   { id = 'h100', name = 'A hundred hours', text = 'Fed a hundred hours of reading.' },
   { id = 'owl', name = 'Night owl', text = 'Read mostly at night.' },
   { id = 'shelf', name = 'Three at once', text = 'Read three books in one week.' },
-  { id = 'moth', name = 'A new generation', text = 'A bookworm became a moth and left an egg.' },
+  { id = 'moth', name = 'A new generation', text = 'Grew up, left at ' .. P.COCOON_HOURS .. ' hours and laid an egg.' },
 }
 
 -- its taste: the reading of each book on each day (book_days), by the book's guessed kind, added
@@ -307,7 +337,10 @@ function P.update(st, data, random)
     food = 0
   end
   local stage = stage_of(st, food)
-  if stage > (st.stage or 1) and stage > 2 then event(st, 'grew', P.STAGES[stage].name, today) end
+  if stage > (st.stage or 1) and stage > 2 then
+    local nm = P.SP[P.species_of(st)].stages[stage]             -- "a young …", "an elder …"
+    event(st, 'grew', (nm:match('^[aeiou]') and 'an ' or 'a ') .. nm, today)
+  end
   st.stage = stage
   -- awards
   if st.finished >= 1 then earn(st, 'book1', today, earned) end
@@ -323,17 +356,73 @@ function P.update(st, data, random)
   if tr == 'owl' then earn(st, 'owl', today, earned) end
   if tr == 'butterfly' then earn(st, 'shelf', today, earned) end
   local taste = st.hatched and P.taste_of(st) or nil
-  local stg = P.STAGES[stage]
+  local stg, sp = P.STAGES[stage], P.SP[P.species_of(st)]
   local nexth = P.STAGES[stage + 1] and P.STAGES[stage + 1].hours or P.COCOON_HOURS
   return {
-    stage = stage, stage_key = stg.key, stage_name = stg.name, food = food,
+    stage = stage, stage_key = stg.key, stage_name = sp.stages[stage], food = food, species = sp.key,
     to_next = st.hatched and math.max(0, nexth * 3600 - food) or math.max(0, P.HATCH_SEC - food),
-    next_name = st.hatched and (P.STAGES[stage + 1] and P.STAGES[stage + 1].name or 'cocoon') or 'hatch',
+    next_name = st.hatched and (P.STAGES[stage + 1] and P.STAGES[stage + 1].key or sp.leave) or 'hatch',
     hunger = hunger(st, data), trait = tr, trait_name = tr and P.TRAITS[tr] or nil,
     taste = taste, taste_name = taste and T.NAMES[taste] or nil,
     book = data.current, today_sec = data.today_sec, streak = data.streak, earned = earned,
     reading = data.ok,
   }
+end
+
+------------------------------------------------------------------ the brood
+
+-- an award of any creature of the brood (the other kinds' eggs come with one)
+function P.has_award(root, id)
+  if root.bw and root.bw.awards and root.bw.awards[id] then return true end
+  for _, c in pairs(root.brood or {}) do if c.awards and c.awards[id] then return true end end
+  return false
+end
+
+-- each kind: { sp, state = 'awake' | 'asleep' | 'egg' (ready to hatch) | 'locked', st }
+function P.brood(root)
+  local out, awake = {}, P.species_of(root.bw)
+  for _, kind in ipairs(P.SPECIES) do
+    local c = (root.brood or {})[kind.key]
+    local state
+    if kind.key == awake then state, c = 'awake', root.bw
+    elseif c then state = 'asleep'
+    elseif not kind.unlock or P.has_award(root, kind.unlock) then state = 'egg'
+    else state = 'locked' end
+    out[#out + 1] = { sp = kind, state = state, st = c }
+  end
+  return out
+end
+
+-- a creature waking: what was read while it slept is not its food, nor its time of day, taste or
+-- finished books; it says it woke. A sleeping one does not eat, grow or get older.
+function P.wake(st, data)
+  local shift = math.max(0, data.total - (st.slept_total or data.total))
+  st.base = (st.base or 0) + shift
+  st.first_total = (st.first_total or 0) + shift
+  st.last_total = data.total
+  st.slept_total = nil
+  st.seen = st.seen or {}
+  for _, b in ipairs(data.books) do if b.finished and b.id then st.seen[b.id] = true end end
+  st.tasted = {}
+  for _, r in ipairs(data.book_days) do
+    if r.date then st.tasted[r.date .. '|' .. tostring(r.id or r.title or '')] = tonumber(r.sec) or 0 end
+  end
+  event(st, 'woke', nil, data.today)
+end
+
+-- the creature of kind key wakes (or hatches from a new egg) and the awake one goes to sleep
+function P.switch(root, key, data, random)
+  root.brood = root.brood or {}
+  local cur = root.bw
+  local ck = P.species_of(cur)
+  if ck == key or not P.SP[key] then return cur end
+  cur.slept_total = data.total
+  root.brood[ck] = cur
+  local nxt = root.brood[key]
+  root.brood[key] = nil
+  if nxt then P.wake(nxt, data) else nxt = P.new(data, random, key) end
+  root.bw = nxt
+  return nxt
 end
 
 -- the reading days of the last two weeks, newest first: { day, sec, title }

@@ -6,11 +6,16 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 
 - **New: Timekeeper** (`timekeeper.xtapp`): timers (up to six, named, set by steps or typed), a focus timer (Pomodoro: focus and breaks in turn, logged by day), a stopwatch with laps, an interval timer for exercise, tally counters (a large +1, the side buttons count too) and a log of the week's focus, with the time of day on top. Everything keeps running when you leave the app. Light on power: running timers show whole minutes and the app wakes only when they change; a tap on the digits shows the seconds. The reader has no sound, so when time is up the screen flashes, the reader stays awake while something runs (firmware 26110201), and the lock screen shows what runs and blinks slowly for three minutes after an end.
 
+## Changed
+
+- **Bookworm 1.1.0: company.** Under Family, an **ink octopus** and a **shelf dragon** can share the reader with the bookworm, one awake at a time: the octopus's egg comes with the first hatching, the dragon's with the first finished book. Tap one to hatch or wake it and the one awake goes to sleep; a sleeping one does not eat, grow or get hungry. Each has its own drawings at every stage, its own voice for everything it says (a dreamy octopus scribbler, a dragon who hoards books), its own names and its own generations, on the app and on the sleep screen. Also: "an elder bookworm" (it said "a elder").
+
 ## Files
 
 | file | content |
 |---|---|
 | `timekeeper.xtapp` | new: Timekeeper |
+| `bookworm.xtapp` | Bookworm 1.1.0: an ink octopus and a shelf dragon join the bookworm |
 | all other packages | unchanged since v0.20.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
