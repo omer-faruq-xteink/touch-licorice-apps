@@ -1309,7 +1309,7 @@ local function add_taste(st, data)
   st.taste, st.tasted = st.taste or {}, st.tasted or {}
   local authors = {}
   for _, b in ipairs(data.books) do if b.id then authors[b.id] = b.author end end
-  if data.current and data.current.id then authors[data.current.id] = data.current.author end
+  if data.current and data.current.id and data.current.author then authors[data.current.id] = data.current.author end
   for _, r in ipairs(data.book_days) do
     local day = P.day_of(r.date or '')
     -- the last week only: older days are forgotten below and would count again
@@ -1888,7 +1888,7 @@ local function draw_card(gg, k, c)
   if c.state == 'locked' then A.egg(gg, cx, ground, 0, 'locked', 60)
   elseif not c.st or not c.st.hatched then A.egg(gg, cx, ground, 0, c.sp.key, 60)
   else
-    local hx, hy = A.pose(c.sp.key, 'hatchling', cx, ground)
+    local hx, hy = A.pose(c.sp.key, 'hatchling', cx, ground - 16)        -- its shell clear of the text
     A.creature(gg, c.sp.key, 'hatchling', hx, hy, c.state == 'awake' and 'full' or 'asleep', 0, nil)
   end
   local text = c.state == 'locked' and c.sp.card or (c.sp.name .. ', ' .. CARD_STATE[c.state])

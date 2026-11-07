@@ -255,7 +255,7 @@ local function add_taste(st, data)
   st.taste, st.tasted = st.taste or {}, st.tasted or {}
   local authors = {}
   for _, b in ipairs(data.books) do if b.id then authors[b.id] = b.author end end
-  if data.current and data.current.id then authors[data.current.id] = data.current.author end
+  if data.current and data.current.id and data.current.author then authors[data.current.id] = data.current.author end
   for _, r in ipairs(data.book_days) do
     local day = P.day_of(r.date or '')
     -- the last week only: older days are forgotten below and would count again

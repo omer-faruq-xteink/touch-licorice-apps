@@ -246,7 +246,7 @@ local function draw_card(gg, k, c)
   if c.state == 'locked' then A.egg(gg, cx, ground, 0, 'locked', 60)
   elseif not c.st or not c.st.hatched then A.egg(gg, cx, ground, 0, c.sp.key, 60)
   else
-    local hx, hy = A.pose(c.sp.key, 'hatchling', cx, ground)
+    local hx, hy = A.pose(c.sp.key, 'hatchling', cx, ground - 16)        -- its shell clear of the text
     A.creature(gg, c.sp.key, 'hatchling', hx, hy, c.state == 'awake' and 'full' or 'asleep', 0, nil)
   end
   local text = c.state == 'locked' and c.sp.card or (c.sp.name .. ', ' .. CARD_STATE[c.state])
