@@ -5,8 +5,8 @@
     "listing_id": "u_fe86de11270e4d7fabc3c8169eddb3cc",
     "project_id": "d5ba24db-e60d-4be6-a0d8-2ed2a7896d48",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "0.1.1",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-04"
   },
   "calculator": {
@@ -25,8 +25,8 @@
     "listing_id": "u_b67d945db0ab44a997f49f7b59ac2d1b",
     "project_id": "ac2744ef-3e9d-494c-8ee4-3a9ca918932f",
     "release_version": "1.1.1",
-    "status": "in review",
-    "live_version": "1.1.0",
+    "status": "published",
+    "live_version": "1.1.1",
     "submitted": "2026-11-06"
   },
   "chess": {
@@ -255,8 +255,8 @@
     "listing_id": "u_90031091d2a54d9689580ee8e0a4466e",
     "project_id": "f17ef4eb-59be-469b-9ad7-796b984cab58",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-04"
   },
   "slidepuzzle": {
@@ -445,8 +445,8 @@
     "listing_id": "",
     "project_id": "3c24e555-c442-42a7-bcc9-05ab60b1e975",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-03"
   },
   "queens": {
@@ -455,8 +455,8 @@
     "listing_id": "",
     "project_id": "bf6810f5-1e65-4774-8cf2-4428f90b18d5",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-03"
   },
   "backgammon": {
@@ -465,8 +465,8 @@
     "listing_id": "",
     "project_id": "eca078ae-b008-4f88-bc03-92f201b1714c",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-04"
   },
   "notebook": {
@@ -475,8 +475,8 @@
     "listing_id": "",
     "project_id": "bfdb56a1-5848-4583-8085-63262ad00636",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-06"
   },
   "casefiles": {
@@ -485,8 +485,8 @@
     "listing_id": "",
     "project_id": "42efc232-ad42-47d2-8b09-71fe89051741",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-06"
   },
   "lamplighter": {
@@ -495,8 +495,8 @@
     "listing_id": "",
     "project_id": "735ff7d3-4a31-4246-8daa-2473307dbe83",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": null,
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-06"
   },
   "timekeeper": {

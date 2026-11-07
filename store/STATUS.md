@@ -26,7 +26,12 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | app | store name | app_id | release | status | live | submitted | Studio project |
 |---|---|---|---|---|---|---|---|
 | `game2048` | 2048 | `twentyfortyeight` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d2ef365a-0cbc-486a-9188-f2a3588bc7ca` |
+| `anki` | Anki | `anki` | 1.1.0 | published | 1.1.0 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
+| `backgammon` | Backgammon | `backgammon` | 1.0.0 | published | 1.0.0 | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
+| `bookworm` | Bookworm | `bookworm` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
+| `calendar` | Calendar | `calendar` | 1.1.1 | published | 1.1.1 | 2026-11-06 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
+| `casefiles` | Case Files | `casefiles` | 1.0.0 | published | 1.0.0 | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
 | `checkers` | Checkers | `checkers` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
 | `chessplay` | Chess | `chessplay` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
@@ -42,16 +47,20 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
 | `klondike` | Klondike | `klondike` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cb0f7994-54d7-41a6-963d-fc1fd466c3d6` |
 | `knightstour` | Knight's Tour | `knightstour` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `34c4be95-b474-4ee7-8224-ead826489eb8` |
+| `lamplighter` | Lamplighter | `lamplighter` | 1.0.0 | published | 1.0.0 | 2026-11-06 | `735ff7d3-4a31-4246-8daa-2473307dbe83` |
 | `lightsout` | Lights Out | `lightsout` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `5cc3b0a4-112a-4124-8f3c-9799f92cf3eb` |
 | `litclock` | Literary Clock | `litclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d30ca88a-e863-448d-9b29-94c7e7676b0c` |
 | `mahjong` | Mahjong | `mahjong` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `3d8374a5-4b5a-403a-941f-caacaed40dd9` |
 | `merchant` | Merchant | `merchant` | 2.0.2 | published | 2.0.2 | 2026-10-29 | `42e7380e-eef7-40ee-aa93-1736c028bd0b` |
 | `minesweeper` | Minesweeper | `minesweeper` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `0f0322cf-6f46-4bbf-9ca1-01175a6614a7` |
 | `nonogram` | Nonograms | `nonogram` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
+| `notebook` | Notebook | `notebook` | 1.0.1 | published | 1.0.1 | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
 | `notes` | Notes | `notes` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
+| `queens` | Queens | `queens` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `readwise` | Readwise | `readwise` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.2.0 | published | 1.2.0 | 2026-11-03 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | published | 1.0.1 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
@@ -66,15 +75,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
-| `anki` | Anki | `anki` | 1.1.0 | in review | 0.1.1 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
-| `backgammon` | Backgammon | `backgammon` | 1.0.0 | in review | - | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
-| `bookworm` | Bookworm | `bookworm` | 1.0.0 | in review | - | 2026-11-03 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
-| `calendar` | Calendar | `calendar` | 1.1.1 | in review | 1.1.0 | 2026-11-06 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
-| `casefiles` | Case Files | `casefiles` | 1.0.0 | in review | - | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
-| `lamplighter` | Lamplighter | `lamplighter` | 1.0.0 | in review | - | 2026-11-06 | `735ff7d3-4a31-4246-8daa-2473307dbe83` |
-| `notebook` | Notebook | `notebook` | 1.0.1 | in review | - | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
-| `queens` | Queens | `queens` | 1.0.0 | in review | - | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
-| `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | in review | 1.0.0 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.0 | in review | - | 2026-11-07 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 
-41 published, 10 in review or draft, 51 in all.
+50 published, 1 in review or draft, 51 in all.
