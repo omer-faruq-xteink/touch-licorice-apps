@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102301**, **26102401**, **26102801** (beta), **26102901** and **26110201**). Instapaper, wallabag, RSS, Hacker News and Readwise now need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Added
+
+- **New: Timekeeper** (`timekeeper.xtapp`): timers (up to six, named, set by steps or typed), a focus timer (Pomodoro: focus and breaks in turn, logged by day), a stopwatch with laps, an interval timer for exercise, tally counters (a large +1, the side buttons count too) and a log of the week's focus, with the time of day on top. Everything keeps running when you leave the app. Light on power: running timers show whole minutes and the app wakes only when they change; a tap on the digits shows the seconds. The reader has no sound, so when time is up the screen flashes, the reader stays awake while something runs (firmware 26110201), and the lock screen shows what runs and blinks slowly for three minutes after an end.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.20.0 |
+| `timekeeper.xtapp` | new: Timekeeper |
+| all other packages | unchanged since v0.20.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

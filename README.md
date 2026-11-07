@@ -53,6 +53,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; needs firmware 2.18 |
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
+| **Timekeeper** | timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer for exercise, counters and a log of focus time; whole minutes to save power, a flash when time is up; can be the lock screen |
 | **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
 | **Notebook** | plain text notes written in blocks (Enter makes a new line; a long text goes on into the next block by itself), folders, tags, sorting and a search through all notes; kept as .txt files you can also edit on a computer |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
@@ -383,6 +384,15 @@ makes a new line, Save and Cancel sit above it, and a long text goes on into a n
 date; Search looks through every note and shows the line it found. Each note is a `.txt` file in
 `AppFiles/notebook/`, readable and writable on a computer. [More](apps/notebook/README.md)
 
+### Timekeeper
+
+Timers (up to six, named), a focus timer (Pomodoro) that logs your focus time, a stopwatch with
+laps, an interval timer for exercise and tally counters, with the time of day on top. Everything
+keeps running when you leave the app. Light on power: running timers show whole minutes, a tap
+on the digits the seconds. The reader has no sound, so an end flashes the screen, the reader can
+stay awake while something runs, and the lock screen shows what runs and blinks when time is up.
+[More](apps/timekeeper/README.md)
+
 ### Tasks
 
 To-do lists: tap the box to tick an item, Add with the firmware keyboard, Clear done to remove the
@@ -543,6 +553,7 @@ python -I apps/kakuro/test_kakuro.py
 python -I apps/queens/test_queens.py
 python -I apps/casefiles/test_casefiles.py
 python -I apps/lamplighter/test_lamplighter.py
+python -I apps/timekeeper/test_timekeeper.py
 python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py

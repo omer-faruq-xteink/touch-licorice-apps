@@ -447,6 +447,17 @@ def lamplighter(p):
     p.ellipse((10, 66, 34, 90), w=4)                       # an unlit lamp
 
 
+def timekeeper(p):
+    # a stopwatch: a round face, a crown and button on top, a hand and a filled slice of time
+    p.ellipse((14, 20, 82, 88), w=5)
+    p.rect((40, 6, 56, 13), fill=True)                      # the crown
+    p.rect((45, 12, 51, 21), fill=True)
+    p.line([(70, 22), (78, 14)], 5)                        # the side button
+    p.d.pieslice(p._b((24, 30, 72, 78)), 270, 340, fill=0)  # time gone by
+    p.line([(48, 54), (48, 30)], 4)                        # the hand at twelve
+    p.ellipse((44, 50, 52, 58), fill=True)
+
+
 def queens(p):
     # a corner of a Queens board: a crown, crosses where no queen can go, a thick region border
     p.rect((8, 8, 88, 88), w=4)
@@ -748,7 +759,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
          'minesweeper': minesweeper, 'mahjong': mahjong, 'anki': anki,
          'freecell': freecell, 'wikipedia': wikipedia,
-         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'lamplighter': lamplighter, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
+         'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'lamplighter': lamplighter, 'timekeeper': timekeeper, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
          'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
