@@ -121,6 +121,25 @@ BEACON = ("<!-- Cloudflare Web Analytics --><script type='module' src='https://s
           "data-cf-beacon='{\"token\": \"3dfe5ef58dd642deb0588cb81fc6f979\"}'></script><!-- End Cloudflare Web Analytics -->")
 
 
+def add_icons(out):
+    """the site's icon (site/favicon.svg, PNGs for older browsers and phones) in the <head> of every
+    page, by a path relative to the page; the count of pages"""
+    n = 0
+    for path in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
+        s = open(path, encoding='utf-8').read()
+        if 'rel="icon"' in s or '</head>' not in s:
+            continue
+        up = os.path.relpath(out, os.path.dirname(path)).replace(os.sep, '/')
+        up = '' if up == '.' else up + '/'
+        links = (f'<link rel="icon" href="{up}favicon.svg" type="image/svg+xml">\n'
+                 f'<link rel="icon" href="{up}icon-32.png" sizes="32x32" type="image/png">\n'
+                 f'<link rel="apple-touch-icon" href="{up}apple-touch-icon.png">\n')
+        i = s.index('</head>')
+        open(path, 'w', encoding='utf-8', newline='\n').write(s[:i] + links + s[i:])
+        n += 1
+    return n
+
+
 def add_analytics(out):
     """the beacon before </body> of every page; the count of pages"""
     n = 0
@@ -214,6 +233,7 @@ def main():
     community = site_community.build(out, os.environ.get('COMMUNITY_FIXTURES'))
     stamp_assets(out)
     counters = counter_pages(out)
+    add_icons(out)
     pages = add_analytics(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '

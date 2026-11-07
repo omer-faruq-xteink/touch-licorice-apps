@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- the site's icon: a puzzle piece (an app to add) on the reader's dark frame -->
+  <rect width="64" height="64" rx="14" fill="#1b1b1b"/>
+  <g fill="#fafafa">
+    <rect x="13" y="21" width="30" height="30" rx="3"/>
+    <circle cx="28" cy="20" r="7"/>
+    <circle cx="44" cy="36" r="7"/>
+  </g>
+  <circle cx="13" cy="36" r="5.5" fill="#1b1b1b"/>
+  <circle cx="28" cy="52" r="5.5" fill="#1b1b1b"/>
+</svg>
