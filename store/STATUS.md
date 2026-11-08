@@ -32,7 +32,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `anki` | Anki | `anki` | 1.1.0 | published | 1.1.0 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `backgammon` | Backgammon | `backgammon` | 1.0.0 | published | 1.0.0 | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
 | `calculator` | Calculator | `calculator` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
-| `calendar` | Calendar | `calendar` | 1.1.1 | published | 1.1.1 | 2026-11-06 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `casefiles` | Case Files | `casefiles` | 1.0.0 | published | 1.0.0 | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
 | `checkers` | Checkers | `checkers` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
 | `chessplay` | Chess | `chessplay` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
@@ -78,6 +77,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `bookworm` | Bookworm | `bookworm` | 1.1.0 | in review | 1.0.0 | 2026-11-08 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
+| `calendar` | Calendar | `calendar` | 1.1.2 | in review | 1.1.1 | 2026-11-08 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.0 | in review | - | 2026-11-07 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 
-49 published, 2 in review or draft, 51 in all.
+48 published, 3 in review or draft, 51 in all.
