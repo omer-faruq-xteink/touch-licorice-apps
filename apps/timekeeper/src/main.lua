@@ -511,10 +511,11 @@ local function draw_digits(gg)
   elseif countdown then text = minutes_text((secs + 59) // 60)
   else text = minutes_text(secs // 60) end
   big(gg, text, BIG_Y)
-  -- a tap on the digits shows the seconds until the next minute
+  -- a tap on the digits shows the seconds until the next minute; another tap reads them again
+  -- (it only did the first time: "tap again" left the seconds where they were)
   hit(0, BIG_Y - 10, W, BIG_H + 20, function()
     local s2, cd2, run2 = shown()                     -- as it is now, not as it was drawn
-    if run2 and not want_seconds(s2, cd2, run2) then
+    if run2 and not live_seconds(s2, cd2, run2) then
       exact_until = now() + (cd2 and (((s2 - 1) % 60) + 1) or (60 - s2 % 60))
       exact_secs, exact_at = s2, now()
     end

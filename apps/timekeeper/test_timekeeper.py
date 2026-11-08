@@ -135,7 +135,15 @@ g.draw()
 g.tap(240, 200)
 assert int(A().exact()) == int(A().now()) + 50 and wake_in() == 50, wake_in()   # one refresh, frozen
 assert any(' at ' in t and 'tap again' in t for t in g.texts()), g.texts()
-advance(50)
+first = [t for t in g.texts() if 'tap again' in t]
+# tap again: the seconds are read again (it did nothing while the first reading showed)
+advance(15)
+g.draw()
+g.tap(240, 200)
+assert int(A().exact()) == int(A().now()) + 35 and wake_in() == 35, (A().exact(), A().now(), wake_in())
+again = [t for t in g.texts() if 'tap again' in t]
+assert again and again != first, (first, again)                 # "at hh:mm:ss" moved on
+advance(35)
 assert A().exact() is None and wake_in() == 60
 g.tap_label('Reset')
 # Edit: the length by steps and typed (minutes or h:mm), and the name

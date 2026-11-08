@@ -1,7 +1,7 @@
 {
   "app_id": "timekeeper",
   "display_name": "Timekeeper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "omer-faruq",
   "description": "Timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer, counters and a log of focus time; the lock screen shows what runs. Light on power: whole minutes, seconds on a tap.",
   "entry": "index.lua",
