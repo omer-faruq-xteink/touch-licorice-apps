@@ -85,7 +85,9 @@ def plain(md):
 
 # sections of an app's README shown on its page after the introduction (set-up a user can't find
 # on the reader)
-SECTIONS = {'calendar': ['Adding a calendar']}
+SECTIONS = {'calendar': ['Adding a calendar'], 'rss': ['AI questions (optional)'], 'hackernews': ['AI questions (optional)'],
+            'instapaper': ['AI questions (optional)'], 'readwise': ['AI questions (optional)'],
+            'wallabag': ['AI questions (optional)']}
 
 
 def intro(app):
@@ -103,7 +105,8 @@ def intro(app):
     for title in SECTIONS.get(app, []):
         start = lines.index('## ' + title) + 1
         end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
-        out.append(f'<h3>{H(title)}</h3>' + render(lines[start:end]))
+        slug = re.sub(r'[^\w\- ]', '', title.lower()).replace(' ', '-')   # as GitHub's, so README links work
+        out.append(f'<h3 id="{slug}">{H(title)}</h3>' + render(lines[start:end]))
     return '\n'.join(out)
 
 

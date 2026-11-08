@@ -1,7 +1,7 @@
 {
   "app_id": "instapaper",
   "display_name": "Instapaper",
-  "version": "0.3.0",
+  "version": "1.2.0",
   "author": "omer-faruq",
   "description": "Read your Instapaper articles; archive, star, progress kept in sync; portrait or landscape (firmware 2.18)",
   "entry": "index.lua",

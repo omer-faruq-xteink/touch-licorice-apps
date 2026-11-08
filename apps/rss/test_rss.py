@@ -695,13 +695,19 @@ g.store['config.txt'] = str(g.store['config.txt']).replace('images=0', 'images=1
 g = restart(); g.flush()
 def overflow():
     """texts that run past the right edge, or into the next column (10 px a character here)"""
-    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > (400 if int(r.x) < 400 else 800) - 8]
+    edges = [400, 800] if not two_thirds else [277, 538, 800]           # Settings: three columns
+    return [(str(r.s), int(r.x)) for r in draw().values() if int(r.x) + 10 * len(str(r.s)) > next(e for e in edges if int(r.x) < e) - 8]
+two_thirds = False
 tap_label('Settings')
 assert 'Screen' in texts(), texts()
 assert max(int(r.y) for r in draw().values()) <= 800 - 48, [(str(r.s), int(r.y)) for r in draw().values()]   # portrait: it all fits
 x, y = recs()['portrait']; tap(x + 5, y + 5)
 assert 'screen=landscape' in str(g.store['config.txt']) and int(g.ctx.screen.width) == 800
+two_thirds = True
 assert 'landscape' in texts() and not overflow(), overflow()
+assert max(int(r.y) for r in draw().values()) <= 480 - 48, [(str(r.s), int(r.y)) for r in draw().values()]   # landscape: three rows fit
+assert 'Offline copies (100)' in texts() and not any(s.endswith('~') for s in texts() if s[0].isupper()), texts()
+two_thirds = False
 key('back')
 cells = [(str(r.s), int(r.x), int(r.y)) for r in draw().values() if 100 <= int(r.y) < 200]
 assert any(x > 400 for _s, x, _y in cells) and any(x < 400 for _s, x, _y in cells), cells     # two columns

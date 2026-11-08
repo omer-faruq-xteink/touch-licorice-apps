@@ -11,6 +11,10 @@ Reads RSS and Atom feeds on the device, as text, in one of two ways (or both sid
   star, read and tags kept in CommaFeed. The Worker also publishes the account as an OPDS catalog
   for the stock reader; this app uses its JSON API, so articles open inside the app.
 
+**Optional: questions to an AI** about the article you are reading (Claude, OpenAI, Gemini,
+OpenRouter, Groq, Mistral, DeepSeek, Ollama or any OpenAI-compatible server, with your own key). It is **off by default**, and while it is off nothing of it
+shows anywhere: the app works exactly as without it. See [AI questions (optional)](#ai-questions-optional).
+
 ## Setup
 
 Feeds on the reader: install `rss.xtapp`, open it, tap **Add feed** (see below).
@@ -112,6 +116,64 @@ or with an older Worker, the app looks exactly as before. Nothing to set in the 
   articles stay; older copies are removed. **Articles saved offline** in Settings shows how many
   there are; tap it twice to delete them all (lists and settings stay).
 
+## AI questions (optional)
+
+Nothing here is needed to read feeds. **AI is off by default**; while it is off (or has no key) the
+app shows no AI button anywhere and sends nothing to any AI service.
+
+To use it, open **Settings → AI**:
+
+- **AI**: on / off.
+- **Service**: tap it for the list: **Claude (Anthropic)**, **OpenAI**, **Gemini (Google)**,
+  **OpenRouter**, **Groq**, **Mistral**, **DeepSeek**, **Ollama (on your network)**, and last
+  **Other (OpenAI-compatible)** for any other server that speaks OpenAI's interface (LM Studio,
+  a company proxy, ...). Each known service brings its own address and a model to start with;
+  Ollama and Other ask for their address when chosen (e.g. `http://192.168.1.5:11434/v1`), and
+  need no key unless the server wants one. Choosing another service resets Address, Model and
+  Extra parameters to its own.
+- **Address** (empty: the service's own), **Key** (your API key from the service; you pay the
+  service for what you ask), **Model** (empty: the service's starting model, e.g.
+  `claude-opus-5-5`, `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-flash`), **Answer in** (a
+  language, e.g. `Turkish`; empty: the language of the question).
+- **Extra parameters (JSON)**: an object merged into every request as the service documents its
+  fields; nested objects merge, `null` removes a field the app sends. A text that is not a JSON
+  object is not saved. Examples:
+  - OpenAI reasoning models, less thinking: `{"reasoning_effort":"minimal"}`
+  - Gemini 2.5 Flash, no thinking: `{"generationConfig":{"thinkingConfig":{"thinkingBudget":0}}}`
+  - Claude, more thorough (the app asks for low effort): `{"output_config":{"effort":"medium"}}`
+  - any service, steadier or shorter answers: `{"temperature":0.3}`, `{"max_tokens":800}`
+- **Test the connection** asks for a one-word answer and shows it (or the service's error).
+- A long key is easier over USB: put `ai.txt` into `AppFiles/rss/` with lines such as
+  `service=deepseek` (a name from the list, or `other` with `url=...`), `key=...`, `model=...`,
+  `lang=...`, `extra={...}`. Opening Settings → AI (or the app) takes the settings in and
+  **deletes the file**, so the key does not stay on the card. The key is kept in the app's private
+  storage and shown only as `sk-ant…WXYZ`.
+
+With AI on, an open article has one more button in its bar, **AI**. It opens the ready questions
+(**Summarize**, **Key points**, **Explain simply**, **Background**, **What is missing?**, and
+**Translate** when an answer language is set) and **Your question**. The answer is laid
+out like an article and paged the same way; **More** returns to the ready questions (with **Your question** for a follow-up; the whole
+conversation goes along) (and **Start over**), Back returns to the article.
+The conversation stays while that article is open.
+
+What is sent: the article's title, feed, date, link and text as shown (the first 24 KB; with Full
+text on, the whole article), plus your questions, to the service you chose, nowhere else. A reply
+must come within 60 s; a failed one says why and the question can be asked again.
+
+**Web search.** At the top of the ready questions, **Web search: off / on** (where the service has
+a web search): while it is on, every question searches the web first, the ready ones (Background,
+What is missing?, your own buttons) and your own, the first and the follow-ups; it is off again for
+each new article. Claude, OpenAI, Gemini and OpenRouter search themselves; for DeepSeek the model first writes a short search
+query from the whole article, the conversation and the question, the app runs DeepSeek's search
+with it, and the results go with the question (one more request, which begins like the answer's,
+so DeepSeek serves the article from its cache the second time). Groq, Mistral, Ollama and
+Other have no web search here, so the switch does not show. Searches cost extra at the service.
+
+**My buttons** (Settings → AI): up to six questions of your own, shown after the ready ones. Tap
+one to change it (empty it to delete it), or **Add a button**, as `Label | question`. They are
+kept in `AppFiles/rss/ai_buttons.txt`, one `Label | question` a line, which you can also edit
+over USB.
+
 ## Images
 
 With **Images in articles** on, pictures appear where they are in the text, as greyscale JPEGs at
@@ -131,10 +193,13 @@ python xtpack.py apps/rss
 python -I apps/rss/test_feeds.py     # the feed and OPML parser
 python -I apps/rss/test_rss.py       # offline, Lua 5.4 via lupa, fake Worker
 python -I apps/rss/test_rss_local.py # feeds on the reader: fake servers, gzip, 304, ranges
+python -I apps/rss/test_ai.py        # the optional AI questions: requests, answers, screens
 ```
 
-Edit `src/main.lua` (screens), `src/library.lua` (collections, fetching, storage) and
-`src/feeds.lua` (parsing); `index.lua` is generated.
+Edit `src/main.lua` (screens), `src/library.lua` (collections, fetching, storage),
+`src/feeds.lua` (parsing); the optional AI questions are `tools/gamekit/ai.lua` (services, requests,
+answers) and `aiui.lua` (their screens), shared with Instapaper, Readwise, wallabag and Hacker News
+(ai.lua only) and built into each package (no app needs another); `index.lua` is generated.
 
 Verified on an X4 Pro running Licorice 26102301 (2026-10-24) against a deployed Worker: HTTPS,
 JSON decoding, list paging, article layout, Basic auth and path-token auth, offline cache.

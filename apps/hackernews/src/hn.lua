@@ -93,6 +93,72 @@ function N.text(html)
   return s
 end
 
+-- A story's comments all at once, for the AI (Algolia's search, flat, with their parents): about
+-- 35 KB per 100 comments, so a page of `per` stays under the reader's 128 KB an answer.
+function N.comments_url(story_id, page, per)
+  return N.ALGOLIA .. 'search?tags=comment,story_' .. story_id .. '&hitsPerPage=' .. per .. '&page=' .. page
+    .. '&attributesToRetrieve=comment_text,author,parent_id,created_at_i&attributesToHighlight=%5B%5D'
+end
+
+local function idstr(v)
+  if type(v) == 'number' then return string.format('%d', math.floor(v)) end
+  return tostring(v or '')
+end
+
+-- a page of Algolia comment hits, kept small: { id, parent, by, t, text } each. The parents are
+-- read from the raw JSON in order (a decoded number above 2^24 may come back rounded); objectID
+-- is a string already.
+function N.comment_hits(d, body)
+  local parents = {}
+  for p in tostring(body or ''):gmatch('"parent_id"%s*:%s*(%d+)') do parents[#parents + 1] = p end
+  local hits = type(d) == 'table' and type(d.hits) == 'table' and d.hits or {}
+  local use_raw = #parents == #hits
+  local out = {}
+  for k, h in ipairs(hits) do
+    out[#out + 1] = { id = idstr(h.objectID), parent = use_raw and parents[k] or idstr(h.parent_id), by = tostring(h.author or '?'),
+                      t = tonumber(h.created_at_i) or 0, text = N.text(h.comment_text) }
+  end
+  return out
+end
+
+-- The comments as one text for the AI: "author: text", a reply indented two spaces under the
+-- comment it answers; the first level in HN's order (order: the story's kids), replies oldest
+-- first (HN's own order of replies is not in the data). At most budget bytes, whole comments;
+-- returns the text and how many comments it holds.
+function N.thread_text(hits, story_id, order, budget)
+  local kids, known = {}, {}
+  for _k, c in ipairs(hits) do known[c.id] = true end
+  for _k, c in ipairs(hits) do
+    local p = (c.parent ~= '' and known[c.parent]) and c.parent or tostring(story_id)   -- a lost parent: first level
+    kids[p] = kids[p] or {}
+    kids[p][#kids[p] + 1] = c
+  end
+  for _p, list in pairs(kids) do table.sort(list, function(a, b) if a.t ~= b.t then return a.t < b.t end return a.id < b.id end) end
+  local rank = {}
+  for k, id in ipairs(order or {}) do rank[tostring(id)] = k end
+  local top = kids[tostring(story_id)] or {}
+  table.sort(top, function(a, b)
+    local ra, rb = rank[a.id] or math.huge, rank[b.id] or math.huge
+    if ra ~= rb then return ra < rb end
+    if a.t ~= b.t then return a.t < b.t end
+    return a.id < b.id
+  end)
+  local out, used, n, full = {}, 0, 0, false
+  local function walk(list, depth)
+    for _k, c in ipairs(list) do
+      if full then return end
+      local line = string.rep('  ', depth) .. c.by .. ': ' .. c.text:gsub('%s*\n+%s*', ' ')
+      if used + #line + 1 > budget then full = true; return end
+      out[#out + 1] = line
+      used, n = used + #line + 1, n + 1
+      if kids[c.id] then walk(kids[c.id], depth + 1) end
+    end
+  end
+  walk(top, 0)
+  if full then out[#out + 1] = '[' .. (#hits - n) .. ' more comments are left out here.]' end
+  return table.concat(out, '\n'), n
+end
+
 -- the bytes of s that fit in width w (whole UTF-8 characters, at least one)
 local function fit(f, s, w)
   local best = nil

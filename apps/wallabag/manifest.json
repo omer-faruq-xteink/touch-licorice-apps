@@ -1,7 +1,7 @@
 {
   "app_id": "wallabag",
   "display_name": "wallabag",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "omer-faruq",
   "description": "Read your wallabag articles (your own server or a hosted one); archive, star, tags, offline copies; portrait or landscape (firmware 2.18)",
   "entry": "index.lua",

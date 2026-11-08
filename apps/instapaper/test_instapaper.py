@@ -7,6 +7,8 @@ import json, os
 from lupa import lua54
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import subprocess as _sp, sys as _sys                          # src/ -> index.lua first
+_sp.run([_sys.executable, '-I', os.path.join(HERE, 'bundle.py')], check=True, stdout=_sp.DEVNULL)
 L = lua54.LuaRuntime(unpack_returned_tuples=True)
 
 calls = []          # (method, url, body, authorization)
@@ -408,4 +410,9 @@ assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['conf
 g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
 g = restart(); g.flush()
 assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
+
+# the optional AI questions (tools/gamekit/ai.lua, aiui.lua)
+_sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
+import ai_reader_test  # noqa: E402
+ai_reader_test.run(globals(), 'Unread', 'instapaper')
 print('instapaper29 tests passed')

@@ -169,6 +169,554 @@ local function require(n)
   return v
 end
 
+__mods['ai'] = function()
+-- Asking an AI about the article on screen, shared by RSS and Hacker News (their bundle.py puts
+-- it in as require('ai')): the services and the three kinds of interface they speak (Claude, any
+-- OpenAI-compatible server, Gemini), the request each one takes and the answer each one gives,
+-- and the logic of the Settings → AI page. Nothing here draws or touches the network: the app
+-- sends what A.request builds and shows what A.value gives.
+--
+-- The settings live in the app's cfg: aion (boolean), aiprov, aiurl, aikey, aimodel, ailang,
+-- aiextra (strings).
+--
+-- A conversation is a list of { role = 'user' | 'assistant', text = ... }. The article goes into
+-- the system prompt, so every follow-up question still sees it.
+
+local A = {}
+
+-- The services offered in Settings → AI, in the list's order: each speaks one of the three kinds
+-- of interface (claude, openai, gemini), with its own address and a model to start with (the
+-- Model setting replaces it). Ollama and Other have no address of their own: it is asked when
+-- they are chosen, and a key is optional there (local servers need none).
+A.PROVIDERS = {
+  { id = 'claude', label = 'Claude (Anthropic)', name = 'Claude', kind = 'claude', url = 'https://api.anthropic.com/v1', model = 'claude-opus-5-5' },
+  { id = 'openai', label = 'OpenAI', name = 'OpenAI', kind = 'openai', url = 'https://api.openai.com/v1', model = 'gpt-5-mini' },
+  { id = 'gemini', label = 'Gemini (Google)', name = 'Gemini', kind = 'gemini', url = 'https://generativelanguage.googleapis.com/v1beta', model = 'gemini-2.5-flash' },
+  { id = 'openrouter', label = 'OpenRouter', name = 'OpenRouter', kind = 'openai', url = 'https://openrouter.ai/api/v1', model = 'openrouter/auto' },
+  { id = 'groq', label = 'Groq', name = 'Groq', kind = 'openai', url = 'https://api.groq.com/openai/v1', model = 'llama-3.3-70b-versatile' },
+  { id = 'mistral', label = 'Mistral', name = 'Mistral', kind = 'openai', url = 'https://api.mistral.ai/v1', model = 'mistral-small-latest' },
+  { id = 'deepseek', label = 'DeepSeek', name = 'DeepSeek', kind = 'openai', url = 'https://api.deepseek.com/v1', model = 'deepseek-flash' },
+  { id = 'ollama', label = 'Ollama (on your network)', name = 'Ollama', kind = 'openai', url = '', model = 'llama3.2', keyless = true,
+    hint = 'http://192.168.1.' },
+  { id = 'other', label = 'Other (OpenAI-compatible)', name = 'AI', short = 'Other', kind = 'openai', url = '', model = '', keyless = true,
+    hint = 'https://' },
+}
+A.PROV = {}
+for _, p in ipairs(A.PROVIDERS) do A.PROV[p.id] = p end
+
+-- the ready questions: the button's name and what is asked
+A.PRESETS = {
+  { 'Summarize', 'Summarize this article in a few short paragraphs.' },
+  { 'Key points', 'List the key points of this article.' },
+  { 'Explain simply', 'Explain this article simply, for someone new to the subject.' },
+  { 'Background', 'What background or context helps to understand this article?' },
+  { 'What is missing?', 'What might this article leave out, and which of its claims are weak or one-sided?' },
+}
+
+-- more ready questions when a discussion goes along (Hacker News comments)
+A.DISCUSSION = {
+  { 'The discussion', 'Summarize the discussion in the comments: the main points of view and the most useful answers.' },
+  { 'Disagreements', 'Where do the commenters disagree, and what are the strongest arguments on each side?' },
+}
+
+local ARTICLE_MAX = 24000      -- bytes of article text sent along
+local BODY_MAX = 60000         -- the reader sends at most 65536 bytes
+local COMMENTS_ROOM = 52000    -- article text and comments together, at most
+
+-- s cut to at most n bytes, on a whole UTF-8 character
+local function cut(s, n)
+  if #s <= n then return s end
+  local i = n
+  while i > 0 and s:byte(i + 1) and s:byte(i + 1) >= 0x80 and s:byte(i + 1) < 0xC0 do i = i - 1 end
+  return s:sub(1, i)
+end
+A.cut = cut
+
+function A.prov(cfg) return A.PROV[cfg.aiprov] or A.PROV.claude end
+function A.kind(cfg) return A.prov(cfg).kind end
+function A.url(cfg) return ((cfg.aiurl ~= '' and cfg.aiurl or A.prov(cfg).url):gsub('/+$', '')) end
+function A.model(cfg) return cfg.aimodel ~= '' and cfg.aimodel or A.prov(cfg).model end
+
+-- switched on and able to ask: an address, and a key where the service needs one
+function A.ready(cfg)
+  if not cfg.aion or A.url(cfg) == '' then return false end
+  return cfg.aikey ~= '' or A.prov(cfg).keyless == true
+end
+
+-- Extra parameters (Settings → AI): a JSON object merged into every request body, nested objects
+-- into nested objects; null removes a field (e.g. {"fallbacks":null}). Returns the table, or nil
+-- and why. decode is ctx.json's decode.
+function A.extra(s, decode)
+  if not s or not s:match('%S') then return nil end
+  local ok, t = pcall(decode, s)
+  if not ok or type(t) ~= 'table' then return nil, 'Extra parameters: not valid JSON' end
+  if t[1] ~= nil then return nil, 'Extra parameters: a JSON object {...} is needed' end
+  return t
+end
+
+local function merge(dst, src, null)
+  for k, v in pairs(src) do
+    if null ~= nil and v == null then dst[k] = nil
+    elseif type(v) == 'table' and type(dst[k]) == 'table' and v[1] == nil then merge(dst[k], v, null)
+    else dst[k] = v end
+  end
+end
+
+-- the system prompt: how to answer on this screen, then the article
+-- art: { title, feed, date, url, text, comments, what }. text is the article (may be empty: then
+-- only its link is given); comments a discussion already written out as text (Hacker News);
+-- what names the thing read ('an article' by default).
+function A.system(cfg, art)
+  local text = (art.text or ''):gsub('%[%[img:%d+%]%]', ''):gsub('\n\n\n+', '\n\n')
+  local short = #text > ARTICLE_MAX
+  text = cut(text, ARTICLE_MAX)
+  local lines = {
+    'You help someone who is reading ' .. (art.what or 'an article') .. ' on a small black-and-white e-reader.',
+    'Reply in plain text: short paragraphs, "- " for list items, no tables, no code blocks, no links to follow.',
+    'Be concise unless asked for more. If the text below seems to be only a summary, say so when it matters.',
+  }
+  if (cfg.ailang or '') ~= '' then lines[#lines + 1] = 'Answer in ' .. cfg.ailang .. '.' end
+  lines[#lines + 1] = ''
+  lines[#lines + 1] = 'Title: ' .. (art.title or '')
+  if (art.feed or '') ~= '' then lines[#lines + 1] = 'Source: ' .. art.feed end
+  if (art.date or '') ~= '' then lines[#lines + 1] = 'Date: ' .. art.date end
+  if (art.url or '') ~= '' then lines[#lines + 1] = 'Link: ' .. art.url end
+  lines[#lines + 1] = ''
+  if text:match('%S') then
+    lines[#lines + 1] = text .. (short and '\n\n[The article goes on; only its beginning is given here.]' or '')
+  elseif (art.url or '') ~= '' then
+    lines[#lines + 1] = '[Only the link of the article is given here, not its text: say so when it matters.]'
+  end
+  if art.comments and art.comments:match('%S') then
+    local room = math.max(8000, COMMENTS_ROOM - #text)
+    local c = art.comments
+    if #c > room then c = cut(c, room) .. '\n[More comments follow; they are left out here.]' end
+    lines[#lines + 1] = ''
+    lines[#lines + 1] = 'The discussion (each comment as "author: text"; a reply is indented under the comment it answers):'
+    lines[#lines + 1] = c
+  end
+  return table.concat(lines, '\n')
+end
+
+-- Claude's newest models take a few extras: low effort (quick answers) on the 5 family, and the
+-- server-side fallback to another model where a model declines
+local function claude_extras(model, body, headers)
+  if model:match('^claude%-%a+%-5') then body.output_config = { effort = 'low' } end
+  if model == 'claude-opus-5-5' or model == 'claude-opus-5' or model == 'claude-fable-5-1' or model == 'claude-sonnet-5-5' then
+    body.fallbacks = 'default'
+    headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'
+  end
+end
+
+local function body_for(kind, model, sys, msgs)
+  if kind == 'claude' then
+    local m = {}
+    for _, x in ipairs(msgs) do m[#m + 1] = { role = x.role, content = x.text } end
+    return { model = model, max_tokens = 4096, system = sys, messages = m }
+  elseif kind == 'gemini' then
+    local c = {}
+    for _, x in ipairs(msgs) do c[#c + 1] = { role = x.role == 'assistant' and 'model' or 'user', parts = { { text = x.text } } } end
+    return { systemInstruction = { parts = { { text = sys } } }, contents = c }
+  end
+  local m = { { role = 'system', content = sys } }
+  for _, x in ipairs(msgs) do m[#m + 1] = { role = x.role, content = x.text } end
+  return { model = model, messages = m }
+end
+
+local function message_of(d)
+  if type(d) ~= 'table' then return nil end
+  local e = d.error
+  if type(e) == 'table' and e.message then return tostring(e.message) end
+  if type(e) == 'string' then return e end
+  return nil
+end
+
+-- Web search: a switch at the top of the ready questions (Web search: on / off), for every
+-- question asked while it is on, the ready ones too; off again for each new article. Where the service
+-- has it: Claude, Gemini and OpenRouter as a tool the model calls itself, OpenAI through its
+-- Responses API, DeepSeek as a separate search the app makes first (A.search_request); the
+-- others (Groq, Mistral, Ollama, Other) do not offer it here.
+A.WEB = { claude = 'tool', gemini = 'tool', openrouter = 'tool', openai = 'responses', deepseek = 'search' }
+function A.web_ok(cfg) return A.WEB[A.prov(cfg).id] ~= nil end
+function A.web_first(cfg) return A.WEB[A.prov(cfg).id] == 'search' end
+
+-- What DeepSeek's search looks for is written by the model first: a short query from the whole
+-- article, the conversation and the question (a ready question such as "What background ...?"
+-- says nothing of the article by itself). The request is the answer's own (the same system text
+-- with the article, the same conversation) with an instruction after the question, so the answer
+-- that follows starts the same way and DeepSeek serves that part from its cache. When it fails,
+-- the article's title and the question are searched.
+local QUERY_ASK = '[Before answering: reply only with one web search query (at most 12 words and under 100 characters) that finds what is'
+  .. ' needed to answer this, using the article and the conversation above. No quotes, no explanation.]'
+function A.query_request(cfg, art, msgs, J)
+  local list = {}
+  for i, m in ipairs(msgs) do list[i] = m end
+  local last = list[#list]
+  if not last or last.role ~= 'user' then return nil, 'no question' end
+  list[#list] = { role = 'user', text = last.text .. '\n\n' .. QUERY_ASK }
+  return A.request(cfg, art, list, { encode = J.encode, extra = J.extra, null = J.null, max_tokens = 60 })
+end
+-- the query from that answer, or the title and the question when there is none
+function A.query_text(cfg, resp, decode, art, question)
+  local text = resp and A.answer(cfg, resp, decode)
+  local q = text and text:match('[^\n]*%S[^\n]*')
+  if q then q = q:gsub('[%*`]', ''):gsub('^%s*[#>%-]*%s*', ''):gsub('^["\']+', ''):gsub('["\']+%s*$', ''):gsub('%s+$', '') end
+  if not q or q == '' or #q > 200 then q = ((art.title or '') .. ' ' .. question):gsub('^%s+', '') end
+  return A.short_query(q)
+end
+
+-- DeepSeek's search takes a query (and ori_question) of 1 to 128 Unicode characters: longer ones
+-- are cut after a whole word
+A.QUERY_MAX = 128
+function A.short_query(q)
+  q = tostring(q or ''):gsub('%s+', ' '):gsub('^ ', ''):gsub(' $', '')
+  local n = utf8.len(q)
+  if not n then q = cut(q, A.QUERY_MAX); n = utf8.len(q) or #q end   -- not valid UTF-8: bytes
+  if n <= A.QUERY_MAX then return q end
+  local c = q:sub(1, (utf8.offset(q, A.QUERY_MAX + 1) or #q + 1) - 1)
+  if q:sub(#c + 1, #c + 1) == ' ' then return c end              -- the cut fell between words
+  return c:match('^(.*%S)%s+%S*$') or c
+end
+
+-- DeepSeek's search (POST /v1/tools/search, the same key): the request for a query, with the
+-- question it serves (ori_question, which DeepSeek uses to rank the results)
+function A.search_request(cfg, query, encode, question)
+  local q = A.short_query(query)
+  if q == '' then q = 'news' end
+  local oq = question and A.short_query(question) or ''
+  local body = encode(oq ~= '' and { query = q, ori_question = oq, count = 5 } or { query = q, count = 5 })
+  if type(body) ~= 'string' then return nil, 'could not encode the search' end
+  return { url = A.url(cfg) .. '/tools/search', method = 'POST', body = body,
+           headers = { ['content-type'] = 'application/json', ['Authorization'] = 'Bearer ' .. (cfg.aikey or '') } }
+end
+
+-- its results as text to go with the question (at most about 6 KB), or nil and why
+function A.search_text(resp, decode)
+  if type(resp) ~= 'table' or type(resp.body) ~= 'string' then return nil, 'the search gave no answer' end
+  local st = tonumber(resp.status)
+  local ok, d = pcall(decode, resp.body)
+  if st and st >= 400 then local m = ok and message_of(d); return nil, 'search: HTTP ' .. st .. (m and (': ' .. m) or '') end
+  if not ok or type(d) ~= 'table' or type(d.results) ~= 'table' or #d.results == 0 then return nil, 'the search found nothing' end
+  local out = { 'Web search results (use them when they help, and name the source):' }
+  for k, r in ipairs(d.results) do
+    if type(r) == 'table' then
+      local head = k .. '. ' .. tostring(r.title or '') .. ' (' .. tostring(r.url or '') .. (r.date and r.date ~= '' and (', ' .. tostring(r.date)) or '') .. ')'
+      out[#out + 1] = head .. '\n' .. cut(tostring(r.summary or r.snippet or ''), 1100)
+    end
+  end
+  return cut(table.concat(out, '\n\n'), 6000)
+end
+
+-- the request for the conversation so far: opts for ctx.net:request, or nil and why.
+-- J: { encode = ctx.json's encode, extra = A.extra's table or nil, null = ctx.json.null,
+-- web = true for a web search where the service runs it itself }. A conversation too long for
+-- one request loses its oldest exchanges (the first question stays); the article is shortened last.
+function A.request(cfg, art, msgs, J)
+  local kind, model, base = A.kind(cfg), A.model(cfg), A.url(cfg)
+  local key = cfg.aikey or ''
+  local headers = { ['content-type'] = 'application/json' }
+  local url
+  if kind == 'claude' then
+    url = base .. '/messages'
+    headers['x-api-key'] = key
+    headers['anthropic-version'] = '2023-06-01'
+  elseif kind == 'gemini' then
+    url = base .. '/models/' .. model .. ':generateContent'
+    headers['x-goog-api-key'] = key
+  else
+    url = base .. '/chat/completions'
+    if key ~= '' then headers['Authorization'] = 'Bearer ' .. key end
+  end
+  local web = J.web and A.WEB[A.prov(cfg).id] or nil
+  if web == 'responses' then url = base .. '/responses' end
+  local sys = A.system(cfg, art)
+  local list = {}
+  for i, x in ipairs(msgs) do list[i] = x end
+  for _ = 1, 40 do
+    local body = body_for(kind, model, sys, list)
+    if kind == 'claude' then claude_extras(model, body, headers) end
+    if J.max_tokens and kind == 'openai' then body.max_tokens = J.max_tokens end   -- a short answer (the search query)
+    if web == 'responses' then                       -- OpenAI: the Responses API with its web_search tool
+      local input = {}
+      for _, x in ipairs(list) do input[#input + 1] = { role = x.role, content = x.text } end
+      body = { model = model, instructions = sys, input = input, tools = { { type = 'web_search' } } }
+    elseif web == 'tool' and kind == 'claude' then   -- the basic web search: quick enough for the reader's 60 s
+      body.tools = { { type = 'web_search_20250305', name = 'web_search', max_uses = 2 } }
+    elseif web == 'tool' and kind == 'openai' then   -- OpenRouter's server tool
+      body.tools = { { type = 'openrouter:web_search', parameters = { max_results = 5 } } }
+    end
+    if type(J.extra) == 'table' then merge(body, J.extra, J.null) end
+    local s = J.encode(body)
+    if type(s) ~= 'string' then return nil, 'could not encode the question' end
+    -- Gemini's tool is an empty object, which ctx.json writes only as [] (an empty table)
+    if web == 'tool' and kind == 'gemini' then s = s:sub(1, -2) .. ',"tools":[{"google_search":{}}]}' end
+    if #s <= BODY_MAX then return { url = url, method = 'POST', headers = headers, body = s } end
+    if #list > 3 then
+      table.remove(list, 2); table.remove(list, 2)          -- the oldest answer and question after the first
+    else
+      sys = cut(sys, math.max(2000, #sys - (#s - BODY_MAX) - 500))
+    end
+  end
+  return nil, 'the question is too long'
+end
+
+-- the answer's text from the reply (resp from ctx.net:request, decode = ctx.json's decode), or nil
+-- and a short reason
+function A.answer(cfg, resp, decode)
+  if type(resp) ~= 'table' then return nil, 'no answer' end
+  local st, body = tonumber(resp.status), resp.body
+  if type(body) ~= 'string' or body == '' then
+    return nil, (resp.err and tostring(resp.err)) or (st and ('HTTP ' .. st)) or 'no answer'
+  end
+  local ok, d = pcall(decode, body)
+  if not ok or type(d) ~= 'table' then return nil, (st and st >= 400 and ('HTTP ' .. st .. ' ') or 'not JSON: ') .. body:sub(1, 60) end
+  if st and st >= 400 then
+    local m = message_of(d)
+    if st == 401 or st == 403 then m = 'the key was not accepted' .. (m and (': ' .. m) or '') end
+    return nil, 'HTTP ' .. st .. (m and (': ' .. m) or '')
+  end
+  local kind, parts = A.kind(cfg), {}
+  if kind == 'claude' then
+    if d.stop_reason == 'refusal' then return nil, 'the model declined to answer' end
+    for _, b in ipairs(type(d.content) == 'table' and d.content or {}) do
+      if type(b) == 'table' and b.type == 'text' and type(b.text) == 'string' then parts[#parts + 1] = b.text end
+    end
+    if d.stop_reason == 'max_tokens' then parts[#parts + 1] = ' …' end
+    if #parts == 0 and d.stop_reason == 'pause_turn' then return nil, 'the search took too long: ask again' end
+  elseif kind == 'gemini' then
+    local c = type(d.candidates) == 'table' and d.candidates[1]
+    local content = type(c) == 'table' and c.content
+    for _, p in ipairs(type(content) == 'table' and type(content.parts) == 'table' and content.parts or {}) do
+      if type(p) == 'table' and type(p.text) == 'string' and not p.thought then parts[#parts + 1] = p.text end
+    end
+    if #parts == 0 and type(d.promptFeedback) == 'table' and d.promptFeedback.blockReason then
+      return nil, 'blocked: ' .. tostring(d.promptFeedback.blockReason)
+    end
+  elseif type(d.output) == 'table' then             -- OpenAI's Responses API (web search)
+    for _, item in ipairs(d.output) do
+      if type(item) == 'table' and item.type == 'message' and type(item.content) == 'table' then
+        for _, c in ipairs(item.content) do
+          if type(c) == 'table' and c.type == 'output_text' and type(c.text) == 'string' then parts[#parts + 1] = c.text end
+        end
+      end
+    end
+    if d.status == 'incomplete' then parts[#parts + 1] = ' …' end
+  else
+    local c = type(d.choices) == 'table' and d.choices[1]
+    local m = type(c) == 'table' and c.message
+    if type(m) == 'table' and type(m.content) == 'string' then parts[1] = m.content end
+  end
+  local text = table.concat(parts):gsub('^%s+', ''):gsub('%s+$', '')
+  if text == '' then return nil, message_of(d) or 'an empty answer' end
+  return text
+end
+
+-- Markdown as this screen shows it: headings as "# ", list items as "• ", no bold or code marks.
+-- Single line breaks stay (each line is laid out on its own), blank lines part paragraphs.
+function A.plain(s)
+  local out = {}
+  for line in (s:gsub('\r', '') .. '\n'):gmatch('([^\n]*)\n') do
+    local t = line:gsub('^%s+', '')
+    local head = t:match('^#+%s+(.*)$')
+    if head then t = '# ' .. head
+    elseif t:match('^[%-%*%+]%s+') then t = '• ' .. t:gsub('^[%-%*%+]%s+', '')
+    elseif t:match('^```') or t:match('^%-%-%-+$') or t:match('^%*%*%*+$') then t = '' end
+    t = t:gsub('%*%*(.-)%*%*', '%1'):gsub('__(.-)__', '%1'):gsub('`', '')
+    out[#out + 1] = t
+  end
+  return (table.concat(out, '\n'):gsub('\n\n\n+', '\n\n'))
+end
+
+-- ai.txt in the app's folder: service= (or kind=), url=, key=, model=, lang=, extra= (and on=0 to
+-- keep it off); returns the settings it holds (keys as in cfg) or nil
+function A.read_file(s)
+  if type(s) ~= 'string' then return nil end
+  local map = { kind = 'aiprov', service = 'aiprov', provider = 'aiprov', url = 'aiurl', address = 'aiurl', key = 'aikey',
+                model = 'aimodel', lang = 'ailang', extra = 'aiextra', on = 'aion' }
+  local out, n = {}, 0
+  for line in (s:gsub('\r', '') .. '\n'):gmatch('([^\n]*)\n') do
+    local k, v = line:match('^%s*(%a+)%s*=%s*(.-)%s*$')
+    k = k and map[k:lower()]
+    if k then out[k] = v; n = n + 1 end
+  end
+  if n == 0 then return nil end
+  if out.aiprov then
+    local k = out.aiprov:lower()
+    if not A.PROV[k] then
+      local found = (k:find('compat') or k:find('other')) and 'other' or k:find('anthropic') and 'claude' or k:find('google') and 'gemini' or nil
+      if not found then for _, p in ipairs(A.PROVIDERS) do if k:find(p.id, 1, true) then found = p.id; break end end end
+      k = found or 'other'
+    end
+    out.aiprov = k
+  elseif out.aiurl then
+    out.aiprov = 'other'
+  end
+  if out.aion then out.aion = not (out.aion == '0' or out.aion:lower() == 'off')
+  else out.aion = true end
+  return out
+end
+
+------------------------------------------------------------------ the Settings → AI page
+
+A.SET = { { 'aion', 'AI' }, { 'aiprov', 'Service' }, { 'aiurl', 'Address' }, { 'aikey', 'Key' },
+          { 'aimodel', 'Model' }, { 'ailang', 'Answer in' }, { 'aiextra', 'Extra parameters (JSON)' },
+          { 'aibtn', 'My buttons' }, { 'aitest', 'Connection' } }
+A.HALF = { aion = true, aiprov = true, aimodel = true, ailang = true, aibtn = true, aitest = true }   -- half a row in portrait
+A.DEFAULTS = { aion = false, aiprov = 'claude', aiurl = '', aikey = '', aimodel = '', ailang = '', aiextra = '' }
+-- aion comes from config.txt as '1' / '0'
+function A.normalize(cfg) cfg.aion = cfg.aion == true or cfg.aion == '1' end
+
+-- anything of it set (the app saves its AI lines only then)
+function A.used(cfg)
+  for k, v in pairs(A.DEFAULTS) do if cfg[k] ~= v then return true end end
+  return false
+end
+
+-- the AI lines of the app's config.txt ("\naion=1\naiprov=..."), or '' while nothing is set
+function A.cfg_lines(cfg)
+  if not A.used(cfg) then return '' end
+  return '\naion=' .. (cfg.aion and '1' or '0') .. '\naiprov=' .. cfg.aiprov .. '\naiurl=' .. cfg.aiurl .. '\naikey=' .. cfg.aikey
+    .. '\naimodel=' .. cfg.aimodel .. '\nailang=' .. cfg.ailang .. '\naiextra=' .. cfg.aiextra
+end
+
+-- a field's value as the page shows it (the key only as its ends)
+function A.value(cfg, k)
+  local P = A.prov(cfg)
+  if k == 'aion' then return cfg.aion and 'on' or 'off' end
+  if k == 'aiprov' then return P.short or P.name end
+  if k == 'aiurl' then return cfg.aiurl ~= '' and cfg.aiurl or (P.url ~= '' and (P.url:gsub('^https://', '') .. '  (default)') or '(needed)') end
+  if k == 'aikey' then
+    local key = cfg.aikey
+    if key == '' then return P.keyless and '(none needed)' or '(empty)' end
+    return (#key > 12 and (key:sub(1, 6) .. '…' .. key:sub(-4)) or '****') .. '  (' .. #key .. ' characters)'
+  end
+  if k == 'aimodel' then return cfg.aimodel ~= '' and cfg.aimodel or (P.model ~= '' and P.model or '(server default)') end
+  if k == 'aiextra' then return cfg.aiextra ~= '' and cfg.aiextra or '(none)' end
+  if k == 'ailang' then return cfg.ailang ~= '' and cfg.ailang or '(as asked)' end
+  if k == 'aibtn' then return #A.buttons() .. ' of ' .. A.BUTTONS_MAX end
+  return 'Test the connection'
+end
+
+-- Your own ready questions: ai_buttons.txt in the app's folder, one "Label | question" a line (a
+-- line without "|" is its own label, cut short); lines starting with # are left out. Edited on the
+-- reader (Settings → AI → My buttons) or over USB. At most BUTTONS_MAX.
+A.BUTTONS_FILE, A.BUTTONS_MAX = 'ai_buttons.txt', 6
+function A.parse_button(line)
+  line = tostring(line or ''):gsub('\r', ''):gsub('^%s+', ''):gsub('%s+$', '')
+  if line == '' or line:sub(1, 1) == '#' then return nil end
+  local label, q = line:match('^(.-)%s*|%s*(.+)$')
+  if not label or label == '' then
+    q = q or line
+    label = q:gsub('%s*|%s*', ' ')
+    if #label > 22 then label = cut(label, 21) .. '…' end
+  end
+  return { label = label, q = q }
+end
+function A.parse_buttons(s)
+  local out = {}
+  for line in (tostring(s or '') .. '\n'):gmatch('([^\n]*)\n') do
+    local b = A.parse_button(line)
+    if b and #out < A.BUTTONS_MAX then out[#out + 1] = b end
+  end
+  return out
+end
+local buttons_cache = nil
+-- the buttons, read from the card when asked to (reload) or the first time
+function A.buttons(reload)
+  if reload or not buttons_cache then
+    local ok, s = pcall(function()
+      if not (ctx.files and ctx.files:exists(A.BUTTONS_FILE)) then return '' end
+      return ctx.files:read(A.BUTTONS_FILE, 0, 8192)
+    end)
+    buttons_cache = A.parse_buttons(ok and s or '')
+  end
+  return buttons_cache
+end
+-- the buttons written back (after an edit on the reader)
+function A.save_buttons(list)
+  local t = { '# Your own AI buttons: one "Label | question" a line, at most ' .. A.BUTTONS_MAX .. '.' }
+  for _, b in ipairs(list) do t[#t + 1] = b.label .. ' | ' .. b.q end
+  buttons_cache = list
+  return pcall(function() return ctx.files:write(A.BUTTONS_FILE, table.concat(t, '\n') .. '\n') end)
+end
+
+-- the keyboard for a text field: its title and starting text
+function A.field(cfg, k)
+  local P = A.prov(cfg)
+  local titles = { aiurl = P.url ~= '' and ('Address (empty: ' .. P.url .. ')') or 'Address, e.g. http://192.168.1.5:11434/v1',
+                   aikey = 'API key', aimodel = P.model ~= '' and ('Model (empty: ' .. P.model .. ')') or 'Model',
+                   ailang = 'Answer in (e.g. Turkish; empty: as asked)',
+                   aiextra = 'Extra parameters (JSON), e.g. {"max_tokens":800}' }
+  local start = cfg[k] or ''
+  if k == 'aiurl' and start == '' and P.hint then start = P.hint end
+  return titles[k] or k, start
+end
+
+-- what was typed into field k: kept in cfg, or nil and why not (the caller saves)
+function A.store(cfg, k, v, decode)
+  v = v:gsub('^%s+', ''):gsub('%s+$', '')
+  if k == 'aiurl' and v == A.prov(cfg).hint then v = '' end
+  if k == 'aiextra' then
+    local _, err = A.extra(v, decode)
+    if err then return nil, err .. ' (not saved)' end
+  end
+  cfg[k] = v
+  return true
+end
+
+-- AI on / off; on without what it needs says what is missing
+function A.toggle(cfg)
+  cfg.aion = not cfg.aion
+  if cfg.aion and not A.ready(cfg) then return A.url(cfg) == '' and 'now set the address' or 'now add the key' end
+  return nil
+end
+
+-- a service from the list: its own address and model, and no Extra parameters (they differ from
+-- service to service); true when its address must be typed now (Ollama, Other)
+function A.choose(cfg, id)
+  local P = A.PROV[id]
+  if not P then return false end
+  if cfg.aiprov ~= id then cfg.aiprov, cfg.aiurl, cfg.aimodel, cfg.aiextra = id, '', '', '' end
+  return P.url == '' and cfg.aiurl == ''
+end
+
+-- ai.txt's text taken into cfg; true when it held settings (the caller saves and deletes the file)
+function A.take(cfg, s)
+  local got = A.read_file(s)
+  if not got then return false end
+  for k, v in pairs(got) do cfg[k] = v end
+  return true
+end
+
+-- the conversation's buttons: More leads to the ready questions, your own question and the web
+-- search switch
+function A.chat_bar(cfg) return { 'Back', 'Prev', 'Next', 'More' } end
+
+-- the connection test: a one-word question
+A.TEST_ART = { title = 'Test', text = 'This is a connection test.' }
+A.TEST_MSGS = { { role = 'user', text = 'Reply with the single word OK.' } }
+
+-- the ready questions' rows { label, 'web' } | { label, 'ask', question } | { label, 'own' } |
+-- { label, 'new' }: the web search switch where the service has a web search, the presets (and
+-- more for a discussion), your own buttons, Translate when an answer language is set, your own
+-- question, and Start over once there is a conversation
+-- (no_article: only the discussion is sent, so the article's questions are left out; web: the
+-- web search switch's state, shown first where the service has a web search)
+function A.items(cfg, has_chat, more, no_article, web)
+  local t = {}
+  if A.web_ok(cfg) then t[#t + 1] = { 'Web search: ' .. (web and 'on' or 'off'), 'web' } end
+  if not no_article then for _, p in ipairs(A.PRESETS) do t[#t + 1] = { p[1], 'ask', p[2] } end end
+  for _, p in ipairs(more or {}) do t[#t + 1] = { p[1], 'ask', p[2] } end
+  for _, b in ipairs(A.buttons()) do t[#t + 1] = { b.label, 'ask', b.q } end
+  if cfg.ailang ~= '' and not no_article then t[#t + 1] = { 'Translate', 'ask', 'Translate this article into ' .. cfg.ailang .. '.' } end
+  t[#t + 1] = { 'Your question', 'own' }
+  if has_chat then t[#t + 1] = { 'Start over', 'new' } end
+  return t
+end
+
+return A
+end
+
 __mods['hn'] = function()
 -- Hacker News pieces that need no screen: the addresses of the two public APIs, HN's comment
 -- HTML as plain text, ages and domains, and word wrap that also breaks words too long for a line
@@ -265,6 +813,72 @@ function N.text(html)
   return s
 end
 
+-- A story's comments all at once, for the AI (Algolia's search, flat, with their parents): about
+-- 35 KB per 100 comments, so a page of `per` stays under the reader's 128 KB an answer.
+function N.comments_url(story_id, page, per)
+  return N.ALGOLIA .. 'search?tags=comment,story_' .. story_id .. '&hitsPerPage=' .. per .. '&page=' .. page
+    .. '&attributesToRetrieve=comment_text,author,parent_id,created_at_i&attributesToHighlight=%5B%5D'
+end
+
+local function idstr(v)
+  if type(v) == 'number' then return string.format('%d', math.floor(v)) end
+  return tostring(v or '')
+end
+
+-- a page of Algolia comment hits, kept small: { id, parent, by, t, text } each. The parents are
+-- read from the raw JSON in order (a decoded number above 2^24 may come back rounded); objectID
+-- is a string already.
+function N.comment_hits(d, body)
+  local parents = {}
+  for p in tostring(body or ''):gmatch('"parent_id"%s*:%s*(%d+)') do parents[#parents + 1] = p end
+  local hits = type(d) == 'table' and type(d.hits) == 'table' and d.hits or {}
+  local use_raw = #parents == #hits
+  local out = {}
+  for k, h in ipairs(hits) do
+    out[#out + 1] = { id = idstr(h.objectID), parent = use_raw and parents[k] or idstr(h.parent_id), by = tostring(h.author or '?'),
+                      t = tonumber(h.created_at_i) or 0, text = N.text(h.comment_text) }
+  end
+  return out
+end
+
+-- The comments as one text for the AI: "author: text", a reply indented two spaces under the
+-- comment it answers; the first level in HN's order (order: the story's kids), replies oldest
+-- first (HN's own order of replies is not in the data). At most budget bytes, whole comments;
+-- returns the text and how many comments it holds.
+function N.thread_text(hits, story_id, order, budget)
+  local kids, known = {}, {}
+  for _k, c in ipairs(hits) do known[c.id] = true end
+  for _k, c in ipairs(hits) do
+    local p = (c.parent ~= '' and known[c.parent]) and c.parent or tostring(story_id)   -- a lost parent: first level
+    kids[p] = kids[p] or {}
+    kids[p][#kids[p] + 1] = c
+  end
+  for _p, list in pairs(kids) do table.sort(list, function(a, b) if a.t ~= b.t then return a.t < b.t end return a.id < b.id end) end
+  local rank = {}
+  for k, id in ipairs(order or {}) do rank[tostring(id)] = k end
+  local top = kids[tostring(story_id)] or {}
+  table.sort(top, function(a, b)
+    local ra, rb = rank[a.id] or math.huge, rank[b.id] or math.huge
+    if ra ~= rb then return ra < rb end
+    if a.t ~= b.t then return a.t < b.t end
+    return a.id < b.id
+  end)
+  local out, used, n, full = {}, 0, 0, false
+  local function walk(list, depth)
+    for _k, c in ipairs(list) do
+      if full then return end
+      local line = string.rep('  ', depth) .. c.by .. ': ' .. c.text:gsub('%s*\n+%s*', ' ')
+      if used + #line + 1 > budget then full = true; return end
+      out[#out + 1] = line
+      used, n = used + #line + 1, n + 1
+      if kids[c.id] then walk(kids[c.id], depth + 1) end
+    end
+  end
+  walk(top, 0)
+  if full then out[#out + 1] = '[' .. (#hits - n) .. ' more comments are left out here.]' end
+  return table.concat(out, '\n'), n
+end
+
 -- the bytes of s that fit in width w (whole UTF-8 characters, at least one)
 local function fit(f, s, w)
   local best = nil
@@ -318,6 +932,7 @@ end
 -- One request at a time (a queue); leaving a screen drops what it still waited for.
 
 local N = require('hn')
+local A = require('ai')         -- the optional AI questions (tools/gamekit/ai.lua)
 local W, H = kit.W, kit.H      -- the screen now (sync_screen); the rest follow it
 local BTN_Y, BTN_H = 704, 64
 local LIST_TOP, ROW_H, ROWS = 64, 78, 8
@@ -328,12 +943,14 @@ local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-a
 local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
 
-local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait' }
-local screen = 'list'           -- list | story | thread | settings
+local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait', aisend = 'both' }
+for k, v in pairs(A.DEFAULTS) do cfg[k] = v end
+local screen = 'list'           -- list | story | thread | settings | aimenu | chat | aiset | aiprov | aibtns
 local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
 local S = nil                   -- the open story: { row, item, article, article_err, lines, pages, page }
 local levels = {}               -- comment levels, deepest last: { parent, kids, got, next, page, lines, pages }
 local thread_from = 'list'
+local chat = { msgs = {}, lines = {}, pages = { 1 }, page = 1 }   -- the AI conversation of the open story
 local status, ERR = nil, nil
 
 -- a character limit set for the 480 px portrait width, scaled to the screen's width now
@@ -360,9 +977,15 @@ local function load_cfg()
   if not SIZES[cfg.size] then cfg.size = 'medium' end
   if cfg.images ~= 'off' then cfg.images = 'on' end
   if cfg.screen ~= 'landscape' then cfg.screen = 'portrait' end
+  A.normalize(cfg)                 -- aion: a boolean
+  if cfg.aisend ~= 'article' and cfg.aisend ~= 'comments' and cfg.aisend ~= 'link' then cfg.aisend = 'both' end
 end
 local function save_cfg()
-  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen)
+  local s = 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen
+  -- the AI lines only once something of it is set
+  s = s .. A.cfg_lines(cfg)
+  if cfg.aisend ~= 'both' then s = s .. '\naisend=' .. cfg.aisend end
+  kit.write('settings.txt', s)
 end
 local function worker_url(path)
   local host = cfg.host:gsub('^https?://', ''):gsub('/+$', '')
@@ -377,6 +1000,7 @@ local queue, inflight = {}, nil
 local function keep_wifi() pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end) end
 
 local function finish(job, resp)
+  if job.whole then job.on_done(resp); return end            -- the AI: status, body and error as they came
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then
     job.on_done(nil, type(resp) == 'table' and resp.error and tostring(resp.error) or 'no answer'); return
   end
@@ -404,7 +1028,7 @@ pump = function()
   inflight, job.since = job, kit.now_ms()
   keep_wifi()
   local ok, err = pcall(function()
-    ctx.net:request({ url = job.url, method = 'GET', headers = job.headers, timeout_ms = job.timeout }, function(c, resp)
+    ctx.net:request({ url = job.url, method = job.method or 'GET', headers = job.headers, body = job.body, timeout_ms = job.timeout }, function(c, resp)
       if inflight ~= job then return end
       inflight = nil
       if not job.dropped then
@@ -425,6 +1049,14 @@ end
 local function get(url, label, on_done, headers, timeout, raw)
   queue[#queue + 1] = { url = url, label = label, on_done = on_done, timeout = timeout or 30000, raw = raw,
                         headers = headers or { ['User-Agent'] = UA, ['Accept'] = 'application/json' } }
+  local job = queue[#queue]
+  pump()
+  return job
+end
+-- a POST (the AI): opts from A.request; on_done(resp) gets the answer as it came
+local function post(opts, label, on_done)
+  queue[#queue + 1] = { url = opts.url, method = 'POST', body = opts.body, headers = opts.headers, label = label,
+                        on_done = on_done, timeout = 60000, whole = true }
   local job = queue[#queue]
   pump()
   return job
@@ -795,10 +1427,307 @@ local function open_thread(row)
 end
 
 local function doc_page(delta)
-  local doc = screen == 'thread' and level() or S
+  local doc = (screen == 'thread' and level()) or (screen == 'chat' and chat) or (screen == 'story' and S) or nil
   if not doc then return end
   doc.page = math.max(1, math.min(#doc.pages, doc.page + delta))
   if screen == 'thread' then thread_pump() else load_pics() end
+end
+
+------------------------------------------------------------------ AI (optional; Settings → AI)
+-- Off (or not set up), nothing of it shows. On, a story and its comments get an AI button: the
+-- ready questions with what to send (Send: Article + comments, Article, Comments, Link +
+-- comments), then the conversation (chat), where Ask types a follow-up and More goes back to the
+-- ready questions. One conversation per story, kept while it is the open story. The comments
+-- come all at once from Algolia's search (N.comments_url), only when they are to be sent.
+
+local AI = {}
+local SEND = { { 'both', 'Article + comments' }, { 'article', 'Article' }, { 'comments', 'Comments' }, { 'link', 'Link + comments' } }
+local COMMENTS_MAX, COMMENTS_PER, COMMENTS_ROOM = 600, 200, 52000
+local ai_from = 'story'         -- where Back from the AI goes: story | thread
+
+function AI.on() return A.ready(cfg) end
+function AI.dec(s) return ctx.json:decode(s) end
+function AI.J()
+  local extra, err = A.extra(cfg.aiextra, AI.dec)
+  if err then return nil, err end
+  return { encode = function(v) return ctx.json:encode(v) end, extra = extra, null = ctx.json.null }
+end
+function AI.send_label()
+  for _k, m in ipairs(SEND) do if m[1] == cfg.aisend then return m[2] end end
+  return SEND[1][2]
+end
+
+function AI.layout(to_last)
+  local out, last_at = {}, 1
+  for _k, m in ipairs(chat.msgs) do
+    if m.role == 'user' then
+      last_at = #out + 1                           -- a new answer opens at its question
+      add_lines(out, '» ' .. (m.label or m.text), 'small', 32)
+      out[#out + 1] = { s = '', f = 'small', x = 0, h = 8 }
+    else
+      add_text(out, A.plain(m.text))
+      out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
+    end
+  end
+  if chat.waiting then add_lines(out, chat.waiting, 'small', 16) end
+  chat.lines, chat.pages = out, paginate(out)
+  -- a last page holding only an answer's closing rule and gaps is dropped (it showed empty)
+  while #chat.pages > 1 do
+    local blank = true
+    for i = chat.pages[#chat.pages], #out do if out[i].s ~= '' then blank = false; break end end
+    if not blank then break end
+    for i = #out, chat.pages[#chat.pages], -1 do out[i] = nil end   -- its lines go too
+    chat.pages[#chat.pages] = nil
+  end
+  if to_last then
+    chat.page = 1
+    for pg, first in ipairs(chat.pages) do if first <= last_at then chat.page = pg end end
+  end
+  chat.page = math.max(1, math.min(chat.page, #chat.pages))
+end
+
+-- a question whose request was dropped (the screen was left meanwhile) can be asked again
+function AI.check()
+  if chat.waiting and (not chat.job or chat.job.dropped) then
+    chat.waiting, chat.job = nil, nil
+    if #chat.msgs > 0 and chat.msgs[#chat.msgs].role == 'user' then table.remove(chat.msgs) end
+  end
+end
+
+function AI.open()
+  if not S then return end
+  if chat.id ~= S.row.id then chat = { id = S.row.id, msgs = {}, lines = {}, pages = { 1 }, page = 1 } end
+  AI.check()
+  if screen == 'story' or screen == 'thread' then ai_from = screen end
+  A.buttons(true)                                  -- ai_buttons.txt may have changed over USB
+  status = nil
+  if #chat.msgs > 0 then AI.layout(false); screen = 'chat' else screen = 'aimenu' end
+end
+
+-- what goes with the questions, by Send
+function AI.content(mode)
+  local r = S.row
+  local text = S.article or (S.item and S.item.text and N.text(S.item.text)) or ''
+  local art = { title = r.title, what = mode == 'article' and 'a Hacker News story' or 'a Hacker News story and its comments' }
+  if mode == 'both' or mode == 'article' then art.text, art.url = text, r.url end
+  if mode == 'link' then art.url = r.url; if not r.url then art.text = text end end   -- Ask HN: the post is its text
+  if mode ~= 'article' and S.ai_comments then art.comments = S.ai_comments.text end
+  return art
+end
+
+-- all of the story's comments, 200 a request (100 when an answer comes cut), at most 600
+function AI.fetch_comments(story, done)
+  if story.ai_comments or (tonumber(story.row.comments) or 0) == 0 then done(); return end
+  local hits, per = {}, COMMENTS_PER
+  local function page(pg)
+    chat.job = get(N.comments_url(story.row.id, pg, per), 'Getting comments ' .. #hits .. ' / ' .. story.row.comments .. '...', function(d, err, code, body)
+      if S ~= story then return end
+      if not d and err == 'not JSON' and per > 50 then per = per // 2; page(pg * 2); return end
+      if not d then done(err); return end
+      for _k, h in ipairs(N.comment_hits(d, body)) do hits[#hits + 1] = h end
+      if pg + 1 < (tonumber(d.nbPages) or 0) and #hits < COMMENTS_MAX and #(d.hits or {}) > 0 then page(pg + 1); return end
+      local text, n = N.thread_text(hits, story.row.id, story.item and story.item.kids, COMMENTS_ROOM)
+      story.ai_comments = { text = text, n = n }
+      done()
+    end)
+  end
+  page(0)
+end
+
+-- a question: a ready one (label), or your own; with a web search while the switch is on, where
+-- the service has one (DeepSeek's is made first and goes along with the question)
+function AI.ask(prompt, label)
+  AI.check()
+  if chat.waiting then status = 'Still waiting for the answer.'; return end
+  local J, jerr = AI.J()
+  if not J then status = jerr; return end
+  local web = chat.web and A.web_ok(cfg)
+  J.web = web and not A.web_first(cfg)
+  local story, c, mode = S, chat, cfg.aisend
+  c.msgs[#c.msgs + 1] = { role = 'user', text = prompt, label = (label or prompt) .. (web and ' (web search)' or '') }
+  screen = 'chat'
+  local function fail(why)
+    c.waiting, c.job = nil, nil
+    if #c.msgs > 0 and c.msgs[#c.msgs].role == 'user' then table.remove(c.msgs) end   -- it can be asked again
+    status = 'AI: ' .. kit.short(tostring(why or 'no answer'), 70)
+    if c ~= chat then return end
+    if #c.msgs == 0 and screen == 'chat' then screen = 'aimenu' end
+    AI.layout(false)
+  end
+  local function send(err)
+    if err then fail(err); return end
+    if S ~= story or c ~= chat then return end
+    local opts, rerr = A.request(cfg, AI.content(mode), c.msgs, J)
+    if not opts then fail(rerr); return end
+    local name = A.prov(cfg).name
+    c.waiting = 'Asking ' .. name .. (J.web and ', searching the web...' or '...')
+    AI.layout(true)
+    c.job = post(opts, 'Asking ' .. name .. '...', function(resp)
+      c.job = nil
+      local text, why = A.answer(cfg, resp, AI.dec)
+      if not text then fail(why); return end
+      c.waiting = nil
+      c.msgs[#c.msgs + 1] = { role = 'assistant', text = text }
+      status = nil
+      if c == chat then AI.layout(true) end
+    end)
+  end
+  -- DeepSeek: the model writes the search query, the app searches, the results go with the question
+  local function search(err)
+    if err then fail(err); return end
+    if not (web and A.web_first(cfg)) then send(); return end
+    if S ~= story or c ~= chat then return end
+    local art = AI.content(mode)
+    local function run(query)
+      if S ~= story or c ~= chat then return end
+      local opts, serr = A.search_request(cfg, query, J.encode, prompt)
+      if not opts then fail(serr); return end
+      c.waiting = 'Searching the web...'
+      AI.layout(true)
+      c.job = post(opts, 'Searching the web...', function(resp)
+        c.job = nil
+        local found, why = A.search_text(resp, AI.dec)
+        if not found then fail(why); return end
+        c.msgs[#c.msgs].text = prompt .. '\n\n' .. found
+        send()
+      end)
+    end
+    local qopts = A.query_request(cfg, art, c.msgs, J)
+    if not qopts then run(A.query_text(cfg, nil, AI.dec, art, prompt)); return end
+    c.waiting = 'Choosing what to search...'
+    AI.layout(true)
+    c.job = post(qopts, 'Choosing what to search...', function(resp)
+      c.job = nil
+      run(A.query_text(cfg, resp, AI.dec, art, prompt))
+    end)
+  end
+  c.waiting = 'Getting the comments...'
+  AI.layout(true)
+  if mode ~= 'article' then AI.fetch_comments(story, search) else search() end
+end
+
+-- your own question
+function AI.ask_own()
+  local web = chat.web and A.web_ok(cfg)
+  local title = (#chat.msgs > 0 and 'Ask more' or 'Ask about this story') .. (web and ' (with a web search)' or '')
+  ctx.input:text({ title = title, text = '', max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' and v:match('%S') then
+      local ok, e = pcall(AI.ask, (v:gsub('^%s+', ''):gsub('%s+$', '')))
+      if not ok then ERR = tostring(e) end
+    end
+    kit.refresh()
+  end)
+end
+
+-- the ready questions: Send first, then the questions (the article's unless only comments go,
+-- the discussion's when comments go), your own question and Start over
+function AI.items()
+  local t = { { 'Send: ' .. AI.send_label(), 'send' } }
+  local more = cfg.aisend ~= 'article' and A.DISCUSSION or nil
+  for _k, it in ipairs(A.items(cfg, #chat.msgs > 0, more, cfg.aisend == 'comments', chat.web)) do t[#t + 1] = it end
+  return t
+end
+-- their cells: Send across, the questions two (landscape three) a row, then your question, the web
+-- search switch and Start over in a new row of the same cells
+function AI.menu_cells()
+  local items, out = AI.items(), {}
+  local n = W > H and 3 or 2
+  local rh = W > H and 46 or 58
+  local y, col, prev = W > H and 52 or 84, 0, nil
+  local cw = (W - 32 - (n - 1) * 12) // n
+  local web_row = false
+  for _k, it in ipairs(items) do if it[2] == 'web' then web_row = W > H end end
+  local sw = web_row and (W - 32 - 12) * 3 // 5 or W - 32      -- landscape: Send and the web switch share the top row
+  for _k, it in ipairs(items) do
+    if it[2] == 'send' then
+      out[#out + 1] = { x = 16, y = y, w = sw, h = rh - 10, item = it }
+      if not web_row then y = y + rh end
+    elseif it[2] == 'web' and web_row then
+      out[#out + 1] = { x = 16 + sw + 12, y = y, w = W - 32 - sw - 12, h = rh - 10, item = it }; y = y + rh
+    elseif it[2] == 'web' then
+      out[#out + 1] = { x = 16, y = y, w = W - 32, h = rh - 10, item = it }; y = y + rh
+    else
+      local group = it[2] == 'ask' and 'ask' or 'tail'
+      if prev and group ~= prev and col > 0 then col, y = 0, y + rh end
+      out[#out + 1] = { x = 16 + col * (cw + 12), y = y, w = cw, h = rh - 10, item = it }
+      col = col + 1
+      if col == n then col, y = 0, y + rh end
+      prev = group
+    end
+  end
+  return out
+end
+
+-- My buttons (ai_buttons.txt): a tap edits one as "Label | question" (emptied: deleted); the
+-- last row adds one
+function AI.btn_rect(i)
+  local n = W > H and 3 or 1                       -- (cols() is defined further down)
+  local cw = (W - 32 - (n - 1) * 16) // n
+  return 16 + ((i - 1) % n) * (cw + 16), 70 + ((i - 1) // n) * 70, cw, 60
+end
+function AI.edit_button(i)
+  local list = {}
+  for k, b in ipairs(A.buttons()) do list[k] = b end
+  local cur = list[i]
+  ctx.input:text({ title = cur and 'Label | question (empty: delete)' or 'New button: Label | question',
+                   text = cur and (cur.label .. ' | ' .. cur.q) or '', max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' then
+      local b = A.parse_button(v)
+      if cur and not b then table.remove(list, i)
+      elseif b and cur then list[i] = b
+      elseif b and #list < A.BUTTONS_MAX then list[#list + 1] = b end
+      if (b or cur) and not A.save_buttons(list) then status = 'could not write ' .. A.BUTTONS_FILE end
+    end
+    kit.refresh()
+  end)
+end
+
+function AI.test()
+  local J, jerr = AI.J()
+  if not J then status = jerr; return end
+  local opts, err = A.request(cfg, A.TEST_ART, A.TEST_MSGS, J)
+  if not opts then status = 'AI: ' .. tostring(err); return end
+  post(opts, 'Testing ' .. A.prov(cfg).name .. '...', function(resp)
+    local text, why = A.answer(cfg, resp, AI.dec)
+    status = text and ('Works: "' .. kit.short(text, 30) .. '"') or ('AI: ' .. kit.short(tostring(why or 'no answer'), 70))
+  end)
+end
+
+-- ai.txt in AppFiles/hackernews/ (USB): taken in, then deleted
+function AI.import()
+  local ok, s = pcall(function()
+    if not (ctx.files and ctx.files:exists('ai.txt')) then return nil end
+    return ctx.files:read('ai.txt', 0, 4096)
+  end)
+  if not (ok and A.take(cfg, s)) then return false end
+  save_cfg()
+  pcall(function() ctx.files:remove('ai.txt') end)
+  status = 'AI settings taken from ai.txt (file deleted)'
+  return true
+end
+
+function AI.edit(i)
+  local k = A.SET[i] and A.SET[i][1]
+  if not k then return end
+  if k == 'aion' then local m = A.toggle(cfg); save_cfg(); status = m; return end
+  if k == 'aiprov' then screen = 'aiprov'; return end
+  if k == 'aitest' then AI.test(); return end
+  if k == 'aibtn' then A.buttons(true); screen = 'aibtns'; return end
+  local title, start = A.field(cfg, k)
+  ctx.input:text({ title = title, text = start, max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' then
+      local stored, why = A.store(cfg, k, v, AI.dec)
+      if stored then save_cfg() else status = why end
+    end
+    kit.refresh()
+  end)
+end
+
+function AI.choose(id)
+  local need = A.choose(cfg, id)
+  save_cfg()
+  screen = 'aiset'
+  if need then for i, s in ipairs(A.SET) do if s[1] == 'aiurl' then AI.edit(i) end end end
 end
 
 ------------------------------------------------------------------ drawing
@@ -863,8 +1792,9 @@ local function draw_list(gg)
   end
 end
 
-local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev' }, { 'token', 'Path token (after /k/), or empty' },
-                   { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' },
+-- { key, label, shorter label for landscape's three columns }
+local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev', 'Worker host' }, { 'token', 'Path token (after /k/), or empty', 'Token (after /k/)' },
+                   { 'auth', 'user:password for Basic auth, or empty', 'Login (user:password)' }, { 'size', 'Text size' },
                    { 'images', 'Pictures in articles' } }
 -- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
 local function can_rotate()
@@ -878,20 +1808,22 @@ local function settings_list()
   local t = {}
   for k, v in ipairs(SETTINGS) do t[k] = v end
   if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
+  t[#t + 1] = { 'ai', 'AI' }
   return t
 end
--- one column in portrait, two in landscape
-local function cols() return W > H and 2 or 1 end
+-- one column in portrait, three in landscape
+local function cols() return W > H and 3 or 1 end
 local setting_rect
--- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
--- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
-local HALF = { size = true, images = true, screen = true }
-local function setting_rows()
+-- Settings' (and the AI page's) cells: in portrait a short one shares its row with the next short
+-- one; in landscape every cell is a third. grid_rows() gives { x, row, w } per cell and the rows used
+local HALF = { size = true, images = true, screen = true, ai = true }
+local function grid_rows(items, half)
   local out, row, col = {}, 0, 0
-  local cw = (W - 48) // 2
-  for i, s in ipairs(settings_list()) do
-    if cols() > 1 or HALF[s[1]] then
-      if col == 2 then row, col = row + 1, 0 end
+  local n = cols() > 1 and 3 or 2
+  local cw = (W - 32 - (n - 1) * 16) // n
+  for i, s in ipairs(items) do
+    if cols() > 1 or half[s[1]] then
+      if col == n then row, col = row + 1, 0 end
       out[i] = { 16 + col * (cw + 16), row, cw }
       col = col + 1
     else
@@ -902,9 +1834,20 @@ local function setting_rows()
   end
   return out, row + (col > 0 and 1 or 0)
 end
+local function setting_rows() return grid_rows(settings_list(), HALF) end
 setting_rect = function(i)
   local r = setting_rows()[i]
   return r[1], 70 + r[2] * 86, r[3], 86
+end
+function AI.rect(i)
+  local r = grid_rows(A.SET, A.HALF)[i]
+  return r[1], 70 + r[2] * 86, r[3], 86
+end
+-- the Service list: one column (three in landscape)
+function AI.prov_rect(i)
+  local n = cols()
+  local cw = (W - 32 - (n - 1) * 16) // n
+  return 16 + ((i - 1) % n) * (cw + 16), 70 + ((i - 1) // n) * 66, cw, 56
 end
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
@@ -914,7 +1857,8 @@ local function draw_settings(gg)
     local v = cfg[s[1]]
     if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
-    gg:text(x, y + 8, fit(s[2], 'small', w), { font = kit.font('small') })
+    if s[1] == 'ai' then v = AI.on() and A.prov(cfg).name or (cfg.aion and 'not set up yet' or 'off') end
+    gg:text(x, y + 8, fit((cols() > 1 and s[3]) or s[2], 'small', w), { font = kit.font('small') })
     gg:text(x, y + 36, v ~= '' and fit(v, 'medium', w) or '(empty)', { font = kit.font('medium') })
     gg:line(x, y + 78, x + w, y + 78)
   end
@@ -928,13 +1872,85 @@ local function draw_settings(gg)
   end
 end
 
+function AI.draw_set(gg)
+  gg:text(16, 16, 'AI (optional)', { font = kit.font('large') })
+  for k, s in ipairs(A.SET) do
+    local x, y, w = AI.rect(k)
+    gg:text(x, y + 8, fit(s[2], 'small', w), { font = kit.font('small') })
+    gg:text(x, y + 36, fit(A.value(cfg, s[1]), 'medium', w), { font = kit.font('medium') })
+    gg:line(x, y + 78, x + w, y + 78)
+  end
+  if cols() > 1 then return end
+  local _, rows = grid_rows(A.SET, A.HALF)
+  local y = 70 + rows * 86 + 8
+  for _k, l in ipairs(N.wrap('Off: no AI button anywhere. On: one on stories and comments. A long key: put ai.txt in '
+      .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'AppFiles/hackernews')
+      .. '/ with lines service=deepseek, key=..., model=...; the app takes it in and deletes the file.', 'small', W - 32)) do
+    gg:text(16, y, l, { font = kit.font('small') }); y = y + 22
+  end
+end
+
+function AI.draw_prov(gg)
+  gg:text(16, 16, 'Service', { font = kit.font('large') })
+  local cur = A.prov(cfg).id
+  for i, P in ipairs(A.PROVIDERS) do
+    local x, y, w, h = AI.prov_rect(i)
+    kit.button(gg, x, y, w, h, P.label, { font = 'medium', line_width = P.id == cur and 5 or 1 })
+  end
+end
+
+function AI.draw_btns(gg)
+  gg:text(16, 16, 'My buttons', { font = kit.font('large') })
+  local list = A.buttons()
+  local n = #list + (#list < A.BUTTONS_MAX and 1 or 0)
+  for i = 1, n do
+    local x, y, w, h = AI.btn_rect(i)
+    gg:rect(x, y, w, h)
+    local b = list[i]
+    if b then
+      gg:text(x + 12, y + 6, fit(b.label, 'medium', w - 24), { font = kit.font('medium') })
+      gg:text(x + 12, y + 34, fit(b.q, 'small', w - 24), { font = kit.font('small') })
+    else
+      gg:text(x + 12, y + 18, 'Add a button', { font = kit.font('medium') })
+    end
+  end
+  if cols() > 1 then return end
+  local _x, y = AI.btn_rect(n + 1)
+  for _k, l in ipairs(N.wrap('They come after the ready questions. Tap one to change it; empty it to delete it. Also in '
+      .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'AppFiles/hackernews')
+      .. '/' .. A.BUTTONS_FILE .. ' (USB): one "Label | question" a line.', 'small', W - 32)) do
+    gg:text(16, y + 4, l, { font = kit.font('small') }); y = y + 22
+  end
+end
+
+function AI.draw_menu(gg)
+  gg:text(16, 12, 'Ask ' .. A.prov(cfg).name, { font = kit.font('large') })
+  if W <= H then gg:text(16, 50, fit(S and S.row.title or '', 'small', W - 32), { font = kit.font('small') }) end
+  for _k, c in ipairs(AI.menu_cells()) do
+    kit.button(gg, c.x, c.y, c.w, c.h, c.item[1], { font = 'medium',
+      line_width = (c.item[2] == 'send' or (c.item[2] == 'web' and chat.web)) and 3 or 1 })
+  end
+end
+
 local function buttons()
   if screen == 'list' then return { 'Prev', 'Next', 'Reload', 'Settings' } end
   if screen == 'story' then
+    if AI.on() then
+      -- "AI" is narrow, so Back / Prev / Next keep room for their words (Back was cut at 66 px)
+      local b, ai = 76 * W // 480, 50 * W // 480
+      return { 'Back', 'Prev', 'Next', 'AI', S.row.comments .. ' comments' }, { b, b, b, ai, W - 56 - 3 * b - ai }
+    end
     local b = 84 * W // 480
     return { 'Back', 'Prev', 'Next', S.row.comments .. ' comments' }, { b, b, b, W - 48 - 3 * b }
   end
-  if screen == 'thread' then return { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' } end
+  if screen == 'thread' then
+    local t = { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' }
+    if AI.on() then t[#t + 1] = 'AI' end
+    return t
+  end
+  if screen == 'chat' then
+    return A.chat_bar(cfg)
+  end
   return { 'Back' }
 end
 local function button_rects()
@@ -980,6 +1996,11 @@ function on_draw(c, gg)
     if screen == 'list' then draw_list(gg)
     elseif screen == 'story' then draw_doc(gg, S)
     elseif screen == 'thread' then draw_doc(gg, level())
+    elseif screen == 'chat' then draw_doc(gg, chat)
+    elseif screen == 'aimenu' then AI.draw_menu(gg)
+    elseif screen == 'aiset' then AI.draw_set(gg)
+    elseif screen == 'aiprov' then AI.draw_prov(gg)
+    elseif screen == 'aibtns' then AI.draw_btns(gg)
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
     -- under the buttons: above them it overlapped the last list row
@@ -1000,7 +2021,11 @@ local function ask(title, value, fn)
 end
 
 local function back()
-  if screen == 'thread' and #levels > 1 then
+  if screen == 'chat' then screen = ai_from
+  elseif screen == 'aimenu' then screen = #chat.msgs > 0 and 'chat' or ai_from
+  elseif screen == 'aiset' then screen = 'settings'
+  elseif screen == 'aiprov' or screen == 'aibtns' then screen = 'aiset'
+  elseif screen == 'thread' and #levels > 1 then
     drop_all(); levels[#levels] = nil; build_thread(level()); thread_pump()
   elseif screen == 'thread' then
     drop_all(); screen = thread_from == 'story' and 'story' or 'list'
@@ -1037,6 +2062,9 @@ local function tap(x, y, long)
       elseif b == 'Top' then
         drop_all(); while #levels > 1 do levels[#levels] = nil end
         build_thread(level()); thread_pump()
+      elseif b == 'AI' then AI.open()
+      elseif b == 'Ask' then AI.ask_own()
+      elseif b == 'More' then screen = 'aimenu'
       else open_thread(S.row) end
       return
     end
@@ -1067,11 +2095,49 @@ local function tap(x, y, long)
     else
       doc_page(x < W // 3 and -1 or 1)
     end
+  elseif screen == 'chat' then
+    if y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end
+  elseif screen == 'aimenu' then
+    for _k, cell in ipairs(AI.menu_cells()) do
+      if x >= cell.x and x < cell.x + cell.w and y >= cell.y and y < cell.y + cell.h then
+        local it = cell.item
+        if it[2] == 'send' then
+          for j, m in ipairs(SEND) do if m[1] == cfg.aisend then cfg.aisend = SEND[j % #SEND + 1][1]; break end end
+          save_cfg()
+        elseif it[2] == 'ask' then AI.ask(it[3], it[1])
+        elseif it[2] == 'own' then AI.ask_own()
+        elseif it[2] == 'web' then
+          chat.web = not chat.web
+          status = chat.web and 'Web search on for the next questions' or 'Web search off'
+        elseif it[2] == 'new' then
+          AI.check()
+          if chat.waiting then status = 'Still waiting for the answer.' else chat.msgs = {}; AI.layout(false) end
+        end
+        return
+      end
+    end
+  elseif screen == 'aiset' then
+    for k = 1, #A.SET do
+      local sx, sy, sw, sh = AI.rect(k)
+      if x >= sx and x < sx + sw and y >= sy and y < sy + sh then AI.edit(k); return end
+    end
+  elseif screen == 'aibtns' then
+    local list = A.buttons()
+    for i = 1, #list + (#list < A.BUTTONS_MAX and 1 or 0) do
+      local bx, by, bw, bh = AI.btn_rect(i)
+      if x >= bx and x < bx + bw and y >= by and y < by + bh then AI.edit_button(i); return end
+    end
+  elseif screen == 'aiprov' then
+    for i, P in ipairs(A.PROVIDERS) do
+      local px, py, pw, ph = AI.prov_rect(i)
+      if x >= px and x < px + pw and y >= py and y < py + ph then AI.choose(P.id); return end
+    end
   elseif screen == 'settings' then
     for k, s in ipairs(settings_list()) do
       local sx, sy, sw, sh = setting_rect(k)
       if x >= sx and x < sx + sw and y >= sy and y < sy + sh then
-        if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+        if s[1] == 'ai' then AI.import(); screen = 'aiset'
+        elseif s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
         elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
         elseif s[1] == 'screen' then
           cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
@@ -1087,6 +2153,7 @@ end
 local long_done, suppress_up = false, false
 function on_input(c, ev)
   ERR = nil
+  local left = false
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     sync_screen()
@@ -1105,7 +2172,7 @@ function on_input(c, ev)
       if suppress_up then suppress_up = false; return end
       if kit.modal() then tap(x, y, false); return end
       local delta = ev.gesture == 'swipe_up' and 1 or ev.gesture == 'swipe_down' and -1 or nil
-      if delta and screen ~= 'settings' then
+      if delta and (screen == 'list' or screen == 'story' or screen == 'thread' or screen == 'chat') then
         if screen == 'list' then list_page(delta) else doc_page(delta) end
         return
       end
@@ -1113,22 +2180,25 @@ function on_input(c, ev)
     elseif ev.type == 'key' and kit.key_accepted(ev) then
       if kit.modal() then
         if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+      elseif ev.key == 'back' and screen == 'list' then
+        left = true                                -- not handled: the host asks whether to leave
       elseif ev.key == 'back' then back()
       else
         local delta = (ev.key == 'down' or ev.key == 'right') and 1 or (ev.key == 'up' or ev.key == 'left') and -1 or nil
-        if delta and screen == 'list' then list_page(delta) elseif delta and screen ~= 'settings' then doc_page(delta) end
+        if delta and screen == 'list' then list_page(delta) elseif delta then doc_page(delta) end
       end
     end
   end)
   if not ok then ERR = tostring(e) end
   if screen ~= 'story' then release_pics() end
   kit.refresh()
-  return true
+  return not left
 end
 
 function on_load(c)
   local ok, e = pcall(function()
     load_cfg()
+    AI.import()
     if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
     open_tab('top')
   end)
@@ -1144,5 +2214,6 @@ end
 if rawget(_G, '__TEST') then
   __TEST.api = { N = N, L = function() return L end, S = function() return S end, screen = function() return screen end,
                  levels = function() return levels end, level = level, cfg = cfg, status = function() return status end,
-                 queue = function() return #queue + (inflight and 1 or 0) end, pics = function() return pics end }
+                 queue = function() return #queue + (inflight and 1 or 0) end, pics = function() return pics end,
+                 chat = function() return chat end, A = A }
 end

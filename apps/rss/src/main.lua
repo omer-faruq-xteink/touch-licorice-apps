@@ -10,6 +10,7 @@
 
 local F = require('feeds')
 local Lib = require('library')
+local A = require('ai')
 local SITE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/'
 local GUIDE = SITE .. 'tools/worker/?for=rss-local'
 local CATALOG = SITE .. 'rss/catalog.json'
@@ -125,7 +126,8 @@ local function net_submit(opts, label, timeout, on_result)
   net_queue[#net_queue + 1] = { opts = opts, label = label, timeout = timeout, on_result = on_result }
   net_pump()
 end
-local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false, screen = 'portrait' }
+local cfg = { host = '', token = '', auth = '', full = false, size = 'default', images = false, screen = 'portrait',
+              aion = false, aiprov = 'claude', aiurl = '', aikey = '', aimodel = '', ailang = '', aiextra = '' }   -- AI: A.DEFAULTS
 -- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
 -- sizes shift which of them the body, the headings and the feed / date line use.
 local SIZES = {
@@ -219,6 +221,7 @@ local function load_cfg()
     for k, v in s:gmatch('(%w+)=([^\n]*)') do
       if k == 'full' then cfg.full = (v == '1')
       elseif k == 'images' then cfg.images = (v == '1')
+      elseif k == 'aion' then cfg.aion = (v == '1')
       elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
       elseif k == 'screen' then cfg.screen = v:match('^landscape') and 'landscape' or 'portrait'
       else cfg[k] = v end
@@ -228,7 +231,9 @@ end
 
 local function save_cfg()
   pcall(function()
-    ctx.storage:write('config.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0') .. '\nscreen=' .. cfg.screen)
+    local s = 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nfull=' .. (cfg.full and '1' or '0') .. '\nsize=' .. cfg.size .. '\nimages=' .. (cfg.images and '1' or '0') .. '\nscreen=' .. cfg.screen
+    -- the AI lines only once something of it is set
+    ctx.storage:write('config.txt', s .. A.cfg_lines(cfg))
   end)
 end
 
@@ -937,6 +942,11 @@ local function fetch_tags(retried)
   end, 'loading tags')
 end
 
+------------------------------------------------------------------ AI
+-- The optional AI questions: tools/gamekit/aiui.lua (screens: aiset, aiprov, aimenu, chat) over
+-- tools/gamekit/ai.lua (services, requests, answers). Made below, once the drawing helpers exist.
+local UI
+
 ------------------------------------------------------------------ images
 -- Article images come from the resizer URL the Worker gives (src), as greyscale JPEGs of the
 -- size it announced, at most 456 px wide, so they are drawn at their own size. Only the images of the page on screen are fetched and decoded, one
@@ -1108,8 +1118,10 @@ end
 ------------------------------------------------------------------ drawing
 
 local MENU = { { 'Unread', 'unread' }, { 'Starred', 'starred' }, { 'All', 'all' }, { 'Feeds', 'feeds' }, { 'Tags', 'tags' }, { 'Settings', 'settings' } }
-local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)' }, { 'token', 'Path token (after /k/), or empty' }, { 'auth', 'user:password for Basic auth, or empty' }, { 'full', 'Full text' }, { 'size', 'Text size' }, { 'images', 'Images in articles' },
-                   { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)' } }
+-- { key, label, shorter label for the three columns of landscape }
+local SETTINGS = { { 'host', 'Host (e.g. rss.example.workers.dev)', 'Host (your Worker)' }, { 'token', 'Path token (after /k/), or empty', 'Token (after /k/)' },
+                   { 'auth', 'user:password for Basic auth, or empty', 'Login (user:password)' }, { 'full', 'Full text' }, { 'size', 'Text size' }, { 'images', 'Images in articles' },
+                   { 'ai', 'AI' }, { 'cache', 'Articles saved offline (the latest ' .. CACHE_KEEP .. ' stay)', 'Offline copies (' .. CACHE_KEEP .. ')' } }
 
 -- the menu's and Settings' cells: one column in portrait, two in landscape
 local function cols() return W > H and 2 or 1 end
@@ -1138,13 +1150,15 @@ settings_list = function()            -- Screen goes before the offline copies
 end
 -- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
 -- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
-local HALF = { full = true, size = true, images = true, screen = true }
-local function setting_rows()
+local HALF = { full = true, size = true, images = true, screen = true, ai = true }
+-- in portrait the cells in half take half a row; in landscape every cell takes 1/n of a row
+local function grid_rows(items, half, n)
+  n = (cols() > 1 and n) or 2
   local out, row, col = {}, 0, 0
-  local cw = (W - 48) // 2
-  for i, s in ipairs(settings_list()) do
-    if cols() > 1 or HALF[s[1]] then
-      if col == 2 then row, col = row + 1, 0 end
+  local cw = (W - 32 - (n - 1) * 16) // n
+  for i, s in ipairs(items) do
+    if cols() > 1 or half[s[1]] then
+      if col == n then row, col = row + 1, 0 end
       out[i] = { 16 + col * (cw + 16), row, cw }
       col = col + 1
     else
@@ -1155,6 +1169,8 @@ local function setting_rows()
   end
   return out, row + (col > 0 and 1 or 0)
 end
+-- landscape: three columns, so all of Settings fits in three rows
+local function setting_rows() return grid_rows(settings_list(), HALF, 3) end
 setting_rect = function(i)
   local r = setting_rows()[i]
   return r[1], TOP + 20 + r[2] * 96, r[3], 96
@@ -1338,7 +1354,8 @@ end
 
 local function draw_article(gg)
   local F = ctx.fonts
-  bar(gg, { 'Back', 'Prev', 'Next', art.page .. '/' .. art.pages })
+  local pg = art.page .. '/' .. art.pages
+  bar(gg, UI.on() and { 'Back', 'Prev', 'Next', 'AI', pg } or { 'Back', 'Prev', 'Next', pg })
   local first = art.starts and art.starts[art.page] or 1
   local last = (art.starts and art.starts[art.page + 1]) and (art.starts[art.page + 1] - 1) or #art.lines
   local y = TOP + 4
@@ -1361,12 +1378,13 @@ local function draw_settings(gg)
   local list_ = settings_list()
   for i, s in ipairs(list_) do
     local x, y, w = setting_rect(i)
-    gg:text(x, y, fit(s[2], F and F.small, w), { font = F and F.small })
+    gg:text(x, y, fit((cols() > 1 and s[3]) or s[2], F and F.small, w), { font = F and F.small })
     gg:rect(x, y + 24, w, 48)
     local v = s[1] == 'full' and (cfg.full and 'on' or 'off') or cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
     if s[1] == 'size' then v = cfg.size end
     if s[1] == 'screen' then v = cfg.screen end
+    if s[1] == 'ai' then v = UI.value() end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
     if s[1] == 'auth' and v ~= '' then v = v:gsub(':.*$', ':****') end
     gg:text(x + 12, y + 36, fit(v ~= '' and v or '(empty)', F and F.medium, w - 24), { font = F and F.medium })
@@ -1375,6 +1393,20 @@ local function draw_settings(gg)
   if cols() == 1 then gg:text(16, TOP + 20 + rows * 96, 'tap a field to edit; the host is your Worker', { font = F and F.small }) end
   draw_status(gg)
 end
+
+UI = require('aiui').new({
+  cfg = cfg, save = save_cfg, note = note, refresh = refresh, submit = net_submit, keep_wifi = keep_wifi,
+  wrap = wrap_para, style = st, bar = bar, bar_hit = bar_hit, cell = cell, fit = fit, short = short,
+  draw_status = draw_status, busy = busy, status = function() return status end,
+  dims = function() return W, H, TOP end,
+  get_screen = function() return screen end, set_screen = function(v) screen = v end,
+  article = function()
+    if not art.data or #art.lines == 0 then return nil end
+    local d = art.data
+    return { id = art.id, title = d.title or art.title, feed = d.feed, date = d.date, url = d.url, text = d.text }
+  end,
+  reset = function() measure_cache = {} end, folder = 'AppFiles/rss', what = 'an article',
+})
 
 local function draw_rows(gg, rows, top, label_of)
   local F = ctx.fonts
@@ -1451,7 +1483,8 @@ local function draw_impl(gg)
   elseif screen == 'add' then draw_add(gg)
   elseif screen == 'catalog' then draw_catalog(gg)
   elseif screen == 'confirm' then draw_confirm(gg)
-  elseif screen == 'needworker' then draw_needworker(gg) end
+  elseif screen == 'needworker' then draw_needworker(gg)
+  elseif UI.handles(screen) then UI.draw(gg) end
 end
 
 function on_draw(c, gg)
@@ -1474,6 +1507,7 @@ local function edit_setting(i)
     return
   end
   clear_armed = false
+  if s[1] == 'ai' then UI.open_settings(); return end
   if s[1] == 'full' then
     cfg.full = not cfg.full
     save_cfg()
@@ -1587,11 +1621,13 @@ local function tap(x, y)
     end
   elseif screen == 'article' then
     if y < 46 then
-      local b = bar_hit(x, 4)
-      if b == 1 then article_back() elseif b == 2 then page_article(-1) elseif b == 3 then page_article(1) end
+      local b = bar_hit(x, UI.on() and 5 or 4)
+      if b == 1 then article_back() elseif b == 2 then page_article(-1) elseif b == 3 then page_article(1)
+      elseif b == 4 and UI.on() then UI.open() end
       return
     end
     if x < W / 3 then page_article(-1) else page_article(1) end
+  elseif UI.handles(screen) then UI.tap(x, y)
   elseif screen == 'add' then
     if y < 46 then add_back(); return end
     for i, r in ipairs(ADD_ROWS) do
@@ -1820,10 +1856,15 @@ sync_screen = function()
     load_page_images()
   end
   if preview then open_preview(preview.item) end
+  UI.relayout()
 end
 
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
+  -- Back on the first menu: not handled, so the host asks whether to leave the app
+  if type(ev) == 'table' and ev.type == 'key' and ev.key == 'back' and screen == 'menu' and not where and not preview then
+    return false
+  end
   keep_wifi()   -- still in use: Wi-Fi stays up (at most one call per 30 s)
   local ok, e = pcall(function()
     sync_screen()
@@ -1852,9 +1893,9 @@ function on_input(c, ev)
       end
       local g = ev.gesture
       if g == 'swipe_left' or g == 'swipe_up' then
-        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
+        if screen == 'article' then page_article(1) elseif screen == 'chat' then UI.page(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
       elseif g == 'swipe_right' or g == 'swipe_down' then
-        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
+        if screen == 'article' then page_article(-1) elseif screen == 'chat' then UI.page(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
       else
         tap(ev.x or 0, ev.y or 0)
       end
@@ -1874,13 +1915,14 @@ function on_input(c, ev)
         elseif screen == 'confirm' then removing = nil; open_local_feeds(true)
         elseif screen == 'feeds' and feeds['local'] then local_feeds_back()
         elseif screen == 'needworker' then screen = 'settings'
+        elseif UI.handles(screen) then UI.back()
         elseif screen == 'add' then add_back()
         elseif screen ~= 'menu' then screen = 'menu'
         elseif where then where, acct, coll = nil, nil, nil end
       elseif k == 'right' or k == 'down' then
-        if screen == 'article' then page_article(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
+        if screen == 'article' then page_article(1) elseif screen == 'chat' then UI.page(1) elseif screen == 'list' then page_list(1) elseif on_names() then page_feeds(1) end
       elseif k == 'left' or k == 'up' then
-        if screen == 'article' then page_article(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
+        if screen == 'article' then page_article(-1) elseif screen == 'chat' then UI.page(-1) elseif screen == 'list' then page_list(-1) elseif on_names() then page_feeds(-1) end
       end
     end
   end)
@@ -1891,6 +1933,8 @@ end
 
 function on_load(c)
   load_cfg()
+  A.normalize(cfg)                 -- aion: a boolean
+  UI.import()
   if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
   read_accounts(cache_read('accounts.txt'))   -- the saved list draws the folders at once
   Lib.init({ submit = net_submit, worker = function(path, cb, label) request(path, cb, label) end,

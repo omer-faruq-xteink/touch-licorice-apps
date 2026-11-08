@@ -11,6 +11,7 @@
 -- One request at a time (a queue); leaving a screen drops what it still waited for.
 
 local N = require('hn')
+local A = require('ai')         -- the optional AI questions (tools/gamekit/ai.lua)
 local W, H = kit.W, kit.H      -- the screen now (sync_screen); the rest follow it
 local BTN_Y, BTN_H = 704, 64
 local LIST_TOP, ROW_H, ROWS = 64, 78, 8
@@ -21,12 +22,14 @@ local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-a
 local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
 
-local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait' }
-local screen = 'list'           -- list | story | thread | settings
+local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait', aisend = 'both' }
+for k, v in pairs(A.DEFAULTS) do cfg[k] = v end
+local screen = 'list'           -- list | story | thread | settings | aimenu | chat | aiset | aiprov | aibtns
 local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
 local S = nil                   -- the open story: { row, item, article, article_err, lines, pages, page }
 local levels = {}               -- comment levels, deepest last: { parent, kids, got, next, page, lines, pages }
 local thread_from = 'list'
+local chat = { msgs = {}, lines = {}, pages = { 1 }, page = 1 }   -- the AI conversation of the open story
 local status, ERR = nil, nil
 
 -- a character limit set for the 480 px portrait width, scaled to the screen's width now
@@ -53,9 +56,15 @@ local function load_cfg()
   if not SIZES[cfg.size] then cfg.size = 'medium' end
   if cfg.images ~= 'off' then cfg.images = 'on' end
   if cfg.screen ~= 'landscape' then cfg.screen = 'portrait' end
+  A.normalize(cfg)                 -- aion: a boolean
+  if cfg.aisend ~= 'article' and cfg.aisend ~= 'comments' and cfg.aisend ~= 'link' then cfg.aisend = 'both' end
 end
 local function save_cfg()
-  kit.write('settings.txt', 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen)
+  local s = 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen
+  -- the AI lines only once something of it is set
+  s = s .. A.cfg_lines(cfg)
+  if cfg.aisend ~= 'both' then s = s .. '\naisend=' .. cfg.aisend end
+  kit.write('settings.txt', s)
 end
 local function worker_url(path)
   local host = cfg.host:gsub('^https?://', ''):gsub('/+$', '')
@@ -70,6 +79,7 @@ local queue, inflight = {}, nil
 local function keep_wifi() pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end) end
 
 local function finish(job, resp)
+  if job.whole then job.on_done(resp); return end            -- the AI: status, body and error as they came
   if type(resp) ~= 'table' or type(resp.body) ~= 'string' then
     job.on_done(nil, type(resp) == 'table' and resp.error and tostring(resp.error) or 'no answer'); return
   end
@@ -97,7 +107,7 @@ pump = function()
   inflight, job.since = job, kit.now_ms()
   keep_wifi()
   local ok, err = pcall(function()
-    ctx.net:request({ url = job.url, method = 'GET', headers = job.headers, timeout_ms = job.timeout }, function(c, resp)
+    ctx.net:request({ url = job.url, method = job.method or 'GET', headers = job.headers, body = job.body, timeout_ms = job.timeout }, function(c, resp)
       if inflight ~= job then return end
       inflight = nil
       if not job.dropped then
@@ -118,6 +128,14 @@ end
 local function get(url, label, on_done, headers, timeout, raw)
   queue[#queue + 1] = { url = url, label = label, on_done = on_done, timeout = timeout or 30000, raw = raw,
                         headers = headers or { ['User-Agent'] = UA, ['Accept'] = 'application/json' } }
+  local job = queue[#queue]
+  pump()
+  return job
+end
+-- a POST (the AI): opts from A.request; on_done(resp) gets the answer as it came
+local function post(opts, label, on_done)
+  queue[#queue + 1] = { url = opts.url, method = 'POST', body = opts.body, headers = opts.headers, label = label,
+                        on_done = on_done, timeout = 60000, whole = true }
   local job = queue[#queue]
   pump()
   return job
@@ -488,10 +506,307 @@ local function open_thread(row)
 end
 
 local function doc_page(delta)
-  local doc = screen == 'thread' and level() or S
+  local doc = (screen == 'thread' and level()) or (screen == 'chat' and chat) or (screen == 'story' and S) or nil
   if not doc then return end
   doc.page = math.max(1, math.min(#doc.pages, doc.page + delta))
   if screen == 'thread' then thread_pump() else load_pics() end
+end
+
+------------------------------------------------------------------ AI (optional; Settings → AI)
+-- Off (or not set up), nothing of it shows. On, a story and its comments get an AI button: the
+-- ready questions with what to send (Send: Article + comments, Article, Comments, Link +
+-- comments), then the conversation (chat), where Ask types a follow-up and More goes back to the
+-- ready questions. One conversation per story, kept while it is the open story. The comments
+-- come all at once from Algolia's search (N.comments_url), only when they are to be sent.
+
+local AI = {}
+local SEND = { { 'both', 'Article + comments' }, { 'article', 'Article' }, { 'comments', 'Comments' }, { 'link', 'Link + comments' } }
+local COMMENTS_MAX, COMMENTS_PER, COMMENTS_ROOM = 600, 200, 52000
+local ai_from = 'story'         -- where Back from the AI goes: story | thread
+
+function AI.on() return A.ready(cfg) end
+function AI.dec(s) return ctx.json:decode(s) end
+function AI.J()
+  local extra, err = A.extra(cfg.aiextra, AI.dec)
+  if err then return nil, err end
+  return { encode = function(v) return ctx.json:encode(v) end, extra = extra, null = ctx.json.null }
+end
+function AI.send_label()
+  for _k, m in ipairs(SEND) do if m[1] == cfg.aisend then return m[2] end end
+  return SEND[1][2]
+end
+
+function AI.layout(to_last)
+  local out, last_at = {}, 1
+  for _k, m in ipairs(chat.msgs) do
+    if m.role == 'user' then
+      last_at = #out + 1                           -- a new answer opens at its question
+      add_lines(out, '» ' .. (m.label or m.text), 'small', 32)
+      out[#out + 1] = { s = '', f = 'small', x = 0, h = 8 }
+    else
+      add_text(out, A.plain(m.text))
+      out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
+    end
+  end
+  if chat.waiting then add_lines(out, chat.waiting, 'small', 16) end
+  chat.lines, chat.pages = out, paginate(out)
+  -- a last page holding only an answer's closing rule and gaps is dropped (it showed empty)
+  while #chat.pages > 1 do
+    local blank = true
+    for i = chat.pages[#chat.pages], #out do if out[i].s ~= '' then blank = false; break end end
+    if not blank then break end
+    for i = #out, chat.pages[#chat.pages], -1 do out[i] = nil end   -- its lines go too
+    chat.pages[#chat.pages] = nil
+  end
+  if to_last then
+    chat.page = 1
+    for pg, first in ipairs(chat.pages) do if first <= last_at then chat.page = pg end end
+  end
+  chat.page = math.max(1, math.min(chat.page, #chat.pages))
+end
+
+-- a question whose request was dropped (the screen was left meanwhile) can be asked again
+function AI.check()
+  if chat.waiting and (not chat.job or chat.job.dropped) then
+    chat.waiting, chat.job = nil, nil
+    if #chat.msgs > 0 and chat.msgs[#chat.msgs].role == 'user' then table.remove(chat.msgs) end
+  end
+end
+
+function AI.open()
+  if not S then return end
+  if chat.id ~= S.row.id then chat = { id = S.row.id, msgs = {}, lines = {}, pages = { 1 }, page = 1 } end
+  AI.check()
+  if screen == 'story' or screen == 'thread' then ai_from = screen end
+  A.buttons(true)                                  -- ai_buttons.txt may have changed over USB
+  status = nil
+  if #chat.msgs > 0 then AI.layout(false); screen = 'chat' else screen = 'aimenu' end
+end
+
+-- what goes with the questions, by Send
+function AI.content(mode)
+  local r = S.row
+  local text = S.article or (S.item and S.item.text and N.text(S.item.text)) or ''
+  local art = { title = r.title, what = mode == 'article' and 'a Hacker News story' or 'a Hacker News story and its comments' }
+  if mode == 'both' or mode == 'article' then art.text, art.url = text, r.url end
+  if mode == 'link' then art.url = r.url; if not r.url then art.text = text end end   -- Ask HN: the post is its text
+  if mode ~= 'article' and S.ai_comments then art.comments = S.ai_comments.text end
+  return art
+end
+
+-- all of the story's comments, 200 a request (100 when an answer comes cut), at most 600
+function AI.fetch_comments(story, done)
+  if story.ai_comments or (tonumber(story.row.comments) or 0) == 0 then done(); return end
+  local hits, per = {}, COMMENTS_PER
+  local function page(pg)
+    chat.job = get(N.comments_url(story.row.id, pg, per), 'Getting comments ' .. #hits .. ' / ' .. story.row.comments .. '...', function(d, err, code, body)
+      if S ~= story then return end
+      if not d and err == 'not JSON' and per > 50 then per = per // 2; page(pg * 2); return end
+      if not d then done(err); return end
+      for _k, h in ipairs(N.comment_hits(d, body)) do hits[#hits + 1] = h end
+      if pg + 1 < (tonumber(d.nbPages) or 0) and #hits < COMMENTS_MAX and #(d.hits or {}) > 0 then page(pg + 1); return end
+      local text, n = N.thread_text(hits, story.row.id, story.item and story.item.kids, COMMENTS_ROOM)
+      story.ai_comments = { text = text, n = n }
+      done()
+    end)
+  end
+  page(0)
+end
+
+-- a question: a ready one (label), or your own; with a web search while the switch is on, where
+-- the service has one (DeepSeek's is made first and goes along with the question)
+function AI.ask(prompt, label)
+  AI.check()
+  if chat.waiting then status = 'Still waiting for the answer.'; return end
+  local J, jerr = AI.J()
+  if not J then status = jerr; return end
+  local web = chat.web and A.web_ok(cfg)
+  J.web = web and not A.web_first(cfg)
+  local story, c, mode = S, chat, cfg.aisend
+  c.msgs[#c.msgs + 1] = { role = 'user', text = prompt, label = (label or prompt) .. (web and ' (web search)' or '') }
+  screen = 'chat'
+  local function fail(why)
+    c.waiting, c.job = nil, nil
+    if #c.msgs > 0 and c.msgs[#c.msgs].role == 'user' then table.remove(c.msgs) end   -- it can be asked again
+    status = 'AI: ' .. kit.short(tostring(why or 'no answer'), 70)
+    if c ~= chat then return end
+    if #c.msgs == 0 and screen == 'chat' then screen = 'aimenu' end
+    AI.layout(false)
+  end
+  local function send(err)
+    if err then fail(err); return end
+    if S ~= story or c ~= chat then return end
+    local opts, rerr = A.request(cfg, AI.content(mode), c.msgs, J)
+    if not opts then fail(rerr); return end
+    local name = A.prov(cfg).name
+    c.waiting = 'Asking ' .. name .. (J.web and ', searching the web...' or '...')
+    AI.layout(true)
+    c.job = post(opts, 'Asking ' .. name .. '...', function(resp)
+      c.job = nil
+      local text, why = A.answer(cfg, resp, AI.dec)
+      if not text then fail(why); return end
+      c.waiting = nil
+      c.msgs[#c.msgs + 1] = { role = 'assistant', text = text }
+      status = nil
+      if c == chat then AI.layout(true) end
+    end)
+  end
+  -- DeepSeek: the model writes the search query, the app searches, the results go with the question
+  local function search(err)
+    if err then fail(err); return end
+    if not (web and A.web_first(cfg)) then send(); return end
+    if S ~= story or c ~= chat then return end
+    local art = AI.content(mode)
+    local function run(query)
+      if S ~= story or c ~= chat then return end
+      local opts, serr = A.search_request(cfg, query, J.encode, prompt)
+      if not opts then fail(serr); return end
+      c.waiting = 'Searching the web...'
+      AI.layout(true)
+      c.job = post(opts, 'Searching the web...', function(resp)
+        c.job = nil
+        local found, why = A.search_text(resp, AI.dec)
+        if not found then fail(why); return end
+        c.msgs[#c.msgs].text = prompt .. '\n\n' .. found
+        send()
+      end)
+    end
+    local qopts = A.query_request(cfg, art, c.msgs, J)
+    if not qopts then run(A.query_text(cfg, nil, AI.dec, art, prompt)); return end
+    c.waiting = 'Choosing what to search...'
+    AI.layout(true)
+    c.job = post(qopts, 'Choosing what to search...', function(resp)
+      c.job = nil
+      run(A.query_text(cfg, resp, AI.dec, art, prompt))
+    end)
+  end
+  c.waiting = 'Getting the comments...'
+  AI.layout(true)
+  if mode ~= 'article' then AI.fetch_comments(story, search) else search() end
+end
+
+-- your own question
+function AI.ask_own()
+  local web = chat.web and A.web_ok(cfg)
+  local title = (#chat.msgs > 0 and 'Ask more' or 'Ask about this story') .. (web and ' (with a web search)' or '')
+  ctx.input:text({ title = title, text = '', max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' and v:match('%S') then
+      local ok, e = pcall(AI.ask, (v:gsub('^%s+', ''):gsub('%s+$', '')))
+      if not ok then ERR = tostring(e) end
+    end
+    kit.refresh()
+  end)
+end
+
+-- the ready questions: Send first, then the questions (the article's unless only comments go,
+-- the discussion's when comments go), your own question and Start over
+function AI.items()
+  local t = { { 'Send: ' .. AI.send_label(), 'send' } }
+  local more = cfg.aisend ~= 'article' and A.DISCUSSION or nil
+  for _k, it in ipairs(A.items(cfg, #chat.msgs > 0, more, cfg.aisend == 'comments', chat.web)) do t[#t + 1] = it end
+  return t
+end
+-- their cells: Send across, the questions two (landscape three) a row, then your question, the web
+-- search switch and Start over in a new row of the same cells
+function AI.menu_cells()
+  local items, out = AI.items(), {}
+  local n = W > H and 3 or 2
+  local rh = W > H and 46 or 58
+  local y, col, prev = W > H and 52 or 84, 0, nil
+  local cw = (W - 32 - (n - 1) * 12) // n
+  local web_row = false
+  for _k, it in ipairs(items) do if it[2] == 'web' then web_row = W > H end end
+  local sw = web_row and (W - 32 - 12) * 3 // 5 or W - 32      -- landscape: Send and the web switch share the top row
+  for _k, it in ipairs(items) do
+    if it[2] == 'send' then
+      out[#out + 1] = { x = 16, y = y, w = sw, h = rh - 10, item = it }
+      if not web_row then y = y + rh end
+    elseif it[2] == 'web' and web_row then
+      out[#out + 1] = { x = 16 + sw + 12, y = y, w = W - 32 - sw - 12, h = rh - 10, item = it }; y = y + rh
+    elseif it[2] == 'web' then
+      out[#out + 1] = { x = 16, y = y, w = W - 32, h = rh - 10, item = it }; y = y + rh
+    else
+      local group = it[2] == 'ask' and 'ask' or 'tail'
+      if prev and group ~= prev and col > 0 then col, y = 0, y + rh end
+      out[#out + 1] = { x = 16 + col * (cw + 12), y = y, w = cw, h = rh - 10, item = it }
+      col = col + 1
+      if col == n then col, y = 0, y + rh end
+      prev = group
+    end
+  end
+  return out
+end
+
+-- My buttons (ai_buttons.txt): a tap edits one as "Label | question" (emptied: deleted); the
+-- last row adds one
+function AI.btn_rect(i)
+  local n = W > H and 3 or 1                       -- (cols() is defined further down)
+  local cw = (W - 32 - (n - 1) * 16) // n
+  return 16 + ((i - 1) % n) * (cw + 16), 70 + ((i - 1) // n) * 70, cw, 60
+end
+function AI.edit_button(i)
+  local list = {}
+  for k, b in ipairs(A.buttons()) do list[k] = b end
+  local cur = list[i]
+  ctx.input:text({ title = cur and 'Label | question (empty: delete)' or 'New button: Label | question',
+                   text = cur and (cur.label .. ' | ' .. cur.q) or '', max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' then
+      local b = A.parse_button(v)
+      if cur and not b then table.remove(list, i)
+      elseif b and cur then list[i] = b
+      elseif b and #list < A.BUTTONS_MAX then list[#list + 1] = b end
+      if (b or cur) and not A.save_buttons(list) then status = 'could not write ' .. A.BUTTONS_FILE end
+    end
+    kit.refresh()
+  end)
+end
+
+function AI.test()
+  local J, jerr = AI.J()
+  if not J then status = jerr; return end
+  local opts, err = A.request(cfg, A.TEST_ART, A.TEST_MSGS, J)
+  if not opts then status = 'AI: ' .. tostring(err); return end
+  post(opts, 'Testing ' .. A.prov(cfg).name .. '...', function(resp)
+    local text, why = A.answer(cfg, resp, AI.dec)
+    status = text and ('Works: "' .. kit.short(text, 30) .. '"') or ('AI: ' .. kit.short(tostring(why or 'no answer'), 70))
+  end)
+end
+
+-- ai.txt in AppFiles/hackernews/ (USB): taken in, then deleted
+function AI.import()
+  local ok, s = pcall(function()
+    if not (ctx.files and ctx.files:exists('ai.txt')) then return nil end
+    return ctx.files:read('ai.txt', 0, 4096)
+  end)
+  if not (ok and A.take(cfg, s)) then return false end
+  save_cfg()
+  pcall(function() ctx.files:remove('ai.txt') end)
+  status = 'AI settings taken from ai.txt (file deleted)'
+  return true
+end
+
+function AI.edit(i)
+  local k = A.SET[i] and A.SET[i][1]
+  if not k then return end
+  if k == 'aion' then local m = A.toggle(cfg); save_cfg(); status = m; return end
+  if k == 'aiprov' then screen = 'aiprov'; return end
+  if k == 'aitest' then AI.test(); return end
+  if k == 'aibtn' then A.buttons(true); screen = 'aibtns'; return end
+  local title, start = A.field(cfg, k)
+  ctx.input:text({ title = title, text = start, max_bytes = 256 }, function(c, v)
+    if type(v) == 'string' then
+      local stored, why = A.store(cfg, k, v, AI.dec)
+      if stored then save_cfg() else status = why end
+    end
+    kit.refresh()
+  end)
+end
+
+function AI.choose(id)
+  local need = A.choose(cfg, id)
+  save_cfg()
+  screen = 'aiset'
+  if need then for i, s in ipairs(A.SET) do if s[1] == 'aiurl' then AI.edit(i) end end end
 end
 
 ------------------------------------------------------------------ drawing
@@ -556,8 +871,9 @@ local function draw_list(gg)
   end
 end
 
-local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev' }, { 'token', 'Path token (after /k/), or empty' },
-                   { 'auth', 'user:password for Basic auth, or empty' }, { 'size', 'Text size' },
+-- { key, label, shorter label for landscape's three columns }
+local SETTINGS = { { 'host', 'Worker host, e.g. rss-opds.you.workers.dev', 'Worker host' }, { 'token', 'Path token (after /k/), or empty', 'Token (after /k/)' },
+                   { 'auth', 'user:password for Basic auth, or empty', 'Login (user:password)' }, { 'size', 'Text size' },
                    { 'images', 'Pictures in articles' } }
 -- landscape needs ctx.screen:set_orientation (API 2.18; Studio's preview has none): Settings offers it only then
 local function can_rotate()
@@ -571,20 +887,22 @@ local function settings_list()
   local t = {}
   for k, v in ipairs(SETTINGS) do t[k] = v end
   if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
+  t[#t + 1] = { 'ai', 'AI' }
   return t
 end
--- one column in portrait, two in landscape
-local function cols() return W > H and 2 or 1 end
+-- one column in portrait, three in landscape
+local function cols() return W > H and 3 or 1 end
 local setting_rect
--- Settings' cells: in portrait a short one shares its row with the next short one; in landscape
--- every cell is a half (two columns). setting_rows() gives { x, row, w } per setting and the rows used
-local HALF = { size = true, images = true, screen = true }
-local function setting_rows()
+-- Settings' (and the AI page's) cells: in portrait a short one shares its row with the next short
+-- one; in landscape every cell is a third. grid_rows() gives { x, row, w } per cell and the rows used
+local HALF = { size = true, images = true, screen = true, ai = true }
+local function grid_rows(items, half)
   local out, row, col = {}, 0, 0
-  local cw = (W - 48) // 2
-  for i, s in ipairs(settings_list()) do
-    if cols() > 1 or HALF[s[1]] then
-      if col == 2 then row, col = row + 1, 0 end
+  local n = cols() > 1 and 3 or 2
+  local cw = (W - 32 - (n - 1) * 16) // n
+  for i, s in ipairs(items) do
+    if cols() > 1 or half[s[1]] then
+      if col == n then row, col = row + 1, 0 end
       out[i] = { 16 + col * (cw + 16), row, cw }
       col = col + 1
     else
@@ -595,9 +913,20 @@ local function setting_rows()
   end
   return out, row + (col > 0 and 1 or 0)
 end
+local function setting_rows() return grid_rows(settings_list(), HALF) end
 setting_rect = function(i)
   local r = setting_rows()[i]
   return r[1], 70 + r[2] * 86, r[3], 86
+end
+function AI.rect(i)
+  local r = grid_rows(A.SET, A.HALF)[i]
+  return r[1], 70 + r[2] * 86, r[3], 86
+end
+-- the Service list: one column (three in landscape)
+function AI.prov_rect(i)
+  local n = cols()
+  local cw = (W - 32 - (n - 1) * 16) // n
+  return 16 + ((i - 1) % n) * (cw + 16), 70 + ((i - 1) // n) * 66, cw, 56
 end
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
@@ -607,7 +936,8 @@ local function draw_settings(gg)
     local v = cfg[s[1]]
     if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
-    gg:text(x, y + 8, fit(s[2], 'small', w), { font = kit.font('small') })
+    if s[1] == 'ai' then v = AI.on() and A.prov(cfg).name or (cfg.aion and 'not set up yet' or 'off') end
+    gg:text(x, y + 8, fit((cols() > 1 and s[3]) or s[2], 'small', w), { font = kit.font('small') })
     gg:text(x, y + 36, v ~= '' and fit(v, 'medium', w) or '(empty)', { font = kit.font('medium') })
     gg:line(x, y + 78, x + w, y + 78)
   end
@@ -621,13 +951,85 @@ local function draw_settings(gg)
   end
 end
 
+function AI.draw_set(gg)
+  gg:text(16, 16, 'AI (optional)', { font = kit.font('large') })
+  for k, s in ipairs(A.SET) do
+    local x, y, w = AI.rect(k)
+    gg:text(x, y + 8, fit(s[2], 'small', w), { font = kit.font('small') })
+    gg:text(x, y + 36, fit(A.value(cfg, s[1]), 'medium', w), { font = kit.font('medium') })
+    gg:line(x, y + 78, x + w, y + 78)
+  end
+  if cols() > 1 then return end
+  local _, rows = grid_rows(A.SET, A.HALF)
+  local y = 70 + rows * 86 + 8
+  for _k, l in ipairs(N.wrap('Off: no AI button anywhere. On: one on stories and comments. A long key: put ai.txt in '
+      .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'AppFiles/hackernews')
+      .. '/ with lines service=deepseek, key=..., model=...; the app takes it in and deletes the file.', 'small', W - 32)) do
+    gg:text(16, y, l, { font = kit.font('small') }); y = y + 22
+  end
+end
+
+function AI.draw_prov(gg)
+  gg:text(16, 16, 'Service', { font = kit.font('large') })
+  local cur = A.prov(cfg).id
+  for i, P in ipairs(A.PROVIDERS) do
+    local x, y, w, h = AI.prov_rect(i)
+    kit.button(gg, x, y, w, h, P.label, { font = 'medium', line_width = P.id == cur and 5 or 1 })
+  end
+end
+
+function AI.draw_btns(gg)
+  gg:text(16, 16, 'My buttons', { font = kit.font('large') })
+  local list = A.buttons()
+  local n = #list + (#list < A.BUTTONS_MAX and 1 or 0)
+  for i = 1, n do
+    local x, y, w, h = AI.btn_rect(i)
+    gg:rect(x, y, w, h)
+    local b = list[i]
+    if b then
+      gg:text(x + 12, y + 6, fit(b.label, 'medium', w - 24), { font = kit.font('medium') })
+      gg:text(x + 12, y + 34, fit(b.q, 'small', w - 24), { font = kit.font('small') })
+    else
+      gg:text(x + 12, y + 18, 'Add a button', { font = kit.font('medium') })
+    end
+  end
+  if cols() > 1 then return end
+  local _x, y = AI.btn_rect(n + 1)
+  for _k, l in ipairs(N.wrap('They come after the ready questions. Tap one to change it; empty it to delete it. Also in '
+      .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'AppFiles/hackernews')
+      .. '/' .. A.BUTTONS_FILE .. ' (USB): one "Label | question" a line.', 'small', W - 32)) do
+    gg:text(16, y + 4, l, { font = kit.font('small') }); y = y + 22
+  end
+end
+
+function AI.draw_menu(gg)
+  gg:text(16, 12, 'Ask ' .. A.prov(cfg).name, { font = kit.font('large') })
+  if W <= H then gg:text(16, 50, fit(S and S.row.title or '', 'small', W - 32), { font = kit.font('small') }) end
+  for _k, c in ipairs(AI.menu_cells()) do
+    kit.button(gg, c.x, c.y, c.w, c.h, c.item[1], { font = 'medium',
+      line_width = (c.item[2] == 'send' or (c.item[2] == 'web' and chat.web)) and 3 or 1 })
+  end
+end
+
 local function buttons()
   if screen == 'list' then return { 'Prev', 'Next', 'Reload', 'Settings' } end
   if screen == 'story' then
+    if AI.on() then
+      -- "AI" is narrow, so Back / Prev / Next keep room for their words (Back was cut at 66 px)
+      local b, ai = 76 * W // 480, 50 * W // 480
+      return { 'Back', 'Prev', 'Next', 'AI', S.row.comments .. ' comments' }, { b, b, b, ai, W - 56 - 3 * b - ai }
+    end
     local b = 84 * W // 480
     return { 'Back', 'Prev', 'Next', S.row.comments .. ' comments' }, { b, b, b, W - 48 - 3 * b }
   end
-  if screen == 'thread' then return { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' } end
+  if screen == 'thread' then
+    local t = { 'Back', 'Prev', 'Next', #levels == 1 and 'Story' or 'Top' }
+    if AI.on() then t[#t + 1] = 'AI' end
+    return t
+  end
+  if screen == 'chat' then
+    return A.chat_bar(cfg)
+  end
   return { 'Back' }
 end
 local function button_rects()
@@ -673,6 +1075,11 @@ function on_draw(c, gg)
     if screen == 'list' then draw_list(gg)
     elseif screen == 'story' then draw_doc(gg, S)
     elseif screen == 'thread' then draw_doc(gg, level())
+    elseif screen == 'chat' then draw_doc(gg, chat)
+    elseif screen == 'aimenu' then AI.draw_menu(gg)
+    elseif screen == 'aiset' then AI.draw_set(gg)
+    elseif screen == 'aiprov' then AI.draw_prov(gg)
+    elseif screen == 'aibtns' then AI.draw_btns(gg)
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
     -- under the buttons: above them it overlapped the last list row
@@ -693,7 +1100,11 @@ local function ask(title, value, fn)
 end
 
 local function back()
-  if screen == 'thread' and #levels > 1 then
+  if screen == 'chat' then screen = ai_from
+  elseif screen == 'aimenu' then screen = #chat.msgs > 0 and 'chat' or ai_from
+  elseif screen == 'aiset' then screen = 'settings'
+  elseif screen == 'aiprov' or screen == 'aibtns' then screen = 'aiset'
+  elseif screen == 'thread' and #levels > 1 then
     drop_all(); levels[#levels] = nil; build_thread(level()); thread_pump()
   elseif screen == 'thread' then
     drop_all(); screen = thread_from == 'story' and 'story' or 'list'
@@ -730,6 +1141,9 @@ local function tap(x, y, long)
       elseif b == 'Top' then
         drop_all(); while #levels > 1 do levels[#levels] = nil end
         build_thread(level()); thread_pump()
+      elseif b == 'AI' then AI.open()
+      elseif b == 'Ask' then AI.ask_own()
+      elseif b == 'More' then screen = 'aimenu'
       else open_thread(S.row) end
       return
     end
@@ -760,11 +1174,49 @@ local function tap(x, y, long)
     else
       doc_page(x < W // 3 and -1 or 1)
     end
+  elseif screen == 'chat' then
+    if y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end
+  elseif screen == 'aimenu' then
+    for _k, cell in ipairs(AI.menu_cells()) do
+      if x >= cell.x and x < cell.x + cell.w and y >= cell.y and y < cell.y + cell.h then
+        local it = cell.item
+        if it[2] == 'send' then
+          for j, m in ipairs(SEND) do if m[1] == cfg.aisend then cfg.aisend = SEND[j % #SEND + 1][1]; break end end
+          save_cfg()
+        elseif it[2] == 'ask' then AI.ask(it[3], it[1])
+        elseif it[2] == 'own' then AI.ask_own()
+        elseif it[2] == 'web' then
+          chat.web = not chat.web
+          status = chat.web and 'Web search on for the next questions' or 'Web search off'
+        elseif it[2] == 'new' then
+          AI.check()
+          if chat.waiting then status = 'Still waiting for the answer.' else chat.msgs = {}; AI.layout(false) end
+        end
+        return
+      end
+    end
+  elseif screen == 'aiset' then
+    for k = 1, #A.SET do
+      local sx, sy, sw, sh = AI.rect(k)
+      if x >= sx and x < sx + sw and y >= sy and y < sy + sh then AI.edit(k); return end
+    end
+  elseif screen == 'aibtns' then
+    local list = A.buttons()
+    for i = 1, #list + (#list < A.BUTTONS_MAX and 1 or 0) do
+      local bx, by, bw, bh = AI.btn_rect(i)
+      if x >= bx and x < bx + bw and y >= by and y < by + bh then AI.edit_button(i); return end
+    end
+  elseif screen == 'aiprov' then
+    for i, P in ipairs(A.PROVIDERS) do
+      local px, py, pw, ph = AI.prov_rect(i)
+      if x >= px and x < px + pw and y >= py and y < py + ph then AI.choose(P.id); return end
+    end
   elseif screen == 'settings' then
     for k, s in ipairs(settings_list()) do
       local sx, sy, sw, sh = setting_rect(k)
       if x >= sx and x < sx + sw and y >= sy and y < sy + sh then
-        if s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+        if s[1] == 'ai' then AI.import(); screen = 'aiset'
+        elseif s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
         elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
         elseif s[1] == 'screen' then
           cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'
@@ -780,6 +1232,7 @@ end
 local long_done, suppress_up = false, false
 function on_input(c, ev)
   ERR = nil
+  local left = false
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     sync_screen()
@@ -798,7 +1251,7 @@ function on_input(c, ev)
       if suppress_up then suppress_up = false; return end
       if kit.modal() then tap(x, y, false); return end
       local delta = ev.gesture == 'swipe_up' and 1 or ev.gesture == 'swipe_down' and -1 or nil
-      if delta and screen ~= 'settings' then
+      if delta and (screen == 'list' or screen == 'story' or screen == 'thread' or screen == 'chat') then
         if screen == 'list' then list_page(delta) else doc_page(delta) end
         return
       end
@@ -806,22 +1259,25 @@ function on_input(c, ev)
     elseif ev.type == 'key' and kit.key_accepted(ev) then
       if kit.modal() then
         if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
+      elseif ev.key == 'back' and screen == 'list' then
+        left = true                                -- not handled: the host asks whether to leave
       elseif ev.key == 'back' then back()
       else
         local delta = (ev.key == 'down' or ev.key == 'right') and 1 or (ev.key == 'up' or ev.key == 'left') and -1 or nil
-        if delta and screen == 'list' then list_page(delta) elseif delta and screen ~= 'settings' then doc_page(delta) end
+        if delta and screen == 'list' then list_page(delta) elseif delta then doc_page(delta) end
       end
     end
   end)
   if not ok then ERR = tostring(e) end
   if screen ~= 'story' then release_pics() end
   kit.refresh()
-  return true
+  return not left
 end
 
 function on_load(c)
   local ok, e = pcall(function()
     load_cfg()
+    AI.import()
     if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
     open_tab('top')
   end)
@@ -837,5 +1293,6 @@ end
 if rawget(_G, '__TEST') then
   __TEST.api = { N = N, L = function() return L end, S = function() return S end, screen = function() return screen end,
                  levels = function() return levels end, level = level, cfg = cfg, status = function() return status end,
-                 queue = function() return #queue + (inflight and 1 or 0) end, pics = function() return pics end }
+                 queue = function() return #queue + (inflight and 1 or 0) end, pics = function() return pics end,
+                 chat = function() return chat end, A = A }
 end

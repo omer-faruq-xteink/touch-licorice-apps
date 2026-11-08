@@ -317,7 +317,7 @@ assert screen() == 'list'
 g.no_err()
 
 # landscape (API 2.18): Settings offers Screen; turning gives 800 x 480: the buttons at the bottom,
-# 4 stories a page, Settings in two columns, a story's pages and pictures no taller than a page
+# 4 stories a page, Settings in three columns, a story's pages and pictures no taller than a page
 L.execute("""
 ctx.screen = { width = 480, height = 800 }
 function ctx.screen.set_orientation(self, o)
@@ -326,9 +326,11 @@ function ctx.screen.set_orientation(self, o)
 end
 """)
 g.restart(); answer_all()
-def overflow(col=400):
-    """texts above the buttons past the right edge, or into the next column (10 px a character here)"""
-    return [(str(r.s), int(r.x)) for r in g.draw() if int(r.y) < 384 and int(r.x) + 10 * len(str(r.s)) > (col if int(r.x) < col else 800) - 8]
+def overflow(*edges):
+    """texts above the buttons past the right edge, or into the next column (10 px a character here);
+    edges: where the columns end (Settings: three columns)"""
+    edges = edges or (277, 538, 800)
+    return [(str(r.s), int(r.x)) for r in g.draw() if int(r.y) < 384 and int(r.x) + 10 * len(str(r.s)) > next(e for e in edges if int(r.x) < e) - 8]
 g.tap_label('Settings')
 assert 'Screen' in g.texts(), g.texts()
 assert all(int(r.y) + 22 <= 704 for r in g.draw() if str(r.s) != 'Back'), [(str(r.s), int(r.y)) for r in g.draw()]   # the note ends above the button
