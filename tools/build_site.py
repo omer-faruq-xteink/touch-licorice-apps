@@ -210,6 +210,22 @@ def counter_pages(out):
     return len(pages)
 
 
+def sitemap(out):
+    """sitemap.xml for search engines (Google Search Console takes its address): every page but
+    those marked noindex (the download counters); the count of pages"""
+    urls = []
+    for path in sorted(glob.glob(os.path.join(out, '**', '*.html'), recursive=True)):
+        if 'noindex' in open(path, encoding='utf-8').read():
+            continue
+        rel = os.path.relpath(path, out).replace(os.sep, '/')
+        urls.append(site_catalog.SITE_URL + (rel[:-len('index.html')] if rel.endswith('index.html') else rel))
+    body = ''.join(f'  <url><loc>{escape(u)}</loc></url>\n' for u in urls)
+    open(os.path.join(out, 'sitemap.xml'), 'w', encoding='utf-8', newline='\n').write(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + body + '</urlset>\n')
+    return len(urls)
+
+
 def newest_release():
     """the newest release/vX.Y.Z folder, the local stand-in for the latest release"""
     found = glob.glob(os.path.join(ROOT, 'release', 'v*'))
@@ -235,10 +251,11 @@ def main():
     counters = counter_pages(out)
     add_icons(out)
     pages = add_analytics(out)
+    mapped = sitemap(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
           f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
-          f'{community} community apps, analytics on {pages} pages, {counters} download counters')
+          f'{community} community apps, analytics on {pages} pages, {counters} download counters, sitemap of {mapped} pages')
 
 
 if __name__ == '__main__':
