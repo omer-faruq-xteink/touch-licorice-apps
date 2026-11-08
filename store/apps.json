@@ -504,9 +504,9 @@
     "app_id": "timekeeper",
     "listing_id": "",
     "project_id": "d80faaff-07e6-4c30-8d38-a15a1ee79e64",
-    "release_version": "1.0.0",
+    "release_version": "1.0.1",
     "status": "in review",
     "live_version": null,
-    "submitted": "2026-11-07"
+    "submitted": "2026-11-08"
   }
 }

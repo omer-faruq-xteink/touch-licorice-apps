@@ -80,7 +80,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `instapaper` | Instapaper | `instapaper` | 1.2.0 | in review | 1.1.0 | 2026-11-08 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `readwise` | Readwise | `readwise` | 1.2.0 | in review | 1.1.1 | 2026-11-08 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.3.0 | in review | 1.2.0 | 2026-11-08 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
-| `timekeeper` | Timekeeper | `timekeeper` | 1.0.0 | in review | - | 2026-11-07 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
+| `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-08 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.0 | in review | 1.1.0 | 2026-11-08 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 
 43 published, 8 in review or draft, 51 in all.
