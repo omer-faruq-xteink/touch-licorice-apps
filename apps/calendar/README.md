@@ -13,8 +13,11 @@ to My calendar.
 Google Calendar can't be reached with a login on the reader, but every calendar has a private
 **secret address in iCal format**: in Google Calendar on the web, Settings → your calendar under
 *Settings for my calendars* → *Integrate calendar* → **Secret address in iCal format** (it ends
-in `/basic.ics`). Each calendar has its own address. Other services (Outlook, iCloud, Nextcloud)
-offer a similar "publish" or "subscribe" address; `webcal://` works too.
+in `/basic.ics`). Each calendar has its own address. Other services (Outlook, Nextcloud) offer a
+similar "publish" or "subscribe" address; `webcal://` works too, and an address that moves
+elsewhere is followed. **Apple (iCloud)** gives no address for a private calendar: in Calendar on
+the iPhone or Mac, share the calendar as a **Public Calendar** and use the link it shows
+(`webcal://pNN-caldav.icloud.com/published/2/…`); anyone with that link can see the calendar.
 
 - **On the reader**: More → **Add**, type the address, then a name.
 - **Over USB** (easier for long addresses): put a `calendars.txt` into `XTApps/calendar/files/`
@@ -33,7 +36,13 @@ Google's public holiday calendars work the same way, for example Turkey's:
 Holidays|https://calendar.google.com/calendar/ical/tr.turkish%23holiday%40group.v.calendar.google.com/public/basic.ics|on
 ```
 
-(other countries: `en.usa`, `en.uk`, `de.german`, … in place of `tr.turkish`).
+(other countries: `en.usa`, `en.uk`, `de.german`, … in place of `tr.turkish`). Apple has its own:
+
+```
+Tatiller|https://calendars.icloud.com/holidays/tr_tr.ics|on
+```
+
+(`us_en`, `gb_en`, `de_de`, … in place of `tr_tr`).
 
 The secret address of your own calendar is a password to it: don't share `calendars.txt`.
 

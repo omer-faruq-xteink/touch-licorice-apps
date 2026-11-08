@@ -61,6 +61,13 @@ WORK = '\r\n'.join([
     'UID:night@x', 'SUMMARY:Night train', 'END:VEVENT',
     'END:VCALENDAR', ''])
 
+# Apple's holiday calendars: all-day events repeating yearly, a LANGUAGE on SUMMARY
+APPLE = '\r\n'.join([
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:icalendar-ruby', 'X-WR-CALNAME:Tatiller (Türkiye)',
+    'BEGIN:VEVENT', 'DTSTAMP;VALUE=DATE:19760401', 'UID:republic@apple', 'DTSTART;VALUE=DATE:20251029',
+    'CLASS:PUBLIC', 'SUMMARY;LANGUAGE=tr:Cumhuriyet Bayramı', 'TRANSP:TRANSPARENT', 'RRULE:FREQ=YEARLY;COUNT=6',
+    'END:VEVENT', 'END:VCALENDAR', ''])
+
 URL1 = 'https://calendar.google.com/calendar/ical/me%40gmail.com/private-abc/basic.ics'
 URL2 = 'webcal://example.org/work.ics'
 requests = []
@@ -81,6 +88,15 @@ def answer(url, headers=None):
         return {'status': 200, 'body': WORK}
     if url.endswith('/login'):
         return {'status': 200, 'body': '<html>Sign in</html>'}
+    # an iCloud published calendar: moved to another server (as webcal://), then to a path there
+    if url == 'https://p01-caldav.icloud.com/published/2/apple':
+        return {'status': 301, 'headers': {'location': 'webcal://p57-caldav.icloud.com/published/2/apple'}, 'body': ''}
+    if url == 'https://p57-caldav.icloud.com/published/2/apple':
+        return {'status': 302, 'headers': {'location': '/published/2/apple.ics'}, 'body': ''}
+    if url == 'https://p57-caldav.icloud.com/published/2/apple.ics':
+        return {'status': 200, 'body': APPLE}
+    if url.startswith('https://loop.example/'):                  # moves round in a circle
+        return {'status': 302, 'headers': {'location': 'b' if url.endswith('/a') else 'a'}, 'body': ''}
     return {'status': 404, 'body': 'Not Found'}
 
 
@@ -89,7 +105,7 @@ def setup(L):
         requests.append(opts['url'])
         hd = dict(opts['headers'].items()) if opts['headers'] else {}
         sent.append((opts['url'], hd))
-        L.globals().pending_resp = L.table_from(answer(opts['url'], hd))
+        L.globals().pending_resp = L.table_from(answer(opts['url'], hd), recursive=True)
         L.globals().pending_fn = fn
         return L.table_from({'cancel': lambda self: None})
 
@@ -277,8 +293,23 @@ assert has('error: not an iCal address'), texts()
 g.tap_label('Add'); typed('https://nowhere.example/cal.ics'); typed('Gone')
 answer_all()
 assert has('error: HTTP 404'), texts()
-# delete both through their boxes
-for name in ('Gone', 'Bad'):
+# redirects are followed (the host does not): an iCloud published calendar moved twice
+n = len(requests)
+g.tap_label('Add'); typed('webcal://p01-caldav.icloud.com/published/2/apple'); typed('Apple')
+answer_all()
+assert requests[n:] == ['https://p01-caldav.icloud.com/published/2/apple', 'https://p57-caldav.icloud.com/published/2/apple',
+                        'https://p57-caldav.icloud.com/published/2/apple.ics'], requests[n:]
+apple = [c for c in A().cals().values() if str(c.name) == 'Apple'][0]
+assert apple.err is None and len(apple.events) == 1 and str(apple.events[1].sum) == 'Cumhuriyet Bayramı', apple.err
+assert str(apple.url) == 'https://p01-caldav.icloud.com/published/2/apple'      # the address given stays
+# ...but not for ever: three moves at most
+n = len(requests)
+g.tap_label('Add'); typed('https://loop.example/a'); typed('Loop')
+answer_all()
+loop = [c for c in A().cals().values() if str(c.name) == 'Loop'][0]
+assert len(requests) - n == 4 and str(loop.err) == 'HTTP 302: moved too many times', (requests[n:], loop.err)
+# delete them through their boxes
+for name in ('Gone', 'Bad', 'Apple', 'Loop'):
     y = [s for s in g.draw() if str(s.s) == name][0].y
     g.tap(40, int(y) + 5)
     g.tap_label('Delete'); g.tap_label('Delete')

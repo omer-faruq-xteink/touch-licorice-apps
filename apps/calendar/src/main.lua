@@ -192,8 +192,7 @@ sync_next = function()
   C.step('download ' .. c.name .. (cfg.plain and '' or ' (gzip)'))
   pcall(function() ctx.net:keep_wifi(5 * 60 * 1000) end)
   local ok, err = pcall(function()
-    local opts = C.request(c.url, not cfg.plain)
-    ctx.net:request(opts, function(cc, resp)
+    C.fetch(c.url, not cfg.plain, function(resp)               -- redirects followed
       if sync_cur ~= c then return end
       local okb, e = pcall(take_body, c, resp)
       if not okb then c.err = kit.short(tostring(e), 60) end

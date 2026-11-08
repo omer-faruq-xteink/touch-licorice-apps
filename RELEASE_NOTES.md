@@ -9,6 +9,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 ## Changed
 
 - **Bookworm 1.1.0: company.** Under Family, an **ink octopus** and a **shelf dragon** can share the reader with the bookworm, one awake at a time: the octopus's egg comes with the first hatching, the dragon's with the first finished book. Tap one to hatch or wake it and the one awake goes to sleep; a sleeping one does not eat, grow or get hungry. Each has its own drawings at every stage, its own voice for everything it says (a dreamy octopus scribbler, a dragon who hoards books), its own names and its own generations, on the app and on the sleep screen. Also: "an elder bookworm" (it said "a elder").
+- **Calendar 1.1.2: addresses that move.** A calendar address that answers with a redirect is now followed (up to three moves; the reader does not follow them itself), as iCloud's published calendars can: before, it said "not an iCal address". The help explains Apple's Public Calendar link and lists Apple's holiday calendars (`https://calendars.icloud.com/holidays/tr_tr.ics`).
 
 ## Files
 
@@ -16,6 +17,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice, builds **26102
 |---|---|
 | `timekeeper.xtapp` | new: Timekeeper |
 | `bookworm.xtapp` | Bookworm 1.1.0: an ink octopus and a shelf dragon join the bookworm |
+| `calendar.xtapp` | Calendar 1.1.2: redirects followed (iCloud published calendars) |
 | all other packages | unchanged since v0.20.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

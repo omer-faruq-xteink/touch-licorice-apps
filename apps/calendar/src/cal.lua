@@ -172,6 +172,35 @@ function C.request(url, gz)
   return { url = url, method = 'GET', timeout_ms = 45000, headers = headers }
 end
 
+-- where an answer redirects to (a 3xx with a Location: iCloud's published calendars and other
+-- hosts send one, and the host does not follow it), made absolute; nil for any other answer
+function C.redirect(resp, url)
+  local code = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code))
+  if not code or code < 300 or code > 399 or code == 304 then return nil end
+  local loc = type(resp.headers) == 'table' and resp.headers.location
+  if type(loc) ~= 'string' or not loc:match('%S') then return nil end
+  loc = C.fix_url(loc)
+  if loc:match('^https?://') then return loc end
+  if loc:sub(1, 2) == '//' then return (url:match('^(https?:)') or 'https:') .. loc end
+  if loc:sub(1, 1) == '/' then return (url:match('^(https?://[^/]+)') or '') .. loc end
+  return (url:gsub('[^/]*$', '')) .. loc
+end
+
+-- fetch a calendar, following up to three redirects; fn(resp) gets the last answer (an empty one
+-- when a redirect could not be asked). Returns what ctx.net:request returns for the first ask.
+function C.fetch(url, gz, fn, hops)
+  hops = hops or 0
+  return ctx.net:request(C.request(url, gz), function(cc, resp)
+    local to = hops < 3 and C.redirect(resp, url)
+    if to then
+      local ok, job = pcall(C.fetch, to, gz, fn, hops + 1)
+      if ok and job then return end
+      resp = {}
+    end
+    fn(resp)
+  end)
+end
+
 -- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
 -- too long is closed without a Lua error), the next start knows the step
 function C.step(s) pcall(function() ctx.storage:write('sync_step.txt', s) end) end
@@ -211,6 +240,7 @@ function C.answer(resp, log)
   resp.body = nil                                -- one copy less while it is unpacked and read
   local code = tonumber(resp.status) or tonumber(resp.code)
   if code and code >= 400 then return nil, 'HTTP ' .. code end
+  if code and code >= 300 then return nil, 'HTTP ' .. code .. ': moved too many times' end
   local packed = 0
   if body:sub(1, 2) == '\31\139' then
     packed = #body
