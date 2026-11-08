@@ -152,7 +152,7 @@ g.tap_label('Settings')
 t = g.texts()
 assert 'AI' in t and 'off' in t, t
 g.tap_label('off')
-assert screen() == 'aiset' and 'AI (optional)' in g.texts() and 'Test the connection' in g.texts(), g.texts()
+assert screen() == 'aiset' and 'AI (optional)' in g.texts() and 'Tap to test' in g.texts(), g.texts()
 g.tap_label('off')                                          # on
 assert A().cfg.aion and 'now add the key' in g.texts()
 g.tap_label('Claude')
@@ -162,7 +162,7 @@ assert screen() == 'aiset' and 'deepseek-flash' in g.texts()
 g.tap_label('(empty)'); typed('sk-deepseek-1234567890')
 assert 'sk-dee…7890  (22 characters)' in g.texts(), g.texts()
 assert 'aiprov=deepseek' in g.store['settings.txt'] and 'aikey=sk-deepseek-1234567890' in g.store['settings.txt']
-g.tap_label('Test the connection'); answer_all()
+g.tap_label('Tap to test'); answer_all()
 assert 'Works: "OK"' in g.texts() and last_ai()[0] == 'https://api.deepseek.com/v1/chat/completions', (g.texts(), last_ai()[0])
 assert last_ai()[2]['Authorization'] == 'Bearer sk-deepseek-1234567890'
 g.key('back'); g.key('back')

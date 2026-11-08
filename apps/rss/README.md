@@ -142,7 +142,7 @@ To use it, open **Settings → AI**:
   - Gemini 2.5 Flash, no thinking: `{"generationConfig":{"thinkingConfig":{"thinkingBudget":0}}}`
   - Claude, more thorough (the app asks for low effort): `{"output_config":{"effort":"medium"}}`
   - any service, steadier or shorter answers: `{"temperature":0.3}`, `{"max_tokens":800}`
-- **Test the connection** asks for a one-word answer and shows it (or the service's error).
+- **Connection: Tap to test** asks for a one-word answer and shows it (or the service's error).
 - A long key is easier over USB: put `ai.txt` into `AppFiles/rss/` with lines such as
   `service=deepseek` (a name from the list, or `other` with `url=...`), `key=...`, `model=...`,
   `lang=...`, `extra={...}`. Opening Settings → AI (or the app) takes the settings in and

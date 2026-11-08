@@ -438,7 +438,7 @@ function A.value(cfg, k)
   if k == 'aiextra' then return cfg.aiextra ~= '' and cfg.aiextra or '(none)' end
   if k == 'ailang' then return cfg.ailang ~= '' and cfg.ailang or '(as asked)' end
   if k == 'aibtn' then return #A.buttons() .. ' of ' .. A.BUTTONS_MAX end
-  return 'Test the connection'
+  return 'Tap to test'
 end
 
 -- Your own ready questions: ai_buttons.txt in the app's folder, one "Label | question" a line (a

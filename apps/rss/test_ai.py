@@ -306,7 +306,7 @@ assert str(g.store['config.txt']).endswith('screen=portrait'), g.store['config.t
 # Settings → AI: switch on (needs a key), type a key, the Service cycles
 x, y = recs()['AI']; tap(x + 5, y + 30)
 t = texts()
-assert 'Service' in t and 'Claude' in t and 'claude-opus-5-5' in t and '(none)' in t and 'Test the connection' in t, t
+assert 'Service' in t and 'Claude' in t and 'claude-opus-5-5' in t and '(none)' in t and 'Tap to test' in t, t
 assert any('ai.txt' in s for s in t), t
 tap_label('off')
 assert 'aion=1' in str(g.store['config.txt']) and 'now add the key' in texts()
@@ -334,7 +334,7 @@ assert 'Extra parameters: not valid JSON (not saved)' in texts() and '(none)' in
 tap_label('(none)'); g.typed('{"temperature":0.3}')
 assert '{"temperature":0.3}' in texts()
 answers['api.deepseek.com'] = (200, {'choices': [{'message': {'role': 'assistant', 'content': 'OK'}}]})
-tap_label('Test the connection'); g.flush()
+tap_label('Tap to test'); g.flush()
 assert 'works: "OK"' in texts() and json.loads(sent[-1][3])['temperature'] == 0.3 and sent[-1][0] == 'https://api.deepseek.com/v1/chat/completions', sent[-1]
 # Other: its address is asked at once, with https:// to start from; the key may stay empty
 tap_label('DeepSeek'); tap_label('Other (OpenAI-compatible)')
@@ -347,7 +347,7 @@ assert 'claude-opus-5-5' in texts() and 'api.anthropic.com/v1  (default)' in tex
 
 # the connection test answers in the status line
 answers['/v1/messages'] = (200, {'content': [{'type': 'text', 'text': 'OK'}], 'stop_reason': 'end_turn'})
-tap_label('Test the connection'); g.flush()
+tap_label('Tap to test'); g.flush()
 assert 'works: "OK"' in texts(), texts()
 assert json.loads(sent[-1][3])['messages'][0]['content'] == 'Reply with the single word OK.'
 

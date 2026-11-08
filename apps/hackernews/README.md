@@ -52,7 +52,7 @@ RSS app's (each app keeps its own; neither needs the other installed):
   **Address** (empty: the service's own), **Key**, **Model** (empty: the service's starting model),
   **Answer in** (a language), **Extra parameters (JSON)** merged into every request (e.g.
   `{"reasoning_effort":"minimal"}`, or for Gemini 2.5 Flash without thinking
-  `{"generationConfig":{"thinkingConfig":{"thinkingBudget":0}}}`), and **Test the connection**.
+  `{"generationConfig":{"thinkingConfig":{"thinkingBudget":0}}}`), and **Connection: Tap to test**.
 - A long key is easier over USB: put `ai.txt` into `AppFiles/hackernews/` with lines such as
   `service=deepseek`, `key=...`, `model=...`. Opening Settings → AI (or the app) takes it in and
   **deletes the file**.

@@ -95,7 +95,7 @@ def run(ns, menu_label, app):
     x, y = r['AI']
     tap(x + 5, y + 30)
     t = texts()
-    assert 'Service' in t and 'Claude' in t and 'Test the connection' in t, t
+    assert 'Service' in t and 'Claude' in t and 'Tap to test' in t, t
     assert all(int(v.y) <= 800 - 48 for v in ns['draw']().values()), [(str(v.s), int(v.y)) for v in ns['draw']().values()]
     key('back')
     assert 'AI' in texts()

@@ -70,7 +70,7 @@ RSS app; each app keeps its own settings, and none needs another installed.
   Groq, Mistral, DeepSeek, Ollama on your network, or **Other** for any OpenAI-compatible address);
   **Address** (empty: the service's own), **Key**, **Model** (empty: the service's starting model),
   **Answer in** (a language), **Extra parameters (JSON)** merged into every request (e.g.
-  `{"reasoning_effort":"minimal"}`), and **Test the connection**.
+  `{"reasoning_effort":"minimal"}`), and **Connection: Tap to test**.
 - A long key is easier over USB: put `ai.txt` into `AppFiles/wallabag/` with lines such as
   `service=deepseek`, `key=...`, `model=...`. Opening Settings → AI (or the app) takes it in and
   **deletes the file**.
