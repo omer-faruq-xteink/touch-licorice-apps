@@ -7,6 +7,8 @@ import os, sys
 from lupa import lua54
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import subprocess as _sp                                                 # src/ -> index.lua first
+_sp.run([sys.executable, '-I', os.path.join(HERE, 'bundle.py')], check=True, stdout=_sp.DEVNULL)
 L = lua54.LuaRuntime(unpack_returned_tuples=True)
 
 store = {
@@ -130,7 +132,7 @@ assert t[t.index('ap') + 1:t.index('ap') + 5] == ['Apple', 'apple', 'applet', 'a
 ed.opts.on_end(g.ctx, 'apple', 'enter')
 t = texts()
 assert t[0] == 'Back' and 'apple' in t and 'noun elma' in t, t
-assert str(g.py_store['history.txt']).split('\n')[0] == 'apple'
+assert str(g.py_store['history.txt']).split('\n')[0].split('\t')[0] == 'apple'
 # Back reopens the editor with the query
 tap(30, 20)
 last = lambda: g.edits[len(g.edits)]
@@ -152,6 +154,63 @@ assert any('not found' in x for x in texts())
 last().opts.on_change(g.ctx, '')
 t = texts()
 assert 'recent' in t and t[t.index('recent') + 1] == 'zoo', t
+# My words: every word looked up, newest first, with how often; Review on the FSRS schedule
+L.execute("fake_now = 1794000000; ctx.clock = { now = function(self) return { epoch_sec = fake_now } end }")
+last().opts.on_end(g.ctx, 'apple', 'enter')               # apple a second time
+tap(30, 20)
+assert str(g.py_store['history.txt']).split('\n')[0].startswith('apple\t2\t1794000000'), g.py_store['history.txt']
+recs_ = lambda: {str(r.s): (int(r.x), int(r.y)) for r in draw().values()}
+tap(300, 20)                                              # My words (left of Settings)
+t = texts()
+assert t[:4] == ['Back', 'Prev', 'Next', 'Review 4'] and '4 words' in t, t
+assert t[t.index('4 words') + 1] == 'apple' and 'looked up 2 times · new' in t and 'Clear history' in t, t
+# a word opens its entry; Back returns to My words
+x, y = recs_()['abandon']; tap(x + 5, y + 5)
+assert 'verb terk etmek' in texts()
+tap(30, 20)
+assert 'Clear history' in texts()
+# its x: once asks, again removes it (from the reviews too)
+x, y = recs_()['zoo']
+tap(480 - 36, y + 20)
+assert 'tap x again to remove it' in texts() and 'zoo' in texts()
+tap(480 - 36, y + 20)
+t = texts()
+assert 'zoo' not in t and '3 words' in t and 'removed: zoo' in t, t
+assert 'zoo' not in str(g.py_store['history.txt'])
+# Review: oldest look-up first; the word, then its entry and the four grades with their intervals
+tap(4 + 3 * 118 + 10, 20)
+t = texts()
+assert 'Show' in t and '3 left' in t and 'elma' in t, t                 # elma: looked up in the other dictionary
+tap(240, 800 - 90)
+t = texts()
+assert '(not in Test En-Tr)' in t and t[-8:] == ['Again', '1m', 'Hard', '6m', 'Good', '10m', 'Easy', '14d'], t
+tap(12 + 2 * 120 + 20, 800 - 90)                                         # Good
+assert str(g.py_store['cards.txt']).startswith('elma\t1794000600 '), g.py_store['cards.txt']
+t = texts()
+assert 'abandon' in t and '2 left' in t, t
+tap(240, 800 - 90); assert 'verb terk etmek' in texts()
+tap(12 + 3 * 120 + 20, 800 - 90)                                         # Easy: days away
+tap(240, 800 - 90); tap(12 + 0 * 120 + 20, 800 - 90)                     # apple: Again, back in a minute
+t = texts()
+assert 'Nothing to review now.' in t and 'The next word comes in 1m.' in t, t
+assert str(g.py_store['review_day.txt']) == str(1794000000 // 86400) + ' 3'
+L.execute("fake_now = fake_now + 120")
+tap(30, 20)                                                              # Back: My words
+assert 'Review 1' in texts(), texts()
+key('back'); assert 'Clear history' not in texts()                       # Back: the search
+assert L.eval("function() return on_input(ctx, {type='key', key='back'}) end")() is False   # the first screen: the host asks
+tap(300, 20)
+# Clear history: once asks, again removes every word and every card
+x, y = recs_()['Clear history']
+tap(x + 5, y + 5)
+assert any(s.startswith('Tap again to remove all 3 words') for s in texts()), texts()
+tap(x + 5, y + 5)
+t = texts()
+assert 'No words yet: look some up.' in t and 'history cleared' in t, t
+assert str(g.py_store['history.txt']) == '' and str(g.py_store['cards.txt']) == ''
+tap(4 + 3 * 118 + 10, 20)
+assert 'Nothing to review now.' in texts() and 'Words you look up come here.' in texts()
+tap(30, 20); key('back')
 # user folder (ctx.files, AppFiles/<app_id>): the same files there instead of the private files
 user = {}
 for k in [k for k in list(store) if str(k) not in ('history.txt', 'lock_dict.txt', 'wotd_every.txt') and not str(k).startswith('pkg:')]:

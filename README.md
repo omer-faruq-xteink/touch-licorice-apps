@@ -61,7 +61,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
-| **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen |
+| **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen; My words (every word looked up) and Review with spaced repetition |
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
 | **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |

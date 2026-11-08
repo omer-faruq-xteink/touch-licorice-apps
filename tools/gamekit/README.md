@@ -12,6 +12,8 @@ Klondike, when an app asks for them); `harness.py` is the offline test harness (
 Settings → AI logic) and `aiui.lua` their screens for the apps built like RSS (RSS, Instapaper,
 Readwise, wallabag), which `bundle_reader.py` bundles; Hacker News asks for `ai.lua` as a
 shared module and draws its own screens. Each package gets its own copy, so no app needs another
-installed. `ai_reader_test.py` is the AI check those apps' tests run.
+installed. `ai_reader_test.py` is the AI check those apps' tests run. `fsrs.lua` is the FSRS 4.5
+review scheduler (Anki's, with its default parameters) that Dictionary's Review uses
+(`bundle_reader.bundle(app, shared=('fsrs',))`); the Anki app keeps its own copy.
 Nothing is filled black: large black areas ghost on e-ink, and the host draws text black even
 when asked for white.

@@ -36,8 +36,24 @@ install the new `dict.xtapp` over the old one; the files stay.
 - Entry pages: **Back**, **Prev / Next**, tap the right / left third, side buttons, swipes.
 - **Settings** at the top right: pick the dictionary in use (the choice is remembered), turn
   **Word of the Day** on the lock screen on or off, choose the dictionary it comes from and how often a new word comes (every day,
-  12, 6, 3 hours or every hour). With an empty search box the last 30 lookups
-  are listed.
+  12, 6, 3 hours or every hour). With an empty search box the latest lookups are listed.
+- **My words** at the top (left of Settings): see below.
+
+## My words and Review
+
+Every word you look up is kept (up to 500), newest first, with how often you looked it up and
+when it comes up for review.
+
+- **My words** lists them; tap one to read its entry again (that does not count as another
+  look-up). The **x** on its right removes it: tap it once, then again. **Clear history** at the
+  bottom removes every word (also two taps).
+- **Review** (in My words' bar, with how many are waiting) brings the words back as cards: the
+  word first, **Show** for its entry, then **Again**, **Hard**, **Good** or **Easy**, each with
+  when you will see the word again. The schedule is FSRS, the one Anki uses (the same code as the
+  Anki app, `tools/gamekit/fsrs.lua`): a word you know well comes back after days, then weeks and
+  months; one you forgot comes back in minutes. Words reviewed for the first time: up to 10 a day.
+- The entry comes from the dictionary in use; a word looked up in another one says so.
+- Kept in the app's own storage (`history.txt`, `cards.txt`), not in the dictionary folder.
 
 ## Word of the Day (lock screen)
 
