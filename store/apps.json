@@ -15,8 +15,8 @@
     "listing_id": "u_ba855a9c35e048a893646fb501ed1dd4",
     "project_id": "8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-09"
   },
   "calendar": {
@@ -315,8 +315,8 @@
     "listing_id": "u_85cae7d4e8a84cbe902b72067623adaa",
     "project_id": "547d9981-6d6c-43a4-878d-612452ce57f0",
     "release_version": "1.2.0",
-    "status": "in review",
-    "live_version": "1.1.0",
+    "status": "published",
+    "live_version": "1.2.0",
     "submitted": "2026-11-09"
   },
   "tbr": {
@@ -507,6 +507,6 @@
     "release_version": "1.0.1",
     "status": "in review",
     "live_version": null,
-    "submitted": "2026-11-08"
+    "submitted": "2026-11-09"
   }
 }
