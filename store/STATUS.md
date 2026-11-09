@@ -65,7 +65,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `sudoku` | Sudoku | `sudoku` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
 | `suguru` | Suguru | `suguru` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2901167c-5036-4bdd-b439-d5a7a7ffea8f` |
 | `tarot` | Tarot | `tarot` | 1.0.0 | published | 1.0.0 | 2026-11-01 | `e505686d-eb7a-4648-a224-859c17aa76f2` |
-| `tasks` | Tasks | `tasks` | 1.1.0 | published | 1.1.0 | 2026-11-01 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
 | `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
@@ -80,7 +79,8 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `instapaper` | Instapaper | `instapaper` | 1.2.0 | in review | 1.1.0 | 2026-11-08 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `readwise` | Readwise | `readwise` | 1.2.0 | in review | 1.1.1 | 2026-11-08 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.3.0 | in review | 1.2.0 | 2026-11-08 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
+| `tasks` | Tasks | `tasks` | 1.2.0 | in review | 1.1.0 | 2026-11-09 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-08 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.0 | in review | 1.1.0 | 2026-11-08 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 
-42 published, 9 in review or draft, 51 in all.
+41 published, 10 in review or draft, 51 in all.
