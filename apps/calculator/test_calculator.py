@@ -46,6 +46,11 @@ def keys(*labels):
         g.tap_label(l)
 
 
+def mode(name):
+    g.tap(480 - 60, 30)                     # the Mode button, then a name in its list
+    g.tap_label(name)
+
+
 def run(*labels):
     keys('C', *labels, '=')
     return str(A().result()) if A().result() else None
@@ -70,8 +75,9 @@ keys('+', '1', '=')
 assert str(A().result()) == '13' and 'Ans + 1' in A().expr()
 
 # the scientific mode
-g.tap_label('Sci')
-assert str(A().mode()) == 'sci' and 'sin' in g.texts() and 'Basic' in g.texts()
+assert 'Basic' in g.texts()                # the button is named after the mode
+mode('Sci')
+assert str(A().mode()) == 'sci' and 'sin' in g.texts() and 'Sci' in g.texts()
 assert run('(', '2', '+', '3', ')', '×', '4') == '20'
 assert run('2', 'pi') == '6.283185307179586'
 assert run('sqrt', '2') == '1.414213562373095'               # refined in decimal: no "~"
@@ -83,7 +89,9 @@ assert run('3', 'x²') == '9' and run('4', '1/x') == '0.25'
 assert run('sin', '3', '0') == '0.5' and run('cos', '9', '0') == '0' and run('tan', '4', '5') == '1'
 assert run('asin', '1') == '90'
 assert run('ln', 'e') == '1' and run('log', '1', '0', '0', '0') == '3'
+g.tap_label('2nd')
 assert run('1', 'EE', '3', '+', '1') == '1001'
+g.tap_label('2nd')
 assert run('-', '2', 'x^y', '2') == '-4'
 assert run('sin', '9', '0', ')', '+', '1') == '2'
 g.tap_label('Deg')                                          # radians
@@ -105,8 +113,56 @@ assert str(A().mode()) == 'sci' and len(list(A().history().values())) == len(h)
 
 # the draw commands stay well under the reader's limit
 assert g.commands() < 300, g.commands()
-g.tap_label('Basic')
+mode('Basic')
 assert str(A().mode()) == 'basic' and 'sin' not in g.texts()
+
+# Sci's 2nd page
+mode('Sci')
+g.tap_label('2nd')
+assert '10^x' in g.texts() and 'sin' not in g.texts()
+assert run('10^x', '3') == '1000'
+assert run('³sqrt', '2', '7') == '3' and run('³sqrt', '-', '8') == '-2'
+assert run('root', '8', '1', ',', '4') == '3'
+assert run('2', 'x³') == '8'
+assert run('abs', '-', '5') == '5'
+assert run('int', '-', '2', '.', '5') == '-3'
+assert run('round', '2', '.', '3', '4', '5', ',', '2') == '2.35' and run('round', '2', '.', '5') == '3'
+assert run('1', '7', 'mod', '5') == '2' and run('-', '7', 'mod', '3') == '2'
+assert run('5', 'nCr', '2') == '10' and run('5', 'nPr', '2') == '20' and run('5', '2', 'nCr', '5') == '2598960'
+assert run('gcd', '1', '2', ',', '1', '8') == '6' and run('lcm', '4', ',', '6') == '12'
+assert run('e^x', '0') == '1'
+assert run('gcd', '1', '2') is None and 'comma' in str(A().err())
+# Frac: 0.75 -> 3/4, 1/3 -> 1/3 (exact decimals, continued fractions)
+keys('C', '0', '.', '7', '5', '=', 'Frac')
+assert str(A().frac()) == '3/4' and '= 3/4' in g.texts()
+keys('Frac')
+assert A().frac() is None
+keys('C', '1', '÷', '3', 'Frac')
+assert str(A().frac()) == '1/3'
+keys('C', '2', 'Frac')
+assert str(A().frac()) == 'no simple fraction'
+# variables: Sto puts the result in A-F, Var puts a letter in the expression
+keys('C', '4', '2', 'Sto')
+g.tap_label('B')
+assert A().var('B') == '42'
+keys('C', 'Var')
+g.tap_label('B')
+keys('×', '2', '=')
+assert str(A().result()) == '84'
+g.tap_label('2nd')
+g.restart()
+assert A().var('B') == '42'
+
+# Back: the host's question on the calculator itself (not handled), one frame per tap
+back = g.L.eval("function() return on_input(ctx, {type='key', key='back', phase='up'}) end")
+assert back() is False
+g.L.execute("frames = 0; ctx.invalidate = function() frames = frames + 1 end")
+keys('7')
+assert int(g.g.frames) == 1, int(g.g.frames)                 # down + up: one frame, for the up
+
+# Basic and Sci never load a mode's file
+assert int(A().loaded()) == 0
+assert g.L.eval("package.loaded['modes.ui'] == nil and package.loaded['modes.graph'] == nil")
 print('float digits here:', int(A().FLOAT_DIGITS))
 g.no_err()
 print('calculator tests passed')

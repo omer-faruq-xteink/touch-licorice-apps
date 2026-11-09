@@ -166,6 +166,19 @@ function D.cmp(a, b)
   return d.neg and -1 or 1
 end
 
+-- the whole part, toward zero / toward minus infinity
+function D.trunc(a)
+  if a.m == '0' or a.e >= 0 then return a end
+  local point = #a.m + a.e
+  if point <= 0 then return D.zero() end
+  return make(a.neg, a.m:sub(1, point), 0)
+end
+function D.floor(a)
+  local t = D.trunc(a)
+  if a.neg and D.cmp(t, a) ~= 0 then t = D.sub(t, make(false, '1', 0)) end
+  return t
+end
+
 -- an integer value as a number (nil when it is not a small whole number)
 function D.small_int(a, limit)
   if a.m == '0' then return 0 end

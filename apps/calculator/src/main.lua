@@ -1,16 +1,23 @@
 -- Calculator for XTOS Licorice, API 2.9 (uses tools/gamekit and src/decimal.lua).
 --
 -- Basic: digits, + - x /, %, +/-, backspace, clear. Sci adds sin cos tan (and their inverses, in
--- degrees or radians), ln log, square root, x^2, x^y, n!, 1/x, pi, e, brackets, EE and Ans.
+-- degrees or radians), ln log, square root, x^2, x^y, n!, 1/x, pi, e, brackets and Ans; its 2nd
+-- page has 10^x, e^x, x^3, cube and n-th roots, abs, int, round, mod, nPr, nCr, gcd, lcm, rand,
+-- EE, variables A-F (Sto, Var) and Frac (the result as a fraction).
 -- The expression is typed as on paper and worked out with the usual precedence; brackets left
--- open close at the end, "2pi" and "3(4)" multiply. Labels keep to ASCII and Latin-1 (x ÷ ± ²):
+-- open close at the end, "2pi" and "3(4)" multiply. Labels keep to ASCII and Latin-1 (x ÷ ± ² ³):
 -- the reader's font may not have the minus sign, root or pi signs.
 --
 -- Arithmetic is exact in decimal (src/decimal.lua, 22 digits, shown to 16): 0.1 + 0.2 - 0.3 is 0.
--- Square roots are refined in decimal too. Functions like sin or ln go through Lua's floats; how
--- many digits those carry is measured at start (the reader's Lua may have 32-bit numbers), and a
--- result that went through them is shown to that many digits and marked "~". The last results
--- stay above the display (tap one to use it); everything is kept between visits.
+-- Square and other roots are refined in decimal too. Functions like sin or ln go through Lua's
+-- floats; how many digits those carry is measured at start (the reader's Lua has 32-bit numbers),
+-- and a result that went through them is shown to that many digits and marked "~". The last
+-- results stay above the display (tap one to use it); everything is kept between visits.
+--
+-- The other modes (Graph, Table, Stats, Distributions, Solve, Matrix, Units, Base, Finance,
+-- Dates) are files of their own under modes/, loaded with require only when one is chosen with
+-- the Mode button (top right): Basic and Sci run the same code, at the same speed, whether they exist or not. A mode
+-- asks for numbers and expressions through this screen (api.edit), so every key works there.
 
 local D = require('decimal')
 local W, H = kit.W, kit.H
@@ -19,8 +26,10 @@ local W, H = kit.W, kit.H
 local FLOAT_DIGITS = (1 + 2 ^ -40 ~= 1) and 15 or 6
 local PI = D.parse('3.1415926535897932384626')
 local E = D.parse('2.7182818284590452353603')
+local ONE, TEN = D.parse('1'), D.parse('10')
 
 local mode = 'basic'               -- basic | sci
+local sci_page = 1                 -- Sci's keys: page 1, or page 2 after 2nd
 local deg = true
 local tokens = {}                  -- the expression: { t = kind, s = text }
 local result, approx, err = nil, false, nil
@@ -28,13 +37,19 @@ local fresh = false                -- the result is showing: a digit starts anew
 local ans = D.zero()
 local history = {}                 -- { expr, value } newest last
 local HISTORY_MAX = 20
+local LETTERS = { 'A', 'B', 'C', 'D', 'E', 'F' }
+local vars = {}                    -- A-F: decimal values
+local frac = nil                   -- the result as a fraction while Frac is on
 local ERR = nil
+local screen, screen_label = nil, nil   -- an open mode (its module) and its menu name
+local editing = nil                -- a mode asked for a value: { opts, saved }
 
 ------------------------------------------------------------------ evaluation
 
 local FUNCS = { sin = true, cos = true, tan = true, asin = true, acos = true, atan = true,
                 ln = true, log = true, sqrt = true }
-local LABEL = { sqrt = 'sqrt', asin = 'asin', acos = 'acos', atan = 'atan' }
+local LABEL = { tenpow = '10^', exp = 'e^', cbrt = '³sqrt' }
+local ARGS = { round = { 1, 2 }, gcd = { 2, 2 }, lcm = { 2, 2 }, root = { 2, 2 } }  -- the rest take one
 
 local function fail(msg) error({ calc = msg }, 0) end
 
@@ -57,6 +72,8 @@ local function float_fn(name, v)
   elseif name == 'ln' or name == 'log' then
     if x <= 0 then fail(name .. ' needs a number above 0') end
     y = name == 'ln' and math.log(x) or math.log(x, 10)
+  elseif name == 'exp' then y = math.exp(x)
+  elseif name == 'tenpow' then y = 10 ^ x
   end
   -- values that are whole in degrees: sin 30 = 0.5, cos 90 = 0
   if deg and (name == 'sin' or name == 'cos' or name == 'tan') and math.abs(y) < 1e-12 then y = 0 end
@@ -98,6 +115,86 @@ local function power(a, b)
   return r
 end
 
+-- the n-th root: a float's guess, then Newton in decimal (odd roots of negatives too)
+local function root(v, nv)
+  local n = D.small_int(nv, 1000)
+  if not n or n < 1 then
+    if D.is_zero(nv) then fail('a 0th root') end
+    local inv = D.div(ONE, nv)
+    if v.neg then fail('that root of a negative number') end
+    return power(v, inv)
+  end
+  if n == 1 then return v end
+  if n == 2 then return sqrt(v) end
+  if v.neg and n % 2 == 0 then fail('an even root of a negative number') end
+  if D.is_zero(v) then return v end
+  local a = v.neg and D.neg(v) or v
+  local x = D.from_number(D.to_number(a) ^ (1 / n), FLOAT_DIGITS)
+  if not x or D.is_zero(x) then fail('out of range') end
+  local nd, n1 = D.parse(tostring(n)), D.parse(tostring(n - 1))
+  for _i = 1, 6 do x = D.div(D.add(D.mul(n1, x), D.div(a, D.pow_int(x, n - 1))), nd) end
+  return v.neg and D.neg(x) or x
+end
+
+local function whole(v, what, limit)
+  local n = D.small_int(v, limit or 1000000000)
+  if not n then fail(what .. ' needs whole numbers') end
+  return n
+end
+
+local function round_to(v, nv)
+  local n = nv and whole(nv, 'round', 20) or 0
+  if n < 0 then fail('round needs 0 to 20 places') end
+  local s = D.pow_int(TEN, n)
+  local x, h = D.mul(v, s), D.parse('0.5')
+  local r = x.neg and D.neg(D.floor(D.add(D.neg(x), h))) or D.floor(D.add(x, h))
+  return D.div(r, s)
+end
+
+local function gcd_int(a, b)
+  a, b = math.abs(a), math.abs(b)
+  while b ~= 0 do a, b = b, a % b end
+  return a
+end
+
+local function call(name, args)
+  local want = ARGS[name] or { 1, 1 }
+  if #args < want[1] or #args > want[2] then
+    fail(name .. (want[2] == 1 and ' takes one value' or ' takes ' .. want[1] .. ' values, with a comma'))
+  end
+  local v = args[1]
+  if name == 'sqrt' then return sqrt(v)
+  elseif name == 'cbrt' then return root(v, D.parse('3'))
+  elseif name == 'root' then return root(v, args[2])
+  elseif name == 'abs' then return v.neg and D.neg(v) or v
+  elseif name == 'int' then return D.floor(v)
+  elseif name == 'round' then return round_to(v, args[2])
+  elseif name == 'gcd' or name == 'lcm' then
+    local a, b = whole(v, name), whole(args[2], name)
+    local g = gcd_int(a, b)
+    if name == 'gcd' then return D.parse(tostring(g)) end
+    if g == 0 then return D.zero() end
+    return D.mul(D.parse(tostring(math.abs(a) // g)), D.parse(tostring(math.abs(b))))
+  elseif name == 'tenpow' then
+    local n = D.small_int(v, 10000)
+    if n then return D.pow_int(TEN, n) end
+  end
+  return float_fn(name, v)
+end
+
+local function perm(nv, rv, choose)
+  local n, r = whole(nv, 'nPr and nCr', 1000), whole(rv, 'nPr and nCr', 1000)
+  if n < 0 or r < 0 then fail('nPr and nCr need numbers from 0') end
+  if r > n then return D.zero() end
+  if choose and r > n - r then r = n - r end
+  local out = ONE
+  for i = 0, r - 1 do
+    out = D.mul(out, D.parse(tostring(n - i)))
+    if choose then out = D.div(out, D.parse(tostring(i + 1))) end   -- whole at every step
+  end
+  return out
+end
+
 -- recursive descent over the tokens
 local function evaluate(toks)
   local pos = 1
@@ -105,7 +202,7 @@ local function evaluate(toks)
   local function take() pos = pos + 1; return toks[pos - 1] end
   local expr
   local function starts_primary(t)
-    return t and (t.t == 'num' or t.t == 'const' or t.t == 'func' or t.t == 'lp')
+    return t and (t.t == 'num' or t.t == 'const' or t.t == 'func' or t.t == 'lp' or t.t == 'var')
   end
   local function primary()
     local t = take()
@@ -115,15 +212,19 @@ local function evaluate(toks)
       if not v then fail('bad number ' .. t.s) end
       return v
     elseif t.t == 'const' then
-      return t.s == 'pi' and PI or t.s == 'e' and E or ans
+      if t.s == 'pi' then return PI elseif t.s == 'e' then return E elseif t.s == 'Ans' then return ans end
+      if t.s == 'rand' then return D.from_number(math.random(), FLOAT_DIGITS) or D.zero() end
+      if t.s == 'x' then fail('X is for Graph, Table and Solve') end
+      fail('unexpected ' .. t.s)
+    elseif t.t == 'var' then
+      return vars[t.s] or D.zero()
     elseif t.t == 'lp' or t.t == 'func' then
-      local v = expr()
+      local args = { expr() }
+      while peek() and peek().t == 'sep' do take(); args[#args + 1] = expr() end
       if peek() and peek().t == 'rp' then take() end
-      if t.t == 'func' then
-        if t.s == 'sqrt' then return sqrt(v) end
-        return float_fn(t.s, v)
-      end
-      return v
+      if t.t == 'func' then return call(t.s, args) end
+      if #args > 1 then fail('a comma outside a function') end
+      return args[1]
     end
     fail('unexpected ' .. t.s)
   end
@@ -134,6 +235,7 @@ local function evaluate(toks)
       if p == '!' then v = factorial(v)
       elseif p == '%' then v = D.div(v, D.parse('100'))
       elseif p == '²' then v = D.mul(v, v)
+      elseif p == '³' then v = D.mul(v, D.mul(v, v))
       elseif p == '^-1' then
         v = D.div(D.parse('1'), v)
         if not v then fail('1/0') end
@@ -167,6 +269,15 @@ local function evaluate(toks)
           v = D.div(v, r)
           if not v then fail('division by zero') end
         end
+      elseif t and t.t == 'op' and (t.s == 'nPr' or t.s == 'nCr' or t.s == 'mod') then
+        take()
+        local r = unary()
+        if t.s == 'mod' then
+          if D.is_zero(r) then fail('mod 0') end
+          v = D.sub(v, D.mul(r, D.floor(D.div(v, r))))
+        else
+          v = perm(v, r, t.s == 'nCr')
+        end
       elseif starts_primary(t) then
         v = D.mul(v, unary())                  -- 2pi, 3(4)
       else
@@ -188,6 +299,28 @@ local function evaluate(toks)
   return v
 end
 
+-- the result as a fraction: continued fractions on the exact decimal, denominators below 10^9
+local function to_frac(v)
+  local x = v.neg and D.neg(v) or v
+  local h0, h1, k0, k1 = D.zero(), ONE, ONE, D.zero()
+  local y = x
+  local want = D.format(x, 16)
+  for _i = 1, 60 do
+    local a = D.floor(y)
+    local h2, k2 = D.add(D.mul(a, h1), h0), D.add(D.mul(a, k1), k0)
+    if #k2.m + k2.e > 9 then return nil end
+    h0, h1, k0, k1 = h1, h2, k1, k2
+    if D.format(D.div(h1, k1), 16) == want then
+      if D.format(k1, 16) == '1' then return nil end
+      return (v.neg and '-' or '') .. D.format(h1, 22) .. '/' .. D.format(k1, 22)
+    end
+    local rest = D.sub(y, a)
+    if D.is_zero(rest) then return nil end
+    y = D.div(ONE, rest)
+  end
+  return nil
+end
+
 ------------------------------------------------------------------ the expression
 
 local function text_of(toks)
@@ -195,6 +328,8 @@ local function text_of(toks)
   for _k, t in ipairs(toks) do
     if t.t == 'func' then out[#out + 1] = (LABEL[t.s] or t.s) .. '('
     elseif t.t == 'op' then out[#out + 1] = (t.s == '^') and '^' or (' ' .. t.s .. ' ')
+    elseif t.t == 'sep' then out[#out + 1] = ', '
+    elseif t.t == 'const' and t.s == 'x' then out[#out + 1] = 'X'
     else out[#out + 1] = t.s end
   end
   return table.concat(out)
@@ -203,7 +338,10 @@ end
 local function save()
   local h = {}
   for _k, e in ipairs(history) do h[#h + 1] = e[1] .. '\t' .. e[2] end
-  kit.write('calc.txt', 'mode=' .. mode .. '\ndeg=' .. tostring(deg) .. '\nans=' .. D.format(ans, 22) ..
+  local v = {}
+  for _k, L in ipairs(LETTERS) do if vars[L] then v[#v + 1] = L .. ':' .. D.format(vars[L], 22) end end
+  kit.write('calc.txt', 'mode=' .. (editing and editing.saved.mode or mode) .. '\ndeg=' .. tostring(deg) ..
+    '\nans=' .. D.format(ans, 22) .. '\nvars=' .. table.concat(v, ',') .. '\nscreen=' .. (screen_label or '') ..
     '\n--\n' .. table.concat(h, '\n'))
 end
 
@@ -213,11 +351,14 @@ local function load()
   mode = t.mode == 'sci' and 'sci' or 'basic'
   deg = t.deg ~= 'false'
   ans = (t.ans and D.parse(t.ans)) or D.zero()
+  vars = {}
+  for L, val in (t.vars or ''):gmatch('(%u):([^,]+)') do vars[L] = D.parse(val) end
   history = {}
   for line in ((s:match('\n%-%-\n(.*)$') or '') .. '\n'):gmatch('([^\n]*)\n') do
     local e, v = line:match('^(.-)\t(.+)$')
     if e then history[#history + 1] = { e, v } end
   end
+  return t.screen ~= '' and t.screen or nil
 end
 
 local function last() return tokens[#tokens] end
@@ -290,6 +431,143 @@ local function equals()
   save()
 end
 
+------------------------------------------------------------------ the other modes
+
+-- name in Modes, module (modes/<module>.lua), the view it opens on
+local MODES = {
+  { 'Graph', 'graph', 'graph' }, { 'Table', 'graph', 'table' },
+  { 'Stats', 'stats', 'lists' }, { 'Distributions', 'stats', 'distr' },
+  { 'Solve', 'solve', 'solve' }, { 'Matrix', 'matrix', 'matrix' },
+  { 'Units', 'units', 'units' }, { 'Base', 'base', 'base' },
+  { 'Finance', 'finance', 'tvm' }, { 'Dates', 'dates', 'dates' },
+}
+local loaded = {}
+local api_t = nil
+
+local function close_mode()
+  screen, screen_label = nil, nil
+  save()
+end
+
+local function start_edit(opts)
+  editing = { opts = opts, screen = screen,
+              saved = { tokens = tokens, result = result, approx = approx, err = err, fresh = fresh,
+                        mode = mode, page = sci_page, frac = frac } }
+  tokens = {}
+  for _k, t in ipairs(opts.tokens or {}) do tokens[#tokens + 1] = { t = t.t, s = t.s } end
+  result, approx, err, fresh, frac = nil, false, nil, false, nil
+  mode, sci_page = 'sci', 1
+  screen = nil
+end
+
+local function end_edit()
+  local e = editing
+  local s = e.saved
+  tokens, result, approx, err, fresh = s.tokens, s.result, s.approx, s.err, s.fresh
+  mode, sci_page, frac = s.mode, s.page, s.frac
+  screen = e.screen
+  editing = nil
+end
+
+local function finish_edit()
+  local o = editing.opts
+  local toks = tokens
+  local value, ap
+  if #toks == 0 then
+    if not o.empty then err = 'type a value first'; return end
+  elseif o.value then
+    approx = false
+    local ok, v = pcall(evaluate, toks)
+    if not ok then err = type(v) == 'table' and v.calc or 'cannot work that out'; return end
+    value, ap = v, approx
+  end
+  end_edit()
+  o.on_done(#toks > 0 and toks or nil, value, ap)
+end
+
+local open_mode
+
+-- what a mode gets: the calculator's numbers and its editing screen
+local function api()
+  if api_t then return api_t end
+  local function keep_approx(fn)
+    return function(...)
+      local saved = approx
+      approx = false
+      local ok, v = pcall(fn, ...)
+      local ap = approx
+      approx = saved
+      if ok then return v, ap end
+      return nil, type(v) == 'table' and v.calc or tostring(v)
+    end
+  end
+  api_t = {
+    kit = kit, D = D, W = W, H = H, FLOAT_DIGITS = FLOAT_DIGITS, PI = PI, E = E,
+    evaluate = keep_approx(evaluate),            -- tokens -> value, approx | nil, error
+    sqrt = keep_approx(sqrt),
+    text_of = text_of,
+    format = function(v, ap) return D.format(v, ap and FLOAT_DIGITS or 16) end,
+    deg = function() return deg end,
+    letters = LETTERS,
+    var = function(L) return vars[L] end,
+    ans = function() return ans end,
+    set_ans = function(v) ans = v; save() end,
+    edit = start_edit,                           -- { title, tokens, x, value, empty, on_done(tokens, value, approx) }
+    close = close_mode,
+    open = function(label, arg) open_mode(label, arg) end,
+    read = kit.read, write = kit.write,
+  }
+  return api_t
+end
+
+open_mode = function(label, arg)
+  local spec
+  for _k, m in ipairs(MODES) do if m[1] == label then spec = m end end
+  if not spec then return end
+  local ok, e = pcall(function()
+    pcall(function() ctx.budget:extend() end)
+    local m = loaded[spec[2]]
+    if not m then
+      -- the package's own require (the bundle's local one only knows src/ modules)
+      m = _G.require('modes.' .. spec[2])(api())
+      loaded[spec[2]] = m
+    end
+    screen, screen_label = m, label
+    m.open(spec[3], arg)
+  end)
+  if not ok then ERR = tostring(e); screen, screen_label = nil, nil end
+  save()
+end
+
+-- the one Mode button: Basic and Sci first, then the other modes
+local function modes_menu()
+  local function calc(m) return function() kit.close(); mode, sci_page = m, 1; save() end end
+  local rows = { { { 'Basic', calc('basic') }, { 'Sci', calc('sci') } } }
+  for k, m in ipairs(MODES) do
+    local r = rows[(k - 1) // 2 + 2] or {}
+    rows[(k - 1) // 2 + 2] = r
+    r[#r + 1] = { m[1], function() kit.close(); open_mode(m[1]) end }
+  end
+  rows[#rows + 1] = { { 'Cancel', function() kit.close() end } }
+  kit.show({ title = 'Modes', rows = rows, cancel = kit.close })
+end
+
+local function letter_rows(fn)
+  local rows = { {}, {} }
+  for k, L in ipairs(LETTERS) do
+    local r = rows[(k - 1) // 3 + 1]
+    r[#r + 1] = { L, function() kit.close(); fn(L) end }
+  end
+  rows[3] = { { 'Cancel', function() kit.close() end } }
+  return rows
+end
+
+local function var_lines()
+  local out = {}
+  for _k, L in ipairs(LETTERS) do out[#out + 1] = L .. ' = ' .. D.format(vars[L] or D.zero(), 10) end
+  return { table.concat(out, ',  ') }
+end
+
 ------------------------------------------------------------------ keys
 
 local BASIC = {
@@ -303,28 +581,63 @@ local SCI = {
   { 'sin', 'func', 'sin' }, { 'cos', 'func', 'cos' }, { 'tan', 'func', 'tan' }, { 'pi', 'const', 'pi' }, { 'e', 'const', 'e' },
   { 'asin', 'func', 'asin' }, { 'acos', 'func', 'acos' }, { 'atan', 'func', 'atan' }, { 'ln', 'func', 'ln' }, { 'log', 'func', 'log' },
   { 'sqrt', 'func', 'sqrt' }, { 'x²', 'post', '²' }, { 'x^y', 'op', '^' }, { '(', 'lp', '(' }, { ')', 'rp', ')' },
-  { 'n!', 'post', '!' }, { '1/x', 'post', '^-1' }, { 'EE', 'ee' }, { 'Deg', 'deg' }, { 'Ans', 'const', 'Ans' },
+  { 'n!', 'post', '!' }, { '1/x', 'post', '^-1' }, { '2nd', 'page' }, { 'Deg', 'deg' }, { 'Ans', 'const', 'Ans' },
 }
+local SCI2 = {
+  { '10^x', 'func', 'tenpow' }, { 'e^x', 'func', 'exp' }, { 'x³', 'post', '³' }, { '³sqrt', 'func', 'cbrt' }, { 'root', 'func', 'root' },
+  { 'abs', 'func', 'abs' }, { 'int', 'func', 'int' }, { 'round', 'func', 'round' }, { 'mod', 'op', 'mod' }, { ',', 'sep', ',' },
+  { 'nPr', 'op', 'nPr' }, { 'nCr', 'op', 'nCr' }, { 'gcd', 'func', 'gcd' }, { 'lcm', 'func', 'lcm' }, { 'rand', 'const', 'rand' },
+  { 'EE', 'ee' }, { 'Sto', 'sto' }, { '2nd', 'page' }, { 'Frac', 'frac' }, { 'Var', 'var' },
+}
+-- while a mode asks for a function of X, X takes Ans's place
+local SCI_X = {}
+for k, def in ipairs(SCI) do SCI_X[k] = def end
+SCI_X[20] = { 'X', 'const', 'x' }
 
 local function key_action(k)
   local kind = k[2]
   err = nil
+  if kind ~= 'frac' and kind ~= 'page' and kind ~= 'deg' then frac = nil end
   if kind == 'd' then press_digit(k[1])
   elseif kind == 'op' then press_op(k[3])
   elseif kind == 'clear' then tokens, result, err, fresh = {}, nil, nil, false
   elseif kind == 'back' then backspace()
   elseif kind == 'neg' then negate()
-  elseif kind == 'eq' then equals()
+  elseif kind == 'eq' then if editing then finish_edit() else equals() end
   elseif kind == 'post' then press('post', k[3])
   elseif kind == 'func' then press('func', k[3])
-  elseif kind == 'lp' or kind == 'rp' then press(kind, k[3])
+  elseif kind == 'lp' or kind == 'rp' or kind == 'sep' then press(kind, k[3])
   elseif kind == 'const' then
     begin_from_result(false)
     tokens[#tokens + 1] = { t = 'const', s = k[3] }
   elseif kind == 'ee' then
     local t = last()
     if t and t.t == 'num' and not t.s:find('E') then t.s = t.s .. 'E' end
-  elseif kind == 'deg' then deg = not deg; save() end
+  elseif kind == 'deg' then deg = not deg; save()
+  elseif kind == 'page' then sci_page = 3 - sci_page
+  elseif kind == 'frac' then
+    if editing then return end
+    if not fresh then equals() end
+    if fresh and result then
+      if frac then frac = nil else frac = to_frac(result) or 'no simple fraction' end
+    end
+  elseif kind == 'var' then
+    kit.show({ title = 'Insert a variable', lines = var_lines(), cancel = kit.close, rows = letter_rows(function(L)
+      begin_from_result(false)
+      tokens[#tokens + 1] = { t = 'var', s = L }
+    end) })
+  elseif kind == 'sto' then
+    if editing then return end
+    if not fresh and #tokens > 0 then equals() end
+    if err then return end
+    local v = (fresh and result) or ans
+    kit.show({ title = 'Store ' .. D.format(v, 12) .. ' in', cancel = kit.close, rows = letter_rows(function(L)
+      vars[L] = v
+      history[#history + 1] = { 'Sto ' .. L, D.format(v, 16) }
+      while #history > HISTORY_MAX do table.remove(history, 1) end
+      save()
+    end) })
+  end
 end
 
 -- the key grid: Sci keys above the basic pad
@@ -333,8 +646,9 @@ local function layout()
   local keys = {}
   local top = PAD_TOP
   if mode == 'sci' then
+    local defs = sci_page == 2 and SCI2 or (editing and editing.opts.x and SCI_X or SCI)
     local kw, kh = (W - 24 - 4 * 6) // 5, 56
-    for i, def in ipairs(SCI) do
+    for i, def in ipairs(defs) do
       local r, c = (i - 1) // 5, (i - 1) % 5
       keys[#keys + 1] = { x = 12 + c * (kw + 6), y = top + r * (kh + 6), w = kw, h = kh, k = def, small = true }
     end
@@ -350,7 +664,10 @@ local function layout()
   return keys
 end
 
+-- top right: the Mode button, named after the mode (Done while a mode asks for a value, with
+-- Cancel left of it)
 local MODE_BTN = { x = W - 112, y = 8, w = 100, h = 44 }
+local CANCEL_BTN = { x = W - 220, y = 8, w = 100, h = 44 }
 
 ------------------------------------------------------------------ drawing
 
@@ -360,33 +677,48 @@ local function rtext(gg, s, y, fname)
   gg:text(W - 16 - kit.width(f, s), y, s, { font = f })
 end
 
+local function draw_calc(gg)
+  if editing then
+    gg:text(16, 18, kit.short(editing.opts.title or 'Value', 16), { font = kit.font('medium') })
+    kit.button(gg, CANCEL_BTN.x, CANCEL_BTN.y, CANCEL_BTN.w, CANCEL_BTN.h, 'Cancel', { font = 'medium' })
+    kit.button(gg, MODE_BTN.x, MODE_BTN.y, MODE_BTN.w, MODE_BTN.h, 'Done', { font = 'medium', line_width = 3 })
+  else
+    -- the last two results, tap one to use it
+    for k = 1, 2 do
+      local h = history[#history - 2 + k]
+      if h then
+        local f, s = kit.font('small'), kit.short(h[1] .. ' = ' .. h[2], 34)
+        while #s > 1 and kit.width(f, s) > MODE_BTN.x - 28 do s = kit.drop_last(s) end
+        gg:text(16, 8 + (k - 1) * 26, s, { font = f })
+      end
+    end
+    kit.button(gg, MODE_BTN.x, MODE_BTN.y, MODE_BTN.w, MODE_BTN.h, mode == 'basic' and 'Basic' or 'Sci', { font = 'medium' })
+  end
+  if mode == 'sci' then gg:text(W - 112, 60, deg and 'degrees' or 'radians', { font = kit.font('small') }) end
+  -- the expression (wrapped from the right) and the result
+  local expr = text_of(tokens)
+  local lines_ = kit.wrap(expr, 'medium', W - 32)
+  local y = 88
+  for k = math.max(1, #lines_ - 1), #lines_ do rtext(gg, lines_[k], y, 'medium'); y = y + 28 end
+  if err then rtext(gg, 'Error: ' .. err, 160, 'small')
+  elseif frac then rtext(gg, '= ' .. frac, 150, 'large')
+  elseif result then rtext(gg, (approx and '~ ' or '= ') .. D.format(result, approx and FLOAT_DIGITS or 16), 150, 'large')
+  elseif #tokens == 0 then rtext(gg, '0', 150, 'large') end
+  gg:line(12, PAD_TOP - 14, W - 12, PAD_TOP - 14)
+  for _k, key in ipairs(layout()) do
+    local label = key.k[1]
+    if key.k[2] == 'deg' then label = deg and 'Deg' or 'Rad' end
+    kit.button(gg, key.x, key.y, key.w, key.h, label, { font = key.small and 'medium' or 'large',
+                                                      line_width = (key.k[2] == 'eq' or (key.k[2] == 'page' and sci_page == 2)) and 3 or 2 })
+  end
+end
+
 function on_draw(c, gg)
   if not gg then return end
   local ok, e = pcall(function()
     gg:clear(0)
-    -- the last two results, tap one to use it
-    for k = 1, 2 do
-      local h = history[#history - 2 + k]
-      if h then gg:text(16, 8 + (k - 1) * 26, kit.short(h[1] .. ' = ' .. h[2], 34), { font = kit.font('small') }) end
-    end
-    kit.button(gg, MODE_BTN.x, MODE_BTN.y, MODE_BTN.w, MODE_BTN.h, mode == 'basic' and 'Sci' or 'Basic', { font = 'medium' })
-    if mode == 'sci' then gg:text(W - 112, 60, deg and 'degrees' or 'radians', { font = kit.font('small') }) end
-    -- the expression (wrapped from the right) and the result
-    local expr = text_of(tokens)
-    local f = kit.font('medium')
-    local lines_ = kit.wrap(expr, 'medium', W - 32)
-    local y = 88
-    for k = math.max(1, #lines_ - 1), #lines_ do rtext(gg, lines_[k], y, 'medium'); y = y + 28 end
-    if err then rtext(gg, 'Error: ' .. err, 160, 'small')
-    elseif result then rtext(gg, (approx and '~ ' or '= ') .. D.format(result, approx and FLOAT_DIGITS or 16), 150, 'large')
-    elseif #tokens == 0 then rtext(gg, '0', 150, 'large') end
-    gg:line(12, PAD_TOP - 14, W - 12, PAD_TOP - 14)
-    for _k, key in ipairs(layout()) do
-      local label = key.k[1]
-      if key.k[2] == 'deg' then label = deg and 'Deg' or 'Rad' end
-      kit.button(gg, key.x, key.y, key.w, key.h, label, { font = key.small and 'medium' or 'large',
-                                                        line_width = key.k[2] == 'eq' and 3 or 2 })
-    end
+    if screen and not editing then screen.draw(gg) else draw_calc(gg) end
+    if kit.modal() then kit.draw_modal(gg) end
     if ERR then gg:text(12, H - 24, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
   end)
   if not ok then pcall(function() gg:text(8, H - 60, kit.short('draw ERR ' .. tostring(e), 46)) end) end
@@ -394,42 +726,67 @@ end
 
 ------------------------------------------------------------------ input
 
+local function inside(b, x, y) return x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h end
+
 local function tap(x, y)
-  if x >= MODE_BTN.x and x < MODE_BTN.x + MODE_BTN.w and y >= MODE_BTN.y and y < MODE_BTN.y + MODE_BTN.h then
-    mode = mode == 'basic' and 'sci' or 'basic'
-    save()
+  if kit.modal() then kit.tap_modal(x, y); return end
+  if screen and not editing then screen.tap(x, y); return end
+  if inside(MODE_BTN, x, y) then
+    if editing then finish_edit() else modes_menu() end
     return
   end
+  if editing and inside(CANCEL_BTN, x, y) then end_edit(); return end
   if y < 60 and x < MODE_BTN.x then
+    if editing then return end
     -- a result from the list: its value goes into the expression
     local k = y < 34 and 1 or 2
     local h = history[#history - 2 + k]
     if h then
       begin_from_result(false)
+      frac = nil
       local v = h[2]:gsub('^~', '')
       tokens[#tokens + 1] = { t = 'num', s = (v:gsub('e%+?', 'E')) }
     end
     return
   end
   for _k, key in ipairs(layout()) do
-    if x >= key.x and x < key.x + key.w and y >= key.y and y < key.y + key.h then key_action(key.k); return end
+    if inside(key, x, y) then key_action(key.k); return end
   end
 end
 
+-- one frame per tap: the finger going down changes nothing on the screen, and a frame for it
+-- (about 0.65 s on the panel) would hold back the frame of the tap itself
 function on_input(c, ev)
-  ERR = nil
+  local handled, redraw = true, false
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
-    if ev.type == 'pointer' and ev.phase == 'up' then tap(ev.x or 0, ev.y or 0) end
+    if ev.type == 'pointer' then
+      if ev.phase == 'up' then ERR = nil; tap(ev.x or 0, ev.y or 0); redraw = true end
+    elseif ev.type == 'key' and ev.phase == 'up' then
+      if ev.key == 'back' then
+        redraw = true
+        if kit.modal() then kit.close()
+        elseif editing then end_edit()
+        elseif screen then
+          if not (screen.back and screen.back()) then close_mode() end
+        else
+          handled, redraw = false, false             -- the host asks whether to leave
+        end
+      elseif screen and not editing and not kit.modal() and screen.key then
+        redraw = screen.key(ev.key) and true or false
+      end
+    end
   end)
-  if not ok then ERR = tostring(e) end
-  kit.refresh()
-  return true
+  if not ok then ERR = tostring(e); redraw = true end
+  if redraw then kit.refresh() end
+  return handled
 end
 
 function on_load(c)
   local ok, e = pcall(load)
   if not ok then ERR = tostring(e) end
+  -- left in a mode last time: open it again (only then is its module loaded)
+  if ok and e then open_mode(e) end
 end
 function on_leave() pcall(save) end
 
@@ -438,5 +795,9 @@ if rawget(_G, '__TEST') then
                  result = function() return result and D.format(result, approx and FLOAT_DIGITS or 16) end,
                  err = function() return err end, expr = function() return text_of(tokens) end,
                  mode = function() return mode end, layout = layout, history = function() return history end,
-                 FLOAT_DIGITS = FLOAT_DIGITS }
+                 FLOAT_DIGITS = FLOAT_DIGITS, frac = function() return frac end,
+                 var = function(L) return vars[L] and D.format(vars[L], 16) end,
+                 screen = function() return screen_label end, editing = function() return editing ~= nil end,
+                 loaded = function() local n = 0; for _k in pairs(loaded) do n = n + 1 end; return n end,
+                 mod = function(n) return loaded[n] end, ans = function() return D.format(ans, 16) end }
 end

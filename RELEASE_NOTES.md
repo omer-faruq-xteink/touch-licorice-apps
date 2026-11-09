@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Changed
+
+- **Calculator 1.1.0: a graphing calculator's tools.** The button at the top right is now **Mode**, named after the mode you are in; its list has Basic and Sci, then ten modes: **Graph** (Y1–Y4 as lines, thick lines or dashes; Window, Zoom, Trace; Calc finds a value, zeros, minimum, maximum, intersections, dy/dx and integrals from the formula), **Table**, **Stats** (lists L1 and L2; 1-Var with quartiles; LinReg, QuadReg, ExpReg; a scatter plot with the fit), **Distributions** (normal, t, chi², binomial, Poisson, geometric; tails computed as tails), **Solve** (Left = Right, every solution in a range), **Matrix** (up to 4 × 4: det, inverse, transpose, rref, +, −, ×), and beyond a graphing calculator **Units** (eleven kinds, every unit at once), **Base** (hex, decimal, octal, binary; bit operations on 32 bits), **Finance** (TVM, a loan schedule, percent) and **Dates** (days between dates, weekday, ISO week, a date plus or minus days). Sci has a **2nd** page: 10^x, e^x, x³, cube and n-th roots, abs, int, round, mod, nPr, nCr, gcd, lcm, rand, EE, variables A–F (Sto, Var) and **Frac** (the result as a fraction). Every mode asks for its numbers on the calculator's own keys. Each mode is a file of its own, loaded only when it is opened, so Basic and Sci open and answer as quickly as before; a key now takes one screen refresh instead of two (the finger going down no longer draws a frame). Back on the calculator lets the reader ask whether to leave the app.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.21.0 |
+| `calculator.xtapp` | Calculator 1.1.0 |
+| all other packages | unchanged since v0.21.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

@@ -1,0 +1,10 @@
+{
+  "app_id": "requireprobe",
+  "display_name": "Require Probe",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Developer probe: does require() load other .lua files of the package, and how long does compiling a large one take?",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

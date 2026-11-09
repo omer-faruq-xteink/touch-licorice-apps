@@ -59,7 +59,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
-| **Calculator** | exact decimal arithmetic and a scientific mode (trigonometry, logarithms, powers, roots, n!); last results kept |
+| **Calculator** | exact decimal arithmetic and a scientific mode; its Mode button adds Graph, Table, Stats, Distributions, Solve, Matrix, Units, Base, Finance and Dates |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen; My words (every word looked up) and Review with spaced repetition |
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
@@ -431,7 +431,13 @@ lock screen shows today's books. A port of tbrplanner.koplugin (GPL v3). [More](
 
 Thumb-sized keys, the expression typed as on paper, and exact decimal arithmetic: 0.1 + 0.2 − 0.3
 is 0. Sci adds trigonometry in degrees or radians, logarithms, powers, roots, n!, pi and e,
-brackets and Ans; the last results stay above the display. [More](apps/calculator/README.md)
+brackets and Ans, and a 2nd page (10^x, e^x, n-th roots, abs, round, mod, nPr, nCr, gcd, lcm,
+variables A–F, results as fractions). The Mode button lists Basic, Sci and what a graphing calculator adds: Graph
+(Y1–Y4, zoom, trace, zeros, minimum and maximum, intersections, dy/dx, integrals) and its Table,
+Stats (lists, 1-Var, LinReg, QuadReg, ExpReg, a scatter plot), Distributions (normal, t, chi²,
+binomial, Poisson, geometric), Solve, Matrix (up to 4 × 4), and Units, Base (hex/bin, bit
+operations), Finance (TVM, a loan schedule, percent) and Dates. Each mode is a file of its own,
+loaded only when opened, so Basic and Sci stay as quick as before. [More](apps/calculator/README.md)
 
 ### Anki
 
@@ -559,6 +565,7 @@ python -I apps/delve/test_delve.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py
+python -I apps/calculator/test_modes.py
 python -I apps/klondike/test_klondike.py
 python -I apps/notes/test_notes.py
 python -I apps/rss/test_feeds.py
