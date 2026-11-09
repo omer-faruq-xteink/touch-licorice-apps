@@ -41,19 +41,23 @@ not need to be reviewed or published.
    (`https://omer-faruq-xteink.github.io/touch-licorice-apps/apps/instapaper/`); **Admin contact
    email** your email. Leave **Callback URIs** empty (they are only for apps other people sign in
    to), tick **I have read and accept the API Terms of Use** and press **Register application**.
-3. Instapaper then shows the application's **client ID** and **client secret**. This app needs
-   neither (the secret is shown only once, so keep it somewhere if you may want it for something
-   else).
-4. Leave the application in **Owner Only** mode, as it starts: it works with your own account only,
-   which is all this app needs. Do not submit it for review.
+3. Instapaper then shows the application's **Consumer Key** and **Consumer Secret** (its client ID
+   and client secret). This app needs neither: they are for the older email and password sign-in.
+   The secret is shown only once, so keep it somewhere if you may want it for something else.
+4. Leave the application in **Owner Only** mode, as it starts, and do not press **Submit for
+   Review**: it works with your own account only, which is all this app needs. Owner Only also
+   means the article text is fetched for personal use, which needs no extra Instaparser key.
 5. Open it from [instapaper.com/developers/applications](https://www.instapaper.com/developers/applications)
-   (**Your Apps**) and select
-   **Generate access token**. Copy the token: it is shown only once.
+   (**Your Apps**) and select **Generate access token**. Copy the whole token: it is shown only once.
 6. Put the token into the app (step 1 above).
 
-The token does not run out. **Regenerate** or **revoke** on the same page stops the old one at once;
-then put the new token into the app. Anyone with the token can read and change your Instapaper
-list, so keep it to yourself (it is also in `config.txt` on the card).
+The token lasts until you revoke it. **Regenerate** or **revoke** on the same page stops the old one
+at once; then put the new token into the app. Anyone with the token can read and change your
+Instapaper list, so keep it to yourself (it is also in `config.txt` on the card).
+
+If the app says **token rejected (401)**, the token was not copied whole or was revoked: generate a
+new one. **HTTP 402** or **HTTP 429** while opening an article means Instapaper's article parser is
+out of free credits or busy for a while: try again later.
 
 ## Using it
 
