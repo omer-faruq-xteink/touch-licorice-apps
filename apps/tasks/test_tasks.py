@@ -183,5 +183,27 @@ for k in range(12):
         g.tap(30, row(k + 2))
 assert g.texts().count('every month, next Fri 11 Dec') == 7
 assert g.commands() < 400, g.commands()
+
+# many lists: Prev and Next under 8 rows; a swipe turns the page and never opens a list
+g.store['lists.txt'] = ''.join(f'# List {k}\n[ ] item\n\n' for k in range(1, 15))
+g.restart()
+swipe = g.L.eval("function(gst) on_input(ctx, {type='pointer', phase='down', x=200, y=200}); "
+                 "on_input(ctx, {type='pointer', phase='up', gesture=gst, x=200, y=200}) end")
+t = g.texts()
+assert 'Prev' in t and 'Next' in t and '1-8 of 14' in t and 'List 8' in t and 'List 9' not in t, t
+swipe('swipe_down')                                       # nothing before page 1: stays, opens nothing
+assert str(A().screen()) == 'lists' and '1-8 of 14' in g.texts()
+g.tap_label('Next')
+assert '9-14 of 14' in g.texts() and 'List 14' in g.texts()
+g.tap_label('Next')                                       # the last page: Next does nothing
+assert '9-14 of 14' in g.texts()
+swipe('swipe_down')
+assert '1-8 of 14' in g.texts()
+swipe('swipe_up')
+assert '9-14 of 14' in g.texts() and str(A().screen()) == 'lists'
+g.tap_label('Prev')
+assert '1-8 of 14' in g.texts()
+g.tap(200, row(8))                                        # the last row of the page still opens its list
+assert str(A().screen()) == 'list' and str(A().lists()[A().cur()]['name']) == 'List 8'
 g.no_err()
 print('tasks tests passed')

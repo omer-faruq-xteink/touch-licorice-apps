@@ -21,7 +21,7 @@
 local W, H = kit.W, kit.H
 local TOP = 96
 local ROW_H = 64
-local ROWS = 9
+local ROWS = 9                  -- rows on a page; 8 when there are more, with Prev and Next under them
 local BTN_Y, BTN_H = 704, 64
 
 local lists = {}                -- { { name, items = { { text, done, every = { n, unit }, last } } } }
@@ -452,6 +452,18 @@ local function rows()
   return current().items
 end
 
+-- more than one page: a row gives way to Prev, Next and "10-16 of 16"
+local function per_page() return #rows() > ROWS and ROWS - 1 or ROWS end
+local PAGE_Y = TOP + (ROWS - 1) * ROW_H + 6
+local PREV_BTN = { x = W - 12 - 2 * 100 - 8, y = PAGE_Y, w = 100, h = 50 }
+local NEXT_BTN = { x = W - 12 - 100, y = PAGE_Y, w = 100, h = 50 }
+local function in_rect(b, x, y) return x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h end
+local function page(dir)
+  local n, pp = #rows(), per_page()
+  if dir > 0 and top + pp <= n then top = top + pp
+  elseif dir < 0 and top > 1 then top = math.max(1, top - pp) end
+end
+
 local function draw_checkbox(gg, x, y, done)
   gg:rect(x, y, 34, 34, { line_width = 3 })
   if done then
@@ -482,7 +494,8 @@ function on_draw(c, gg)
     gg:line(0, 88, W, 88)
     if kit.modal() then kit.draw_modal(gg); return end
     local rs = rows()
-    for k = top, math.min(#rs, top + ROWS - 1) do
+    local pp = per_page()
+    for k = top, math.min(#rs, top + pp - 1) do
       local y = TOP + (k - top) * ROW_H
       local r = rs[k]
       if screen == 'lists' then
@@ -515,7 +528,11 @@ function on_draw(c, gg)
       gg:line(12, y + ROW_H - 2, W - 12, y + ROW_H - 2)
     end
     if #rs == 0 then gg:text(20, TOP + 20, screen == 'lists' and 'No lists.' or 'Nothing to do. Add something.', { font = kit.font('medium') }) end
-    if #rs > ROWS then gg:text(W - 140, BTN_Y - 30, 'swipe: ' .. top .. '-' .. math.min(#rs, top + ROWS - 1) .. ' of ' .. #rs, { font = kit.font('small') }) end
+    if pp < ROWS then
+      gg:text(20, PAGE_Y + 14, top .. '-' .. math.min(#rs, top + pp - 1) .. ' of ' .. #rs, { font = kit.font('medium') })
+      kit.button(gg, PREV_BTN.x, PREV_BTN.y, PREV_BTN.w, PREV_BTN.h, 'Prev', { font = 'medium', line_width = top > 1 and 2 or 1 })
+      kit.button(gg, NEXT_BTN.x, NEXT_BTN.y, NEXT_BTN.w, NEXT_BTN.h, 'Next', { font = 'medium', line_width = top + pp <= #rs and 2 or 1 })
+    end
     if msg then gg:text(12, BTN_Y - 30, kit.short(msg, 30), { font = kit.font('small') }) end
     local bs = buttons()
     for k, b in ipairs(bs) do
@@ -566,7 +583,7 @@ local function press(b)
 end
 
 local function row_at(y)
-  if y < TOP or y >= TOP + ROWS * ROW_H then return nil end
+  if y < TOP or y >= TOP + per_page() * ROW_H then return nil end
   local k = top + (y - TOP) // ROW_H
   return rows()[k] and k or nil
 end
@@ -577,6 +594,10 @@ local function tap(x, y, long)
   for k, b in ipairs(bs) do
     local bx, by, bw, bh = button_rect(k, #bs)
     if x >= bx and x < bx + bw and y >= by and y < by + bh then press(b); return end
+  end
+  if per_page() < ROWS and (in_rect(PREV_BTN, x, y) or in_rect(NEXT_BTN, x, y)) then
+    page(in_rect(NEXT_BTN, x, y) and 1 or -1)
+    return
   end
   local k = row_at(y)
   if not k then return end
@@ -612,9 +633,12 @@ function on_input(c, ev)
       if ev.phase ~= 'up' then return end
       long_done = false
       if suppress_up then suppress_up = false; return end
-      local n = #rows()
-      if ev.gesture == 'swipe_up' and top + ROWS <= n then top = top + ROWS; return end
-      if ev.gesture == 'swipe_down' and top > 1 then top = math.max(1, top - ROWS); return end
+      -- a swipe turns the page (up or left: on), and is never taken for a tap on a row
+      local gst = ev.gesture or ''
+      if gst:find('^swipe') then
+        if not kit.modal() then page((gst == 'swipe_up' or gst == 'swipe_left') and 1 or -1) end
+        return
+      end
       tap(x, y, false)
     elseif ev.type == 'key' then
       -- Back on the list of lists: the host asks whether to leave
@@ -625,8 +649,8 @@ function on_input(c, ev)
       if not kit.key_accepted(ev) then redraw = false; return end
       if kit.modal() then
         if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'down' or ev.key == 'right' then if top + ROWS <= #rows() then top = top + ROWS end
-      elseif ev.key == 'up' or ev.key == 'left' then top = math.max(1, top - ROWS)
+      elseif ev.key == 'down' or ev.key == 'right' then page(1)
+      elseif ev.key == 'up' or ev.key == 'left' then page(-1)
       elseif ev.key == 'back' and screen == 'list' then screen, top, open_key = 'lists', 1, nil end
     end
   end)

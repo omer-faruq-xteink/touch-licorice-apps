@@ -11,7 +11,7 @@ Lists of things to do, ticked off with a tap, and your Todoist, Google Tasks and
   when it is due again, counted from that day; months are calendar months (31 Jan + 1 month =
   28 or 29 Feb). Under it: "every 4 days, next Thu 5 Nov" while ticked, "due today" or
   "late 2 days" while open. **Clear done** leaves repeating items in place.
-- Swipes and the side buttons turn the page in long lists.
+- **Prev** and **Next** (under the rows) turn the page when there are more lists or items than fit; swipes and the side buttons do too.
 - **Lock screen**: any one list (List → Lock screen): the date and that list's open items in the
   large font. The firmware asks once to make the app the lock screen; it shows the list as it was
   when you last changed it, and a ticked repeating item appears on it again on the day it is due.
