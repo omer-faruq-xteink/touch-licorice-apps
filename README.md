@@ -54,7 +54,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen; an ink octopus and a shelf dragon can join it |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Timekeeper** | timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer for exercise, counters and a log of focus time; whole minutes to save power, a flash when time is up; can be the lock screen |
-| **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; a list can be the lock screen |
+| **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; your Todoist, Google Tasks and TickTick lists too (tick and add); a list can be the lock screen |
 | **Notebook** | plain text notes written in blocks (Enter makes a new line; a long text goes on into the next block by itself), folders, tags, sorting and a search through all notes; kept as .txt files you can also edit on a computer |
 | **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
 | **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
@@ -401,7 +401,9 @@ ticked ones; edit, move and delete items, several lists. **Repeat** makes an ite
 is due again (every day, week, 2 weeks, month, or any number of days, weeks or months, counted
 from the day you ticked it), with "late 2 days" or the next date under it. One list can be the lock
 screen. Kept in
-`XTApps/tasks/files/lists.txt`, plain text you can also edit on a computer. [More](apps/tasks/README.md)
+`XTApps/tasks/files/lists.txt`, plain text you can also edit on a computer. **Todoist**, **Google
+Tasks** and **TickTick** lists can show after yours (Sources): tick, untick and add items on the reader, the rest in
+their own apps; changes wait while there is no Wi-Fi. [More](apps/tasks/README.md)
 
 ### Weather
 

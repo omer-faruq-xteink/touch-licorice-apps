@@ -215,3 +215,13 @@ body.store footer.site { border-top: 0; }
 }
 .appicon > * { grid-area: 1 / 1; }
 .appicon img { background: #fff; }
+
+/* folded README sections (optional or technical set-up): a tap opens them */
+.prose details.fold { border: 1px solid rgba(127, 127, 127, .35); border-radius: 14px; margin: 14px 0; }
+.prose details.fold > summary { cursor: pointer; padding: 12px 16px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 12px; }
+.prose details.fold > summary::-webkit-details-marker { display: none; }
+.prose details.fold > summary::before { content: ''; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .15s; flex: none; }
+.prose details.fold[open] > summary::before { transform: rotate(45deg); }
+.prose details.fold > .fold-body { padding: 0 16px 6px; }
+.prose details.fold details.fold { margin: 10px 0; }
+.prose ol { padding-left: 1.4em; }

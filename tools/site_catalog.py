@@ -84,10 +84,36 @@ def plain(md):
 
 
 # sections of an app's README shown on its page after the introduction (set-up a user can't find
-# on the reader)
-SECTIONS = {'calendar': ['Adding a calendar'], 'rss': ['AI questions (optional)'], 'hackernews': ['AI questions (optional)'],
-            'instapaper': ['AI questions (optional)'], 'readwise': ['AI questions (optional)'],
-            'wallabag': ['AI questions (optional)']}
+# on the reader): (title, folded). A folded section is a <details> the reader opens with a tap, so
+# long optional or technical text does not make the page look hard; inside any section, a
+# "### " sub-heading starts a folded part of its own (the steps of a set-up).
+AI = ('AI questions (optional)', True)
+SECTIONS = {'calendar': [('Adding a calendar', False)], 'rss': [AI], 'hackernews': [AI], 'instapaper': [AI],
+            'readwise': [AI], 'wallabag': [AI], 'tasks': [('Todoist, Google Tasks and TickTick', False)]}
+
+
+def slug_of(title):
+    return re.sub(r'[^\w\- ]', '', title.lower()).replace(' ', '-')   # as GitHub's, so README links work
+
+
+def section_html(lines):
+    # a README section's lines as HTML; each "### " part folded under its title
+    out, part, title = [], [], None
+
+    def close():
+        if title is None:
+            out.append(render(part))
+        else:
+            out.append(f'<details class="fold" id="{slug_of(title)}"><summary>{inline(title)}</summary>'
+                       f'<div class="fold-body">{render(part)}</div></details>')
+    for line in lines:
+        if line.startswith('### '):
+            close()
+            part, title = [], line[4:].strip()
+        else:
+            part.append(line)
+    close()
+    return '\n'.join(x for x in out if x)
 
 
 def intro(app):
@@ -102,24 +128,29 @@ def intro(app):
             break
         body.append(line)
     out = [render(body)]
-    for title in SECTIONS.get(app, []):
+    for title, folded in SECTIONS.get(app, []):
         start = lines.index('## ' + title) + 1
         end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
-        slug = re.sub(r'[^\w\- ]', '', title.lower()).replace(' ', '-')   # as GitHub's, so README links work
-        out.append(f'<h3 id="{slug}">{H(title)}</h3>' + render(lines[start:end]))
+        body = section_html(lines[start:end])
+        if folded:
+            out.append(f'<details class="fold" id="{slug_of(title)}"><summary>{H(title)}</summary>'
+                       f'<div class="fold-body">{body}</div></details>')
+        else:
+            out.append(f'<h3 id="{slug_of(title)}">{H(title)}</h3>' + body)
     return '\n'.join(out)
 
 
 def render(body):
     """lines of markdown: paragraphs, lists and ``` blocks, as HTML"""
     out, para, items, code = [], [], [], None
+    kind = ['ul']                      # the list being collected: ul, or ol for "1. " lines
 
     def flush():
         if para and not para[0].startswith('**Needs firmware'):    # the page has its own notice
             out.append('<p>' + inline(' '.join(para)) + '</p>')
         para.clear()
         if items:
-            out.append('<ul>' + ''.join(f'<li>{inline(i)}</li>' for i in items) + '</ul>')
+            out.append(f'<{kind[0]}>' + ''.join(f'<li>{inline(i)}</li>' for i in items) + f'</{kind[0]}>')
             items.clear()
     for line in body:
         t = line.strip()
@@ -134,10 +165,14 @@ def render(body):
             code.append(t)
         elif not t:
             flush()
-        elif t.startswith('- '):
+        elif t.startswith('- ') or re.match(r'^\d+\. ', t):
             if para:
                 flush()
-            items.append(t[2:])
+            want = 'ul' if t.startswith('- ') else 'ol'
+            if items and kind[0] != want:
+                flush()
+            kind[0] = want
+            items.append(t[2:] if want == 'ul' else re.sub(r'^\d+\. ', '', t))
         elif items and line.startswith('  '):
             items[-1] += ' ' + t
         else:
@@ -224,6 +259,13 @@ def app_page(e, about):
   import {{ chrome }} from '../../assets/site.js';
   import {{ readerPanel }} from '../../assets/store.js';
   chrome({{ app: {json.dumps(e["name"])} }});
+  // a link to a folded section (from another page or the page itself) opens it
+  const unfold = () => {{
+    const d = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (d && d.tagName === 'DETAILS') {{ d.open = true; d.scrollIntoView(); }}
+  }};
+  unfold();
+  addEventListener('hashchange', unfold);
   readerPanel(document.getElementById('reader'), '../../', [{json.dumps(e["id"])}]);
 </script>
 </body>
