@@ -88,7 +88,7 @@ def plain(md):
 # long optional or technical text does not make the page look hard; inside any section, a
 # "### " sub-heading starts a folded part of its own (the steps of a set-up).
 AI = ('AI questions (optional)', True)
-SECTIONS = {'calendar': [('Adding a calendar', False)], 'rss': [AI], 'hackernews': [AI], 'instapaper': [AI],
+SECTIONS = {'calendar': [('Adding a calendar', False)], 'rss': [AI], 'hackernews': [AI], 'instapaper': [('Setup', False), AI],
             'readwise': [AI], 'wallabag': [AI], 'tasks': [('Todoist, Google Tasks and TickTick', False)]}
 
 

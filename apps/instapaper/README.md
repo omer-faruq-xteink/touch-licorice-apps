@@ -16,16 +16,44 @@ It is **off by default**, and while it is off nothing of it shows anywhere. See
 
 ## Setup
 
-1. On <https://www.instapaper.com/developers/applications/create> create an application of your
-   own (any title, e.g. `<your name> Xteink`; leave it "Owner Only"). On
-   <https://www.instapaper.com/developers/applications> generate an **access token** for it.
-2. Install `instapaper.xtapp` and open it; it starts on **Settings**. Tap **Access token** and type
+The app needs an **access token**, a long code from Instapaper that lets it read your list. You make
+it once, in a computer's browser (a few minutes; the steps are under
+[Getting an access token](#getting-an-access-token)). Then:
+
+1. Install `instapaper.xtapp` and open it; it starts on **Settings**. Tap **Access token** and type
    the token with the firmware keyboard. Easier for a long token: open the app once, put the
    reader in USB mode and write a line `token=<your token>` into
    `XTApps/instapaper/files/config.txt` on the SD card.
-3. **Back** → **Unread**.
+2. **Back** → **Unread**.
 
 The device must be on Wi-Fi; the app keeps it on while in use and lets it go when you leave.
+
+### Getting an access token
+
+Instapaper gives a personal token to an "application" of your own. Nobody else uses it, and it does
+not need to be reviewed or published.
+
+1. Sign in at [instapaper.com](https://www.instapaper.com) with your Instapaper account.
+2. Open [instapaper.com/developers/applications/create](https://www.instapaper.com/developers/applications/create)
+   (Developers → **New App**) and fill in **Register an application**: **Title** any name, such as
+   `<your name> Xteink`; **Description** a line, such as `Reading my articles on an Xteink e-reader`;
+   **Application URL** any page, such as this app's page
+   (`https://omer-faruq-xteink.github.io/touch-licorice-apps/apps/instapaper/`); **Admin contact
+   email** your email. Leave **Callback URIs** empty (they are only for apps other people sign in
+   to), tick **I have read and accept the API Terms of Use** and press **Register application**.
+3. Instapaper then shows the application's **client ID** and **client secret**. This app needs
+   neither (the secret is shown only once, so keep it somewhere if you may want it for something
+   else).
+4. Leave the application in **Owner Only** mode, as it starts: it works with your own account only,
+   which is all this app needs. Do not submit it for review.
+5. Open it from [instapaper.com/developers/applications](https://www.instapaper.com/developers/applications)
+   (**Your Apps**) and select
+   **Generate access token**. Copy the token: it is shown only once.
+6. Put the token into the app (step 1 above).
+
+The token does not run out. **Regenerate** or **revoke** on the same page stops the old one at once;
+then put the new token into the app. Anyone with the token can read and change your Instapaper
+list, so keep it to yourself (it is also in `config.txt` on the card).
 
 ## Using it
 
@@ -76,9 +104,9 @@ RSS app; each app keeps its own settings, and none needs another installed.
 - With AI on, an open article has one more button in its bar, **AI**: the ready questions
   (**Summarize**, **Key points**, **Explain simply**, **Background**, **What is missing?**,
   **Translate** when an answer language is set) and **Your question**. The answer is laid
-  out and paged like the article; **More** returns to the ready questions (with **Your question** for a follow-up; the whole
-conversation goes along) (and **Start over**), Back returns to the article. The article's title, link and text
-  as shown (the first 24 KB) go to the service you chose, nowhere else.
+  out and paged like the article; **More** returns to the ready questions (with **Your question** for
+  a follow-up; the whole conversation goes along) (and **Start over**), Back returns to the article.
+  The article's title, link and text as shown (the first 24 KB) go to the service you chose, nowhere else.
 
 **Web search.** At the top of the ready questions, **Web search: off / on** (where the service has
 a web search): while it is on, every question searches the web first, the ready ones (Background,
