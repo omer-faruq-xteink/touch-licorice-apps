@@ -49,8 +49,8 @@ Google task needs firmware 26110201 or later (API 2.18).
 **Several accounts** of one service (personal and work) each get a file of their own,
 `todoist-NAME.txt`, `google-NAME.txt` or `ticktick-NAME.txt`; NAME marks their lists ("Google (work)"). An account that
 fails (a token no longer accepted) keeps its lists as they were and does not stop the others; the
-list of lists says "1 account failed", and Sources shows what went wrong. Sources → Remove an
-account forgets it and its lists (nothing changes in the service).
+list of lists says "1 account failed", and Sources shows what went wrong. Sources → Remove
+forgets an account and its lists (nothing changes in the service).
 
 ### Setting up Todoist
 

@@ -424,7 +424,7 @@ local function sources()
                           msg = Rm.import_files() or 'No account file in AppFiles/tasks.'
                           if Rm.configured() then Rm.sync() end
                         end } },
-                      { { 'Remove an account', function() remove_menu() end, #Rm.accounts() > 0 }, { 'Close', kit.close } } },
+                      { { 'Remove', function() remove_menu() end, #Rm.accounts() > 0 }, { 'Close', kit.close } } },
              cancel = kit.close })
   if said and Rm.configured() then Rm.sync() end
 end
