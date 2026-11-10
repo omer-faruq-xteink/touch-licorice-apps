@@ -11,7 +11,7 @@ topic of the RSS app's feed list (site/rss/catalog.json): rss/<topic>.opml and r
 The GitHub workflow .github/workflows/pages.yml runs this with the latest release's packages and
 publishes OUT_DIR.
 """
-import glob, hashlib, json, os, re, shutil, sys, zipfile
+import glob, hashlib, html, json, os, re, shutil, sys, zipfile
 from xml.sax.saxutils import quoteattr, escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -140,6 +140,69 @@ def add_icons(out):
     return n
 
 
+SITE_NAME = 'Touch Licorice apps'
+# what a page's title gets when it does not name the reader (search results show the title alone)
+TITLE_TAIL = ' · Touch Licorice apps for the Xteink X4 Pro'
+# tags a page may carry already; add_seo writes them all again
+OLD_TAGS = re.compile(r'^<meta (?:property="og:|name="twitter:)[^>]*>\n|^<link rel="canonical"[^>]*>\n', re.M)
+
+
+def add_seo(out):
+    """in the <head> of every page search engines may list (not noindex): the full address
+    (canonical), and what Facebook, X, LinkedIn, WhatsApp, Slack or Discord show when it is shared
+    (Open Graph, X card): its title, description and picture, site/social/<app>.png for an app's
+    page (tools/make_social.py), else social/home.png. A title that does not name the reader gets
+    TITLE_TAIL. The home page also gets its schema.org WebSite. The count of pages."""
+    n = 0
+    for path in glob.glob(os.path.join(out, '**', '*.html'), recursive=True):
+        s = open(path, encoding='utf-8').read()
+        if 'noindex' in s or '</head>' not in s:
+            continue
+        rel = os.path.relpath(path, out).replace(os.sep, '/')
+        url = site_catalog.SITE_URL + (rel[:-len('index.html')] if rel.endswith('index.html') else rel)
+        m = re.search(r'<title>([^<]*)</title>', s)
+        title = html.unescape(m.group(1)) if m else SITE_NAME
+        if 'Xteink' not in title:
+            title += TITLE_TAIL
+            if m:
+                s = s[:m.start()] + f'<title>{html.escape(title, quote=False)}</title>' + s[m.end():]
+        d = re.search(r'<meta name="description" content="([^"]*)">', s)
+        desc = html.unescape(d.group(1)) if d else 'Free InkApps for the Xteink X4 Pro.'
+        app = re.fullmatch(r'apps/([^/]+)/index\.html', rel)
+        card = f'social/{app.group(1)}.png' if app else 'social/home.png'
+        if not os.path.exists(os.path.join(out, card)):
+            card = 'social/home.png'
+        img = site_catalog.SITE_URL + card
+        alt = (f'{title.split(":")[0]} on the Xteink X4 Pro' if app else 'Touch Licorice apps for the Xteink X4 Pro')
+        a = lambda v: html.escape(v, quote=True)
+        tags = [f'<link rel="canonical" href="{a(url)}">',
+                '<meta property="og:type" content="website">',
+                f'<meta property="og:site_name" content="{SITE_NAME}">',
+                '<meta property="og:locale" content="en_US">',
+                f'<meta property="og:title" content="{a(title)}">',
+                f'<meta property="og:description" content="{a(desc)}">',
+                f'<meta property="og:url" content="{a(url)}">',
+                f'<meta property="og:image" content="{a(img)}">',
+                '<meta property="og:image:type" content="image/png">',
+                '<meta property="og:image:width" content="1200">',
+                '<meta property="og:image:height" content="630">',
+                f'<meta property="og:image:alt" content="{a(alt)}">',
+                '<meta name="twitter:card" content="summary_large_image">',
+                f'<meta name="twitter:title" content="{a(title)}">',
+                f'<meta name="twitter:description" content="{a(desc)}">',
+                f'<meta name="twitter:image" content="{a(img)}">',
+                f'<meta name="twitter:image:alt" content="{a(alt)}">']
+        if rel == 'index.html':
+            site = {'@context': 'https://schema.org', '@type': 'WebSite', 'name': SITE_NAME, 'url': url,
+                    'description': desc, 'inLanguage': 'en'}
+            tags.append(f'<script type="application/ld+json">{json.dumps(site, ensure_ascii=False)}</script>')
+        s = OLD_TAGS.sub('', s)
+        i = s.index('</head>')
+        open(path, 'w', encoding='utf-8', newline='\n').write(s[:i] + '\n'.join(tags) + '\n' + s[i:])
+        n += 1
+    return n
+
+
 def add_analytics(out):
     """the beacon before </body> of every page; the count of pages"""
     n = 0
@@ -250,12 +313,13 @@ def main():
     stamp_assets(out)
     counters = counter_pages(out)
     add_icons(out)
+    seo = add_seo(out)
     pages = add_analytics(out)
     mapped = sitemap(out)
     open(os.path.join(out, '.nojekyll'), 'w').close()
     print(f'{out}: site, downloads/gamebook-stories.zip ({len(names)} stories), downloads/zork-pack.zip '
           f'({len(games)} games), rss/*.opml ({topics} topics), {apps} apps from {packages}, '
-          f'{community} community apps, analytics on {pages} pages, {counters} download counters, sitemap of {mapped} pages')
+          f'{community} community apps, link previews on {seo} pages, analytics on {pages} pages, {counters} download counters, sitemap of {mapped} pages')
 
 
 if __name__ == '__main__':

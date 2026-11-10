@@ -192,6 +192,29 @@ WARN = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
         '<path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4m0 3h.01"/></svg>')
 
 
+# schema.org's application category for each site category (search engines read it from ld_json)
+LD_CATEGORY = {'read': 'ReferenceApplication', 'tools': 'UtilitiesApplication', 'learn': 'EducationalApplication',
+               'stories': 'GameApplication', 'daily': 'GameApplication', 'puzzles': 'GameApplication',
+               'games': 'GameApplication'}
+
+
+def ld_json(e):
+    """an app's page described for search engines (schema.org SoftwareApplication, JSON-LD)"""
+    page = f'{SITE_URL}apps/{e["id"]}/'
+    d = {'@context': 'https://schema.org', '@type': 'SoftwareApplication', 'name': e['name'],
+         'description': e['plain'], 'url': page, 'applicationCategory': LD_CATEGORY[e['category']],
+         'applicationSubCategory': e['category_name'], 'operatingSystem': 'XTOS Licorice (Xteink X4 Pro)',
+         'softwareVersion': e['version'], 'fileSize': e['size_text'],
+         'downloadUrl': f'{SITE_URL}packages/{e["file"]}', 'image': f'{SITE_URL}social/{e["id"]}.png',
+         'author': {'@type': 'Person', 'name': 'omer-faruq', 'url': 'https://github.com/omer-faruq'},
+         'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'},
+         'isAccessibleForFree': True}
+    if e['shots']:
+        d['screenshot'] = f'{SITE_URL}shots/{e["shots"][0]}'
+    # </ cannot end the script early
+    return json.dumps(d, ensure_ascii=False).replace('</', '<\\/')
+
+
 def app_page(e, about):
     shots = ''.join((f'<img class="photo" src="../../shots/{f}" width="480" height="800" alt="{H(e["name"])} on the reader"'
                      if f.endswith('-photo.jpg') else
@@ -204,7 +227,6 @@ def app_page(e, about):
     need = (f'<div class="notice">{WARN}<div>Needs firmware <b>XT Licorice {e["firmware"]}</b> or later (API {e["api"]}). '
             'Older firmware refuses to install it and asks for an update.</div></div>') if e['firmware'] else ''
     store = (f' Also in <a href="{STORE}">Xteink&rsquo;s app store</a>, where updates arrive by themselves.' if e['store'] else '')
-    og_img = f'{SITE_URL}shots/{e["shots"][0]}' if e['shots'] else f'{SITE_URL}apps/{e["id"]}/icon.png'
     firmware = f'{e["firmware"]}+' if e['firmware'] else 'any'
     return f'''<!doctype html>
 <html lang="en">
@@ -213,10 +235,7 @@ def app_page(e, about):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{H(e["name"])}: InkApp for the Xteink X4 Pro</title>
 <meta name="description" content="{H(e["plain"])}">
-<meta property="og:title" content="{H(e["name"])}: InkApp for the Xteink X4 Pro">
-<meta property="og:description" content="{H(e["plain"])}">
-<meta property="og:image" content="{og_img}">
-<meta property="og:url" content="{SITE_URL}apps/{e["id"]}/">
+<script type="application/ld+json">{ld_json(e)}</script>
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="stylesheet" href="../../assets/store.css">
 </head>
