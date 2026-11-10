@@ -28,6 +28,8 @@ def bundle_lock():
              ' -- edit those files, not this one.\n', REQUIRE]
     for name in ('cal', 'views'):
         body = open(os.path.join(src, name + '.lua'), encoding='utf-8').read().rstrip('\n')
+        # code the lock screen keeps only in the sideloaded build (tools/store_export.py cuts it)
+        body = body.replace('-- lock: cut', '-- store: cut').replace('-- lock: end', '-- store: end')
         parts.append(f"\n__mods['{name}'] = function()\n{body}\nend\n")
     parts.append('\n' + open(os.path.join(src, 'lock', 'lock.lua'), encoding='utf-8').read())
     text = ''.join(parts)

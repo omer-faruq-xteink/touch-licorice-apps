@@ -34,6 +34,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `game2048` | 2048 | `twentyfortyeight` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `d2ef365a-0cbc-486a-9188-f2a3588bc7ca` |
 | `anki` | Anki | `anki` | 1.1.0 | published | 1.1.0 | 2026-11-04 | `d5ba24db-e60d-4be6-a0d8-2ed2a7896d48` |
 | `backgammon` | Backgammon | `backgammon` | 1.0.0 | published | 1.0.0 | 2026-11-04 | `eca078ae-b008-4f88-bc03-92f201b1714c` |
+| `bookworm` | Bookworm | `bookworm` | 1.1.0 | published | 1.1.0 | 2026-11-08 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
 | `calculator` | Calculator | `calculator` | 1.1.0 | published | 1.1.0 | 2026-11-09 | `8b27ba9e-0825-46f4-a8b1-dc6f545f1cc3` |
 | `casefiles` | Case Files | `casefiles` | 1.0.0 | published | 1.0.0 | 2026-11-06 | `42efc232-ad42-47d2-8b09-71fe89051741` |
 | `checkers` | Checkers | `checkers` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `6cea5da4-eaf2-42fe-b5ea-35632a8f74b9` |
@@ -45,7 +46,9 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.1 | published | 1.0.1 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
+| `hackernews` | Hacker News | `hackernews` | 1.2.0 | published | 1.2.0 | 2026-11-08 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
+| `instapaper` | Instapaper | `instapaper` | 1.2.0 | published | 1.2.0 | 2026-11-08 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
 | `klondike` | Klondike | `klondike` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cb0f7994-54d7-41a6-963d-fc1fd466c3d6` |
 | `knightstour` | Knight's Tour | `knightstour` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `34c4be95-b474-4ee7-8224-ead826489eb8` |
@@ -60,6 +63,8 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `notes` | Notes | `notes` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
 | `queens` | Queens | `queens` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
+| `readwise` | Readwise | `readwise` | 1.2.0 | published | 1.2.0 | 2026-11-08 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
+| `rss` | RSS | `rss` | 1.3.0 | published | 1.3.0 | 2026-11-08 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | published | 1.0.1 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
@@ -69,18 +74,13 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `tasks` | Tasks | `tasks` | 1.2.0 | published | 1.2.0 | 2026-11-09 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
+| `wallabag` | wallabag | `wallabag` | 1.3.0 | published | 1.3.0 | 2026-11-08 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 | `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
-| `bookworm` | Bookworm | `bookworm` | 1.1.0 | in review | 1.0.0 | 2026-11-08 | `3c24e555-c442-42a7-bcc9-05ab60b1e975` |
-| `calendar` | Calendar | `calendar` | 1.1.2 | in review | 1.1.1 | 2026-11-08 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
-| `hackernews` | Hacker News | `hackernews` | 1.2.0 | in review | 1.1.0 | 2026-11-08 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
-| `instapaper` | Instapaper | `instapaper` | 1.2.0 | in review | 1.1.0 | 2026-11-08 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
-| `readwise` | Readwise | `readwise` | 1.2.0 | in review | 1.1.1 | 2026-11-08 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
-| `rss` | RSS | `rss` | 1.3.0 | in review | 1.2.0 | 2026-11-08 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
-| `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-09 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
-| `wallabag` | wallabag | `wallabag` | 1.3.0 | in review | 1.1.0 | 2026-11-08 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
+| `calendar` | Calendar | `calendar` | 1.1.2 | in review | 1.1.1 | 2026-11-10 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
+| `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 
-43 published, 8 in review or draft, 51 in all.
+49 published, 2 in review or draft, 51 in all.

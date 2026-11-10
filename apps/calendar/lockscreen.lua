@@ -200,6 +200,8 @@ end
 
 -- fetch a calendar, following up to three redirects; fn(resp) gets the last answer (an empty one
 -- when a redirect could not be asked). Returns what ctx.net:request returns for the first ask.
+-- store: cut (the store's check refuses ctx.net in a lock script: bundle.py makes this a store cut
+-- in lockscreen.lua only)
 function C.fetch(url, gz, fn, hops)
   hops = hops or 0
   return ctx.net:request(C.request(url, gz), function(cc, resp)
@@ -212,6 +214,7 @@ function C.fetch(url, gz, fn, hops)
     fn(resp)
   end)
 end
+-- store: end
 
 -- where a sync is, in sync_step.txt: when the reader closes the app mid-way (a callback that runs
 -- too long is closed without a Lua error), the next start knows the step
