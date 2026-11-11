@@ -51,6 +51,14 @@ menu's second line says `changes go straight to Readwise`, or `no access token: 
 - **Screen**: portrait or landscape. The app turns at once and opens that
   way next time; in landscape a list page holds 6 rows (Reader is asked for 6 at a time), the menu
   and Settings take two columns, and an open article is laid out again at about the same place.
+- **Books, PDFs and long articles** are read in parts of a few dozen pages (`part 2` in the line
+  under the title). **Next** on the last page of a part, or the **Next part** button there, opens
+  the next one; **Prev** on the first page goes back to the end of the one before; the app opens
+  again at the part and page you left. Reader sends an EPUB or a PDF as one piece of HTML, often
+  megabytes, which the reader cannot hold at once: the app has it saved to
+  `AppFiles/readwise/doc_<id>.json` and reads it a part at a time. The files of the 5 documents
+  opened last stay (archiving one, or deleting the offline copies in Settings, removes it); an
+  older one is fetched again when needed. A PDF that Reader has no text for shows its summary.
 - Opened documents and lists are saved on the card and open again without a connection. The 100
   most recently opened documents stay; an archived document's copy goes at once. **Articles saved
   offline** in Settings shows how many there are; tap it twice to delete them all.

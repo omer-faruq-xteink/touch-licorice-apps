@@ -1396,7 +1396,9 @@ local function cache_drop(names)
   cache_names = out
   cache_save()
 end
+local book_files_clear     -- the documents kept in parts (defined with them)
 local function cache_clear()
+  if book_files_clear then book_files_clear() end
   for _, n in ipairs(copies()) do cache_remove(n) end
   cache_names = {}
   cache_save()
@@ -1468,6 +1470,8 @@ end
 
 -- paragraphs come separated by blank lines; "# " marks a heading, "> " a quote, "• " a list item
 local function layout_article(data)
+  -- a long article takes more than a callback's 1000 ms to measure and paginate
+  pcall(function() ctx.budget:extend() end)
   art.data = data               -- kept, so turning the screen can lay it out again
   measure_cache = {}
   local out = {}
@@ -1475,6 +1479,7 @@ local function layout_article(data)
   local S = st()
   wrap_para(out, data.title or '', S.title, W - 24, 0)
   local meta = ((data.feed or '') ~= '' and (data.feed .. '  ') or '') .. (data.date or '') .. ((data.source or 'feed') ~= 'feed' and ('  [' .. data.source .. ']') or '')
+  if (data.part or 1) > 1 or data.next then meta = meta .. '  part ' .. (data.part or 1) end
   if meta ~= '' then wrap_para(out, meta, S.meta, W - 24, 0) end
   -- when the title is no bigger than the text, a rule under it keeps it apart
   if S.rule then gap(8); out[#out + 1] = { s = '', f = 'small', h = 6, x = 0, rule = true } end
@@ -1519,6 +1524,8 @@ local function layout_article(data)
   end
   -- Archive and Star under it
   out[#out + 1] = { s = '', f = 'small', h = 76, x = 0, actions = true }
+  -- a long document goes on in its next part: the button ends the last page
+  if data.next then out[#out + 1] = { s = '', f = 'small', h = 76, x = 0, nextpart = true } end
   -- paginate by height
   art.lines = out
   art.starts = { 1 }
@@ -1589,7 +1596,7 @@ local function to_list(d)
       local it = {
         id = id, url = src, title = str(b.title) or src or '(untitled)',
         host = str(b.site_name) or host_of(src), day = (str(b.saved_at) or str(b.created_at) or ''):sub(1, 10),
-        excerpt = str(b.summary) or '', author = str(b.author),
+        excerpt = str(b.summary) or '', author = str(b.author), kind = kind,
         progress = tonumber(b.reading_progress) or 0, location = str(b.location) or '',
         seen = str(b.first_opened_at) ~= nil, read = true,
       }
@@ -1744,7 +1751,7 @@ end
 
 -- GET /list/?id=<id>&withHtmlContent=true -> the article shape the layout uses (nil when Reader
 -- does not have the document)
-local function to_article(d, item)
+local function to_article(d, item, max)
   local doc = type(d) == 'table' and type(d.results) == 'table' and d.results[1] or nil
   if type(doc) ~= 'table' then return nil end
   local url = (item and item.url) or str(doc.source_url) or ''
@@ -1756,9 +1763,235 @@ local function to_article(d, item)
     feed = host .. ((author and author ~= host) and ('  ' .. author) or ''),
     date = (item and item.day) or '',
     url = url,
-    text = html_to_text(str(doc.html_content) or str(doc.content) or str(doc.summary) or '', TEXT_MAX, imgs, url),
+    text = html_to_text(str(doc.html_content) or str(doc.content) or str(doc.summary) or '', max or TEXT_MAX, imgs, url),
     images = imgs,
   }
+end
+
+-- Reader's answer for a document is saved to a file (API 2.18 `save`, up to 8 MB) instead of
+-- coming as a body the host cuts at 128 KB: an EPUB's or a PDF's html_content is the whole book.
+-- It is read in parts of about PART_HTML bytes of HTML, each ending after a closing tag, so a
+-- long document is read part by part (Next on the last page of one opens the next). The file of
+-- a document with more than one part stays (doc_<id>.json, the latest BOOK_KEEP); parts.txt keeps
+-- where each part starts in it.
+local DF = {}      -- what the rest of the app uses of this section (a block keeps its locals in)
+do
+local PART_HTML = 45000
+local DOC_CHUNK = 32768
+local BOOKS, BOOK_KEEP, PARTS, PARTS_KEEP = 'books.txt', 5, 'parts.txt', 60
+local ESCAPES = { ['"'] = '"', ['\\'] = '\\', ['/'] = '/', b = '\b', f = '\f', n = '\n', r = '\r', t = '\t' }
+local function doc_file(id) return 'doc_' .. id .. '.json' end
+
+-- A string of a JSON file in AppFiles, read in parts: the value of "key", or (key nil) the rest
+-- of a string from the file offset `from`. Returns true, the next `max` bytes of it or a little
+-- more (up to the end of a closing tag), and the file offset where the rest begins (nil at the
+-- end of the string); true and nil for null; nil when the file does not have the key.
+local function json_string_in_file(name, key, max, from)
+  local pos, buf, eof = from or 0, '', false
+  local function more()
+    if eof then return false end
+    local ok, chunk = pcall(function() return ctx.files:read(name, pos, DOC_CHUNK) end)
+    if not ok or type(chunk) ~= 'string' or chunk == '' then eof = true; return false end
+    pos = pos + #chunk
+    buf = buf .. chunk
+    if #chunk < DOC_CHUNK then eof = true end
+    return true
+  end
+  local i
+  if key then
+    local needle = '"' .. key .. '"%s*:%s*'
+    local s
+    while true do
+      local a, b = buf:find(needle)
+      while a and a > 1 and buf:byte(a - 1) == 92 do a, b = buf:find(needle, b + 1) end   -- inside a string
+      if a and b < #buf then s = b + 1; break end
+      if not a and #buf > 256 then buf = buf:sub(-128) end
+      if not more() then
+        if a then s = b + 1; break end
+        return nil
+      end
+    end
+    if buf:byte(s) ~= 34 then return true, nil end          -- null (or not a string)
+    i = s + 1
+  else
+    if not more() then return true, '', nil end
+    i = 1
+  end
+  local out, n = {}, 0
+  local function at(k) return pos - #buf + k - 1 end       -- the file offset of buf[k]
+  -- raw bytes a..b of buf: kept; once the part is full it ends after the next closing tag (or,
+  -- with none for a while, at the end of a run, never inside an escape or a character)
+  local function run(a, b)
+    if b < a then return false end
+    if n + (b - a + 1) >= max then
+      local _, e = buf:find('</%a%w*>', math.max(a, a + max - n - 8))
+      if e and e <= b then
+        out[#out + 1] = buf:sub(a, e); n = n + e - a + 1
+        return true, at(e + 1)
+      end
+    end
+    out[#out + 1] = buf:sub(a, b); n = n + b - a + 1
+    if n >= max + 16384 then return true, at(b + 1) end
+    return false
+  end
+  while true do
+    local p = buf:find('[\\"]', i)
+    if not p then
+      local done, nxt = run(i, #buf)
+      if done then return true, table.concat(out), nxt end
+      buf, i = '', 1
+      if not more() then break end
+    else
+      local done, nxt = run(i, p - 1)
+      if done then return true, table.concat(out), nxt end
+      if buf:byte(p) == 34 then return true, table.concat(out), nil end   -- the closing quote
+      if #buf - p < 12 and not eof then                       -- an escape at the end of the part read
+        buf, i = buf:sub(p), 1
+        more()
+      else
+        local e = buf:sub(p + 1, p + 1)
+        if e == 'u' then
+          local cp, step = tonumber(buf:sub(p + 2, p + 5), 16) or 63, 6
+          if cp >= 0xD800 and cp <= 0xDBFF and buf:sub(p + 6, p + 7) == '\\u' then
+            local lo = tonumber(buf:sub(p + 8, p + 11), 16)
+            if lo and lo >= 0xDC00 and lo <= 0xDFFF then cp, step = 0x10000 + (cp - 0xD800) * 0x400 + (lo - 0xDC00), 12 end
+          end
+          if cp >= 0xD800 and cp <= 0xDFFF then cp = 0xFFFD end   -- a lone surrogate
+          out[#out + 1] = utf8.char(cp)
+          i = p + step
+        else
+          out[#out + 1] = ESCAPES[e] or e
+          i = p + 2
+        end
+        n = n + 1
+      end
+    end
+  end
+  return true, table.concat(out), nil
+end
+
+local function file_there(name)
+  local ok, s = pcall(function() return ctx.files:read(name, 0, 1) end)
+  return ok and type(s) == 'string' and s ~= ''
+end
+local function file_remove(name) pcall(function() ctx.files:remove(name) end) end
+
+-- parts.txt: "id o2 o3 ..", where each part after the first starts in the document's file
+local function parts_read()
+  local t, order = {}, {}
+  for line in (cache_read(PARTS) or ''):gmatch('[^\n]+') do
+    local id, rest = line:match('^(%w+)(.*)$')
+    if id then
+      local offs = {}
+      for o in rest:gmatch('%d+') do offs[#offs + 1] = tonumber(o) end
+      if not t[id] then order[#order + 1] = id end
+      t[id] = offs                                          -- offs[1]: where part 2 starts, ...
+    end
+  end
+  return t, order
+end
+local function part_offset(id, part)
+  if part <= 1 then return nil end
+  local offs = parts_read()[id]
+  return offs and offs[part - 1]
+end
+local function part_found(id, part, off)                    -- part `part` (2 on) starts at off
+  local t, order = parts_read()
+  local offs = t[id] or {}
+  if offs[part - 1] == off then return end
+  for k = #offs + 1, part - 2 do offs[k] = 0 end            -- (parts are found in order)
+  offs[part - 1] = off
+  t[id] = offs
+  local out = {}
+  for _, k in ipairs(order) do
+    if k ~= id then out[#out + 1] = k .. ' ' .. table.concat(t[k], ' ') end
+  end
+  out[#out + 1] = id .. ' ' .. table.concat(offs, ' ')
+  while #out > PARTS_KEEP do table.remove(out, 1) end
+  cache_write(PARTS, table.concat(out, '\n'))
+end
+-- books.txt: the documents whose file stays, oldest first; beyond BOOK_KEEP the oldest file goes
+local function books_list()
+  local t = {}
+  for id in (cache_read(BOOKS) or ''):gmatch('%w+') do t[#t + 1] = id end
+  return t
+end
+local function book_keep(id)
+  local out = {}
+  for _, k in ipairs(books_list()) do if k ~= id then out[#out + 1] = k end end
+  out[#out + 1] = id
+  while #out > BOOK_KEEP do file_remove(doc_file(table.remove(out, 1))) end
+  cache_write(BOOKS, table.concat(out, ' '))
+end
+-- every document file in the folder, also one left by a download the reader closed in the middle
+book_files_clear = function()
+  for _, k in ipairs(books_list()) do file_remove(doc_file(k)) end
+  local ok, t = pcall(function() return ctx.files:list() end)
+  for _, e in ipairs((ok and type(t) == 'table') and t or {}) do
+    local n = type(e) == 'table' and e.name or e
+    if type(n) == 'string' and n:match('^doc_%w+%.json$') then file_remove(n) end
+  end
+  cache_write(BOOKS, '')
+end
+local function book_drop(id)
+  file_remove(doc_file(id))
+  local out = {}
+  for _, k in ipairs(books_list()) do if k ~= id then out[#out + 1] = k end end
+  cache_write(BOOKS, table.concat(out, ' '))
+end
+
+-- GET the document into its file; on_done(true) or on_done(nil, err)
+local function download(item, on_done)
+  if cfg.token == '' then note('set the access token in Settings'); on_done(nil, 'no access token'); return end
+  keep_wifi()
+  local opts = { url = API .. '/list/?id=' .. item.id .. '&withHtmlContent=true', method = 'GET',
+                 headers = { ['Accept'] = 'application/json', ['Authorization'] = 'Token ' .. cfg.token },
+                 save = { to = 'files', name = doc_file(item.id) } }
+  net_submit(opts, 'loading article', 45000, function(resp, err)
+    pcall(function() ctx.budget:extend() end)       -- reading and laying out a long one takes time
+    if err then on_done(nil, err); return end
+    if type(resp) ~= 'table' then on_done(nil, 'no response'); return end
+    local code = tonumber(resp.status) or tonumber(resp.code)
+    if code and code >= 400 then on_done(nil, api_error(code, resp.body)); return end
+    if resp.saved ~= true then
+      on_done(nil, resp.err == 'limit_exceeded' and 'too large for the reader (over 8 MB)' or tostring(resp.err or resp.error or 'not saved'))
+      return
+    end
+    on_done(true)
+  end)
+  refresh()
+end
+
+-- part `part` of a downloaded document, from its file (the first from html_content, a later one
+-- from where parts.txt says it starts): the article, or nil and why
+local function article_from_file(item, part, off)
+  pcall(function() ctx.budget:extend() end)
+  local name = doc_file(item.id)
+  local found, html, nxt
+  if part <= 1 then
+    found, html, nxt = json_string_in_file(name, 'html_content', PART_HTML)
+    if not found and not json_string_in_file(name, 'id', 64) then return nil, 'not found in Reader' end
+  else
+    if not off then return nil, 'part ' .. part .. ' not found' end
+    found, html, nxt = json_string_in_file(name, nil, PART_HTML, off)
+  end
+  local a = to_article({ results = { { html_content = html, summary = item.excerpt } } }, item, math.huge)
+  a.part, a.next = part, nxt
+  if part <= 1 and (not html or a.text == '') then
+    local kind = (item.kind == 'pdf' and 'PDF') or (item.kind == 'epub' and 'book') or 'document'
+    a.text = (item.excerpt ~= '' and (item.excerpt .. '\n\n') or '') .. '(Readwise sends no text for this ' .. kind .. '. Open it in Readwise Reader.)'
+  end
+  return a
+end
+DF.doc_file = doc_file
+DF.file_there = file_there
+DF.file_remove = file_remove
+DF.part_offset = part_offset
+DF.part_found = part_found
+DF.book_keep = book_keep
+DF.book_drop = book_drop
+DF.download = download
+DF.article_from_file = article_from_file
 end
 
 -- the converted article as a small text file: header lines, then the text
@@ -1766,8 +1999,8 @@ local function art_encode(a)
   local function one(v) return (tostring(v or ''):gsub('[\n\t]', ' ')) end
   local pics = {}
   for _, im in ipairs(a.images or {}) do pics[#pics + 1] = im.w .. ' ' .. im.h .. ' ' .. one(im.src) end
-  return 'IPA2\n' .. one(a.title) .. '\n' .. one(a.feed) .. '\n' .. one(a.date) .. '\n' .. one(a.url) .. '\n'
-    .. table.concat(pics, '\t') .. '\n' .. (a.text or '')
+  return 'IPA3\n' .. one(a.title) .. '\n' .. one(a.feed) .. '\n' .. one(a.date) .. '\n' .. one(a.url) .. '\n'
+    .. (a.part or 1) .. ' ' .. (a.next or '-') .. '\n' .. table.concat(pics, '\t') .. '\n' .. (a.text or '')
 end
 local function art_decode(raw)
   if type(raw) ~= 'string' then return nil end
@@ -1776,15 +2009,22 @@ local function art_decode(raw)
     if title then return { title = title, feed = feed, date = date, url = url, text = text } end
     return nil
   end
-  if raw:sub(1, 5) ~= 'IPA2\n' then return nil end
-  local title, feed, date, url, pics, text = raw:match('^IPA2\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
+  local title, feed, date, url, pics, text, part, nxt
+  if raw:sub(1, 5) == 'IPA3\n' then
+    local pn
+    title, feed, date, url, pn, pics, text = raw:match('^IPA3\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
+    if pn then part, nxt = pn:match('^(%d+) (%S+)$') end
+  elseif raw:sub(1, 5) == 'IPA2\n' then
+    title, feed, date, url, pics, text = raw:match('^IPA2\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n([^\n]*)\n(.*)$')
+  end
   if not title then return nil end
   local images = {}
   for entry in pics:gmatch('[^\t]+') do
     local w, h, src = entry:match('^(%d+) (%d+) (.+)$')
     if w then images[#images + 1] = { w = tonumber(w), h = tonumber(h), src = src } end
   end
-  return { title = title, feed = feed, date = date, url = url, text = text, images = images }
+  return { title = title, feed = feed, date = date, url = url, text = text, images = images,
+           part = tonumber(part) or 1, next = tonumber(nxt) }
 end
 
 ------------------------------------------------------------------ loaders
@@ -1879,30 +2119,38 @@ end
 -- the card (pos.txt, one "id fraction" line per article, the latest POS_KEEP) and the article
 -- opens there again; without one it opens where Reader's own progress points.
 local POS, POS_KEEP = 'pos.txt', 300
+-- (a line "id fraction part" for a document read in parts: the fraction is of that part)
 local function pos_read()
   local t, order = {}, {}
   for line in (cache_read(POS) or ''):gmatch('[^\n]+') do
-    local id, f = line:match('^(%w+) ([%d%.]+)$')
+    local id, f, part = line:match('^(%w+) ([%d%.]+) ?(%d*)$')
     if id then
       if not t[id] then order[#order + 1] = id end
-      t[id] = tonumber(f)
+      t[id] = { f = tonumber(f), part = tonumber(part) or 1 }
     end
   end
   return t, order
 end
-local function pos_save(id, f)
+local function pos_save(id, f, part)
+  local function pos_line(k, e)
+    return k .. ' ' .. string.format('%.4f', e.f) .. ((e.part or 1) > 1 and (' ' .. e.part) or '')
+  end
   local t, order = pos_read()
   local out = {}
   for _, k in ipairs(order) do
-    if k ~= id then out[#out + 1] = k .. ' ' .. string.format('%.4f', t[k]) end
+    if k ~= id then out[#out + 1] = pos_line(k, t[k]) end
   end
-  out[#out + 1] = id .. ' ' .. string.format('%.4f', f)
+  out[#out + 1] = pos_line(id, { f = f, part = part })
   while #out > POS_KEEP do table.remove(out, 1) end
   cache_write(POS, table.concat(out, '\n'))
 end
 
 local function resume_page()
-  local p = pos_read()[art.id] or (art.item and tonumber(art.item.progress)) or 0
+  local e = pos_read()[art.id]
+  local p
+  if e then p = (e.part == art.part) and e.f or 0
+  elseif art.part == 1 and not art.next then p = art.item and tonumber(art.item.progress) end
+  p = p or 0     -- Reader's progress is of the whole document: of no use for a part
   if p > 0 and art.pages > 1 then art.page = math.max(1, math.min(art.pages, math.floor(p * art.pages + 0.001) + 1)) end
   art.start_page = art.page
 end
@@ -1911,9 +2159,9 @@ end
 local function keep_progress()
   local it = art.item
   if not it or not art.id or not art.start_page or art.page == art.start_page then return end
-  local p = art.page >= art.pages and 1 or (art.page - 1) / art.pages
-  pos_save(art.id, p)
-  it.progress = p
+  local p = (art.page >= art.pages and not art.next) and 1 or (art.page - 1) / art.pages
+  pos_save(art.id, p, art.part)
+  if art.part == 1 and not art.next then it.progress = p end
   it.date = row_meta(it)
   art.start_page = art.page
 end
@@ -1928,34 +2176,56 @@ local function mark_seen(item)
   end, 'marking seen')
 end
 
-local function open_article(item)
-  art.id, art.title, art.feed, art.date = tostring(item.id), item.title or '', item.feed or '', item.date or ''
+local function copy_name(id, part)
+  return 'a' .. id .. ((part or 1) > 1 and ('p' .. part) or '') .. (cfg.images and 'i' or '') .. '.txt'
+end
+
+-- part `part` of the open document (to_end: at its last page, going back from the next part)
+local function open_part(item, part, to_end)
   art.lines, art.starts, art.page, art.pages, art.cached = {}, { 1 }, 1, 1, false
-  art.from_preview = nil
-  art.item, art.start_page = item, nil
-  screen = 'article'
+  art.part, art.next, art.start_page = part, nil, nil
   release_images()
-  local cname = 'a' .. art.id .. (cfg.images and 'i' or '') .. '.txt'
+  local id = art.id
+  local function show(a)
+    art.next = a.next
+    if a.next then DF.part_found(id, part + 1, a.next) end
+    layout_article(a)
+    if to_end then art.page = art.pages; art.start_page = -1 else resume_page() end
+    load_page_images()
+    mark_seen(item)
+  end
+  local cname = copy_name(id, part)
   local cached = art_decode(cache_read(cname))
   if cached then
-    layout_article(cached); resume_page(); art.cached = true; note('cached'); cache_touch(cname); load_page_images()
-    mark_seen(item)
+    cached.part = part
+    show(cached); art.cached = true; note('cached'); cache_touch(cname)
     return
   end
-  local id = art.id
-  request('/list/?id=' .. id .. '&withHtmlContent=true', function(data, err)
-    if art.id ~= id then return end               -- another article by now
-    local a = data and to_article(data, item)
-    if a then
-      layout_article(a); resume_page(); note('')
-      cache_write(cname, art_encode(a))
-      cache_touch(cname)
-      load_page_images()
-      mark_seen(item)
-    else
-      note(short(err or 'not found in Reader', 44))
-    end
-  end, 'loading article')
+  local function build()
+    if art.id ~= id or art.part ~= part then return end     -- another one by now
+    local a, err = DF.article_from_file(item, part, DF.part_offset(id, part))
+    if not a then note(short(err, 44)); return end
+    if a.next or part > 1 then DF.book_keep(id) else DF.file_remove(DF.doc_file(id)) end
+    show(a); note('')
+    cache_write(cname, art_encode(a))
+    cache_touch(cname)
+  end
+  if part > 1 and DF.file_there(DF.doc_file(id)) then build(); return end
+  DF.download(item, function(ok, err)
+    if art.id ~= id or art.part ~= part then return end
+    if ok then build() else note(short(err or 'not found in Reader', 44)) end
+  end)
+end
+
+local function open_article(item)
+  art.id, art.title, art.feed, art.date = tostring(item.id), item.title or '', item.feed or '', item.date or ''
+  art.from_preview = nil
+  art.item = item
+  screen = 'article'
+  local e = pos_read()[art.id]
+  local part = e and e.part or 1
+  if part > 1 and not DF.part_offset(art.id, part) then part = 1 end
+  open_part(item, part)
 end
 
 -- Moves, from the preview or the article's end: Archive (Inbox from the archive) and Later (Inbox
@@ -1982,7 +2252,12 @@ local function move(item, to)
     if err then note(MOVE_LABEL[to]:lower() .. ': ' .. short(err, 36)); return end
     note((to == 'archive' and 'archived' or ('moved to ' .. MOVE_LABEL[to])) .. ': ' .. short(item.title or '', 24))
     item.location = to
-    if to == 'archive' then cache_drop({ 'a' .. id .. '.txt', 'a' .. id .. 'i.txt' }) end
+    if to == 'archive' then
+      local names = {}
+      for _, n in ipairs(copies()) do if n:match('^a' .. id .. 'p?%d*i?%.txt$') then names[#names + 1] = n end end
+      cache_drop(names)
+      DF.book_drop(id)
+    end
     if leaves_list(to) then remove_from_list(id)
     elseif preview and preview.item == item then open_preview(item) end   -- its buttons change
   end, to == 'archive' and 'archiving' or 'moving')
@@ -2360,7 +2635,7 @@ local function draw_actions(gg, y)
   local m1, m2 = moves(art.item)
   local labels = { { MOVE_LABEL[m1], m1 }, { MOVE_LABEL[m2], m2 }, { 'Tags', 'tags' } }
   local bw = math.floor((W - 24 - 2 * 12) / 3)
-  art.btns = {}
+  art.btns = art.btns or {}          -- (the Next part button may be on this page too)
   for k, l in ipairs(labels) do
     local b = { x = 12 + (k - 1) * (bw + 12), y = y + 14, w = bw, h = 52, act = l[2] }
     gg:rect(b.x, b.y, b.w, b.h)
@@ -2384,6 +2659,12 @@ local function draw_article(gg)
     elseif ln.img then draw_image_line(gg, ln, y)
     elseif ln.source then pcall(draw_source_line, gg, ln, y)
     elseif ln.actions then draw_actions(gg, y)
+    elseif ln.nextpart then
+      local b = { x = 12, y = y + 14, w = W - 24, h = 52, act = 'nextpart' }
+      gg:rect(b.x, b.y, b.w, b.h)
+      gg:text(b.x + 16, b.y + 14, 'Next part (' .. (art.part + 1) .. ')  >', { font = F and F.medium })
+      art.btns = art.btns or {}
+      art.btns[#art.btns + 1] = b
     elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
     y = y + ln.h
   end
@@ -2500,7 +2781,15 @@ end
 
 local function page_article(delta)
   local p = art.page + delta
-  if p >= 1 and p <= art.pages then art.page = p; load_page_images() end
+  if p >= 1 and p <= art.pages then art.page = p; load_page_images(); return end
+  if busy() or not art.item then return end
+  -- past either end of a part: the next part, or back to the end of the one before
+  if p > art.pages and art.next then
+    pos_save(art.id, 0, art.part + 1)
+    open_part(art.item, art.part + 1)
+  elseif p < 1 and (art.part or 1) > 1 then
+    open_part(art.item, art.part - 1, true)
+  end
 end
 
 local function page_feeds(delta)
@@ -2556,7 +2845,8 @@ local function tap(x, y)
     for _, b in ipairs(art.btns or {}) do
       if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then
         local it = art.item
-        if b.act == 'tags' then edit_tags(it)
+        if b.act == 'nextpart' then page_article(art.pages - art.page + 1)
+        elseif b.act == 'tags' then edit_tags(it)
         elseif not can_write() then note('set the access token in Settings')
         else
           move(it, b.act)

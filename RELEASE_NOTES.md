@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18).
 
-Nothing yet.
+## Changed
+
+- **Readwise 1.2.1: books, PDFs and long articles, read in parts.** Opening a long document could close the app with an error, and an EPUB bigger than 128 KB showed "bad json": Reader sends an EPUB or a PDF as one piece of HTML, often megabytes, more than the reader keeps of an answer, and turning a long one into pages took longer than the reader allows. Now Reader's answer is saved to a file (`AppFiles/readwise/doc_<id>.json`, kept for the 5 documents opened last) and read a part of a few dozen pages at a time: **Next** on a part's last page, or its **Next part** button, opens the next part, **Prev** on the first page the end of the one before, and the app opens again at the part and page you left. A PDF that Reader has no text for shows its summary.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.22.0 |
+| `readwise.xtapp` | Readwise 1.2.1 |
+| all other packages | unchanged since v0.22.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

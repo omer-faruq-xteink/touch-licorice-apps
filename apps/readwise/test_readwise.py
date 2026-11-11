@@ -60,9 +60,12 @@ def answer(method, url, body, headers):
         return 200, json.dumps({'count': 2, 'nextPageCursor': None, 'results': [{'key': 'zeta', 'name': 'zeta'}, {'key': 'Big Ideas', 'name': 'Big Ideas'}]})
     if u.path == '/api/v3/list/':
         if 'id' in q:
+            if q['id'] not in docs:
+                return 200, json.dumps({'count': 0, 'nextPageCursor': None, 'results': []})
             d = dict(docs[q['id']])
-            d['html_content'] = ARTICLE if q.get('withHtmlContent') == 'true' else None
-            return 200, json.dumps({'count': 1, 'nextPageCursor': None, 'results': [d]})
+            html = d.pop('_html', ARTICLE)
+            d['html_content'] = html if q.get('withHtmlContent') == 'true' else None
+            return 200, json.dumps({'count': 1, 'nextPageCursor': None, 'results': [d]}, ensure_ascii=d.pop('_ascii', False))
         n = int(q['limit'])                                # the rows that fit: 12, or 6 in landscape
         if q.get('tag') == 'Big Ideas':
             return 200, json.dumps({'count': 1, 'nextPageCursor': None, 'results': tagged})
@@ -70,7 +73,7 @@ def answer(method, url, body, headers):
         start = n + 1 if q.get('pageCursor') == 'cur2' else 0
         if q.get('pageCursor') not in (None, 'cur2'):
             return 400, '{"detail":"bad cursor"}'
-        page = rows[start:start + n + 1]
+        page = [{k: v for k, v in d.items() if not k.startswith('_')} for d in rows[start:start + n + 1]]
         return 200, json.dumps({'count': len(rows), 'nextPageCursor': 'cur2' if start == 0 and len(rows) > n + 1 else None, 'results': page})
     return 404, '{"detail":"Not found."}'
 
@@ -99,6 +102,7 @@ local function M(t)
   return out
 end
 pending, inputs, input_opts = {}, {}, {}
+files, extends, saved_sizes = {}, 0, {}       -- AppFiles (API 2.18 save), budget:extend calls
 fake_ms = 1000
 local function font(name, lh) local f = M({ measure = function(s) return #s * 10 end }); f.name = name; f.line_height = lh; return f end
 ctx = {
@@ -113,10 +117,23 @@ ctx = {
   qr = M({ encode = function(t) return setmetatable({}, { __index = { width = 33, height = 33, release = function() end } }) end }),
   net = M({ keep_wifi = function() end, request = function(opts, fn)
     local st, body = py_request(opts.method, opts.url, opts.body, opts.headers)
-    pending[#pending + 1] = function() fn(ctx, { status = st, body = body, headers = {} }) end
+    local res = { ok = true, status = st, body = body, headers = {}, bytes = #body }
+    if opts.save and st >= 200 and st < 300 then                 -- the body goes to the file, whole
+      assert(opts.save.to == 'files', 'save to files expected')
+      files[opts.save.name] = body; saved_sizes[#saved_sizes + 1] = #body; res.body = ''; res.saved = true
+    elseif #body > 131072 then res.body = body:sub(1, 131072); res.err = 'limit_exceeded' end
+    pending[#pending + 1] = function() fn(ctx, res) end
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  budget = M({ extend = function() extends = extends + 1; return true end }),
+  files = M({ path = '/AppFiles/readwise',
+              exists = function(n) return files[n] ~= nil end,
+              read = function(n, off, len) local s = files[n]; if not s then return nil, 'not_found' end
+                                           off = off or 0; return s:sub(off + 1, len and off + len or #s) end,
+              write = function(n, d) files[n] = d; return true end,
+              remove = function(n) files[n] = nil; return true end,
+              list = function() local t = {} for k, v in pairs(files) do t[#t + 1] = { name = k, size = #v } end return t end }),
   capabilities = { image_decode = true },
   image = M({ decode = function(b) return setmetatable({}, { __index = { width = 456, height = 304, release = function() end } }) end }),
 }
@@ -282,6 +299,114 @@ t = texts()
 assert 'Tagged one' in t and 'Inbox' in t and 'Archive' not in t, t        # still here, now archived
 key('back')
 assert g.store['l_tag_Big_20Ideas_1.txt'] is not None
+
+# big documents (an EPUB is a whole book, a PDF too): the answer is saved to a file (it may be
+# megabytes; a body is cut at 128 KB) and read in parts of about 45 KB of HTML, each ending after a
+# closing tag, with \uXXXX escapes, surrogate pairs and escapes across the 32 KB reads. Next on
+# the last page (or the Next part button) opens the next part from the kept file, Prev on the
+# first page the end of the one before; the part is kept with the position; a missing file is
+# fetched again. A PDF without text shows its summary.
+para = lambda k: f'<p>Para {k}: Ünïcödé “quoted” \\ back 😀 tab\tend{k}.</p>\n'
+N_PARAS = 30000
+BOOK = ''.join(para(k) for k in range(N_PARAS))                         # about 2 MB as JSON
+book = doc(70, title='A long book', category='epub', location='later', _html=BOOK, _ascii=True)
+pdf = doc(71, title='A scanned PDF', category='pdf', location='later', _html=None, summary='What the PDF is about.')
+gone = doc(72, title='Deleted meanwhile', location='later')
+later.extend([book, pdf, gone])
+docs.update({d['id']: d for d in (book, pdf)})                          # 72 is not in Reader any more
+for k in list(g.store.keys()):
+    if str(k).startswith('l_later'): g.store[k] = None
+copy_text = lambda name: str(g.store[name]).split('\n', 7)[7]
+copy_part = lambda name: str(g.store[name]).split('\n', 7)[5]
+def paras(text):
+    # the paragraphs of a part, each checked whole
+    found = [int(m) for m in __import__('re').findall(r'Para (\d+): ', text)]
+    for k in found:
+        assert f'Para {k}: Ünïcödé “quoted” \\ back 😀 tab end{k}.' in text, (k, text[:300])
+    return found
+key('back'); tap(*MENU(1)); g.flush()
+assert 'A long book' in texts(), texts()
+before, n_calls = int(g.extends), len(calls)
+tap(100, row_y(1)); g.flush()
+assert calls[-1][1] == 'https://readwise.io/api/v3/update/01doc0070/' and '01doc0070&withHtmlContent=true' in calls[-2][1], calls[-2:]
+assert int(g.saved_sizes[len(g.saved_sizes)]) > 1500000
+assert g.files['doc_01doc0070.json'] is not None and str(g.store['books.txt']) == '01doc0070', g.store['books.txt']
+assert int(g.extends) > before                                         # the long work got its time
+first = paras(copy_text('a01doc0070.txt'))
+assert first == list(range(len(first))) and 300 < len(first) < 900, (len(first), first[:3])
+assert copy_part('a01doc0070.txt').startswith('1 ') and '\ufffd' not in copy_text('a01doc0070.txt')
+assert any('part 1' in x for x in texts()), texts()
+seen, part, downloads = list(first), 1, len([c for c in calls if 'withHtmlContent' in c[1]])
+while True:                                             # Next past each part's last page: the next part
+    now, total = page_ind()
+    for _ in range(total - now): key('right')
+    t = texts()
+    if part == 1: assert 'Next part (2)  >' in t, t
+    if 'Next part (%d)  >' % (part + 1) not in t:
+        break
+    key('right'); g.flush()
+    part += 1
+    name = f'a01doc0070p{part}.txt'
+    got = paras(copy_text(name))
+    assert got and got[0] == seen[-1] + 1, (part, seen[-1], got[:2])   # nothing lost, nothing twice
+    seen += got
+    part_first = got[0]
+    assert page_ind()[0] == 1 and any(f'part {part}' in x for x in texts()), texts()
+assert seen == list(range(N_PARAS)) and part > 30, (part, len(seen))
+assert len([c for c in calls if 'withHtmlContent' in c[1]]) == downloads    # all from the kept file
+assert copy_part(f'a01doc0070p{part}.txt') == f'{part} -'                  # the last part
+# Prev on the first page of a part: the end of the part before
+for _ in range(page_ind()[0] - 1): key('left')
+key('left'); g.flush()
+assert page_ind()[0] == page_ind()[1] and 'Next part (%d)  >' % part in texts(), texts()
+key('right'); g.flush()                                                     # and on again
+assert page_ind()[0] == 1 and any(f'part {part}' in x for x in texts())
+key('right')
+key('back')
+assert str(g.store['pos.txt']).splitlines()[-1].startswith('01doc0070 0.') and str(g.store['pos.txt']).endswith(f' {part}'), g.store['pos.txt']
+# opened again: the part read last, at its page
+tap(100, row_y(1)); g.flush()
+on_page = [int(m) for x in texts() for m in __import__('re').findall(r'^Para (\d+):', x)]
+assert page_ind()[0] == 2 and on_page and min(on_page) >= part_first, (page_ind(), on_page[:3])
+key('back')
+# the kept file gone (and the offline copy of part 3): fetched again, the same part
+g.files['doc_01doc0070.json'] = None
+g.store['a01doc0070p3.txt'] = None
+old3 = None
+g.store['pos.txt'] = str(g.store['pos.txt']).rsplit('\n', 1)[0] + '\n01doc0070 0.0000 3'
+tap(100, row_y(1)); g.flush()
+assert len([c for c in calls if 'withHtmlContent' in c[1]]) == downloads + 1
+got = paras(copy_text('a01doc0070p3.txt'))
+assert got and any('part 3' in x for x in texts()), texts()
+key('back')
+tap(100, row_y(2)); g.flush()
+text = copy_text('a01doc0071.txt')
+assert text == 'What the PDF is about.\n\n(Readwise sends no text for this PDF. Open it in Readwise Reader.)', text
+assert 'What the PDF is about.' in texts() and g.files['doc_01doc0071.json'] is None, texts()
+key('back')
+tap(100, row_y(3)); g.flush()
+assert any('not found in Reader' in x for x in texts()) and g.store['a01doc0072.txt'] is None, texts()
+key('back')
+# deleting the offline copies (Settings, two taps) removes the kept files too, also a stray one
+g.files['doc_01docstray.json'] = '{"a": 1}'
+assert g.files['doc_01doc0070.json'] is not None
+key('back'); key('back'); tap(*MENU(6))
+x, y = recs()[[v for v in texts() if v.startswith('Articles saved offline')][0]]
+tap(x + 5, y + 30); tap(x + 5, y + 30)
+assert g.files['doc_01doc0070.json'] is None and g.files['doc_01docstray.json'] is None and str(g.store['books.txt']) == ''
+assert not [k for k in g.store.keys() if str(k).startswith('a01doc') and g.store[k] is not None]
+key('back'); tap(*MENU(1)); g.flush()
+tap(100, row_y(1)); g.flush()                                               # opens again: fetched anew
+assert g.files['doc_01doc0070.json'] is not None
+key('back')
+# archiving the book removes every part's offline copy and its file
+long_press(100, row_y(1)); tap_label('Archive'); g.flush()
+assert not [k for k in g.store.keys() if str(k).startswith('a01doc0070') and g.store[k] is not None]
+assert g.files['doc_01doc0070.json'] is None and str(g.store['books.txt']) == ''
+key('back')
+del later[1:]
+for k in list(g.store.keys()):
+    if str(k).startswith('l_later'): g.store[k] = None
 
 # errors: Reader's rate limit, a rejected token
 key('back'); tap(*MENU(1)); g.flush()
