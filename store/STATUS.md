@@ -63,7 +63,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `notes` | Notes | `notes` | 1.1.1 | published | 1.1.1 | 2026-11-03 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `6870b261-a98d-4f66-af51-be27150a7c30` |
 | `queens` | Queens | `queens` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
-| `readwise` | Readwise | `readwise` | 1.2.0 | published | 1.2.0 | 2026-11-08 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.3.0 | published | 1.3.0 | 2026-11-08 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.0.1 | published | 1.0.1 | 2026-11-04 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
@@ -81,6 +80,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `calendar` | Calendar | `calendar` | 1.1.2 | in review | 1.1.1 | 2026-11-10 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
+| `readwise` | Readwise | `readwise` | 1.2.1 | in review | 1.2.0 | 2026-11-11 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 
-49 published, 2 in review or draft, 51 in all.
+48 published, 3 in review or draft, 51 in all.

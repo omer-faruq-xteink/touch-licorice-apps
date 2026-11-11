@@ -234,10 +234,10 @@
     "app_id": "readwise",
     "listing_id": "u_4ad5b5be8f5846c082535c2b806e2e67",
     "project_id": "9f9f4778-901e-4a18-b863-033d9384a44c",
-    "release_version": "1.2.0",
-    "status": "published",
+    "release_version": "1.2.1",
+    "status": "in review",
     "live_version": "1.2.0",
-    "submitted": "2026-11-08"
+    "submitted": "2026-11-11"
   },
   "rss": {
     "name": "RSS",
