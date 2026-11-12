@@ -77,3 +77,12 @@ test('tempo marks stripped without losing music (a self-closing tempo before a w
   assert.equal(r.map.bars.length, 4);
   assert.equal(r.map.onsets.length, 16);
 });
+
+test('pages are not left with one system: tall systems get a smaller scale', async () => {
+  for (const name of ['dense.musicxml', 'long.musicxml']) {
+    const r = await convertFixture(name);
+    assert.ok(Array.isArray(r.systems) && r.systems.length === r.pages.length, name);
+    const lonely = r.systems.slice(0, -1).filter(n => n < 2).length;
+    assert.equal(lonely, 0, `${name}: ${r.systems}`);
+  }
+});

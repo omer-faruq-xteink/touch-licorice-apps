@@ -300,7 +300,8 @@ def main():
     out = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, 'dist', 'site'))
     if os.path.exists(out):
         shutil.rmtree(out)
-    shutil.copytree(SITE, out, ignore=shutil.ignore_patterns('test', '__pycache__', '*.py', '*.mjs',
+    # cli.mjs: Node command-line tools; other .mjs files are modules pages import (tools/piano/convert.mjs)
+    shutil.copytree(SITE, out, ignore=shutil.ignore_patterns('test', '__pycache__', '*.py', 'cli.mjs',
                                                                     'community-blocklist.txt'))
     os.makedirs(os.path.join(out, 'downloads'), exist_ok=True)
     names = story_pack(os.path.join(out, 'downloads', 'gamebook-stories.zip'))

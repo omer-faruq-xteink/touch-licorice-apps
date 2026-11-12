@@ -17,6 +17,7 @@
 export const W = 800, H = 440, ROW = W / 8, MAGIC = 'XTSCORE1';
 export const SCALE = 55;                 // Verovio scale (%): sets the size of the music on the page
 export const LANDSCAPE = { w: W, h: H, scale: SCALE };
+export const MIN_SCALE = 40;              // the smallest music a page may get to fit two systems
 const layoutOf = (l) => (typeof l === 'number' ? { ...LANDSCAPE, scale: l } : { ...LANDSCAPE, ...(l || {}) });
 export function verovioOptions(layout = LANDSCAPE) {
   const { w, h, scale } = layoutOf(layout);
@@ -120,11 +121,25 @@ export function to1bit(rgba, w = W, h = H) {
 
 // --- convert -----------------------------------------------------------------------------------------
 export async function convert(tk, raster, input, meta = {}, layout = LANDSCAPE) {
-  const { w: PW, h: PH } = layoutOf(layout);
-  tk.setOptions(verovioOptions(layout));
+  const L = layoutOf(layout);
+  const { w: PW, h: PH } = L;
+  tk.setOptions(verovioOptions(L));
   load(tk, input);
+  if (!tk.getPageCount()) throw new Error('No music found in this file');
+  // systems taller than half a page (wide ranges, marks far below the staff) leave pages with a single
+  // system: smaller music until no page but the last has only one (down to MIN_SCALE)
+  const systemsPerPage = () => {
+    const out = [];
+    for (let p = 1; p <= tk.getPageCount(); p++) out.push((tk.renderToSVG(p).match(/class="system"/g) || []).length);
+    return out;
+  };
+  let systems = systemsPerPage();
+  for (let scale = L.scale - 5; scale >= MIN_SCALE && systems.slice(0, -1).some(n => n < 2); scale -= 5) {
+    tk.setOptions(verovioOptions({ ...L, scale }));
+    tk.redoLayout();
+    systems = systemsPerPage();
+  }
   const count = tk.getPageCount();
-  if (!count) throw new Error('No music found in this file');
   const pages = [], noteAt = new Map(), barOf = new Map(), bars = [], lastSys = [], lastBar = [];
   for (let p = 1; p <= count; p++) {
     const svg = tk.renderToSVG(p);
@@ -178,7 +193,7 @@ export async function convert(tk, raster, input, meta = {}, layout = LANDSCAPE) 
     v: 1, title: meta.title || input.name.replace(/\.[^.]+$/, ''), composer: meta.composer || '', arranger: meta.arranger || '',
     license: meta.license || '', source: meta.source || '', url: meta.url || '', level: meta.level || '', w: PW, h: PH,
   };
-  return { header, pages, map: { bars, onsets, turn } };
+  return { header, pages, map: { bars, onsets, turn }, systems };
 }
 
 // --- file -------------------------------------------------------------------------------------------
