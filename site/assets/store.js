@@ -154,19 +154,20 @@ export async function readerPanel(el, root, ids, catalog) {
         (updates.length ? `, <b>${updates.length} with an update</b>.` : ', all up to date.') :
         'A folder on the card: choose the card itself to see which apps are installed.';
       if (updates.length > 1) acts += `<button type="button" class="get primary all">Update all (${updates.length})</button>`;
-      acts += '<button type="button" class="get off">Disconnect</button>';
+      acts += '<button type="button" class="get disconnect">Disconnect</button>';
     } else {
       title = 'Install straight from this page';
       text = 'Put the reader in USB mode and connect it to this computer, then choose its SD card. Apps are copied there, ' +
         'and the page shows what is installed and what has an update.';
-      acts = `<button type="button" class="get primary on">${card.pending ? 'Reconnect the reader' : 'Connect the reader'}</button>`;
+      acts = `<button type="button" class="get primary connect">${card.pending ? 'Reconnect the reader' : 'Connect the reader'}</button>`;
     }
     el.innerHTML = `<div class="reader-panel${cls}"><div class="ico">${USB}</div><div class="txt"><strong>${title}</strong>` +
       `<p>${text}</p></div><div class="acts">${acts}</div></div>`;
     el.querySelector('.txt').append(msg);
-    el.querySelector('.on')?.addEventListener('click', () => card.connect().catch(fail));
-    el.querySelector('.off')?.addEventListener('click', () => card.disconnect());
-    el.querySelector('.all')?.addEventListener('click', () =>
+    // (button classes of their own: the connected panel itself has the class "on")
+    el.querySelector('button.connect')?.addEventListener('click', () => card.connect().catch(fail));
+    el.querySelector('button.disconnect')?.addEventListener('click', () => card.disconnect());
+    el.querySelector('button.all')?.addEventListener('click', () =>
       copyMany(ids.map((id) => byId.get(id)).filter((a) => a && card.state(a)?.update)));
   }
 
