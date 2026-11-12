@@ -78,9 +78,10 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `calendar` | Calendar | `calendar` | 1.1.2 | in review | 1.1.1 | 2026-11-10 | `ac2744ef-3e9d-494c-8ee4-3a9ca918932f` |
 | `hackernews` | Hacker News | `hackernews` | 1.2.1 | in review | 1.2.0 | 2026-11-12 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `instapaper` | Instapaper | `instapaper` | 1.2.1 | in review | 1.2.0 | 2026-11-12 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
+| `pianofollow` | Piano Follow | `pianofollow` | 1.0.0 | in review | - | 2026-11-12 | `c4df4a87-1974-41e8-a519-54004eba26a0` |
 | `readwise` | Readwise | `readwise` | 1.2.1 | in review | 1.2.0 | 2026-11-11 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `rss` | RSS | `rss` | 1.3.1 | in review | 1.3.0 | 2026-11-12 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.1 | in review | 1.3.0 | 2026-11-12 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
 
-44 published, 7 in review or draft, 51 in all.
+44 published, 8 in review or draft, 52 in all.

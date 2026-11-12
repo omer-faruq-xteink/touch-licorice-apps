@@ -508,5 +508,14 @@
     "status": "in review",
     "live_version": null,
     "submitted": "2026-11-10"
+  },
+  "pianofollow": {
+    "name": "Piano Follow",
+    "app_id": "pianofollow",
+    "listing_id": "",
+    "project_id": "c4df4a87-1974-41e8-a519-54004eba26a0",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "submitted": "2026-11-12"
   }
 }
