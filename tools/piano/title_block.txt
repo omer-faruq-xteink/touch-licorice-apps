@@ -1,0 +1,89 @@
+# Titles or composer texts (lowercase substrings) that drop a PDMX candidate: modern songs, film,
+# TV and game music, and arrangers' remixes, which may be under copyright even when the uploader
+# chose CC0. One per line; lines starting with # are notes.
+soundtrack
+ost
+anime
+disney
+pixar
+ghibli
+hisaishi
+totoro
+spirited away
+zelda
+mario
+pokemon
+pokémon
+undertale
+megalovania
+deltarune
+minecraft
+genshin
+fnaf
+five nights
+sonic
+tetris
+final fantasy
+kingdom hearts
+star wars
+harry potter
+hedwig
+game of thrones
+interstellar
+zimmer
+pirates of the caribbean
+he's a pirate
+jurassic
+titanic
+my heart will go on
+frozen
+let it go
+moana
+encanto
+beauty and the beast
+lion king
+aladdin
+einaudi
+yiruma
+river flows
+tiersen
+amélie
+amelie
+comptine
+coldplay
+imagine dragons
+taylor swift
+billie eilish
+ed sheeran
+shape of you
+despacito
+bohemian
+queen -
+the beatles
+beatles
+elton john
+adele
+alan walker
+faded
+rush e
+naruto
+one piece
+attack on titan
+demon slayer
+your lie in april
+tokyo ghoul
+evangelion
+avengers
+marvel
+batman
+superman
+james bond
+mission impossible
+the godfather
+la la land
+schindler
+williams
+morricone
+hans
+remix
+meme

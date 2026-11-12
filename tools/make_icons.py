@@ -753,6 +753,20 @@ def delve(p):
                 p.d.rectangle([(8 + x * 5) * S, (8 + y * 5) * S, (13 + x * 5) * S - 1, (13 + y * 5) * S - 1], fill=0)
 
 
+def pianofollow(p):
+    # two beamed eighth notes over a strip of piano keys
+    p.rect((8, 56, 88, 88), w=4)
+    for x in (24, 40, 56, 72):                              # white keys
+        p.line([(x, 56), (x, 88)], 2)
+    for x in (20, 36, 64):                                  # black keys
+        p.rect((x, 56, x + 8, 75), fill=True)
+    p.ellipse((22, 34, 38, 46), fill=True)                  # note heads
+    p.ellipse((54, 30, 70, 42), fill=True)
+    p.line([(36, 40), (36, 12)], 4)                         # stems
+    p.line([(68, 36), (68, 8)], 4)
+    p.poly([(34, 10), (70, 6), (70, 13), (34, 17)])         # the beam
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -766,7 +780,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
          'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
-         'hashi': hashi, 'kakuro': kakuro, 'delve': delve}
+         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

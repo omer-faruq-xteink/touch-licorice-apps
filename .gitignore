@@ -20,3 +20,9 @@ release/
 docs/xtapp-api/*
 !docs/xtapp-api/README.md
 !docs/xtapp-api/extract_docs.py
+
+# Node dependencies of tools (tools/piano)
+node_modules/
+
+# superpowers plan workspaces (ledgers, review packages)
+.superpowers/

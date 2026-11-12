@@ -1,0 +1,11 @@
+{
+  "app_id": "pianofollow",
+  "display_name": "Piano Follow",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Sheet music that follows your playing: a free catalog of piano pieces, page turning and practice with a Bluetooth MIDI keyboard. Needs firmware with API 2.21",
+  "entry": "index.lua",
+  "api": "2.21",
+  "permissions": ["net", "ble"],
+  "display": { "orientation": "landscape" }
+}

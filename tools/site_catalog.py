@@ -18,13 +18,13 @@ RELEASE = REPO + '/releases/latest/download/'
 STORE = 'https://xtapp-ai.xteink.cc/store'
 
 # the firmware an API version first came with; older APIs run on every build the apps support
-FIRMWARE = {'2.18': '26110201'}
+FIRMWARE = {'2.18': '26110201', '2.21': '26110501'}
 
 CATEGORIES = [
     ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'wikipedia', 'bookworm']),
     ('tools', 'Tools and lock screens', ['tasks', 'notebook', 'timekeeper', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
                                          'skytonight', 'litclock', 'wordclock']),
-    ('learn', 'Learning', ['anki', 'dict', 'tarot']),
+    ('learn', 'Learning', ['pianofollow', 'anki', 'dict', 'tarot']),
     ('stories', 'Stories', ['gamebook', 'textadv']),
     ('daily', 'Daily puzzles', ['wordhive', 'cryptogram', 'wordladder']),
     ('puzzles', 'Puzzles', ['sudoku', 'queens', 'casefiles', 'lamplighter', 'nonogram', 'kakuro', 'hashi', 'suguru', 'minesweeper', 'lightsout',
@@ -39,6 +39,7 @@ EXTRAS = {
              ('StarDict converter', '../../tools/dictionary/', 'Any other StarDict dictionary.')],
     'wikipedia': [('Offline pack: vital articles (English)', RELEASE + 'wikipedia-en-vital.zip',
                    'Read without Wi-Fi; see the app\'s help for where it goes.')],
+    'pianofollow': [('Score converter', '../../tools/piano/', 'Your own MusicXML or ABC scores for the reader.')],
     'anki': [('Anki deck converter', '../../tools/anki/', 'Your .apkg decks and word lists as cards.')],
     'gamebook': [('Story pack and converters', '../../tools/gamebook/', 'More stories, and Twine, Ink or Project Aon stories.')],
     'textadv': [('Zork I, II and III', '../../tools/textadv/', 'The free pack, and where to find more games.')],

@@ -5,6 +5,8 @@ commands (the host draws about 1024 of them a screen and leaves out the rest).
 
     from harness import Game
     g = Game('apps/lightsout')     # bundles, loads index.lua, calls on_load
+    g = Game('apps/x', stubs=LUA, encoding='latin-1')   # extra Lua stubs run after the standard ones;
+                                   # latin-1 keeps binary Lua strings byte for byte in Python
     g.texts(), g.tap(x, y), g.tap_label('New'), g.key('back'), g.store, g.restart()
 """
 import os, subprocess, sys
@@ -44,11 +46,15 @@ __TEST = {}
 
 
 class Game:
-    def __init__(self, app_dir):
+    def __init__(self, app_dir, stubs='', encoding='utf-8', before_load=None):
         self.app = os.path.abspath(app_dir)
         subprocess.run([sys.executable, '-I', os.path.join(self.app, 'bundle.py')], check=True)
-        self.L = lua54.LuaRuntime(unpack_returned_tuples=True)
+        self.L = lua54.LuaRuntime(unpack_returned_tuples=True, encoding=encoding)
         self.L.execute(STUBS)
+        if stubs:
+            self.L.execute(stubs)
+        if before_load:
+            before_load(self)
         self.g = self.L.globals()
         self.store = self.g.store
         self._tap = self.L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")

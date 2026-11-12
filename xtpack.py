@@ -243,7 +243,7 @@ def build_container(manifest_obj, pubkey, code_files, data_files, icons=None):
     return out, dek
 
 
-API2_PERMISSIONS = ('net', 'reader')
+API2_PERMISSIONS = ('net', 'reader', 'ble')       # ble: API 2.19
 
 
 def validate_manifest(obj, where):

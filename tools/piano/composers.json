@@ -1,0 +1,469 @@
+{
+ "_note": "Composers whose music is in the public domain: died before 1955 (life + 70 years) and the piece published before 1931 (US: 95 years), or a genuinely traditional tune. pdmx_select.py keeps only pieces whose composer field matches one of these (whole words, lowercase); the publication date and any 'Traditional' label are checked by hand in catalog.yaml. Bartok and Prokofiev are left out: their piano music was published after 1930.",
+ "composers": [
+  {
+   "name": "Johann Sebastian Bach",
+   "died": 1750,
+   "match": [
+    "j. s. bach",
+    "j.s. bach",
+    "js bach",
+    "johann sebastian bach",
+    "bach"
+   ]
+  },
+  {
+   "name": "Anna Magdalena Bach notebook",
+   "died": 1760,
+   "match": [
+    "anna magdalena"
+   ]
+  },
+  {
+   "name": "Christian Petzold",
+   "died": 1733,
+   "match": [
+    "petzold"
+   ]
+  },
+  {
+   "name": "George Frideric Handel",
+   "died": 1759,
+   "match": [
+    "handel",
+    "händel",
+    "haendel"
+   ]
+  },
+  {
+   "name": "Domenico Scarlatti",
+   "died": 1757,
+   "match": [
+    "scarlatti"
+   ]
+  },
+  {
+   "name": "François Couperin",
+   "died": 1733,
+   "match": [
+    "couperin"
+   ]
+  },
+  {
+   "name": "Jean-Philippe Rameau",
+   "died": 1764,
+   "match": [
+    "rameau"
+   ]
+  },
+  {
+   "name": "Henry Purcell",
+   "died": 1695,
+   "match": [
+    "purcell"
+   ]
+  },
+  {
+   "name": "Georg Philipp Telemann",
+   "died": 1767,
+   "match": [
+    "telemann"
+   ]
+  },
+  {
+   "name": "Johann Pachelbel",
+   "died": 1706,
+   "match": [
+    "pachelbel"
+   ]
+  },
+  {
+   "name": "Antonio Vivaldi",
+   "died": 1741,
+   "match": [
+    "vivaldi"
+   ]
+  },
+  {
+   "name": "Joseph Haydn",
+   "died": 1809,
+   "match": [
+    "haydn"
+   ]
+  },
+  {
+   "name": "Wolfgang Amadeus Mozart",
+   "died": 1791,
+   "match": [
+    "mozart"
+   ]
+  },
+  {
+   "name": "Muzio Clementi",
+   "died": 1832,
+   "match": [
+    "clementi"
+   ]
+  },
+  {
+   "name": "Friedrich Kuhlau",
+   "died": 1832,
+   "match": [
+    "kuhlau"
+   ]
+  },
+  {
+   "name": "Ludwig van Beethoven",
+   "died": 1827,
+   "match": [
+    "beethoven"
+   ]
+  },
+  {
+   "name": "Daniel Gottlob Türk",
+   "died": 1813,
+   "match": [
+    "türk",
+    "turk"
+   ]
+  },
+  {
+   "name": "Anton Diabelli",
+   "died": 1858,
+   "match": [
+    "diabelli"
+   ]
+  },
+  {
+   "name": "Carl Czerny",
+   "died": 1857,
+   "match": [
+    "czerny"
+   ]
+  },
+  {
+   "name": "Franz Schubert",
+   "died": 1828,
+   "match": [
+    "schubert"
+   ]
+  },
+  {
+   "name": "John Field",
+   "died": 1837,
+   "match": [
+    "john field"
+   ]
+  },
+  {
+   "name": "Felix Mendelssohn",
+   "died": 1847,
+   "match": [
+    "mendelssohn"
+   ]
+  },
+  {
+   "name": "Frédéric Chopin",
+   "died": 1849,
+   "match": [
+    "chopin"
+   ]
+  },
+  {
+   "name": "Robert Schumann",
+   "died": 1856,
+   "match": [
+    "schumann"
+   ]
+  },
+  {
+   "name": "Friedrich Burgmüller",
+   "died": 1874,
+   "match": [
+    "burgmüller",
+    "burgmuller",
+    "burgmueller"
+   ]
+  },
+  {
+   "name": "Ferdinand Beyer",
+   "died": 1863,
+   "match": [
+    "beyer"
+   ]
+  },
+  {
+   "name": "Henri Bertini",
+   "died": 1876,
+   "match": [
+    "bertini"
+   ]
+  },
+  {
+   "name": "Jean-Baptiste Duvernoy",
+   "died": 1880,
+   "match": [
+    "duvernoy"
+   ]
+  },
+  {
+   "name": "Stephen Heller",
+   "died": 1888,
+   "match": [
+    "heller"
+   ]
+  },
+  {
+   "name": "Louis Köhler",
+   "died": 1886,
+   "match": [
+    "köhler",
+    "kohler",
+    "koehler"
+   ]
+  },
+  {
+   "name": "Félix Le Couppey",
+   "died": 1887,
+   "match": [
+    "le couppey",
+    "couppey"
+   ]
+  },
+  {
+   "name": "Charles-Louis Hanon",
+   "died": 1900,
+   "match": [
+    "hanon"
+   ]
+  },
+  {
+   "name": "Cornelius Gurlitt",
+   "died": 1901,
+   "match": [
+    "gurlitt"
+   ]
+  },
+  {
+   "name": "Carl Reinecke",
+   "died": 1910,
+   "match": [
+    "reinecke"
+   ]
+  },
+  {
+   "name": "Louis Streabbog",
+   "died": 1886,
+   "match": [
+    "streabbog"
+   ]
+  },
+  {
+   "name": "Franz Liszt",
+   "died": 1886,
+   "match": [
+    "liszt"
+   ]
+  },
+  {
+   "name": "Johannes Brahms",
+   "died": 1897,
+   "match": [
+    "brahms"
+   ]
+  },
+  {
+   "name": "Pyotr Ilyich Tchaikovsky",
+   "died": 1893,
+   "match": [
+    "tchaikovsky",
+    "tschaikowsky",
+    "chaikovsky",
+    "tchaikovski"
+   ]
+  },
+  {
+   "name": "Modest Mussorgsky",
+   "died": 1881,
+   "match": [
+    "mussorgsky",
+    "moussorgsky"
+   ]
+  },
+  {
+   "name": "Antonín Dvořák",
+   "died": 1904,
+   "match": [
+    "dvořák",
+    "dvorak",
+    "dvorák"
+   ]
+  },
+  {
+   "name": "Edvard Grieg",
+   "died": 1907,
+   "match": [
+    "grieg"
+   ]
+  },
+  {
+   "name": "Georges Bizet",
+   "died": 1875,
+   "match": [
+    "bizet"
+   ]
+  },
+  {
+   "name": "Jacques Offenbach",
+   "died": 1880,
+   "match": [
+    "offenbach"
+   ]
+  },
+  {
+   "name": "Gioachino Rossini",
+   "died": 1868,
+   "match": [
+    "rossini"
+   ]
+  },
+  {
+   "name": "Giuseppe Verdi",
+   "died": 1901,
+   "match": [
+    "verdi"
+   ]
+  },
+  {
+   "name": "Giacomo Puccini",
+   "died": 1924,
+   "match": [
+    "puccini"
+   ]
+  },
+  {
+   "name": "Johann Strauss II",
+   "died": 1899,
+   "match": [
+    "johann strauss",
+    "strauss"
+   ]
+  },
+  {
+   "name": "Louis Moreau Gottschalk",
+   "died": 1869,
+   "match": [
+    "gottschalk"
+   ]
+  },
+  {
+   "name": "Camille Saint-Saëns",
+   "died": 1921,
+   "match": [
+    "saint-saëns",
+    "saint-saens",
+    "saint saens"
+   ]
+  },
+  {
+   "name": "Gabriel Fauré",
+   "died": 1924,
+   "match": [
+    "fauré",
+    "faure"
+   ]
+  },
+  {
+   "name": "Isaac Albéniz",
+   "died": 1909,
+   "match": [
+    "albéniz",
+    "albeniz"
+   ]
+  },
+  {
+   "name": "Enrique Granados",
+   "died": 1916,
+   "match": [
+    "granados"
+   ]
+  },
+  {
+   "name": "Scott Joplin",
+   "died": 1917,
+   "match": [
+    "joplin"
+   ]
+  },
+  {
+   "name": "Claude Debussy",
+   "died": 1918,
+   "match": [
+    "debussy"
+   ]
+  },
+  {
+   "name": "Erik Satie",
+   "died": 1925,
+   "match": [
+    "satie"
+   ]
+  },
+  {
+   "name": "Edward Elgar",
+   "died": 1934,
+   "match": [
+    "elgar"
+   ]
+  },
+  {
+   "name": "Gustav Holst",
+   "died": 1934,
+   "match": [
+    "holst"
+   ]
+  },
+  {
+   "name": "Maurice Ravel",
+   "died": 1937,
+   "match": [
+    "ravel"
+   ]
+  },
+  {
+   "name": "Sergei Rachmaninoff",
+   "died": 1943,
+   "match": [
+    "rachmaninoff",
+    "rachmaninov",
+    "rachmaninow"
+   ]
+  },
+  {
+   "name": "Alexander Scriabin",
+   "died": 1915,
+   "match": [
+    "scriabin",
+    "skryabin"
+   ]
+  },
+  {
+   "name": "Traditional",
+   "died": 0,
+   "match": [
+    "traditional",
+    "trad.",
+    "trad",
+    "folk",
+    "folksong",
+    "folk song",
+    "anonymous",
+    "anon.",
+    "anon",
+    "unknown",
+    "children's song",
+    "nursery rhyme"
+   ]
+  }
+ ]
+}

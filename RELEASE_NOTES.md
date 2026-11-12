@@ -1,6 +1,10 @@
 # v0.23.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
+
+## New
+
+- **Piano Follow 1.0.0: sheet music that follows your playing.** A landscape score on the reader's music stand, with a free catalog of 51 public-domain and CC0 pieces (mostly beginner and easy, plus well-known classical works; by level, composer or search; each with its source and license), and your own MusicXML or ABC scores through the new [score converter](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/piano/), which engraves them for the reader and writes them to its card. With a Bluetooth MIDI keyboard the app follows your playing: **Page turn** turns each page on its last note (back to the start of a written repeat when the music repeats), **Follow** also marks the bar you are playing, and **Practice** (right hand, left hand or both) waits for the right notes and lists the bars with mistakes at the end. Mistakes, skipped notes and bars played again are expected; the app waits for the end of a page before turning it. The keyboard is remembered and found again by itself. Without a keyboard it is a plain score reader. Needs **26110501** or later (API 2.21, Bluetooth).
 
 ## Changed
 
@@ -11,6 +15,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 | file | content |
 |---|---|
+| `pianofollow.xtapp` | Piano Follow 1.0.0 (new) |
 | `readwise.xtapp` | Readwise 1.2.1 |
 | `instapaper.xtapp` | Instapaper 1.2.1 |
 | `wallabag.xtapp` | wallabag 1.3.1 |

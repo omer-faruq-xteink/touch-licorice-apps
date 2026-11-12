@@ -1,0 +1,12 @@
+{
+  "name": "piano-follow-tools",
+  "private": true,
+  "type": "module",
+  "description": "Piano Follow: converter (MusicXML/ABC -> .xtscore) and catalog tools",
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "verovio": "6.4.1",
+    "yaml": "2.9.1"
+  }
+}

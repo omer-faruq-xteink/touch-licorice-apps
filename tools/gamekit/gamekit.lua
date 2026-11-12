@@ -86,7 +86,8 @@ end
 
 ------------------------------------------------------------------ boxes
 
-local BOX_X, BOX_W, ROW_H, GAP = 20, kit.W - 40, 56, 10
+local BOX_X, ROW_H, GAP = 20, 56, 10
+local BOX_W = kit.W - 40      -- refreshed in layout(): an app may set kit.W, kit.H for a landscape screen
 local modal = nil
 
 function kit.show(m) modal = m end
@@ -94,6 +95,7 @@ function kit.close() modal = nil end
 function kit.modal() return modal end
 
 local function layout(m)
+  BOX_W = kit.W - 40
   local lines = {}
   if m.title then for _k, l in ipairs(kit.wrap(m.title, 'medium', BOX_W - 40)) do lines[#lines + 1] = { l, 'medium' } end end
   for _k, s in ipairs(m.lines or {}) do

@@ -1,0 +1,8 @@
+# PC BLE MIDI keyboard simulator (tools/piano/blemidi_sim.py), Windows: install into tools/piano/.venv
+winrt-runtime==4.1.0
+winrt-Windows.Foundation==4!10.0.28000.2957
+winrt-Windows.Devices.Bluetooth==4!10.0.28000.2957
+winrt-Windows.Devices.Bluetooth.GenericAttributeProfile==4!10.0.28000.2957
+winrt-Windows.Storage.Streams==4!10.0.28000.2957
+mido==1.3.3
+python-rtmidi==1.5.8

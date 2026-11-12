@@ -1,0 +1,758 @@
+# Piano Follow catalog: a reviewed selection from PDMX (https://zenodo.org/records/15571083).
+# src: path inside the PDMX folder; review: todo | ok | rejected (only ok is published).
+# Rights: public domain or CC0 arrangement (PDMX license, no license_conflict), composer died before
+# 1955 and the work published before 1931, or a genuine traditional tune (checked by hand).
+# Reviewed 2026-11-12 (landscape pages): 51 ok; the rest rejected for now (too long for a starter set,
+# duplicates, a 4-staff file, unclear identity).
+pieces:
+- id: clair-de-lune-easy
+  src: mxl/6/54/QmNyaupjnP2L7AgSvjuq5TmDoDhqCJiKhGd8rT9CefbkMY.mxl
+  title: Clair de Lune (easy)
+  composer: Claude Debussy
+  license: CC0
+  url: https://musescore.com/score/5933450
+  review: rejected
+- id: clair-de-lune-beginner
+  src: mxl/8/52/QmQxJ4tsA3Xdsym1ZgNNRkGpiX8cT5yaKnPVMfFVvDDsMo.mxl
+  title: Clair de Lune (beginner version)
+  composer: Claude Debussy
+  license: CC0
+  url: https://musescore.com/score/5921846
+  level: beginner
+  review: ok
+- id: minuet-in-g-petzold
+  src: mxl/4/57/QmeZGCq4yEPgFQahrVwV5AsP1bvLtv8zwaxRhD7tBwPRJH.mxl
+  title: Minuet in G (Anna Magdalena Notebook)
+  composer: Christian Petzold
+  license: CC0
+  url: https://musescore.com/score/6180412
+  level: easy
+  review: ok
+- id: mozart-minuet-f-k2
+  src: mxl/0/18/QmaENucP3iVPGGeUtgdj959VJEx116ke3SYH4X5s993nhN.mxl
+  title: Minuet in F major, K. 2
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/58882
+  level: easy
+  review: ok
+- id: w-a-mozart-minuet-in-g-major-k1e
+  src: mxl/10/43/QmSSZAHjALT7zf8hpZpLFXaBHB9ytuBETs4QbhvYDFSAaa.mxl
+  title: W. A. Mozart Minuet in G Major K1e.
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/5847376
+  review: rejected
+- id: mozart-minuet-c-k1f
+  src: mxl/11/16/QmTDBFbPLYF24o8ihUjDJ5XUYpstJj2VexoBQovTLXXNsS.mxl
+  title: Minuet in C major, K. 1f
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/5930179
+  level: easy
+  review: ok
+- id: w-a-mozart-minuet-in-f-major-k5
+  src: mxl/12/19/QmUfTS6K5Js8oBzGHXSD3f8QqxKq2q7yJH5zxG5FzhiHEe.mxl
+  title: W. A. Mozart Minuet in F Major K5.
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/5931431
+  review: rejected
+- id: mozart-lullaby
+  src: mxl/2/49/QmcV1mc7NZy353NRt1XFR6TaEVe7tWC7wcf5EPaQswfyTy.mxl
+  title: Lullaby, K. 350
+  composer: Wolfgang Amadeus Mozart
+  license: Public domain
+  url: https://musescore.com/score/962866
+  level: easy
+  review: ok
+- id: burlesque-g
+  src: mxl/10/10/QmSAKUUM14Kdbhn8ZnsfvWjpoHGojgfpRLVPPUx9cfaTxa.mxl
+  title: Burlesque in G major (Leopold Mozart notebook)
+  composer: Wolfgang Amadeus Mozart
+  license: Public domain
+  url: https://musescore.com/score/1669456
+  level: easy
+  review: ok
+- id: mozart-k331-theme
+  src: mxl/4/42/QmeswnMFsq7kKrfJU2KHcucQ55D1psa3djU7BiYUptXPPR.mxl
+  title: Theme from Sonata K. 331
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/5744456
+  level: beginner
+  review: ok
+- id: ode-alegria-nona-sinfonia
+  src: mxl/15/43/QmXSLQKVZPn958cnVLFwDb7oLrkEFAEL98u6RvxCGx92zq.mxl
+  title: Ode à Alegria (Nona Sinfonia)
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/292651
+  review: rejected
+- id: ode-to-joy
+  src: mxl/16/30/QmYLujmiUZXfVaKgu2EjF2xA6wqGBrRZbRRaee32562scp.mxl
+  title: Ode to Joy (Symphony No. 9)
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5945055
+  level: beginner
+  review: ok
+- id: symphony-no-5-beethoven-easy-piano
+  src: mxl/1/2/Qmb3TdvE21azQCaKve5SGrA5zVr8aXS9Mynhz8f1R1bbWd.mxl
+  title: Symphony No. 5 Beethoven Easy Piano
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5958295
+  review: rejected
+- id: beethoven-symphony-7-2nd-movement-allegretto-sim
+  src: mxl/10/46/QmSuJuQ8iPEfz8rTTr1gm5Ti9YLRwP4oCtELEE4msNm1HE.mxl
+  title: Beethoven Symphony 7 2nd Movement (Allegretto) Simple Piano arrangement
+  composer: Ludwig van Beethoven
+  license: Public domain
+  url: https://musescore.com/score/747201
+  review: rejected
+- id: beethoven-russian-folk-song
+  src: mxl/0/22/QmaGkwceqGBDhCQ8j8S2qAaCKyrVrUXU3Y1PD2NHVF5EL4.mxl
+  title: Russian Folk Song, Op. 107 No. 3
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5914916
+  level: easy
+  review: ok
+- id: beethoven-sonatina-g
+  src: mxl/4/44/QmetPJWpxk5JX5tHPziMZZf4y1FzkEDYW3PDtnfv2BSN1z.mxl
+  title: Sonatina in G major, Anh. 5 No. 1
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5907036
+  level: intermediate
+  review: ok
+- id: sonatine-in-f-major-woo-anh-5-beethoven
+  src: mxl/11/22/QmTGp6XWcEQqR1nTn2LrKV4Rg2JdJfsrEAvh7coVkbeKoS.mxl
+  title: Sonatine In F Major WoO Anh. 5 Beethoven
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/1635126
+  review: rejected
+- id: swan-lake-theme
+  src: mxl/7/21/QmPgMNcBd5ozzUrUffL8ocPSzTA68EPU2UNqG38zbsfY4L.mxl
+  title: Swan Lake (theme)
+  composer: Pyotr Ilyich Tchaikovsky
+  license: CC0
+  url: https://musescore.com/score/5964065
+  level: easy
+  review: ok
+- id: 8-waltz-childrens-album-tchaikovsky
+  src: mxl/7/55/QmPYa6XPhNR2SAyGq9dzgkrnSeaX3UtobGwBPZdcqTNc3f.mxl
+  title: 8. Waltz Childrens Album Tchaikovsky
+  composer: Pyotr Ilyich Tchaikovsky
+  license: Public domain
+  url: https://musescore.com/score/912266
+  review: rejected
+- id: morning-mood
+  src: mxl/7/47/QmPUNHoPbosz4QLCQuAYoU1NmsCxVQGScfv9xKvq5sTYhV.mxl
+  title: Morning Mood (Peer Gynt)
+  composer: Edvard Grieg
+  license: CC0
+  url: https://musescore.com/score/4812602
+  level: intermediate
+  review: ok
+- id: pomp-and-circumstance
+  src: mxl/3/1/Qmd2zwg73vJnNrTXsNfrSim8yYPaiK9ZmbKF36DuNTYeXb.mxl
+  title: Pomp and Circumstance
+  composer: Edward Elgar
+  license: CC0
+  url: https://musescore.com/score/4603731
+  review: rejected
+- id: william-tell-theme
+  src: mxl/17/46/QmZumwDkqLuntGZSVsXLf5ohjfC9VVZk7ZKVB6uGHdwV37.mxl
+  title: William Tell Overture (theme)
+  composer: Gioachino Rossini
+  license: CC0
+  url: https://musescore.com/score/6007144
+  level: beginner
+  review: ok
+- id: radetzky-march-for-easy-piano
+  src: mxl/15/35/QmXoyqoicW7nxZHoHhpKVWKEL7zJvDov5mk1P8ceJYibGR.mxl
+  title: Radetzky March for easy piano
+  composer: Johann Strauss II
+  license: CC0
+  url: https://musescore.com/score/45821
+  review: rejected
+- id: blue-danube
+  src: mxl/10/34/QmSN3CLBB6nE2PiZ1enzMZ1cE7qcrDEh9T62SZL2jPpKqV.mxl
+  title: The Blue Danube (theme)
+  composer: Johann Strauss II
+  license: CC0
+  url: https://musescore.com/score/5462208
+  level: easy
+  review: ok
+- id: brahms-lullaby
+  src: mxl/7/20/QmPFQZeVnLpVk8bmcBaBuM6goEzx9RTSXhHUzbf2oUvzLm.mxl
+  title: Lullaby (Wiegenlied)
+  composer: Johannes Brahms
+  license: Public domain
+  url: https://musescore.com/score/5767746
+  level: easy
+  review: ok
+- id: brahms-op-39-n9
+  src: mxl/7/6/QmP72hCMtEN3AhRVvLodL3zak9gsktuiLJptYcwuv8p88p.mxl
+  title: Brahms op. 39 n9
+  composer: Johannes Brahms
+  license: CC0
+  url: https://musescore.com/score/6344963
+  review: rejected
+- id: jupiter-theme
+  src: mxl/4/1/Qme2zmL2nofwN5b7xQCS9UjiVLMuaoGt3Mx4tFqdMNQBqJ.mxl
+  title: Jupiter (theme, The Planets)
+  composer: Gustav Holst
+  license: CC0
+  url: https://musescore.com/score/6007150
+  level: easy
+  review: ok
+- id: ombra-mai-fu-easy-piano-edit-from-opera-serse-la
+  src: mxl/0/43/QmaS965mVkXySZeanyMVhc9iS467NCauyBKry2oB4gGhKT.mxl
+  title: Ombra mai fu (Easy piano edit.) from Opera serse Largo - G.Handel
+  composer: George Frideric Handel
+  license: CC0
+  url: https://musescore.com/score/3673846
+  review: rejected
+- id: handel-sarabande
+  src: mxl/16/4/QmY5z81RCunsZb2svQ3c8w24Qc9upfGkP55ws4EzCbv3LE.mxl
+  title: Sarabande in D minor, HWV 437
+  composer: George Frideric Handel
+  license: CC0
+  url: https://musescore.com/score/83019
+  level: intermediate
+  review: ok
+- id: handel-g-f-menuet-hwv-434-4
+  src: mxl/10/57/QmSZqC3s6dQqw5zWsB2XXcSVQu2Ry8iTbVxSVvio4zqeG2.mxl
+  title: Handel G.F. Menuet HWV 434 4
+  composer: George Frideric Handel
+  license: CC0
+  url: https://musescore.com/score/6039484
+  review: rejected
+- id: march-from-scipio
+  src: mxl/2/47/QmcUwJuUknGx1rotwxPoi1cqS7QyoqvxsXnUAcWMKxq1Su.mxl
+  title: March from Scipio
+  composer: George Frideric Handel
+  license: CC0
+  url: https://musescore.com/score/5887309
+  review: rejected
+- id: duvernoy-op176-1
+  src: mxl/10/29/QmSKsFjf24tonfSwbfx62wkQDrbHzAnR6Tt15DAEM2RRKH.mxl
+  title: Elementary Study, Op. 176 No. 1
+  composer: Jean-Baptiste Duvernoy
+  license: CC0
+  url: https://musescore.com/score/144446
+  level: easy
+  review: ok
+- id: elementary-studies-op-176-etude-6-by-jean-baptis
+  src: mxl/15/7/QmX8Adb4sJp5KsY7PS6ECNa4hxci1voWafLU5p99PSygXg.mxl
+  title: Elementary Studies (op 176) Etude 6 by Jean Baptiste Duvernoy
+  composer: Jean-Baptiste Duvernoy
+  license: CC0
+  url: https://musescore.com/score/1691766
+  review: rejected
+- id: elementary-studies-op-176-etude-2-by-jean-baptis
+  src: mxl/8/45/QmQTS9efHxwxbt8RMrJeiZPia9r4kSKRP696C2o7Xa4NKX.mxl
+  title: Elementary Studies (op 176) Etude 2 by Jean Baptiste Duvernoy
+  composer: Jean-Baptiste Duvernoy
+  license: CC0
+  url: https://musescore.com/score/149033
+  review: rejected
+- id: burgmuller-clear-stream
+  src: mxl/16/8/QmY9NPgydX3kdd9cJbZwrsH2HXTUMY9FaP56fzfnVHhSJ6.mxl
+  title: The Clear Stream, Op. 100 No. 7
+  composer: Friedrich Burgmüller
+  license: CC0
+  url: https://musescore.com/score/6344453
+  level: intermediate
+  review: ok
+- id: burgmuller-arabesque
+  src: mxl/17/19/QmZfHayYiHJJBpxa5yZpMwR9RDMcDRYGvFC25NyyKa8ziH.mxl
+  title: Arabesque, Op. 100 No. 2
+  composer: Friedrich Burgmüller
+  license: CC0
+  url: https://musescore.com/score/5849868
+  level: intermediate
+  review: ok
+- id: czerny-op-599-n-63
+  src: mxl/14/41/QmWRxYQDfXpXsQj9RbrcVMza6LNZk7PLTYYcXTcZnurZD5.mxl
+  title: Czerny Op.599 n.63
+  composer: Carl Czerny
+  license: CC0
+  url: https://musescore.com/score/6080531
+  review: rejected
+- id: minuet-d-minor-anh-132
+  src: mxl/10/14/QmSCFycf8NBkcyhemv2X2ZVVVucp1v6sG1Emook2w7Qo1K.mxl
+  title: Minuet in D minor, BWV Anh. 132
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/4355521
+  level: easy
+  review: ok
+- id: minuet-in-g-minor
+  src: mxl/13/19/QmVf6RECC5ZyPeEffyXEZtr1eBi6Ljj99NYNfYJC7iBVsv.mxl
+  title: Minuet in G minor (Anna Magdalena Notebook)
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/5836081
+  level: easy
+  review: ok
+- id: aria-anna-magdalena
+  src: mxl/13/18/QmVESzhQqB1q62QNkPUUhFj5jgEdJduukkuYsY51SmLt1x.mxl
+  title: Aria (Anna Magdalena Notebook)
+  composer: Johann Sebastian Bach
+  license: Public domain
+  url: https://musescore.com/score/1041461
+  level: easy
+  review: ok
+- id: 01-marche-in-d-major-c-p-e-bach
+  src: mxl/7/33/QmPntU8tX6xg8CsDWpWWoMhFskjyS15Dqez1baCcKouRwZ.mxl
+  title: 01- Marche in D Major C.P.E. Bach
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/5841493
+  review: rejected
+- id: march-in-e-flat-major-anh127
+  src: mxl/16/37/QmYPciBiuneQXwQTeYBbiA3FfnMewB6rM81xSwgdmvSg27.mxl
+  title: march in e-flat major anh127
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/5724080
+  review: rejected
+- id: bach-prelude-c-bwv846
+  src: mxl/1/20/QmbFt6yc1EUxZvqTVUg7xQY531BbkUcxn8uL3VYrB2uwjB.mxl
+  title: Prelude in C major, BWV 846
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/949476
+  level: intermediate
+  review: ok
+- id: schumann-album-for-the-young-op-68-no-6-the-poor
+  src: mxl/17/29/QmZKna9E8zfnV3rG3KeNafWy2rqXcBiaQwxci1Z8BjuTNH.mxl
+  title: Schumann - Album for the Young Op. 68 No. 6 The Poor Orphan-Child
+  composer: Robert Schumann
+  license: CC0
+  url: https://musescore.com/score/5891528
+  review: rejected
+- id: schumann-op68-16-first-grief
+  src: mxl/8/8/QmQ91CoSnRCiMV4oVgLTJruJcnLjXPS4Myxj5P5o7Rr3ug.mxl
+  title: First Grief, Album for the Young No. 16
+  composer: Robert Schumann
+  license: CC0
+  url: https://musescore.com/score/5945395
+  level: intermediate
+  review: ok
+- id: schumann-op68-4-chorale
+  src: mxl/17/49/QmZV18xdpHyW6Yhdc2uFEALbKNFkHsBX6xbV2qzgLS2J42.mxl
+  title: Chorale, Album for the Young No. 4
+  composer: Robert Schumann
+  license: CC0
+  url: https://musescore.com/score/5872610
+  level: easy
+  review: ok
+- id: schumann-child-falling-asleep
+  src: mxl/3/28/QmdkkfuvTVkCwG7ZxqeqzBW11LKiYNPzSECCdx2XCWmgfc.mxl
+  title: Child Falling Asleep, Kinderszenen No. 12
+  composer: Robert Schumann
+  license: CC0
+  url: https://musescore.com/score/650491
+  level: intermediate
+  review: ok
+- id: chopin-waltz-a-minor
+  src: mxl/17/36/QmZpiR4dVBt5Wo6p6r3XWL8pSmzZ6bAUF9xfwDJfNHqBur.mxl
+  title: Waltz in A minor, B. 150
+  composer: Frédéric Chopin
+  license: CC0
+  url: https://musescore.com/score/4991265
+  level: intermediate
+  review: ok
+- id: chopin-prelude-c-minor
+  src: mxl/11/15/QmTdWdv8SDSC62Hnxm4gCoDbFsJ4vcSwnWbEAbnY7f3kvz.mxl
+  title: Prelude in C minor, Op. 28 No. 20
+  composer: Frédéric Chopin
+  license: CC0
+  url: https://musescore.com/score/1098156
+  level: intermediate
+  review: ok
+- id: chopin-prelude-e-minor
+  src: mxl/0/33/QmanzCS7875c3wuXfewZKx3qARMdn6GvcwJfQ15QGmxQ6n.mxl
+  title: Prelude in E minor, Op. 28 No. 4
+  composer: Frédéric Chopin
+  license: CC0
+  url: https://musescore.com/score/6261482
+  level: intermediate
+  review: ok
+- id: gnossienne-1
+  src: mxl/3/49/QmdV4EjTYTsxUQ5av9jmmFj7Yes4a9oHVCmYQo5YsUyRyt.mxl
+  title: Gnossienne No. 1
+  composer: Erik Satie
+  license: CC0
+  url: https://musescore.com/score/5179301
+  level: intermediate
+  review: ok
+- id: erik-satie-enfantillages-pittoresques-berceuse
+  src: mxl/1/49/QmbVkdMiKVAo54sndFEXNvZ2HApnq4YSRXFkjTiGxHJMjq.mxl
+  title: Erik Satie - Enfantillages Pittoresques - Berceuse
+  composer: Erik Satie
+  license: CC0
+  url: https://musescore.com/score/5747512
+  review: rejected
+- id: faur-dolly-suite-no-1-berceuse
+  src: mxl/3/26/Qmdjg6kQGLDjAZCmbewUZqabGCEvJtB7VCdVcafhU5Dq6S.mxl
+  title: 'Fauré - Dolly Suite No. 1: Berceuse'
+  composer: Gabriel Fauré
+  license: CC0
+  url: https://musescore.com/score/5904479
+  review: rejected
+- id: canon-in-d-easy
+  src: mxl/16/2/QmY3diBD8WJD42S8vMzu9eJvUkgTGUP3rqZ86JjdkXs2Xt.mxl
+  title: Canon in D (easy)
+  composer: Johann Pachelbel
+  license: Public domain
+  url: https://musescore.com/score/1807476
+  level: easy
+  review: ok
+- id: verdi-la-donna-mobile-short-version
+  src: mxl/8/27/QmQJXjY5JG4vKFTJibGJnaYuMzE8oRH52nJrzHG69UUAMT.mxl
+  title: Verdi - La Donna è Mobile (Short Version)
+  composer: Giuseppe Verdi
+  license: CC0
+  url: https://musescore.com/score/5861778
+  review: rejected
+- id: surprise-symphony
+  src: mxl/3/47/QmdUauH9VqGnEtRTkQF4EXmh4Kk4UsEoMpLrsmwqs66Bip.mxl
+  title: Surprise Symphony (theme)
+  composer: Joseph Haydn
+  license: CC0
+  url: https://musescore.com/score/191217
+  level: easy
+  review: ok
+- id: we-wish-you-a-merry-christmas
+  src: mxl/0/48/Qmavwniavih7ELK7Z2pDwpCXoiKPhieynVrY8muxBtuf64.mxl
+  title: We Wish You a Merry Christmas
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5306782
+  review: rejected
+- id: londonderry-air-o-danny-boy-piano-solo
+  src: mxl/7/18/QmPEb1HrBCEgRMjkS8TwYXXz1zNv4RuGUVMb2eTyxiym8S.mxl
+  title: Londonderry Air (O' Danny Boy) Piano solo
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/118124
+  review: rejected
+- id: happy-birthday-piano
+  src: mxl/13/28/QmVkWV8DMxrNwYb94NAczQsrKxCpynQuD9xq8SdxdTPCUE.mxl
+  title: HAPPY BIRTHDAY - Piano
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5847891
+  review: rejected
+- id: amazing-grace-in-g-major-for-piano-breezepiano
+  src: mxl/1/52/QmbxzES4fnA6B1ruzrEEcpA2vYuSytvuC3zYzMciswGyRs.mxl
+  title: Amazing Grace in G major for Piano - BreezePiano
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/4460386
+  review: rejected
+- id: greensleeves-easy
+  src: mxl/8/34/QmQNqsspDfCChXVoAFUo13GUEcSrZcVQVt1JcW4x1B16Qe.mxl
+  title: Greensleeves (easy, with fingering)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6117714
+  level: beginner
+  review: ok
+- id: row-row-row-your-boat
+  src: mxl/14/23/QmWhyQKnEU8xgcB4Tpaa12xZ5AiFmL4xeyoCtwt876ciiX.mxl
+  title: Row, Row, Row Your Boat
+  composer: Traditional
+  license: Public domain
+  url: https://musescore.com/score/127109
+  level: beginner
+  review: ok
+- id: happy-birthday
+  src: mxl/6/17/QmNecetm6r2YzsBRcQ1mCGFLxhvpNusxJF4cJbzHBzRtCq.mxl
+  title: Happy Birthday to You (melody)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6064902
+  level: beginner
+  review: ok
+- id: when-the-saints
+  src: mxl/2/41/QmcRkqTkTZarjJDmdGUknRfZ8yPJhwtc8xBiJJ3f8pbJvR.mxl
+  title: When the Saints Go Marching In
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6052271
+  level: easy
+  review: ok
+- id: red-river-valley
+  src: mxl/16/3/QmY4rmYbmrS3zmyjcYXUsrZXynavkzZPJfavXk2Qr8y7j9.mxl
+  title: Red River Valley
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6404875
+  level: beginner
+  review: ok
+- id: cielito-lindo
+  src: mxl/3/35/QmdotJP1ctgJZG85e3Wr2kWcL1QiSQ7R1e9m8faM6SF8EM.mxl
+  title: Cielito Lindo
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6404874
+  level: beginner
+  review: ok
+- id: greensleeves
+  src: mxl/3/34/QmdNPGyM9Q7jPVVBy7gg5z5VLAZ2Lz3Q4SZWaa5SC52a44.mxl
+  title: Greensleeves
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/2599201
+  review: rejected
+- id: alouette
+  src: mxl/8/40/QmQrQGpXBsF8exusKg66yVxsXwcRPmtu1p6ayd88LCexre.mxl
+  title: Alouette
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6404873
+  level: beginner
+  review: ok
+- id: twinkle-twinkle
+  src: mxl/7/25/QmPinqY1oto3v4qQZjnQ6Rmocg9PmKgtQE7774TYcXXytJ.mxl
+  title: Twinkle, Twinkle (Ah! vous dirai-je, maman)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/1295
+  level: beginner
+  review: ok
+- id: we-wish-you-easy
+  src: mxl/9/6/QmR712RQwPDHCCiajMSiK5yUrD5vQSieBC7CnkLt8ATjyj.mxl
+  title: We Wish You a Merry Christmas (easy)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5831983
+  level: easy
+  review: ok
+- id: wexford-carol
+  src: mxl/17/31/QmZmLPG8GasJ4obmYNJkWjKwfngAHNGnRtr4TCHPkstqKC.mxl
+  title: The Wexford Carol (melody)
+  composer: Traditional
+  license: Public domain
+  url: https://musescore.com/score/388941
+  level: beginner
+  review: ok
+- id: swallowtail-jig-for-piano
+  src: mxl/11/16/QmTD2o8mJCv5g4y8D9UzExFaQG4apP1sGBipP5g4VtJmkW.mxl
+  title: Swallowtail Jig (for Piano)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5149019
+  review: rejected
+- id: the-irish-rover
+  src: mxl/3/1/Qmd2vTckqKPuSxxA5yu1xs8o5zXnxVS4dvoE8WdUCKuNwR.mxl
+  title: The Irish Rover
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5111
+  review: rejected
+- id: i-ve-been-working-on-the-railroad
+  src: mxl/17/25/QmZiUaj5UMfMXdcbFM4BQPzdXomp8MPGS8U7CwguWE6mbo.mxl
+  title: I've Been Working on the Railroad
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6340686
+  review: rejected
+- id: dark-eyes
+  src: mxl/7/55/QmPYit3qLZ6wyHzCwXVR2njRMCEkbZsnRaVbu2cCvACmnD.mxl
+  title: Dark Eyes
+  composer: Traditional
+  license: Public domain
+  url: https://musescore.com/score/67862
+  review: rejected
+- id: itsy-bitsy-spider
+  src: mxl/6/41/QmNR8R4g3MJYDxTEPzSR9W4baosPFtMMTM6iZWtjpkDnDq.mxl
+  title: The Itsy Bitsy Spider
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6404868
+  level: beginner
+  review: ok
+- id: romance-anonimo-romanza
+  src: mxl/17/3/QmZ4ACuGVhoKNwbrqv7KYbA8Yfn3W34H3snaD3UeCUGSz4.mxl
+  title: Romance Anonimo (Romanza)
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/5371941
+  review: rejected
+- id: down-by-the-riverside
+  src: mxl/2/49/QmcVLsCUT8bZV1K2MYUyHNBDxSJUUK8eDFR3GTZU2ih3xH.mxl
+  title: Down by the Riverside
+  composer: Traditional
+  license: CC0
+  url: https://musescore.com/score/6272082
+  review: rejected
+- id: fur-elise
+  src: mxl/9/14/QmRChN12tY2yeGtMsns9hCLa8tLVufrP2XkHUGryLe9R4Z.mxl
+  title: Für Elise
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5036717
+  level: intermediate
+  review: ok
+- id: moonlight-sonata-1
+  src: mxl/4/46/QmeuK3Unr7ybzDCvVVbU4Eu878nUjDhRJpZMyzzMY5EQyr.mxl
+  title: Moonlight Sonata, 1st movement
+  composer: Ludwig van Beethoven
+  license: CC0
+  url: https://musescore.com/score/5300478
+  level: advanced
+  review: ok
+- id: chopin-nocturne-in-e-minor-op-72-no-1
+  src: mxl/17/26/QmZjvcr2jKehXfKzwznakmHNVAdwN2zX86NGYD7DHw4Qgz.mxl
+  title: Chopin Nocturne in E Minor Op. 72 No. 1
+  composer: Frédéric Chopin
+  license: CC0
+  url: https://musescore.com/score/5037212
+  review: rejected
+- id: debussy-premi-re-arabesque-l-66-no-1
+  src: mxl/10/25/QmSiufNxXsLotuQDJMEjTj3AbLr5H4K3mfB4LbjeB6UwTm.mxl
+  title: Debussy Première Arabesque L. 66 No. 1
+  composer: Claude Debussy
+  license: CC0
+  url: https://musescore.com/score/5077352
+  review: rejected
+- id: debussy-girl-flaxen-hair
+  src: mxl/15/25/QmXiANoF15wqxY1T8hka5xUpgtC7ZNWWHciJ5qJe9mEgXf.mxl
+  title: The Girl with the Flaxen Hair
+  composer: Claude Debussy
+  license: CC0
+  url: https://musescore.com/score/5125937
+  level: advanced
+  review: ok
+- id: passacaglia-handel-halvorsen
+  src: mxl/4/8/Qme9QyPowPWgPLW5hsyamiBuUP2G3gnTin21M6BcUcnJPQ.mxl
+  title: Passacaglia (Handel / Halvorsen)
+  composer: George Frideric Handel
+  license: CC0
+  url: https://musescore.com/score/5889760
+  level: advanced
+  review: ok
+- id: cannon-in-d
+  src: mxl/16/31/QmYmGt6ezXWEAau77uWnYaJ1EioFBvvWwMTNhrxUNCX678.mxl
+  title: Cannon in D
+  composer: Johann Pachelbel
+  license: Public domain
+  url: https://musescore.com/score/635941
+  review: rejected
+- id: bach-marcello-adagio-bwv974
+  src: mxl/2/55/QmcYdVAdoqPzSreBT2Aihn5XKTNFDreFh9mbuSgeRkEGoZ.mxl
+  title: Adagio, BWV 974 (after Marcello)
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/53267
+  level: advanced
+  review: ok
+- id: bach-toccata-and-fugue-in-d-minor-piano-solo
+  src: mxl/3/0/Qmd1eQ3eecd9ZnMkV1YLLmJtWnLGNNBN3nUXzQkKXwmG2h.mxl
+  title: Bach Toccata and Fugue in D Minor (Piano solo)
+  composer: Johann Sebastian Bach
+  license: CC0
+  url: https://musescore.com/score/5522509
+  review: rejected
+- id: sergei-rachmaninoff-prelude-op-3-no-2-in-c-sharp
+  src: mxl/10/47/QmSUDHGgsU29t731Aar6xWBZnkp2QLrs6mPQWMk8uPsiNh.mxl
+  title: 'Sergei Rachmaninoff: Prelude Op.3 No.2 in C-sharp minor'
+  composer: Sergei Rachmaninoff
+  license: CC0
+  url: https://musescore.com/score/6177451
+  review: rejected
+- id: mountain-king
+  src: mxl/15/53/QmXXdTmXQW5jKbHEHgHuZFuW57wNrtApiba8WidW76APCp.mxl
+  title: In the Hall of the Mountain King
+  composer: Edvard Grieg
+  license: CC0
+  url: https://musescore.com/score/4836471
+  level: advanced
+  review: ok
+- id: schubert-liszt-st-ndchen
+  src: mxl/11/18/QmTEDu1sV1CPr6k7kopsCAyjw4uEv7iT6PoaJDsNEyoGTB.mxl
+  title: Schubert/Liszt - Ständchen
+  composer: Franz Schubert
+  license: CC0
+  url: https://musescore.com/score/4907304
+  review: rejected
+- id: franz-liszt-liebestraum-no-3-in-a-flat-major
+  src: mxl/15/49/QmXVDzZEQFK4udkxBwDnRhVyFodUByGiwQN9AicG3YAobk.mxl
+  title: 'Franz Liszt: Liebestraum No.3 in A-flat major'
+  composer: Franz Liszt
+  license: CC0
+  url: https://musescore.com/score/6282292
+  review: rejected
+- id: solace
+  src: mxl/5/29/QmfKRi7kV739GSpACKLUA7vNx9QY82Z42mtANDwUajvsip.mxl
+  title: Solace
+  composer: Scott Joplin
+  license: CC0
+  url: https://musescore.com/score/2039191
+  review: rejected
+- id: maple-leaf-rag-qrs-7308
+  src: mxl/17/0/QmZ1HBbp1HNyKAzEQbKALxQCLPxNA5rXC4fbYVVNx43zDa.mxl
+  title: Maple Leaf Rag (QRS 7308)
+  composer: Scott Joplin
+  license: CC0
+  url: https://musescore.com/score/5879968
+  review: rejected
+- id: october-autumn-song-from-tchaikovsky-s-the-seaso
+  src: mxl/4/13/QmecvQCAXGvX7dNDBLKdEMYhxaehk3gdBMQ5ccBY5wGDS8.mxl
+  title: 'October: Autumn Song from Tchaikovsky''s The Seasons'
+  composer: Pyotr Ilyich Tchaikovsky
+  license: CC0
+  url: https://musescore.com/score/5333841
+  review: rejected
+- id: dance-of-the-sugar-plum-fairy
+  src: mxl/2/26/Qmcj8gXjgCTnbhZHt99y5ZFianqvgGw1RSJ45TQnL62XVt.mxl
+  title: Dance of the Sugar Plum Fairy
+  composer: Pyotr Ilyich Tchaikovsky
+  license: Public domain
+  url: https://musescore.com/score/1270291
+  review: rejected
+- id: sonata-no-16-k-545-3rd-movement
+  src: mxl/7/9/QmPaDt5oro5S5MxK47tRyuppCxwhyyTfe5568yRv4494KE.mxl
+  title: Sonata No. 16 K 545 3rd Movement
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/6137406
+  review: rejected
+- id: turkish-march
+  src: mxl/9/13/QmRc72qvsdoJZcp9zVjKXy7qskvXtMCpxjhp59DreLwzv4.mxl
+  title: Turkish March (Rondo alla Turca)
+  composer: Wolfgang Amadeus Mozart
+  license: CC0
+  url: https://musescore.com/score/6007082
+  level: intermediate
+  review: ok
+- id: mendelssohn-songs-without-words-no-1-piano-solo
+  src: mxl/4/36/QmepdEgDRkBfNLzy9QE7zjnA8ooBKWKZWHQFgErQ2XaDPb.mxl
+  title: Mendelssohn Songs Without Words (No. 1) Piano solo
+  composer: Felix Mendelssohn
+  license: CC0
+  url: https://musescore.com/score/4889297
+  review: rejected
+- id: elgar-enigma-variations-xi-nimrod
+  src: mxl/9/6/QmR7hknmXF7kVWhWN1oFmom5w7AnrgCimtuXfXWwajnXpk.mxl
+  title: Elgar - Enigma Variations - XI. Nimrod
+  composer: Edward Elgar
+  license: CC0
+  url: https://musescore.com/score/5062595
+  review: rejected
+- id: maurice-ravel-pavane-pour-une-infante-d-funte-m
+  src: mxl/15/20/QmXFuVoxG3zw7YHrEG68RWmj3xTkTd7foh8UWiNecWD43r.mxl
+  title: Maurice Ravel - Pavane pour une infante défunte M. 19
+  composer: Maurice Ravel
+  license: CC0
+  url: https://musescore.com/score/4810274
+  review: rejected

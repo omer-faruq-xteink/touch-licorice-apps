@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piano scores</title>
+<meta name="description" content="Convert your own MusicXML or ABC sheet music for Piano Follow on the Xteink X4 Pro.">
+<link rel="stylesheet" href="../../assets/site.css">
+<style>
+  #pages { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  #pages .page { width: 240px; max-width: 100%; height: auto; border: 1px solid #999; background: #fff; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Piano scores</h1>
+  <p class="lead">Piano Follow shows sheet music on the reader and follows your playing. Pieces from its catalog
+    download on the reader; here you can add your own: the music is engraved for the reader's screen and written
+    to its card. Nothing is uploaded.</p>
+
+  <ol class="steps">
+    <li>
+      <p>Add a score as <strong>MusicXML</strong> (<code>.musicxml</code>, <code>.xml</code>, <code>.mxl</code>),
+        which MuseScore, Sibelius, Finale and Dorico can export, or <strong>ABC</strong> (<code>.abc</code>).</p>
+      <div class="drop" tabindex="0" id="drop">
+        <strong>Drop the file here, or click to choose</strong>
+        <span>.musicxml, .xml, .mxl or .abc</span>
+        <input type="file" accept=".musicxml,.xml,.mxl,.abc">
+      </div>
+    </li>
+    <li id="step2" hidden>
+      <div class="panel">
+        <div class="row">
+          <label class="field">Title <input type="text" id="title" size="28"></label>
+          <label class="field">Composer <input type="text" id="composer" size="20"></label>
+        </div>
+        <div class="row"><button id="go">Convert</button></div>
+        <div class="msg" id="result"></div>
+        <div id="pages"></div>
+        <div class="row" id="save" hidden>
+          <button id="write">Write to the reader</button>
+          <button id="download">Download .xtscore</button>
+        </div>
+        <div class="msg" id="saved"></div>
+      </div>
+    </li>
+    <li>
+      <p>With the reader in USB mode, <strong>Write to the reader</strong> asks once for the card (choose the card
+        itself) and puts the file in <code>AppFiles/pianofollow/</code> (Chrome or Edge on a computer). Or download
+        it and copy it there yourself.</p>
+    </li>
+  </ol>
+  <p class="note">MIDI files, PDFs and photos of sheet music cannot be converted: notation guessed from MIDI
+    reads badly, and reading notes from images is a different problem. Use files you have the right to use;
+    they stay on your computer and your reader. The engraver is
+    <a href="https://www.verovio.org/">Verovio</a> (LGPL), loaded from a public CDN.</p>
+</main>
+<script type="module" src="page.js"></script>
+</body>
+</html>

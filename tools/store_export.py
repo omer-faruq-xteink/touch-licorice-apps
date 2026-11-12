@@ -38,12 +38,13 @@ ICON_PX = 88
 STORE_ICON_PX = 512
 # the API version a store build declares: Studio checks every call against it (the sideloaded
 # packages keep "2.0", which the X4 Pro's host runs as 2.9); 2.1 zlib, image decode; 2.4
-# net:keep_wifi; 2.8 lockscreen:clear_default; 2.2 ctx.state; 2.9 ctx.files; 2.18 device:keep_awake
+# net:keep_wifi; 2.8 lockscreen:clear_default; 2.2 ctx.state; 2.9 ctx.files; 2.18 device:keep_awake;
+# 2.21 layer:set_bits and ctx.ble (2.19)
 STORE_API = {'calendar': '2.9', 'notes': '2.2', 'tasks': '2.18', 'timekeeper': '2.18', 'weather': '2.8', 'tbr': '2.8', 'hackernews': '2.18', 'wikipedia': '2.9', 'rss': '2.18', 'instapaper': '2.18', 'wallabag': '2.18', 'readwise': '2.18', 'dict': '2.9', 'anki': '2.9',
              'game2048': '2.2', 'sokoban': '2.2', 'sudoku': '2.2', 'suguru': '2.2',
              'litclock': '2.9', 'wordclock': '2.9', 'skytonight': '2.9', 'gamebook': '2.9', 'tsumego': '2.9', 'textadv': '2.9',
              'wordhive': '2.9', 'cryptogram': '2.9', 'tarot': '2.9', 'wordladder': '2.9',
-             'hashi': '2.9', 'kakuro': '2.9', 'notebook': '2.9'}
+             'hashi': '2.9', 'kakuro': '2.9', 'notebook': '2.9', 'pianofollow': '2.21'}
 # code only the sideloaded build keeps (a lock screen fetching, which the store's API forbids):
 # from a line "-- store: cut" through the next "-- store: end"
 STORE_CUT = re.compile(r'^[ \t]*-- store: cut.*?^[ \t]*-- store: end[^\n]*\n', re.M | re.S)
@@ -123,7 +124,7 @@ def manifest_for(app, app_dir, ids):
     # every app here is drawn for the X4 Pro's touch screen; the X4 Classic has only keys
     m['requires'] = sorted(set(m.get('requires', [])) | {'pointer'})
     # only the official names (an unknown one refuses the install); the older host's sys.* go
-    m['permissions'] = [x for x in m.get('permissions', []) if x in ('net', 'reader')]
+    m['permissions'] = [x for x in m.get('permissions', []) if x in ('net', 'reader', 'ble')]
     if not m['permissions']:
         m.pop('permissions', None)
     lock = m.get('lockscreen')

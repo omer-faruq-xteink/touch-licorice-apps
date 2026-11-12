@@ -18,6 +18,8 @@ export const TOOLS = [
     blurb: 'Ready feed lists by topic, and an OPML list of your own for the RSS app to read on the reader.' },
   { id: 'textadv', title: 'Text adventures', app: 'Text adventures',
     blurb: 'Zork I, II and III as a free pack, and where to find more games for the reader.' },
+  { id: 'piano', title: 'Piano scores', app: 'Piano Follow',
+    blurb: 'Engrave your own MusicXML or ABC sheet music for the reader’s screen and write it to the card.' },
   { id: 'worker', title: 'Worker setup', app: 'RSS, Hacker News',
     blurb: 'Step by step: your own free Cloudflare Worker for the apps that use one, and what to type on the reader.' },
 ];
