@@ -1,6 +1,6 @@
 # v0.23.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110701**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
 
 ## New
 

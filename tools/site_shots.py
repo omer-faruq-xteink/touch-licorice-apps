@@ -24,7 +24,8 @@ def shots(app):
     for old in glob.glob(os.path.join(OUT, f'{app}-*')):
         os.remove(old)
     for n, path in enumerate(found, 1):
-        img = Image.open(path).convert('L').resize(SIZE, Image.LANCZOS)
+        img = Image.open(path).convert('L')
+        img = img.resize(SIZE if img.height >= img.width else SIZE[::-1], Image.LANCZOS)   # a landscape app: 800x480
         if path.lower().endswith('.jpg'):
             img.save(os.path.join(OUT, f'{app}-{n}-photo.jpg'), quality=82, optimize=True)
             continue

@@ -216,13 +216,27 @@ def ld_json(e):
     return json.dumps(d, ensure_ascii=False).replace('</', '<\\/')
 
 
+def shot_size(f):
+    """(width, height) of a screenshot in site/shots/: 800x480 for a landscape app"""
+    try:
+        with open(os.path.join(ROOT, 'site', 'shots', f), 'rb') as fh:
+            head = fh.read(24)
+        if head[:8] == bytes([137, 80, 78, 71, 13, 10, 26, 10]):          # a PNG: its size is in the IHDR
+            return struct.unpack('>II', head[16:24])
+    except OSError:
+        pass
+    return 480, 800
+
+
 def app_page(e, about):
-    shots = ''.join((f'<img class="photo" src="../../shots/{f}" width="480" height="800" alt="{H(e["name"])} on the reader"'
-                     if f.endswith('-photo.jpg') else
-                     f'<div class="device"><div class="screen"><img src="../../shots/{f}" width="480" height="800" '
-                     f'alt="{H(e["name"])}, screen {n}"') + (' loading="lazy"' if n > 2 else '') +
-                    ('>' if f.endswith('-photo.jpg') else '></div></div>')
-                    for n, f in enumerate(e['shots'], 1))
+    def shot(n, f):
+        if f.endswith('-photo.jpg'):
+            return (f'<img class="photo" src="../../shots/{f}" width="480" height="800" alt="{H(e["name"])} on the reader"'
+                    + (' loading="lazy"' if n > 2 else '') + '>')
+        w, h = shot_size(f)
+        return (f'<div class="device{" landscape" if w > h else ""}"><div class="screen"><img src="../../shots/{f}" '
+                f'width="{w}" height="{h}" alt="{H(e["name"])}, screen {n}"' + (' loading="lazy"' if n > 2 else '') + '></div></div>')
+    shots = ''.join(shot(n, f) for n, f in enumerate(e['shots'], 1))
     extras = ''.join(f'<li><a href="{H(href)}"><b>{H(label)}</b><span>{H(note)}</span></a></li>'
                      for label, href, note in EXTRAS.get(e['id'], []))
     need = (f'<div class="notice">{WARN}<div>Needs firmware <b>XT Licorice {e["firmware"]}</b> or later (API {e["api"]}). '

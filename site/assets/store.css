@@ -64,6 +64,12 @@ body.store footer.site { border-top: 0; }
 .device img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.9s; }
 .device img.on { opacity: 1; }
 .hero .device { transform: rotate(-4deg); }
+/* a landscape app: the reader turned, the screen 800x480, the chin on the right */
+.device.landscape { width: 360px; padding: 14px 34px 14px 14px; }
+.device.landscape::after { left: auto; right: 11px; bottom: auto; top: 50%; width: 10px; height: 28px; margin: -14px 0 0 0; }
+.device.landscape .screen { aspect-ratio: 800 / 480; }
+.gallery .device.landscape { width: 380px; }
+@media (max-width: 640px) { .gallery .device.landscape { width: 300px; } }
 
 /* the reader panel */
 .reader-panel { display: flex; gap: 18px; align-items: center; background: var(--s-card); border-radius: 20px; padding: 18px 22px;

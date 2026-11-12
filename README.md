@@ -8,7 +8,7 @@ arrive by themselves. The [app site](https://omer-faruq-xteink.github.io/touch-l
 every app with its screenshots and, in Chrome or Edge on a computer, copies apps straight to the
 reader's SD card in USB mode and shows which installed apps have an update. Its
 [tools](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/)
-convert Anki decks, StarDict dictionaries and Twine / Ink stories in the browser, has ready
+convert Anki decks, StarDict dictionaries, Twine / Ink stories and piano scores in the browser, has ready
 [feed lists](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/feeds/) for RSS and the
 [Zork pack](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/textadv/) for Text adventures, and walks through
 the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/) for RSS and Hacker News.
@@ -65,6 +65,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
 | **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |
+| **Piano Follow** | sheet music in landscape that follows your playing on a Bluetooth MIDI keyboard: turns the pages, marks the bar, or waits for the right notes in Practice; a free catalog of 51 pieces and your own MusicXML / ABC scores; needs firmware with API 2.21 |
 | **Gamebook** | choose-your-own-adventure stories: seven built in, a pack of more, and Twine, Ink or Project Aon stories converted on the tools site |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
 
@@ -498,12 +499,26 @@ shared online, and Project Aon's free gamebooks such as Lone Wolf (their EPUB). 
 `.story` format is plain text and easy to write by hand: [FORMAT.md](apps/gamebook/FORMAT.md).
 [More](apps/gamebook/README.md)
 
+### Piano Follow
+
+Sheet music on the reader, in landscape on the music stand, that follows your playing. Pieces come
+from a free catalog read straight from this repository (51 public-domain and CC0 pieces from
+[PDMX](https://zenodo.org/records/15571083), mostly beginner and easy plus well-known classics), or
+from your own MusicXML or ABC files through the
+[score converter](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/piano/). With a
+Bluetooth MIDI keyboard (remembered and found again by itself) **Page turn** turns each page on its
+last note, back to the start of a written repeat; **Follow** also draws a dashed line under the
+bar you are playing; **Practice** (right hand, left hand or both) waits for the right notes and
+lists the bars with mistakes. Without a keyboard it is a plain score reader. Needs firmware with
+API 2.21 (26110501 or later). [More](apps/pianofollow/README.md)
+
 ## Tools site
 
 `site/` is a static site published to GitHub Pages by `.github/workflows/pages.yml`
 (`python -I tools/build_site.py` builds it into `dist/site`, with the story pack). Its converters
 are JavaScript ports of `apkg2cards.py` and `stardict2shards.py` that give the same files
-(`python -I site/test/test_converters.py`), plus the Gamebook converter and the Worker setup guide. A
+(`python -I site/test/test_converters.py`), plus the Gamebook converter, the piano score converter (Verovio; `cd tools/piano && npm test`, which
+also builds the Piano Follow catalog) and the Worker setup guide. A
 new tool is a folder under `site/tools/` and a line in `site/assets/site.js`.
 
 ## Build from source
@@ -580,6 +595,8 @@ python -I apps/litclock/test_litclock.py
 python -I apps/wordclock/test_wordclock.py
 python -I apps/skytonight/test_sky.py
 python -I apps/gamebook/test_gamebook.py
+python -I apps/pianofollow/test_pianofollow.py
+python -I tools/piano/test_sim.py
 python -I site/test/test_converters.py
 ```
 

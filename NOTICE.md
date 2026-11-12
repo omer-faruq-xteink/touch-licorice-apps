@@ -133,6 +133,14 @@ as `.story` files.
 (https://github.com/inkle/the-intercept), Copyright (c) 2016 inkle Ltd., MIT licence; converted
 from its Ink source. The full licence text is at the top of the file and travels with it.
 
+## Piano Follow catalog — `catalog/piano/`, `tools/piano/catalog.yaml`
+
+Scores selected from [PDMX](https://zenodo.org/records/15571083) (Long et al., MuseScore scores,
+dataset licensed CC BY 4.0); only pieces marked public domain or CC0, by composers who died before
+1955 or traditional, each listed with its source and license in `catalog/piano/catalog.json`.
+Engraved with [Verovio](https://www.verovio.org/) (LGPL v3), which the converter loads from a
+public CDN (site) or npm (`tools/piano`); Verovio itself is not part of this repository.
+
 ## Tools site — `site/`
 
 `site/assets/unescape.js` holds the HTML5 entity table of Python's `html` module (PSF licence),

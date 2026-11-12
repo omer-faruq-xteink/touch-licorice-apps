@@ -22,10 +22,10 @@ The button in the middle of the score's top bar switches the mode (kept per piec
 
 - **Page turn**: the app follows silently and turns the page on the page's last note (at a written
   repeat, back to where the repeat starts).
-- **Follow**: the same, with a short line under the bar you are playing (redrawn about once a
+- **Follow**: the same, with a dashed line under the bar you are playing (redrawn about once a
   second: the e-ink screen needs about half a second a frame).
 - **Practice** (right hand, left hand or both): the score waits until the next note or chord is
-  played right; a small mark shows which. A chord counts when all its notes are down within a
+  played right; a small mark under the staff shows which. A chord counts when all its notes are down within a
   second, in any order. Wrong notes are counted (top bar) and listed by bar at the end, with
   **Practice from bar n** for each.
 
@@ -37,7 +37,7 @@ turn is better than an early one. Turning a page by hand also tells the app wher
 
 **Keyboard** on the first screen: **Search** lists Bluetooth MIDI keyboards (those advertising the
 standard BLE MIDI service; USB keyboards need a Bluetooth MIDI adapter), tap one to connect. It is
-remembered and connected again the next time. A keyboard that asks for pairing is paired
+remembered: the app connects to it when it opens, and the Keyboard screen searches for it by itself. A keyboard that asks for pairing is paired
 automatically. If it goes away, the top bar says **Keyboard lost** and the app tries again every
 5 seconds. **Forget** removes it.
 
