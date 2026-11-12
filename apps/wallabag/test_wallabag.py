@@ -136,6 +136,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  budget = M({ extend = function() extends = (extends or 0) + 1; return true end }),   -- counted: long work asks for time
 }
 function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end
 ''')
@@ -363,4 +364,6 @@ assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), 
 _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 import ai_reader_test  # noqa: E402
 ai_reader_test.run(globals(), 'Unread', 'wallabag')
+# opening and laying out articles asked for more time than a callback's 1000 ms
+assert int(L.globals().extends or 0) > 0, L.globals().extends
 print('wallabag tests passed')

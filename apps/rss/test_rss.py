@@ -74,6 +74,7 @@ ctx = {
     return M({ cancel = function() cancelled = (cancelled or 0) + 1 end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  budget = M({ extend = function() extends = (extends or 0) + 1; return true end }),   -- counted: long work asks for time
   capabilities = { image_decode = true },
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 300, release = function() released = (released or 0) + 1 end } }) end }),
   qr = M({ encode = function(t) if qr_fail then error('qr too long') end; qr_made = t; return setmetatable({}, { __index = { width = 33, height = 33, release = function() qr_released = (qr_released or 0) + 1 end } }) end }),
@@ -730,4 +731,6 @@ assert int(g.ctx.screen.width) == 480 and 'screen=portrait' in str(g.store['conf
 g.store['config.txt'] = str(g.store['config.txt']).replace('screen=portrait', 'screen=landscape')
 g = restart(); g.flush()
 assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), texts()
+# opening and laying out articles asked for more time than a callback's 1000 ms
+assert int(L.globals().extends or 0) > 0, L.globals().extends
 print('rss29 tests passed')

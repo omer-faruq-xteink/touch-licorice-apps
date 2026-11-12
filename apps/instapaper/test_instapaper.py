@@ -101,6 +101,7 @@ ctx = {
     return M({ cancel = function() end })
   end }),
   json = M({ decode = function(s) return py_json_decode(s) end }),
+  budget = M({ extend = function() extends = (extends or 0) + 1; return true end }),   -- counted: long work asks for time
   capabilities = { image_decode = true },
   image = M({ decode = function(b) decoded = (decoded or 0) + 1; return setmetatable({}, { __index = { width = 456, height = 304, release = function() end } }) end }),
 }
@@ -415,4 +416,6 @@ assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), 
 _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 import ai_reader_test  # noqa: E402
 ai_reader_test.run(globals(), 'Unread', 'instapaper')
+# opening and laying out articles asked for more time than a callback's 1000 ms
+assert int(L.globals().extends or 0) > 0, L.globals().extends
 print('instapaper29 tests passed')

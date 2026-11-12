@@ -399,6 +399,7 @@ end
 
 -- paragraphs come separated by blank lines; "# " marks a heading, "> " a quote, "• " a list item
 local function layout_article(data)
+  pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   art.data = data               -- kept, so turning the screen can lay it out again
   measure_cache = {}
   local out = {}
@@ -635,6 +636,7 @@ local function picture(tag, base)
 end
 
 local function html_to_text(html, max, imgs, base)
+  pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   local src = tostring(html or ''):gsub('<!%-%-.-%-%->', ' ')
   local out, i, n, skip = {}, 1, #src, nil
   while i <= n do

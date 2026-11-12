@@ -121,6 +121,8 @@ def decode(self, s):
 ctx = L.globals().ctx
 ctx.net = L.table_from({'request': request, 'keep_wifi': lambda self, ms: None})
 ctx.json = L.table_from({'decode': decode})
+L.execute('extends = 0')
+ctx.budget = L.eval("{ extend = function() extends = extends + 1; return true end }")   # counted: long work asks for time
 L.execute("decoded, released = 0, 0; ctx.capabilities = { image_decode = true }; ctx.image = { decode = function(self, b) decoded = decoded + 1; "
           "return { width = 456, release = function() released = released + 1 end } end }")
 L.execute(f"ctx.clock.now = function(self) return {{ epoch_sec = {NOW}, hour = 12, minute = 0, second = 0 }} end")
@@ -358,4 +360,6 @@ g.store['settings.txt'] = g.store['settings.txt'].replace('screen=portrait', 'sc
 g.restart(); answer_all()
 assert int(ctx.screen.width) == 800 and lst().rows
 g.no_err()
+# opening and laying out articles asked for more time than a callback's 1000 ms
+assert int(L.globals().extends or 0) > 0, L.globals().extends
 print('hackernews tests passed')

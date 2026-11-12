@@ -1276,6 +1276,7 @@ local function meta(r)
 end
 
 local function build_story()
+  pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   local r, out = S.row, {}
   add_lines(out, r.title, 'large', 16)
   add_lines(out, meta(r), 'small', 16)
@@ -1345,6 +1346,7 @@ end
 local function level() return levels[#levels] end
 
 local function build_thread(lv)
+  pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   local out, now = {}, now_sec()
   local p = lv.parent
   if p.type == 'story' or #levels == 1 then

@@ -1,7 +1,7 @@
 {
   "app_id": "rss",
   "display_name": "RSS",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "author": "omer-faruq",
   "description": "Read RSS and Atom feeds on the reader, or your CommaFeed articles through a Worker",
   "entry": "index.lua",

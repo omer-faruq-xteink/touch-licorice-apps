@@ -105,6 +105,7 @@ local BLOCK_END = { p = true, div = true, li = true, blockquote = true, pre = tr
   table = true, ul = true, ol = true, h1 = true, h2 = true, h3 = true, h4 = true, h5 = true, h6 = true }
 
 function F.html_to_text(html, max, imgs, base)
+  pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   local src = tostring(html or ''):gsub('<!%-%-.-%-%->', ' ')
   local out, i, n, skip = {}, 1, #src, nil
   while i <= n do
