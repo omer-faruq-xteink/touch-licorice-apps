@@ -506,7 +506,8 @@ local function fetch_picture(c)
     cur = cur and cur.c and cur.c.num == c.num and cur or { c = c, kind = 'none' }
     status = f == 'net' and 'Picture: no network.' or ('Picture failed: ' .. tostring(f))
   end
-  -- a host without picture decoding (the manifest requires it; Studio's preview has none): say so,
+  -- a host without picture decoding (Studio's preview has none; not in requires, or the preview
+  -- would not open the app at all): say so,
   -- fetch nothing and keep nothing, so a reader that can decode still gets the picture later
   if not ctx.image then
     release()

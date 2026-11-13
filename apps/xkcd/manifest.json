@@ -7,7 +7,7 @@
   "entry": "index.lua",
   "api": "2.26",
   "permissions": ["net"],
-  "requires": ["pointer", "image_decode"],
+  "requires": ["pointer"],
   "lockscreen": {
     "enabled": true,
     "entry": "lockscreen.lua",
