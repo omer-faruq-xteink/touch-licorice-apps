@@ -518,5 +518,14 @@
     "status": "published",
     "submitted": "2026-11-12",
     "live_version": "1.0.0"
+  },
+  "xkcd": {
+    "name": "xkcd",
+    "app_id": "xkcd",
+    "listing_id": "",
+    "project_id": "",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "submitted": "2026-11-13"
   }
 }
