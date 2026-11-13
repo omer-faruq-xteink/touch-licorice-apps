@@ -25,8 +25,8 @@
     "listing_id": "u_b67d945db0ab44a997f49f7b59ac2d1b",
     "project_id": "ac2744ef-3e9d-494c-8ee4-3a9ca918932f",
     "release_version": "1.1.2",
-    "status": "in review",
-    "live_version": "1.1.1",
+    "status": "published",
+    "live_version": "1.1.2",
     "submitted": "2026-11-10"
   },
   "chess": {
@@ -95,8 +95,8 @@
     "listing_id": "u_8b569131c8c94c05830297a26ec72254",
     "project_id": "70abf652-40aa-4091-ac58-9dfa81e818a5",
     "release_version": "1.2.1",
-    "status": "in review",
-    "live_version": "1.2.0",
+    "status": "published",
+    "live_version": "1.2.1",
     "submitted": "2026-11-12"
   },
   "hashi": {
@@ -515,7 +515,8 @@
     "listing_id": "",
     "project_id": "c4df4a87-1974-41e8-a519-54004eba26a0",
     "release_version": "1.0.0",
-    "status": "in review",
-    "submitted": "2026-11-12"
+    "status": "published",
+    "submitted": "2026-11-12",
+    "live_version": "1.0.0"
   }
 }
