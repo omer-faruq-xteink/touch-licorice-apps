@@ -318,5 +318,14 @@ goto('7')
 assert len(requests) > n and requests[n] == ('https://xkcd.com/7/info.0.json', None), requests[n:]
 answer_all()
 assert g.store['cache.txt'].startswith('png:400x900' + chr(9) + '7' + chr(9)), g.store['cache.txt'][:40]
+# a reader (or Studio's preview) without picture decoding: the manifest asks for it, and the app says
+# so in plain words instead of an error
+man = json.load(open(os.path.join(HERE, 'manifest.json'), encoding='utf-8'))
+assert 'image_decode' in man['requires'], man['requires']
+L.execute('saved_image = ctx.image; ctx.image = nil')
+goto('9'); answer_all()
+t = ' '.join(texts())
+assert '9: Comic 9' in t and 'cannot show pictures' in t and 'attempt to' not in t, t
+L.execute('ctx.image = saved_image')
 g.no_err()
 print('xkcd tests passed')

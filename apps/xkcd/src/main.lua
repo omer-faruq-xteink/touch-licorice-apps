@@ -237,10 +237,20 @@ end
 
 -- the picture of c: first the original's size (its first 64 bytes: a PNG says it there), to turn
 -- the screen for its shape; then the resizer makes it for exactly the space it gets (X.weserv_url)
+local NO_DECODE = 'no image_decode'
 local function fetch_picture(c)
   local function fail(f)
     cur = cur and cur.c and cur.c.num == c.num and cur or { c = c, kind = 'none' }
     status = f == 'net' and 'Picture: no network.' or ('Picture failed: ' .. tostring(f))
+  end
+  -- a host without picture decoding (the manifest requires it; Studio's preview has none): say so,
+  -- fetch nothing and keep nothing, so a reader that can decode still gets the picture later
+  if not ctx.image then
+    release()
+    turn(false)
+    status, offline, screen = nil, false, 'comic'
+    cur = { c = c, kind = 'none', err = NO_DECODE }
+    return
   end
   get(c.img, nil, 'Loading the picture...', function(res)
     local f = failed(res)
@@ -423,7 +433,8 @@ local function draw_comic(gg)
     gg:image(cur.img, ax + (aw - iw) // 2, ay + (ah - ih) // 2)
   else
     local y = ay + 10
-    local msg = cur.err and ('The picture could not be shown (' .. cur.err .. ').') or 'An interactive comic: open it on another device.'
+    local msg = cur.err == NO_DECODE and 'This reader cannot show pictures (no image decoding). Open the comic on another device:'
+      or cur.err and ('The picture could not be shown (' .. cur.err .. ').') or 'An interactive comic: open it on another device.'
     for _k, l in ipairs(kit.wrap(msg, 'medium', W - 24)) do gg:text(12, y, l, { font = kit.font('medium') }); y = y + 28 end
     draw_qr(gg, X.page_url(c.num), y + 8, math.min(200, ah - (y - ay) - 30))
   end
