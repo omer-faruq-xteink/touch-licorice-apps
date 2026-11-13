@@ -6,7 +6,7 @@ the draw-command count.
 
   python -I apps/weather/test_weather.py
 """
-import json, os, sys, urllib.parse
+import json, os, re, sys, time, urllib.parse
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 from harness import Game, STUBS  # noqa: E402
@@ -62,7 +62,7 @@ def setup(L):
 
     L.globals().ctx.net = L.table_from({'request': request, 'keep_wifi': lambda self, ms: None})
     L.globals().ctx.json = L.table_from({'decode': lambda self, s: to_lua(json.loads(s))})
-    L.execute(f"now_sec = {NOW}; ctx.clock.now = function(self) return {{ epoch_sec = now_sec, hour = 12 + (now_sec - {NOW}) // 3600, minute = 0, second = 0 }} end")
+    L.execute(f"now_sec = {NOW}; ctx.clock.now = function(self) local d = os.date('!*t', now_sec); return {{ epoch_sec = now_sec, valid = true, year = d.year, month = d.month, day = d.day, hour = d.hour, minute = d.min, second = d.sec }} end")
     L.execute("lock_calls = {}; ctx.lockscreen = { is_default = function(self) return lock_is end, "
               "set_default = function(self) lock_calls[#lock_calls + 1] = 'set'; lock_is = true end, "
               "clear_default = function(self) lock_calls[#lock_calls + 1] = 'clear'; lock_is = false end }")
@@ -94,7 +94,7 @@ g.tap(100, 90 + 20)
 assert 'latitude=38.41' in requests[-1] and 'longitude=27.13' in requests[-1] and 'fahrenheit' not in requests[-1]
 assert 'Getting the forecast...' in g.texts()
 answer_now()
-assert 'name=İzmir\nlat=38.41\nlon=27.13\nunit=C\nlock=false' == g.store['settings.txt']
+assert 'name=İzmir\nlat=38.41\nlon=27.13\nunit=C\nlock=false\nevery=60' == g.store['settings.txt']
 f = g.store['forecast.txt']
 assert 'now_t=18' in f and 'h0=12:00;' in f and 'd1=2025-10-28;3;10;15;20' in f, f
 t = g.texts()
@@ -131,12 +131,36 @@ g.tap_label('Back')
 assert str(A().screen()) == 'main'
 
 # the lock screen
+# the lock screen: Lock asks how often it fetches a new forecast while locked
 g.tap_label('Lock')
-assert list(g.L.eval('lock_calls').values()) == ['set'] and 'lock=true' in g.store['settings.txt']
-assert 'Lock off' in g.texts()
-g.tap_label('Lock off')
-assert list(g.L.eval('lock_calls').values()) == ['set', 'clear']
-g.tap_label('Lock')
+t = g.texts()
+for s in ['Every 15 min', 'Every 30 min', 'Every hour', 'Every 3 hours', 'Every 6 hours', 'Never']:
+    assert s in t, (s, t)
+assert 'Lock screen off' not in t and list(g.L.eval('lock_calls').values()) == []
+g.tap_label('Every 3 hours')
+assert list(g.L.eval('lock_calls').values()) == ['set'] and 'lock=true\nevery=180' in g.store['settings.txt']
+assert 'Lock 3 h' in g.texts() and 'Every hour' not in g.texts()
+g.tap_label('Lock 3 h')
+assert 'Lock screen off' in g.texts()
+g.key('back')                                               # Back closes the list, nothing changes
+assert 'Lock screen off' not in g.texts() and 'Lock 3 h' in g.texts()
+g.tap_label('Lock 3 h'); g.tap_label('Never')
+assert 'every=0' in g.store['settings.txt'] and 'Lock only' in g.texts()
+assert list(g.L.eval('lock_calls').values()) == ['set']
+g.tap_label('Lock only'); g.tap_label('Lock screen off')
+assert list(g.L.eval('lock_calls').values()) == ['set', 'clear'] and 'lock=false' in g.store['settings.txt']
+assert 'Lock' in g.texts()
+g.tap_label('Lock'); g.tap_label('Every hour')
+assert list(g.L.eval('lock_calls').values()) == ['set', 'clear', 'set'] and 'Lock 1 h' in g.texts()
+
+# the lock screen fetches while locked (firmware 26111201, API 2.26: lockscreen "net": true gives the
+# lock session ctx.net; ctx.lock:done() ends it). A timer wake holds its frame until the request is
+# answered; the first session draws at once and again after the answer.
+man = json.load(open(os.path.join(HERE, 'manifest.json'), encoding='utf-8'))
+assert man['api'] == '2.26' and man['lockscreen'].get('net') is True and 'net' in man['permissions'], man
+# 900: the shortest interval offered; the reader seems to allow the lock screen's network at most once
+# per declared interval (timer wakes had none with 3600, Lock Probe's had it with 60)
+assert man['lockscreen']['interval_sec'] == 900, man
 
 L2 = lua54.LuaRuntime(unpack_returned_tuples=True)
 L2.execute(STUBS)
@@ -144,24 +168,159 @@ answer2 = setup(L2)
 for k in ('forecast.txt', 'settings.txt'):
     L2.globals().store[k] = g.store[k]
 L2.execute(f"now_sec = {NOW + 31 * 60 + 10 * 60}")
-L2.execute(open(os.path.join(HERE, 'lockscreen.lua'), encoding='utf-8').read())
+L2.execute("done_calls, inval = 0, 0; ctx.invalidate = function() inval = inval + 1 end; "
+           "ctx.lock = { reason = 'timer', net = true, done = function(self) done_calls = done_calls + 1 end, set_interval = function(self, s) wake = s; return s end }")
+LOCK = open(os.path.join(HERE, 'lockscreen.lua'), encoding='utf-8').read()
+def session(reason='timer'):
+    """a new lock session: the script loads afresh, then on_load"""
+    L2.execute(f"ctx.lock.reason = '{reason}'; done_calls, inval = 0, 0")
+    L2.execute(LOCK)
+    L2.eval("function() on_load(ctx) end")()
 draw2 = L2.eval("function() drawn, commands = {}, 0; on_draw(ctx, gg); local t = {} for _, d in ipairs(drawn) do t[#t + 1] = d.s end return t end")
+done = lambda: int(L2.globals().done_calls)
+def _upd(): return int(re.search(r'updated=(\d+)', L2.globals().store['forecast.txt']).group(1))
+def age(): return int(L2.globals().now_sec) - _upd()
+def stamp():
+    """what the lock screen says about the forecast's time (the clock stub is UTC): the time it was
+    fetched, 'yesterday' before it, or how many days ago"""
+    upd, now = _upd(), int(L2.globals().now_sec)
+    days = now // 86400 - upd // 86400
+    hm = time.strftime('%H:%M', time.gmtime(upd))
+    return 'updated ' + hm if days == 0 else ('updated yesterday ' + hm if days == 1 else f'updated {days} days ago')
+
+# fresh: no request, the frame, then done
+n = len(requests)
+session()
+assert len(requests) == n and done() == 0
 t = list(draw2().values())
-for s in ['İzmir', '°C', 'Rain', 'Today 11° / 18°   rain 80%', 'Tue', 'Wed', 'Thu', '10° / 15°', 'updated 10 min ago']:
+for s in ['İzmir', '°C', 'Rain', 'Today 11° / 18°   rain 80%', 'Tue', 'Wed', 'Thu', '10° / 15°']:
     assert s in t, (s, t)
 assert int(L2.globals().commands) < 300, L2.globals().commands
-n = len(requests)
-draw2()
-assert len(requests) == n                                  # fresh: no question
-L2.execute(f"now_sec = now_sec + 2 * 3600")
-t = list(draw2().values())
-assert 'updated 130 min ago' in t or 'updated 2 h ago' in t, t
-assert len(requests) == n + 1
-draw2()
-assert len(requests) == n + 1                              # asked once, not on every draw
+assert stamp() in t and age() == 600, (stamp(), t)
+assert done() == 1
+
+# old, timer wake: asked in on_load, answered before the (held) frame, drawn fresh, then done
+L2.execute("now_sec = now_sec + 2 * 3600")
+session()
+assert len(requests) == n + 1 and 'latitude=38.41' in requests[-1] and done() == 0
 answer2()
 assert 'updated=' + str(NOW + 31 * 60 + 10 * 60 + 2 * 3600) in L2.globals().store['forecast.txt']
-assert 'updated 0 min ago' in list(draw2().values())
+assert int(L2.globals().inval) == 1
+assert stamp() in list(draw2().values()) and age() == 0 and done() == 1
+
+# old, first session: drawn at once with the old forecast (no done while asking), again when answered
+L2.execute("now_sec = now_sec + 2 * 3600")
+session('first')
+assert len(requests) == n + 2
+t = list(draw2().values())
+assert stamp() in t and age() == 7200 and done() == 0, t
+draw2()
+assert len(requests) == n + 2 and done() == 0               # asked once, not on every draw
+answer2()
+assert stamp() in list(draw2().values()) and age() == 0 and done() == 1
+
+# a failed answer: the old forecast stays, a frame, then done
+L2.execute("now_sec = now_sec + 2 * 3600")
+mode['fail'] = True
+session()
+answer2()
+mode['fail'] = False
+assert int(L2.globals().inval) == 1 and done() == 0
+assert stamp() in list(draw2().values()) and age() == 7200 and done() == 1
+
+# a reader whose lock screen has no network: no request, the age shown, no error
+L2.execute("ctx.lock.net = false; saved_net = ctx.net; ctx.net = nil")
+session()
+assert len(requests) == n + 3
+assert stamp() in list(draw2().values()) and age() == 7200 and done() == 1
+# due but not fetched: try again a whole interval later, not at once (it woke every 30 s on the reader)
+assert int(L2.globals().wake) == 3600, L2.globals().wake
+assert 'lock.net false' in L2.globals().store['wakes.txt'].strip().split('\n')[-1], L2.globals().store['wakes.txt']
+L2.execute("ctx.lock.net = true; ctx.net = saved_net")
+
+# the interval chosen in the app: every 3 hours asks only once the forecast is 3 hours old; never, not at all
+L2.globals().store['settings.txt'] = g.store['settings.txt'].replace('every=60', 'every=180')
+session()
+assert len(requests) == n + 3 and done() == 0
+draw2()
+assert done() == 1                                          # 2 h old: no request
+L2.execute("now_sec = now_sec + 2 * 3600")
+session()
+assert len(requests) == n + 4
+answer2()
+assert stamp() in list(draw2().values()) and age() == 0 and done() == 1
+# the next wake is the chosen interval itself, at most an hour (the reader aligns wakes to multiples of
+# the interval, so a computed rest of it only brought early wakes); every session sets it, as the host
+# goes back to the manifest's at each lock; a wake up to a minute early still fetches
+wake = lambda: int(L2.globals().wake)
+L2.globals().store['settings.txt'] = g.store['settings.txt']
+L2.execute("now_sec = now_sec + 3600 - 30")                  # every hour, a wake 30 s early: fetched
+session()
+assert len(requests) == n + 5 and wake() == 3600
+answer2(); draw2()
+L2.execute("now_sec = now_sec + 20 * 60")                    # 20 min later (e.g. locked again): not yet
+session()
+assert len(requests) == n + 5 and wake() == 3600, wake()
+
+# every 15 minutes
+L2.globals().store['settings.txt'] = g.store['settings.txt'].replace('every=60', 'every=15')
+L2.execute("now_sec = now_sec + 13 * 60")                    # fetched 33 min ago
+session()
+assert len(requests) == n + 6 and wake() == 900
+answer2(); draw2()
+L2.execute("now_sec = now_sec + 15 * 60 - 90")               # the next wake, 90 s early (seen: up to a minute): fetched
+session()
+assert len(requests) == n + 7 and wake() == 900
+answer2(); draw2()
+L2.execute("now_sec = now_sec + 10 * 60")                    # 10 min: not yet, due in 5
+session()
+assert len(requests) == n + 7 and wake() == 900
+
+# a new day: every 6 hours wakes hourly (on the hour), so one comes just after midnight, and "Today"
+# (yesterday by then) is fetched again
+L2.globals().store['settings.txt'] = g.store['settings.txt'].replace('every=60', 'every=360')
+L2.execute("now_sec = now_sec + 30 * 60")
+session()
+to_midnight = 86400 - int(L2.globals().now_sec) % 86400
+assert len(requests) == n + 7 and 0 < to_midnight < 3600 and wake() == 3600, (wake(), to_midnight)
+L2.execute(f"now_sec = now_sec + {to_midnight + 60}")
+session()
+assert len(requests) == n + 8, (len(requests), n)
+answer2(); draw2()
+
+L2.globals().store['settings.txt'] = g.store['settings.txt'].replace('every=60', 'every=0')
+L2.execute("now_sec = now_sec + 5 * 3600")
+session()
+assert len(requests) == n + 8 and wake() == 3600
+assert stamp() in list(draw2().values()) and age() >= 5 * 3600 and done() == 1
+# every lock session leaves a line in wakes.txt (private storage, XTApps/weather/files/ over USB): the
+# time, why it woke, the forecast's age, the interval, what it did, the next wake; and each answer
+log = L2.globals().store['wakes.txt'].strip('\n').split('\n')
+assert 0 < len(log) <= 20 and all(re.match(r'\d\d:\d\d ', l) for l in log), log
+whole = '\n'.join(log)
+for s in ['timer', 'first', 'fetch', 'not due', 'reply 200', 'reply HTTP 503', 'no network on the lock screen', 'never', 'next ']:
+    assert s in whole, (s, whole)
+for _k in range(25):
+    session(); draw2()
+log = L2.globals().store['wakes.txt'].strip('\n').split('\n')
+assert len(log) == 20, len(log)                             # the last 20 only
+
+# a timer wake that comes early and would end before the quarter it was woken for gets a second wake on
+# it (Calendar: 14:59:37 then 15:00:01): it holds with ctx:after (it runs in a 2.26 lock session: Lock
+# Probe 1.9) until 2 s past the quarter, and only then ends
+L2.globals().store['settings.txt'] = g.store['settings.txt'].replace('every=60', 'every=15')
+L2.execute("timers = {}; ctx.after = function(self, ms, fn) timers[#timers + 1] = { ms = ms, fn = fn }; return {} end; "
+           "ctx.lock.interval_sec = 900; now_sec = (now_sec // 900 + 1) * 900 - 40")
+session()
+answer2(); draw2()
+assert int(L2.eval('#timers')) == 1 and int(L2.eval('timers[1].ms')) == 42000 and done() == 0
+L2.execute("now_sec = now_sec + 42; timers[1].fn(ctx)")
+draw2()
+assert done() == 1 and 'held' in L2.globals().store['wakes.txt'].strip().split('\n')[-2], L2.globals().store['wakes.txt']
+L2.execute("timers = {}; now_sec = now_sec + 15 * 60")       # on time (2 s past the quarter): no hold
+session(); answer2(); draw2()                                # due again: fetched, no hold
+assert int(L2.eval('#timers')) == 0 and done() == 1
+
 L3 = lua54.LuaRuntime(unpack_returned_tuples=True)          # nothing saved yet
 L3.execute(STUBS)
 L3.execute(open(os.path.join(HERE, 'lockscreen.lua'), encoding='utf-8').read())

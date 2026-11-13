@@ -1,0 +1,40 @@
+M31|Andromedagalaxie|Das fernste Objekt, das man ohne Hilfsmittel sieht: ein blasses Oval, 2,5 Millionen Lichtjahre entfernt.
+M33|Dreiecksgalaxie|Eine schwache Spirale, von oben gesehen; braucht dunklen Himmel und ein Fernglas.
+M42|Orionnebel|Eine leuchtende Wolke, in der Sterne entstehen: der mittlere „Stern“ im Schwert des Orion.
+M45|Plejaden|Das Siebengestirn: ein enger, kleiner Wagen aus blauen Sternen.
+Hyades|Hyaden|Der V-förmige Sternhaufen, der das Gesicht des Stiers bildet.
+M44|Krippe|Für das Auge ein nebliger Fleck, im Fernglas Dutzende Sterne.
+M13|Herkuleshaufen|Eine Kugel aus mehreren Hunderttausend alten Sternen; im Fernglas ein unscharfer Punkt.
+M8|Lagunennebel|Eine helle Gaswolke vor dem Zentrum der Milchstraße, schon im Fernglas zu sehen.
+M22|M22|Einer der hellsten Kugelsternhaufen, nahe der Spitze der Teekanne.
+M24|Sagittarius-Sternwolke|Ein dichter Abschnitt der Milchstraße, übersät mit fernen Sternen.
+M7|Ptolemäus-Haufen|Ein großer, heller Sternhaufen am Stachel des Skorpions, seit der Antike bekannt.
+M6|Schmetterlingshaufen|Ein Sternhaufen, dessen Sterne im Fernglas einen Schmetterling zeichnen.
+M4|M4|Ein Kugelsternhaufen direkt neben Antares, einer der nächsten seiner Art.
+M35|M35|Ein reicher Sternhaufen zu Füßen der Zwillinge, in dunklen Nächten mit bloßem Auge ein Fleck.
+M41|M41|Ein offener Sternhaufen wenige Grad südlich von Sirius.
+M47|M47|Ein lockerer, heller Sternhaufen in der Milchstraße östlich von Sirius.
+M11|Wildentenhaufen|Ein dichter Sternhaufen, dessen Sterne sich wie ein Entenschwarm auffächern.
+M27|Hantelnebel|Abgestoßenes Gas eines sterbenden Sterns, im Teleskop geformt wie ein Apfelbutzen.
+Cr399|Kleiderbügel|Eine Sternenreihe mit Haken: im Fernglas ein kopfstehender Kleiderbügel.
+M57|Ringnebel|Ein kleiner Rauchring aus Gas um einen sterbenden Stern; ein Ziel fürs Teleskop.
+M81|Bodes Galaxie|Eine helle Spiralgalaxie, im Fernglas mit M82 gleich daneben.
+M51|Whirlpool-Galaxie|Eine Spirale, von oben gesehen, die an einer kleinen Begleitgalaxie zerrt.
+M3|M3|Ein großer Kugelsternhaufen auf halbem Weg zwischen Arktur und Cor Caroli.
+M5|M5|Einer der schönsten Kugelsternhaufen, nahe einem Stern 5. Größe.
+M15|M15|Ein dichter Kugelsternhaufen vor der Nase des Pferdes.
+M39|M39|Ein lockeres Sternendreieck in der Milchstraße nahe Deneb.
+NGC7000|Nordamerikanebel|Ein großes, schwaches Leuchten bei Deneb, geformt wie der Kontinent.
+NGC869|Doppelhaufen|Zwei reiche Sternhaufen Seite an Seite, zwischen Perseus und Kassiopeia.
+Mel111|Coma-Sternhaufen|Ein weiter Schleier schwacher Sterne, am besten mit bloßem Auge oder Fernglas.
+M104|Sombrerogalaxie|Eine Galaxie, fast genau von der Kante gesehen, mit einem dunklen Staubband.
+M87|M87|Eine Riesengalaxie, deren Schwarzes Loch als erstes überhaupt fotografiert wurde.
+M83|Südliche Feuerradgalaxie|Eine helle Spirale, von oben gesehen, für den Südhimmel.
+NGC253|Sculptor-Galaxie|Eine lange, helle Galaxie, fast genau von der Kante gesehen.
+NGC5139|Omega Centauri|Der größte Kugelsternhaufen unserer Milchstraße, für das Auge ein unscharfer Stern.
+NGC104|47 Tucanae|Ein prächtiger Kugelsternhaufen neben der Kleinen Magellanschen Wolke.
+SMC|Kleine Magellansche Wolke|Eine kleine Nachbargalaxie, wie ein abgebrochenes Stück der Milchstraße.
+LMC|Große Magellansche Wolke|Unsere größte Nachbargalaxie, eine helle Wolke am Südhimmel.
+NGC3372|Carinanebel|Ein riesiger, heller Nebel um den instabilen Stern Eta Carinae.
+IC2602|Südliche Plejaden|Ein heller Haufen blauer Sterne, ein südlicher Zwilling der Plejaden.
+NGC4755|Schmuckkästchen|Ein kleiner Sternhaufen beim Kreuz des Südens, ein roter Stern unter blauen.

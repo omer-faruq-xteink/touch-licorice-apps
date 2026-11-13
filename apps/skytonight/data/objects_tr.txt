@@ -1,0 +1,40 @@
+M31|Andromeda Gökadası|Yardımsız görebileceğiniz en uzak şey: 2,5 milyon ışık yılı ötede soluk bir oval.
+M33|Üçgen Gökadası|Yüzü bize dönük sönük bir sarmal; karanlık gökyüzü ve dürbün ister.
+M42|Orion Bulutsusu|Yıldızların doğduğu parlak bir bulut; Avcı'nın kılıcındaki ortanca 'yıldız'.
+M45|Ülker|Yedi Kız Kardeş: mavi yıldızlardan sıkışık, minik bir kepçe.
+Hyades|Hyades|Boğa'nın yüzünü oluşturan V biçimli açık yıldız kümesi.
+M44|Arı Kovanı Kümesi|Gözle puslu bir leke; dürbünle onlarca yıldıza dönüşür.
+M13|Herkül Kümesi|Birkaç yüz bin yaşlı yıldızdan oluşan bir top; dürbünde bulanık bir nokta.
+M8|Lagün Bulutsusu|Samanyolu'nun merkezi üzerinde parlak bir gaz bulutu; dürbünle görülür.
+M22|M22|En parlak küresel yıldız kümelerinden biri; Çaydanlık'ın tepesine yakın.
+M24|Yay Yıldız Bulutu|Samanyolu'nun uzak yıldızlarla dolu, yoğun bir parçası.
+M7|Ptolemaios Kümesi|Akrebin iğnesinin yanında, antik çağdan beri bilinen büyük, parlak bir küme.
+M6|Kelebek Kümesi|Yıldızları dürbünde bir kelebek çizen açık yıldız kümesi.
+M4|M4|Antares'in hemen yanında, türünün en yakınlarından bir küresel küme.
+M35|M35|İkizler'in ayaklarında zengin bir küme; karanlık gecelerde gözle bir leke.
+M41|M41|Sirius'un birkaç derece güneyinde bir açık yıldız kümesi.
+M47|M47|Sirius'un doğusunda, Samanyolu'nda seyrek ve parlak bir küme.
+M11|Yaban Ördeği Kümesi|Yıldızları uçan bir ördek sürüsü gibi yelpazelenen sık bir küme.
+M27|Halter Bulutsusu|Ölen bir yıldızın saçtığı gaz; teleskopta elma koçanına benzer.
+Cr399|Elbise Askısı|Kancalı bir yıldız dizisi: dürbünde ters duran bir elbise askısı.
+M57|Halka Bulutsusu|Ölen bir yıldızın çevresinde küçük bir duman halkası; teleskop hedefi.
+M81|Bode Gökadası|Dürbünde yanındaki M82 ile birlikte görülen parlak bir sarmal gökada.
+M51|Girdap Gökadası|Yüzü bize dönük, küçük bir eşini kendine çeken sarmal gökada.
+M3|M3|Arcturus ile Cor Caroli'nin tam ortasında büyük bir küresel küme.
+M5|M5|En güzel küresel kümelerden biri; beşinci kadirden bir yıldıza yakın.
+M15|M15|Atın burnunun hemen önünde yoğun bir küresel küme.
+M39|M39|Deneb yakınında, Samanyolu'nda seyrek bir yıldız üçgeni.
+NGC7000|Kuzey Amerika Bulutsusu|Deneb'in yanında, kıtanın biçimini andıran büyük ve sönük bir ışıltı.
+NGC869|Çift Küme|Kahraman ile Koltuk arasında yan yana duran iki zengin küme.
+Mel111|Berenis'in Saçı Kümesi|Sönük yıldızlardan geniş bir serpinti; en iyi gözle ya da dürbünle.
+M104|Sombrero Gökadası|Neredeyse yandan görülen, karanlık bir toz şeridi taşıyan gökada.
+M87|M87|Kara deliği ilk kez fotoğraflanan dev bir gökada.
+M83|Güney Fırıldak Gökadası|Güney gökyüzü için yüzü bize dönük parlak bir sarmal.
+NGC253|Heykeltraş Gökadası|Neredeyse yandan görülen uzun, parlak bir gökada.
+NGC5139|Omega Centauri|Gökadamızın en büyük küresel kümesi; gözle bulanık bir yıldız.
+NGC104|47 Tucanae|Küçük Macellan Bulutu'nun yanında göz alıcı bir küresel küme.
+SMC|Küçük Macellan Bulutu|Samanyolu'ndan kopmuş bir parçaya benzeyen, yakınımızdaki küçük bir gökada.
+LMC|Büyük Macellan Bulutu|En büyük komşu gökadamız; güney gökyüzünde parlak bir bulut.
+NGC3372|Karina Bulutsusu|Kararsız Eta Carinae yıldızını saran dev, parlak bir bulutsu.
+IC2602|Güney Ülker'i|Mavi yıldızlardan parlak bir küme; Ülker'in güneydeki ikizi.
+NGC4755|Mücevher Kutusu|Haç'ın yanında, maviler arasında tek kırmızı yıldızı olan küçük bir küme.

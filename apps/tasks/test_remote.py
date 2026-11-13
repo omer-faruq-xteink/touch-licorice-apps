@@ -407,10 +407,111 @@ assert GS['refreshes'] == before + 1 and 'My Tasks' in names()
 open_list('Home')
 g.tap_label('List')
 g.tap_label('Lock screen')
+# a service's list: how often the lock screen syncs it while locked
+t = g.texts()
+for s in ['Every 15 min', 'Every 30 min', 'Every hour', 'Every 3 hours', 'Every 6 hours', 'Never']:
+    assert s in t, (s, t)
+g.tap_label('Every hour')
 lock = g.store['lock.txt']
 assert lock.startswith('Home\n') and 'kitchen' in lock, lock
-assert 'todoist:p2' in g.store['settings.txt']
+assert 'todoist:p2' in g.store['settings.txt'] and 'every=60' in g.store['settings.txt'], g.store['settings.txt']
+assert re.fullmatch(r'\d+', g.store['remote_synced.txt']), g.store.get('remote_synced.txt')   # every sync notes its time
 g.key('back')
+
+# the lock screen syncs that list while locked (API 2.26: lockscreen "net": true gives the lock session
+# ctx.net; ctx.lock:done() ends it); only its account, only when due; a local list never connects
+man = json.load(open(os.path.join(HERE, 'manifest.json'), encoding='utf-8'))
+assert man['api'] == '2.26' and man['lockscreen'].get('net') is True and 'net' in man['permissions'], man
+# 900: the shortest interval offered; the lock screen gets the network only as often as interval_sec
+assert man['lockscreen']['interval_sec'] == 900, man
+LOCKSCREEN = os.path.join(HERE, 'lockscreen.lua').replace(os.sep, '/')
+L.execute("app_clock = ctx.clock.now; now_sec = 1794200000; ctx.clock.now = function(self) local d = os.date('!*t', now_sec); "
+          "return { epoch_sec = now_sec, valid = true, year = d.year, month = d.month, day = d.day, hour = d.hour, minute = d.min, second = d.sec } end")
+G.store['remote_synced.txt'] = '1794200000'                 # 04:53 UTC (the clock above is UTC)
+
+
+def lock_session(answer_first=True, reason='timer'):
+    """on_load, then (a timer wake holds its frame until the answers) the answers, then on_draw"""
+    L.execute(f"done_calls, wake = 0, nil; ctx.lock = {{ reason = '{reason}', net = true, "
+              "done = function(self) done_calls = done_calls + 1 end, set_interval = function(self, s) wake = s; return s end }")
+    L.execute(f"dofile([[{LOCKSCREEN}]])")
+    L.execute('on_load(ctx)')
+    if answer_first:
+        flush()
+    return g.texts()
+
+
+def lock_done(): return int(G.done_calls)
+def lock_wake(): return int(G.wake)
+
+
+n0 = len(calls)
+L.execute('now_sec = 1794200000 + 10 * 60')                 # synced 10 min ago: not due
+t = lock_session()
+assert len(calls) == n0 and 'Home' in t and 'kitchen' in t and 'synced 04:53' in t and lock_done() == 1, t
+assert lock_wake() == 3600, lock_wake()                       # every hour: wakes hourly (aligned by the reader)
+T['tasks'].append({'id': 't9', 'content': 'Fix the door', 'project_id': 'p2', 'child_order': 0, 'checked': False,
+                   'due': None, 'parent_id': None})
+L.execute('now_sec = 1794200000 + 3600 - 90')                 # due (a wake 90 s early still counts)
+t = lock_session()
+sent_now = calls[n0:]
+assert sent_now and all('todoist.com' in c[1] for c in sent_now), sent_now      # only the lock list's account
+assert 'Fix the door' in g.store['lock.txt'] and 'Fix the door' in t and lock_done() == 1, t
+assert 'synced 05:51' in t and lock_wake() == 3600, (t, lock_wake())
+# the first session draws at once, then again after the answers, and only then ends
+n1 = len(calls)
+L.execute('now_sec = now_sec + 2 * 3600')
+t = lock_session(answer_first=False, reason='first')
+assert 'synced 05:51' in t and lock_done() == 0, t
+flush()
+assert len(calls) > n1 and 'synced 07:51' in g.texts() and lock_done() == 1
+# offline: the old list stays, the frame, then done
+online[0] = False
+L.execute('now_sec = now_sec + 2 * 3600')
+t = lock_session()
+online[0] = True
+assert 'Fix the door' in t and 'synced 07:51' in t and lock_done() == 1, t
+# Never: no request
+G.store['settings.txt'] = G.store['settings.txt'].replace('every=60', 'every=0')
+n2 = len(calls)
+L.execute('now_sec = now_sec + 5 * 3600')
+t = lock_session()
+assert len(calls) == n2 and 'Fix the door' in t and lock_done() == 1 and lock_wake() == 3600, (t, lock_wake())
+G.store['settings.txt'] = G.store['settings.txt'].replace('every=0', 'every=60')
+# due but no network on the lock screen: the next try a whole interval later, not at once
+L.execute('saved_net = ctx.net; ctx.net = nil; now_sec = now_sec + 3 * 3600')
+t = lock_session()
+L.execute('ctx.net = saved_net')
+assert len(calls) == n2 and lock_wake() == 3600 and lock_done() == 1, lock_wake()
+# every 15 minutes: the wake is the interval itself
+G.store['settings.txt'] = G.store['settings.txt'].replace('every=60', 'every=15')
+t = lock_session()
+assert lock_wake() == 900, lock_wake()
+assert len(calls) > n2                                        # it was due: synced
+n2 = len(calls)
+# a timer wake that comes early and would end before the quarter it was woken for gets a second wake on
+# it (Calendar: 14:59:37 then 15:00:01): it holds with ctx:after (it runs in a 2.26 lock session: Lock
+# Probe 1.9) until 2 s past the quarter, and only then ends
+L.execute("saved_after = ctx.after; held = {}; ctx.after = function(self, ms, fn) held[#held + 1] = { ms = ms, fn = fn }; return {} end; "
+          "now_sec = (now_sec // 900 + 2) * 900 - 40")
+L.execute("done_calls = 0; ctx.lock.interval_sec = 900; dofile([[%s]]); on_load(ctx)" % LOCKSCREEN)
+flush(); g.texts()
+assert int(L.eval('#held')) == 1 and int(L.eval('held[1].ms')) == 42000 and lock_done() == 0, (L.eval('#held'), lock_done())
+L.execute('now_sec = now_sec + 42; held[1].fn(ctx)')
+g.texts()
+assert lock_done() == 1
+L.execute('ctx.after = saved_after')
+n2 = len(calls)
+G.store['settings.txt'] = G.store['settings.txt'].replace('every=15', 'every=60')
+# a local list on the lock screen: never connects
+saved_settings, saved_lock = G.store['settings.txt'], G.store['lock.txt']
+G.store['settings.txt'] = saved_settings.replace('lock=todoist:p2', 'lock=To do')
+G.store['lock.txt'] = 'To do\nbread'
+t = lock_session()
+assert len(calls) == n2 and 'bread' in t and lock_done() == 1, t
+G.store['settings.txt'], G.store['lock.txt'] = saved_settings, saved_lock
+L.execute('ctx.clock.now = app_clock; ctx.lock = nil')
+g.restart()                                                   # the app again
 
 # ---------------------------------------------------------------- a token that is not accepted; Remove
 TOKEN = 'changed'

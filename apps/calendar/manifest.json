@@ -1,11 +1,18 @@
 {
   "app_id": "calendar",
   "display_name": "Calendar",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "author": "omer-faruq",
   "description": "Your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); it can be the lock screen.",
   "entry": "index.lua",
-  "api": "2.0",
-  "permissions": ["net"],
-  "lockscreen": { "enabled": true, "entry": "lockscreen.lua", "interval_sec": 900 }
+  "api": "2.26",
+  "permissions": [
+    "net"
+  ],
+  "lockscreen": {
+    "enabled": true,
+    "entry": "lockscreen.lua",
+    "interval_sec": 3600,
+    "net": true
+  }
 }

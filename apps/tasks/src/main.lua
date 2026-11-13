@@ -29,6 +29,14 @@ local screen = 'lists'          -- lists | list
 local cur = 1                   -- the open list (in all(): the local lists, then the services')
 local top = 1                   -- first row shown
 local lock_name = nil           -- the list on the lock screen: its name, or "<service>:<id>"
+-- how often the lock screen syncs a service's list while locked, in minutes (0: never)
+local lock_every = 60
+local EVERY = { { 15, 'Every 15 min' }, { 30, 'Every 30 min' }, { 60, 'Every hour' }, { 180, 'Every 3 hours' },
+                { 360, 'Every 6 hours' }, { 0, 'Never' } }
+local function every_text(m)
+  if m == 0 then return 'not synced while locked' end
+  return 'synced every ' .. (m < 60 and (m .. ' min') or (m == 60 and 'hour' or ((m // 60) .. ' hours')))
+end
 local msg, ERR = nil, nil
 local R = nil                   -- lib/remote.lua once loaded
 
@@ -186,7 +194,7 @@ end
 
 local function save()
   kit.write('lists.txt', serialize())
-  kit.write('settings.txt', 'lock=' .. (lock_name or '') .. '\nopen=' .. cur)
+  kit.write('settings.txt', 'lock=' .. (lock_name or '') .. '\nopen=' .. cur .. '\nevery=' .. lock_every)
   write_lock()
 end
 
@@ -211,6 +219,7 @@ local function load()
   if #lists == 0 then lists = { { name = 'To do', items = {} } } end
   local t = kit.kv(kit.read('settings.txt'))
   lock_name = (t.lock and t.lock ~= '') and t.lock or nil
+  lock_every = tonumber(t.every) or 60
   cur = math.max(1, math.min(#lists, tonumber(t.open) or 1))
 end
 
@@ -342,12 +351,29 @@ function item_menu(i)
              cancel = kit.close })
 end
 
+-- a service's list on the lock screen: how often it is synced while the reader is locked
+local function lock_every_menu(l)
+  local rows = {}
+  for k = 1, #EVERY, 2 do
+    local row = {}
+    for j = k, math.min(k + 1, #EVERY) do
+      local m = EVERY[j][1]
+      row[#row + 1] = { EVERY[j][2], function() kit.close(); lock_every = m; set_lock(l) end }
+    end
+    rows[#rows + 1] = row
+  end
+  kit.show({ title = 'Lock screen: ' .. l.name, lines = { 'Its open items when the reader locks, synced with ' .. remote().label(l) ..
+             ' while it is locked (Wi-Fi on for a few seconds):' }, rows = rows, cancel = kit.close })
+end
+
 local function list_menu(k)
   local l = all()[k]
   if l.src then
     kit.show({ title = l.name, lines = { 'A list in ' .. remote().label(l) .. ': rename or delete it there.',
-                                         lock_name == key_of(l) and 'This list is on the lock screen.' or 'Lock screen: its open items when the reader locks.' },
-               rows = { { { lock_name == key_of(l) and 'Lock screen off' or 'Lock screen', function() kit.close(); set_lock(l) end },
+                                         lock_name == key_of(l) and ('This list is on the lock screen, ' .. every_text(lock_every) .. '.')
+                                           or 'Lock screen: its open items when the reader locks.' },
+               rows = { { { lock_name == key_of(l) and 'Lock screen off' or 'Lock screen',
+                            function() kit.close(); if lock_name == key_of(l) then set_lock(l) else lock_every_menu(l) end end },
                           { 'Close', kit.close } } },
                cancel = kit.close })
     return

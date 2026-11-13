@@ -38,6 +38,11 @@ for k in range(400, 440):
     ITEMS[k] = {'by': f'user{k}', 'id': k, 'time': NOW - 500, 'type': 'comment', 'text': f'Comment {k}. ' + 'Words go on here. ' * 12}
 
 
+FY = [(80000001, 'Rust 2.0 is out', 'https://spam.example/a'), (80000002, 'Writing a Lua VM in Rust', 'https://blog.example/lua'),
+      (80000003, 'Lua tables explained', 'https://lua.example/t'), (80000004, 'Why Rust won', 'https://news.example/r'),
+      (80000005, 'Gardening tips', 'https://g.example/')]
+
+
 def hit(i):
     it = ITEMS.get(i, {})
     return {'objectID': str(i), 'title': it.get('title', f'Story number {i} with a title long enough to need two lines here'),
@@ -55,6 +60,11 @@ def answer(url):
         return {'status': 200, 'body': json.dumps(ITEMS.get(i))}
     if u.netloc == 'hn.algolia.com':
         assert q['attributesToHighlight'] == '[]'
+        if 'optionalWords' in q:                          # For you: any topic word in the title
+            words = q['query'].replace('"', ' ').lower().split()
+            hits = [{'objectID': str(i), 'title': t, 'url': u_, 'points': 50, 'num_comments': 3, 'author': 'a',
+                     'created_at_i': NOW - 3600} for i, t, u_ in FY if any(w in t.lower().split() for w in words)]
+            return {'status': 200, 'body': json.dumps({'hits': hits, 'nbPages': 3, 'page': int(q['page'])})}
         if 'query' in q:
             page = int(q['page'])
             hits = [hit(70000000 + page * 24 + k) for k in range(24)]
@@ -296,10 +306,10 @@ assert 'the Worker has no full-text service' in page_text()
 g.tap_label('Back')
 
 # tabs and search
-g.tap(30 + 79 * 2, 30)                                    # Best
+g.tap_label('Best')
 assert lst().tab == 'best' and requests[-1].endswith('/v0/beststories.json')
 answer_all()
-g.tap(30 + 79 * 5, 30)                                    # Find
+g.tap_label('Find')
 typed('lisp machines')
 assert 'search?tags=story&query=lisp%20machines&hitsPerPage=24&page=0' in requests[-1]
 answer_all()
@@ -309,6 +319,92 @@ assert 'page=1' in requests[-1]
 answer_all()
 assert len(titles()) == 48 and lst().top == 25 and not lst().more
 assert g.commands() < 900, g.commands()
+
+# For you (1.3.0): the first tab; topics in foryou.txt, one search for them all, mutes left out
+tabs = [str(t) for t in g.texts()]
+FYL = 'For you' if 'For you' in tabs else 'You'          # "You" where "For you" does not fit the tab
+assert tabs.index(FYL) < tabs.index('Top') and len([t for t in ('For you', 'You', 'Top', 'New', 'Best', 'Ask', 'Show', 'Find') if t in tabs]) == 7, tabs[:8]
+n = len(requests)
+g.tap_label(FYL)
+assert lst().tab == 'foryou' and len(requests) == n and 'Add a topic' in g.texts(), g.texts()   # no topics: nothing asked
+g.tap_label('Add a topic')
+typed('Lua')
+assert g.store['foryou.txt'] == 'lua' and 'optionalWords=lua' in requests[-1] and 'advancedSyntax=true' in requests[-1]
+answer_all()
+assert titles() == ['Writing a Lua VM in Rust', 'Lua tables explained'], titles()
+assert 'list_foryou.txt' in g.store and 'Lua tables explained' in g.store['list_foryou.txt']
+assert g.store['foryou_at.txt'] == str(NOW), g.store['foryou_at.txt']   # when: for the sleep screen
+g.store['foryou.txt'] = 'rust\n-site:spam.example'
+g.restart()                                               # topics: the app opens on For you
+assert lst().tab == 'foryou' and 'query=rust&optionalWords=rust' in requests[-1], requests[-1]
+answer_all()
+assert titles() == ['Writing a Lua VM in Rust', 'Why Rust won'], titles()     # the spam.example one left out
+assert any(str(t).startswith('rust · 50 pts') for t in g.texts()), [t for t in g.texts() if 'pts' in str(t)]
+g.tap_label('Next')
+assert 'page=1' in requests[-1], requests[-1]
+answer_all()
+g.store['foryou.txt'] = 'rust\n-rust'
+g.restart(); answer_all()
+assert titles() == [] and 'Nothing for your topics in the last 2 days.' in g.texts(), g.texts()
+del g.store['foryou.txt']
+g.restart()
+assert lst().tab == 'top' and requests[-1].endswith('/v0/topstories.json')
+answer_all()
+
+# More / Less like this on a story; the For you page in Settings: all entries, each edited or removed
+g.tap(100, row(1)); answer_all()
+assert screen() == 'story' and 'More like this' in g.texts() and 'Less like this' in g.texts(), g.texts()
+g.tap_label('More like this')
+assert 'lisp' in g.texts() and 'essay' in g.texts() and 'about' not in g.texts(), g.texts()
+g.tap_label('lisp')
+assert g.store['foryou.txt'] == 'lisp', g.store.get('foryou.txt')
+g.tap_label('Less like this')
+assert 'site:example.com' in g.texts(), g.texts()
+g.tap_label('site:example.com')
+assert g.store['foryou.txt'] == 'lisp\n-site:example.com', g.store['foryou.txt']
+g.tap_label('Back')
+g.tap_label(FYL)
+assert 'query=lisp&optionalWords=lisp' in requests[-1], requests[-1]
+answer_all()
+L.execute("lock_calls, lock_on = {}, false; ctx.lockscreen = { is_default = function(self) return lock_on end, "
+          "set_default = function(self) lock_calls[#lock_calls + 1] = 'set'; lock_on = true end, "
+          "clear_default = function(self) lock_calls[#lock_calls + 1] = 'clear'; lock_on = false end }")
+g.tap_label('Settings')
+assert 'For you' in g.texts(), g.texts()
+g.tap_label('For you')
+t = g.texts()
+for s in ['lisp', 'muted site: example.com', 'Add a topic', 'Mute a word', 'Sleep screen: off']:
+    assert s in t, (s, t)
+g.tap_label('lisp')
+assert 'Edit' in g.texts() and 'Remove' in g.texts() and 'Cancel' in g.texts()
+g.tap_label('Edit'); typed('Go')
+assert g.store['foryou.txt'] == 'go\n-site:example.com', g.store['foryou.txt']
+g.tap_label('go'); g.tap_label('Edit'); typed('  ')
+assert g.store['foryou.txt'] == '-site:example.com', g.store['foryou.txt']          # emptied: removed
+g.tap_label('Add a topic'); typed('rust')
+g.tap_label('Add a topic'); typed('Rust')
+g.tap_label('Add a topic'); typed('lua')
+g.tap_label('lua'); g.tap_label('Edit'); typed('rust')
+assert g.store['foryou.txt'] == 'rust\n-site:example.com', g.store['foryou.txt']   # a topic once
+g.tap_label('Mute a word'); typed('crypto')
+assert g.store['foryou.txt'] == 'rust\n-crypto\n-site:example.com', g.store['foryou.txt']
+g.tap_label('muted site: example.com'); g.tap_label('Remove')
+g.tap_label('rust'); g.tap_label('Cancel')
+assert g.store['foryou.txt'] == 'rust\n-crypto' and 'muted: crypto' in g.texts(), g.store['foryou.txt']
+g.tap_label('Sleep screen: off')
+g.tap_label('Every hour')
+assert list(L.eval('lock_calls').values()) == ['set'] and 'lockevery=60' in g.store['settings.txt'] and 'Sleep screen: every hour' in g.texts()
+g.tap_label('Sleep screen: every hour')
+g.tap_label('Every 3 hours')
+assert 'lockevery=180' in g.store['settings.txt'] and 'Sleep screen: every 3 hours' in g.texts()
+g.tap_label('Sleep screen: every 3 hours')
+g.tap_label('Off')
+assert list(L.eval('lock_calls').values())[-1] == 'clear' and 'Sleep screen: off' in g.texts()
+g.tap_label('Back'); g.tap_label('Back')
+assert screen() == 'list' and lst().tab == 'foryou' and 'query=rust' in requests[-1], requests[-1]   # changed: asked again
+answer_all()
+del g.store['foryou.txt']
+g.restart(); answer_all()
 
 # leaving a screen drops what it waited for
 g.tap(100, row(1))

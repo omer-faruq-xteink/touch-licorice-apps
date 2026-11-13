@@ -66,6 +66,106 @@ function N.domain(url)
   return d and (d:gsub('^www%.', '')) or nil
 end
 
+------------------------------------------------------------------ For you (1.3.0)
+-- foryou.txt, one entry a line: "rust" a topic, "-crypto" a muted word, "-site:medium.com" a
+-- muted site. Lower case (ASCII), trimmed, each once.
+
+local function trim(s) return (s:gsub('^%s+', ''):gsub('%s+$', '')) end
+-- lower case for A-Z only (string.lower and %w follow the C locale and may change UTF-8 bytes)
+local function lower(s) return (s:gsub('[A-Z]', function(c) return string.char(c:byte() + 32) end)) end
+local function add_once(list, v)
+  for _k, x in ipairs(list) do if x == v then return false end end
+  list[#list + 1] = v
+  return true
+end
+
+function N.foryou_parse(text)
+  local fy = { topics = {}, words = {}, sites = {} }
+  for line in (tostring(text or '') .. '\n'):gmatch('([^\n]*)\n') do
+    local s = lower(trim((line:gsub('\r', ''))))
+    local site = s:match('^%-%s*site:%s*(%S+)$')
+    if site then add_once(fy.sites, (site:gsub('^www%.', '')))
+    elseif s:sub(1, 1) == '-' then
+      local w = trim(s:sub(2))
+      if w ~= '' then add_once(fy.words, w) end
+    elseif s ~= '' then
+      add_once(fy.topics, (s:gsub('%s+', ' ')))
+    end
+  end
+  return fy
+end
+
+function N.foryou_text(fy)
+  local out = {}
+  for _k, t in ipairs(fy.topics) do out[#out + 1] = t end
+  for _k, w in ipairs(fy.words) do out[#out + 1] = '-' .. w end
+  for _k, s in ipairs(fy.sites) do out[#out + 1] = '-site:' .. s end
+  return table.concat(out, '\n')
+end
+
+-- one search for all the topics: each optional (a story matching more of them ranks higher, then
+-- by points), a topic of several words a phrase; the last two days, 10 points or more; 40 a page,
+-- so that some are left after the mutes
+function N.foryou_url(topics, now, page)
+  local q = {}
+  for _k, topic in ipairs(topics) do
+    local t = topic:gsub('"', '')
+    q[#q + 1] = t:find(' ', 1, true) and ('"' .. t .. '"') or t
+  end
+  local query = N.enc(table.concat(q, ' '))
+  return N.ALGOLIA .. 'search?tags=story&query=' .. query .. '&optionalWords=' .. query .. '&advancedSyntax=true'
+    .. '&numericFilters=' .. N.enc('created_at_i>' .. ((now or 0) - 172800) .. ',points>=10')
+    .. '&hitsPerPage=40&page=' .. (page or 0) .. FIELDS
+end
+
+-- the title's words, lower case (letters, digits and the like; whole UTF-8 characters)
+local function words_of(title)
+  local out = {}
+  for w in lower(tostring(title or '')):gmatch("[A-Za-z0-9\128-\255][A-Za-z0-9\128-\255'%+#%.%-]*") do
+    out[#out + 1] = (w:gsub("[%.%-']+$", ''))
+  end
+  return out
+end
+local function has_words(title_words, phrase)
+  local set = {}
+  for _k, w in ipairs(title_words) do set[w] = true end
+  for w in phrase:gmatch('%S+') do if not set[w] then return false end end
+  return true
+end
+
+function N.muted(row, fy)
+  local tw = words_of(row.title)
+  for _k, w in ipairs(fy.words) do if has_words(tw, w) then return true end end
+  local d = N.domain(row.url)
+  if d then
+    d = lower(d)
+    for _k, s in ipairs(fy.sites) do
+      if d == s or d:sub(-(#s + 1)) == '.' .. s then return true end
+    end
+  end
+  return false
+end
+
+function N.topics_in(title, topics)
+  local tw, out = words_of(title), {}
+  for _k, t in ipairs(topics) do if has_words(tw, t) then out[#out + 1] = t end end
+  return out
+end
+
+local STOP = {}
+for w in ('the and for with from that this what how why who are was were has have had not you your our its'
+    .. ' into over about after than then when will can just new now all any via using use one two out'
+    .. ' show ask tell more most some his her they them their there here been being but get got')
+    :gmatch('%S+') do STOP[w] = true end
+-- the words of a title that could be a topic (More like this): 3 letters or more, not a stop word
+function N.title_words(title)
+  local out = {}
+  for _k, w in ipairs(words_of(title)) do
+    if #w >= 3 and not STOP[w] and not w:match('^%d+$') then add_once(out, w) end
+  end
+  return out
+end
+
 function N.ago(t, now)
   if not t or t <= 0 or not now or now <= 0 then return '' end
   local s = math.max(0, now - t)

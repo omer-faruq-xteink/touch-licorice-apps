@@ -700,15 +700,16 @@ return function(env)
     queue[#queue + 1] = { acc = a.id, fn = function() google_token(a, function() list_page(nil) end) end }
   end
 
-  -- send the waiting changes, then fetch every list again; account by account
-  function R.sync()
+  -- send the waiting changes, then fetch every list again; account by account (only: one account's
+  -- id, as the lock screen syncs only the account of the list it shows)
+  function R.sync(only)
     if busy or not R.configured() then return end
     if not ctx.net then status = 'No network access'; return end
     busy, queue, fresh, got, errors = true, {}, {}, {}, {}
     status = 'Syncing...'
     pcall(function() ctx.net:keep_wifi(60000) end)
     for _k, a in ipairs(accounts) do
-      if ready(a) then
+      if ready(a) and (not only or a.id == only) then
         queue_ops(a)
         if a.src == 'todoist' then queue_todoist(a)
         elseif a.src == 'ticktick' then queue_ticktick(a)
@@ -732,6 +733,7 @@ return function(env)
       end)
       rlists = fresh
       apply_pending()
+      kit.write('remote_synced.txt', tostring((now_sec())))     -- when, for the lock screen
       local failed = 0
       for _k in pairs(errors) do failed = failed + 1 end
       finish('Synced ' .. clock_label() .. (#pending > 0 and (', ' .. #pending .. ' waiting') or '') ..

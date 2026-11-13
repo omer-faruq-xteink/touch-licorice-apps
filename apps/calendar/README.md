@@ -1,4 +1,4 @@
-# Calendar — XTOS Licorice mini app (API 2.9)
+# Calendar — XTOS Licorice mini app (API 2.26)
 
 Your Google Calendar (or any calendar with an iCal address), read-only, and **My calendar** for
 events you add on the reader, in **Day**, **Week**, **Month** and **Agenda** views, and on the
@@ -85,8 +85,10 @@ others, can be hidden or renamed in More, and is never synced.
   hour and shows as many hours as fit, past midnight into the next day; the day's events that
   are over are listed on one line above the hours ("Earlier: 09:00 Standup"), those that don't
   fit on one line at the bottom ("+2 later today: 21:00 Gym, …"). The lock
-  screen is redrawn every 15 minutes, and fetches the calendars again (at most once an hour) when
-  they are older than the sync interval, if the reader lets it use Wi-Fi.
+  screen fetches the calendars that are switched on and older than the sync interval while the
+  reader is locked (My calendar is on the reader and never fetched; with nothing to fetch it does
+  not connect; of a big calendar only the events it can show are read, so years of history fit) and says when they were synced ("synced 14:05"). It wakes once an hour, on the
+  hour (the Day view moves on, midnight brings the new day). Needs firmware 26111201 or later (API 2.26).
 
 ## Good to know
 

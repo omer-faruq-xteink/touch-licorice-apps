@@ -18,10 +18,10 @@ RELEASE = REPO + '/releases/latest/download/'
 STORE = 'https://xtapp-ai.xteink.cc/store'
 
 # the firmware an API version first came with; older APIs run on every build the apps support
-FIRMWARE = {'2.18': '26110201', '2.21': '26110501'}
+FIRMWARE = {'2.18': '26110201', '2.21': '26110501', '2.26': '26111201'}
 
 CATEGORIES = [
-    ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'wikipedia', 'bookworm']),
+    ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'xkcd', 'wikipedia', 'bookworm']),
     ('tools', 'Tools and lock screens', ['tasks', 'notebook', 'timekeeper', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
                                          'skytonight', 'litclock', 'wordclock']),
     ('learn', 'Learning', ['pianofollow', 'anki', 'dict', 'tarot']),

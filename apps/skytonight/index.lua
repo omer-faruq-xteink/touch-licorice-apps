@@ -269,7 +269,10 @@ local WORDS = {
          dirs = { 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW' },
          days = { 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' },
          months = { 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' },
-         planets = { mercury = 'Mercury', venus = 'Venus', mars = 'Mars', jupiter = 'Jupiter', saturn = 'Saturn' } },
+         planets = { mercury = 'Mercury', venus = 'Venus', mars = 'Mars', jupiter = 'Jupiter', saturn = 'Saturn' },
+         zoom_out = 'Zoom out', brightest = 'Brightest', evenings = 'Evenings', card = 'Card', names = 'Names', lines = 'Lines', objects = 'Objects',
+         months_long = { 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                         'October', 'November', 'December' } },
   tr = { now = 'şimdi', tonight = 'bu gece', sunset = 'Gün batımı', dark = 'Karanlık', sunrise = 'Gün doğumu',
          rises = 'doğuş', sets = 'batış', lit = '%%%d aydınlık', moon = 'Ay', full = 'Dolunay', new = 'Yeni ay', sun = 'Güneş',
          none_up = 'Ufkun üstünde gezegen yok', no_clock = 'Saat ayarlı değil.',
@@ -281,7 +284,10 @@ local WORDS = {
          dirs = { 'K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB' },
          days = { 'Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt' },
          months = { 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara' },
-         planets = { mercury = 'Merkür', venus = 'Venüs', mars = 'Mars', jupiter = 'Jüpiter', saturn = 'Satürn' } },
+         planets = { mercury = 'Merkür', venus = 'Venüs', mars = 'Mars', jupiter = 'Jüpiter', saturn = 'Satürn' },
+         zoom_out = 'Uzaklaş', brightest = 'En parlak', evenings = 'Akşamları', card = 'Kart', names = 'Yazılar', lines = 'Çizgiler', objects = 'Cisimler',
+         months_long = { 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül',
+                         'Ekim', 'Kasım', 'Aralık' } },
   de = { now = 'jetzt', tonight = 'heute Nacht', sunset = 'Sonnenunterg.', dark = 'Dunkel', sunrise = 'Sonnenaufg.',
          rises = 'Aufgang', sets = 'Untergang', lit = '%d %% beleuchtet', moon = 'Mond', full = 'Vollmond', new = 'Neumond', sun = 'Sonne',
          none_up = 'Keine Planeten über dem Horizont', no_clock = 'Die Uhr ist nicht gestellt.',
@@ -293,7 +299,10 @@ local WORDS = {
          dirs = { 'N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW' },
          days = { 'So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa' },
          months = { 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez' },
-         planets = { mercury = 'Merkur', venus = 'Venus', mars = 'Mars', jupiter = 'Jupiter', saturn = 'Saturn' } },
+         planets = { mercury = 'Merkur', venus = 'Venus', mars = 'Mars', jupiter = 'Jupiter', saturn = 'Saturn' },
+         zoom_out = 'Übersicht', brightest = 'Hellste', evenings = 'Abends', card = 'Karte', names = 'Namen', lines = 'Linien', objects = 'Objekte',
+         months_long = { 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September',
+                         'Oktober', 'November', 'Dezember' } },
 }
 local NAME_COL = { en = 1, tr = 2, de = 3 }       -- which of names.txt's three names
 local LANGS = { 'en', 'tr', 'de' }
@@ -403,7 +412,7 @@ local function pread(name)
 end
 
 -- stars.txt "ra dec mag", brightest first; lines.txt "ra dec ra dec ..."; names.txt
--- "ra dec rank en|tr|de"; stars_named.txt "ra dec name"
+-- "ra dec rank ABBR en|tr|de" (ABBR: the IAU abbreviation); stars_named.txt "ra dec name"
 local function load_data()
   if STARS then return end
   STARS, LINES, CNAMES, SNAMES = {}, {}, {}, {}
@@ -415,10 +424,10 @@ local function load_data()
     for v in line:gmatch('%S+') do pts[#pts + 1] = tonumber(v) end
     LINES[#LINES + 1] = pts
   end
-  for ra, dec, rank, names in pread('names.txt'):gmatch('(%S+) (%S+) (%d) ([^\n]+)') do
+  for ra, dec, rank, abbr, names in pread('names.txt'):gmatch('(%S+) (%S+) (%d) (%S+) ([^\n]+)') do
     local n = {}
     for part in (names .. '|'):gmatch('([^|]*)|') do n[#n + 1] = part end
-    CNAMES[#CNAMES + 1] = { tonumber(ra), tonumber(dec), tonumber(rank), n }
+    CNAMES[#CNAMES + 1] = { tonumber(ra), tonumber(dec), tonumber(rank), n, abbr }
   end
   for ra, dec, name in pread('stars_named.txt'):gmatch('(%S+) (%S+) ([^\n]+)') do
     SNAMES[#SNAMES + 1] = { tonumber(ra), tonumber(dec), name }
@@ -555,6 +564,217 @@ local function project(alt, az)
   return CX - r * sin(az * rad), CY - r * cos(az * rad)
 end
 
+-- the zoomed view (1.1.0): the chart ZOOM times larger in the band WIN_Y0..WIN_Y1, the chart point
+-- (view.zx, view.zy) at its centre
+local ZOOM = 2.5
+local WIN_Y0, WIN_Y1 = 92, 500
+-- the window's bottom: WIN_Y1 with the card under it, view.win_y1 (down to the buttons) without
+local function win_y1(view) return view.win_y1 or WIN_Y1 end
+local function win_cy(view) return (WIN_Y0 + win_y1(view)) // 2 end
+
+local function to_screen(x, y, view)
+  if not view.zoom then return x, y end
+  return (x - view.zx) * view.zoom + CX, (y - view.zy) * view.zoom + win_cy(view)
+end
+
+-- a star's place on the screen and u, the sine of its altitude (up when u > 0)
+local function radec_to_screen(ra, dec, view)
+  local lat = view.place.lat
+  local h, d = (A.gmst(view.s) + view.place.lon - ra) * rad, dec * rad
+  local sl, cl = sin(lat * rad), cos(lat * rad)
+  local sd, cd, ch = sin(d), cos(d), cos(h)
+  local u = sd * sl + cd * cl * ch
+  local k = R / (1 + u)
+  local x, y = to_screen(CX + k * cd * sin(h), CY - k * (sd * cl - cd * sl * ch), view)
+  return x, y, u
+end
+
+-- the other way: a point on the screen -> ra, dec (degrees), or nil outside the horizon
+local function chart_to_radec(sx, sy, view)
+  local x, y = sx, sy
+  if view.zoom then x, y = (sx - CX) / view.zoom + view.zx, (sy - win_cy(view)) / view.zoom + view.zy end
+  local X, Y = (x - CX) / R, (CY - y) / R
+  local rho2 = X * X + Y * Y
+  if rho2 > 1 then return nil end
+  local u = (1 - rho2) / (1 + rho2)                 -- stereographic: rho^2 = (1 - u) / (1 + u)
+  local xe, yn = X * (1 + u), Y * (1 + u)
+  local lat = view.place.lat
+  local sl, cl = sin(lat * rad), cos(lat * rad)
+  local sd = u * sl + yn * cl
+  local h = math.atan(xe, u * cl - yn * sl) / rad
+  local dec = math.asin(math.max(-1, math.min(1, sd))) / rad
+  return (A.gmst(view.s) + view.place.lon - h) % 360, dec
+end
+
+-- the IAU boundaries (bounds.txt "ABBR N ra dec ..."), read on the first use
+local BOUNDS
+local function load_bounds()
+  if BOUNDS then return end
+  BOUNDS = {}
+  for ab, north, rest in pread('bounds.txt'):gmatch('(%S+) (%d) ([^\n]+)') do
+    local xs, ys = {}, {}
+    for a, b in rest:gmatch('(%S+) (%S+)') do xs[#xs + 1] = tonumber(a); ys[#ys + 1] = tonumber(b) end
+    BOUNDS[#BOUNDS + 1] = { ab, north == '1', xs, ys }
+  end
+end
+
+local function constellation_at(ra, dec)
+  load_bounds()
+  -- the meridian from the point up to the north pole crosses a polygon's edges an odd number of
+  -- times when the point is inside (an even number for UMi, which holds the pole); each edge the
+  -- short way round in RA, so 0/360 is no seam
+  for _, b in ipairs(BOUNDS) do
+    local xs, ys = b[3], b[4]
+    local hit, n = b[2], #xs
+    for i = 1, n do
+      local j = i % n + 1
+      local a1 = (xs[i] - ra + 180) % 360 - 180
+      local a2 = (xs[j] - ra + 180) % 360 - 180
+      if (a1 > 0) ~= (a2 > 0) and math.abs(a1 - a2) < 180 then
+        if ys[i] + (ys[j] - ys[i]) * a1 / (a1 - a2) > dec then hit = not hit end
+      end
+    end
+    if hit then return b[1] end
+  end
+  return nil
+end
+
+-- the cards (cards.txt "ABBR|story|stars|ids") and the deep-sky objects (objects.txt "ID type ra dec
+-- mag ABBR|name|note"), read on the first zoom
+-- In Turkish and German, cards_<lang>.txt (the same lines) gives the stories and objects_<lang>.txt
+-- ("ID|name|note") the objects' names and notes; a line missing there stays English. Read again
+-- when the language changes (the Place page's language button).
+local CARDS, OBJECTS, OBJ_BY_ID, CARDS_LANG
+local function load_cards()
+  if CARDS and CARDS_LANG == LANG then return end
+  CARDS, OBJECTS, OBJ_BY_ID, CARDS_LANG = {}, {}, {}, LANG
+  for ab, st, sn, il in pread('cards.txt'):gmatch('([^|\n]+)|([^|\n]*)|([^|\n]*)|([^\n]*)') do
+    local list = {}
+    for id in il:gmatch('%S+') do list[#list + 1] = id end
+    CARDS[ab] = { story = st, stars = sn, ids = list }
+  end
+  for id, ty, ra, dec, mag, ab, name, note in
+      pread('objects.txt'):gmatch('(%S+) (%S+) (%S+) (%S+) (%S+) ([^|\n]+)|([^|\n]*)|([^\n]*)') do
+    local o = { id = id, type = ty, ra = tonumber(ra), dec = tonumber(dec), mag = tonumber(mag), abbr = ab, name = name, note = note }
+    OBJECTS[#OBJECTS + 1] = o
+    OBJ_BY_ID[id] = o
+  end
+  if LANG ~= 'en' then
+    for ab, st in pread('cards_' .. LANG .. '.txt'):gmatch('([^|\n]+)|([^|\n]*)|[^\n]*') do
+      if CARDS[ab] and st ~= '' then CARDS[ab].story = st end
+    end
+    for id, name, note in pread('objects_' .. LANG .. '.txt'):gmatch('([^|\n]+)|([^|\n]*)|([^\n]*)') do
+      local o = OBJ_BY_ID[id]
+      if o then
+        if name ~= '' then o.name = name end
+        if note ~= '' then o.note = note end
+      end
+    end
+  end
+end
+
+-- a segment cut to a rectangle (Liang-Barsky); nil when it misses it
+local function clip_seg(x1, y1, x2, y2, x0, y0, xm, ym)
+  local t0, t1 = 0, 1
+  local dx, dy = x2 - x1, y2 - y1
+  local ps = { -dx, dx, -dy, dy }
+  local qs = { x1 - x0, xm - x1, y1 - y0, ym - y1 }
+  for i = 1, 4 do
+    local p, q = ps[i], qs[i]
+    if p == 0 then
+      if q < 0 then return nil end
+    else
+      local r = q / p
+      if p < 0 then
+        if r > t1 then return nil elseif r > t0 then t0 = r end
+      else
+        if r < t0 then return nil elseif r < t1 then t1 = r end
+      end
+    end
+  end
+  return x1 + t0 * dx, y1 + t0 * dy, x1 + t1 * dx, y1 + t1 * dy
+end
+
+-- a polygon ({x, y} points) cut to a rectangle (Sutherland-Hodgman), as a flat list
+local function clip_poly(pts, x0, y0, xm, ym)
+  local function cut(list, inside, cross)
+    local out = {}
+    for i = 1, #list do
+      local p, q = list[i], list[i % #list + 1]
+      local pin, qin = inside(p), inside(q)
+      if pin then out[#out + 1] = p end
+      if pin ~= qin then out[#out + 1] = cross(p, q) end
+    end
+    return out
+  end
+  local function at_x(x) return function(p, q) local t = (x - p[1]) / (q[1] - p[1]); return { x, p[2] + t * (q[2] - p[2]) } end end
+  local function at_y(y) return function(p, q) local t = (y - p[2]) / (q[2] - p[2]); return { p[1] + t * (q[1] - p[1]), y } end end
+  pts = cut(pts, function(p) return p[1] >= x0 end, at_x(x0))
+  if #pts > 0 then pts = cut(pts, function(p) return p[1] <= xm end, at_x(xm)) end
+  if #pts > 0 then pts = cut(pts, function(p) return p[2] >= y0 end, at_y(y0)) end
+  if #pts > 0 then pts = cut(pts, function(p) return p[2] <= ym end, at_y(ym)) end
+  local flat = {}
+  for _, p in ipairs(pts) do flat[#flat + 1] = floor(p[1] + 0.5); flat[#flat + 1] = floor(p[2] + 0.5) end
+  return flat
+end
+
+-- words of s in lines no wider than maxw
+local function wrap(f, s, maxw)
+  local out, line = {}, ''
+  for word_ in s:gmatch('%S+') do
+    local cand = line == '' and word_ or (line .. ' ' .. word_)
+    if line ~= '' and text_w(f, cand) > maxw then out[#out + 1] = line; line = word_ else line = cand end
+  end
+  if line ~= '' then out[#out + 1] = line end
+  return out
+end
+
+-- the month when a point of right ascension ra (degrees) is due south (north, in the south) at
+-- 21:00: then the Sun's RA is ra - 9 h; the Sun's RA is 0 h on 21 March and gains 2 h a month
+local function evening_month(ra)
+  return (2 + floor(((ra / 15 - 9) % 24) / 2 + 0.5)) % 12 + 1
+end
+
+-- the card of constellation ab in y0..y1: its name, when to look, the story, the brightest stars,
+-- the objects; what does not fit is left out from the end. c(k) counts the frame's commands.
+local function draw_card(g, ab, y0, y1, c)
+  load_cards()
+  local name, ra
+  for _, cn in ipairs(CNAMES) do
+    if cn[5] == ab then name, ra = cn[4][NAME_COL[LANG]] or cn[4][1], cn[1]; break end
+  end
+  if not name then return end
+  local f_name, f_text, f_obj = font_px(24), font_px(16), font_px(15)
+  local lh_t, lh_o = f_text.line_height or 20, f_obj.line_height or 19
+  local y = y0
+  if c(2) then
+    g:text(20, y, name, { font = f_name })
+    g:text(W - 20, y + 6, word('evenings') .. ': ' .. WORDS[LANG].months_long[evening_month(ra)], { font = f_text, align = 'right' })
+  end
+  y = y + (f_name.line_height or 30) + 4
+  local card = CARDS[ab]
+  if not card then return end
+  local lines = wrap(f_text, card.story, W - 40)
+  if card.stars ~= '' then lines[#lines + 1] = word('brightest') .. ': ' .. card.stars end
+  for _, l in ipairs(lines) do
+    if y + lh_t > y1 or not c() then return end
+    g:text(20, y, l, { font = f_text })
+    y = y + lh_t
+  end
+  y = y + 4
+  for _, id in ipairs(card.ids) do
+    local o = OBJ_BY_ID[id]
+    if o then                                       -- an object whole or not at all
+      local ls = wrap(f_obj, o.id .. (o.name ~= o.id and (' ' .. o.name) or '') .. ': ' .. o.note, W - 40)
+      if y + #ls * lh_o > y1 or not c(#ls) then return end
+      for k, l in ipairs(ls) do
+        g:text(k == 1 and 20 or 32, y, l, { font = f_obj })
+        y = y + lh_o
+      end
+    end
+  end
+end
+
 local function dir_word(az) return WORDS[LANG].dirs[floor((az + 22.5) / 45) % 8 + 1] end
 
 -- the moon's disc at (x, y): dark disc, the lit part as a polygon. Waxing is lit on the right in
@@ -595,6 +815,17 @@ local function draw_sky(g, view, y_end)
   local function c(k) n = n + (k or 1); return n <= MAX_CMDS end
   local white = { color = 0 }
   local sl, cl = sin(lat * rad), cos(lat * rad)
+  -- zoomed (1.1.0): the chart Z times larger in the window WIN_Y0..WIN_Y1; DCX, DCY, DR: the
+  -- horizon's circle on the screen
+  local Z = view.zoom
+  local WY1 = win_y1(view)                         -- the zoomed window's bottom
+  local DCX, DCY = to_screen(CX, CY, view)
+  local DR = Z and R * Z or R
+  local function inwin(x, y, m)
+    m = m or 0
+    return x >= -m and x <= W + m and y >= WIN_Y0 - m and y <= WY1 + m
+  end
+  local function proj(alt, az) local x, y = project(alt, az); return to_screen(x, y, view) end
   -- a star's place on the chart and u, the sine of its altitude (above the horizon when u > 0):
   -- the stereographic projection straight from the direction vector, four sines per star
   local function xy(ra, dec)
@@ -602,7 +833,9 @@ local function draw_sky(g, view, y_end)
     local sd, cd, ch = sin(d), cos(d), cos(h)
     local u = sd * sl + cd * cl * ch
     local k = R / (1 + u)
-    return CX + k * cd * sin(h), CY - k * (sd * cl - cd * sl * ch), u
+    local x, y = CX + k * cd * sin(h), CY - k * (sd * cl - cd * sl * ch)
+    if Z then x, y = to_screen(x, y, view) end
+    return x, y, u
   end
   local function late()
     if not view.budget_ms then return false end
@@ -612,31 +845,47 @@ local function draw_sky(g, view, y_end)
 
   -- header: the place, the date and the time
   local f_big, f_mid, f_small, f_tiny = font_px(30), font_px(20), font_px(16), font_px(14)
-  g:text(20, 16, place.name, { font = f_big })
-  g:text(W - 20, 16, hhmm(s, off), { font = f_big, align = 'right' })
-  local sub = date_text(s, off) .. (view.label and ('  ·  ' .. word(view.label)) or '')
-  g:text(20, 58, sub, { font = f_mid })
-  c(3)
-
-  -- the sky: a black disc, the compass points around it
-  g:circle(CX, CY, R, { fill = true })
-  local fpt = font_px(18)
-  for i, ang in ipairs({ 0, 90, 180, 270 }) do
-    local x, y = CX - (R + 13) * sin(ang * rad), CY - (R + 13) * cos(ang * rad)
-    g:text(floor(x), floor(y), WORDS[LANG].dirs[(i - 1) * 2 + 1], { font = fpt, align = 'center', valign = 'middle' })
+  local function header()
+    g:text(20, 16, place.name, { font = f_big })
+    g:text(W - 20, 16, hhmm(s, off), { font = f_big, align = 'right' })
+    local sub = date_text(s, off) .. (view.label and ('  ·  ' .. word(view.label)) or '')
+    g:text(20, 58, sub, { font = f_mid })
+    c(3)
   end
-  c(5)
+  if not Z then header() end                       -- zoomed: drawn last, over the chart's overflow
 
-  -- labels: kept apart from each other and inside the disc
+  if Z then
+    -- the part of the black disc inside the window
+    local pts = {}
+    for k = 0, 63 do
+      local a = k * (2 * math.pi / 64)
+      pts[#pts + 1] = { DCX + DR * cos(a), DCY + DR * sin(a) }
+    end
+    local flat = clip_poly(pts, 0, WIN_Y0, W, WY1)
+    if #flat >= 6 and c() then g:polygon(flat, { fill = true }) end
+  else
+    -- the sky: a black disc, the compass points around it
+    g:circle(CX, CY, R, { fill = true })
+    local fpt = font_px(18)
+    for i, ang in ipairs({ 0, 90, 180, 270 }) do
+      local x, y = CX - (R + 13) * sin(ang * rad), CY - (R + 13) * cos(ang * rad)
+      g:text(floor(x), floor(y), WORDS[LANG].dirs[(i - 1) * 2 + 1], { font = fpt, align = 'center', valign = 'middle' })
+    end
+    c(5)
+  end
+
+  -- labels: kept apart from each other and inside the disc (and the window, zoomed)
   local boxes = {}
   local function label(x, y, s_, f, opts)
+    if view.no_names then return false end         -- the app's menu: Names off
     local w, h = text_w(f, s_), f.line_height or 18
     local x0 = opts and opts.align == 'center' and x - w // 2 or x
     local y0 = y - h // 2
-    local dy = y0 + h / 2 - CY
+    if Z and (x0 < 4 or x0 + w > W - 4 or y0 < WIN_Y0 + 2 or y0 + h > WY1 - 2) then return false end
+    local dy = y0 + h / 2 - DCY
     for _, ex in ipairs({ x0, x0 + w }) do
-      local dx = ex - CX
-      if dx * dx + dy * dy > (R - 6) * (R - 6) then return false end
+      local dx = ex - DCX
+      if dx * dx + dy * dy > (DR - 6) * (DR - 6) then return false end
     end
     local p = 8                                 -- a gap between labels
     for _, b in ipairs(boxes) do
@@ -650,10 +899,29 @@ local function draw_sky(g, view, y_end)
 
   -- the constellation figures, cut at the horizon
   dbg('figures (' .. n .. ' commands)')
-  for _, pts in ipairs(LINES) do
+  for _, pts in ipairs(view.no_lines and {} or LINES) do   -- the app's menu: Lines off, none
     local out, px, py, palt = {}, nil, nil, nil
     local function flush()
-      if #out >= 4 and c() then g:polyline(out, white) end
+      if Z then                                   -- zoomed: each segment cut to the window
+        local piece = {}
+        local function emit()
+          if #piece >= 4 and c() then g:polyline(piece, white) end
+          piece = {}
+        end
+        for i = 1, #out - 3, 2 do
+          local a, b, c2, d = clip_seg(out[i], out[i + 1], out[i + 2], out[i + 3], 0, WIN_Y0, W, WY1)
+          if a then
+            a, b, c2, d = floor(a), floor(b), floor(c2), floor(d)
+            if #piece == 0 or piece[#piece - 1] ~= a or piece[#piece] ~= b then emit(); piece = { a, b } end
+            piece[#piece + 1], piece[#piece + 2] = c2, d
+          else
+            emit()
+          end
+        end
+        emit()
+      elseif #out >= 4 and c() then
+        g:polyline(out, white)
+      end
       out = {}
     end
     for i = 1, #pts - 1, 2 do
@@ -664,9 +932,9 @@ local function draw_sky(g, view, y_end)
           out[#out + 1], out[#out + 2] = floor(x), floor(y)
         elseif (alt >= 0) ~= (palt >= 0) and alt > -0.8 and palt > -0.8 then
           local t = palt / (palt - alt)               -- where the altitude passes 0, on the rim
-          local ex, ey = px + (x - px) * t - CX, py + (y - py) * t - CY
+          local ex, ey = px + (x - px) * t - DCX, py + (y - py) * t - DCY
           local d = sqrt(ex * ex + ey * ey)
-          if d > 0 then ex, ey = CX + ex * R / d, CY + ey * R / d end
+          if d > 0 then ex, ey = DCX + ex * DR / d, DCY + ey * DR / d end
           if alt >= 0 then
             out[1], out[2] = floor(ex), floor(ey)
             out[3], out[4] = floor(x), floor(y)
@@ -683,6 +951,34 @@ local function draw_sky(g, view, y_end)
     flush()
   end
 
+  -- zoomed on a constellation: its boundary, dashed (edges cut in steps of 1.5 degrees, as the
+  -- boundaries follow lines of RA and Dec, which are curves on the chart)
+  if Z and view.card and not view.win_y1 then      -- only with the card (hidden: nothing is picked)
+    load_bounds()
+    for _, b in ipairs(BOUNDS) do
+      if b[1] == view.card then
+        local xs, ys, m = b[3], b[4], #b[3]
+        local dash = false
+        for i = 1, m do
+          local j = i % m + 1
+          local dra = (xs[j] - xs[i] + 180) % 360 - 180
+          local ddec = ys[j] - ys[i]
+          local steps = math.max(1, floor(math.max(math.abs(dra) * cos(ys[i] * rad), math.abs(ddec)) / 1.5) + 1)
+          local px, py, pu = xy(xs[i], ys[i])
+          for k = 1, steps do
+            local qx, qy, qu = xy(xs[i] + dra * k / steps, ys[i] + ddec * k / steps)
+            dash = not dash
+            if dash and pu > 0 and qu > 0 then
+              local a, b2, c2, d2 = clip_seg(px, py, qx, qy, 0, WIN_Y0, W, WY1)
+              if a and c() then g:line(floor(a), floor(b2), floor(c2), floor(d2), white) end
+            end
+            px, py, pu = qx, qy, qu
+          end
+        end
+      end
+    end
+  end
+
   -- the sun, the moon and the planets first, so their labels win
   dbg('sun, moon, planets (' .. n .. ' commands)')
   local _, sra, sdec = A.sun(s)
@@ -692,8 +988,9 @@ local function draw_sky(g, view, y_end)
   malt = malt - mpar * cos(malt * rad)
   local lit, waxing, age = A.phase(s)
   local f_lab = font_px(15)
-  if salt > 0 and c(10) then
-    local x, y = project(salt, saz)
+  local sx, sy = proj(salt, saz)
+  if salt > 0 and (not Z or inwin(sx, sy, -20)) and c(10) then
+    local x, y = sx, sy
     g:circle(floor(x), floor(y), 9, { fill = true, color = 0 })
     for k = 0, 7 do
       local a = k * 45 * rad
@@ -701,8 +998,9 @@ local function draw_sky(g, view, y_end)
     end
     label(x + 20, y, word('sun'), f_lab)
   end
-  if malt > 0 and c(3) then
-    local x, y = project(malt, maz)
+  local mx, my = proj(malt, maz)
+  if malt > 0 and (not Z or inwin(mx, my, -12)) and c(3) then
+    local x, y = mx, my
     moon_disc(g, floor(x), floor(y), 10, lit, waxing, lat < 0, true)
     label(x + 14, y, word('moon'), f_lab)
   end
@@ -710,12 +1008,45 @@ local function draw_sky(g, view, y_end)
   for _, name in ipairs(A.PLANETS) do
     local _, _, pra, pdec = A.planet(name, s)
     local palt, paz = A.horizon(pra, pdec, lst, lat)
-    if palt > 0 and c(2) then
-      local x, y = project(palt, paz)
+    local x, y = proj(palt, paz)
+    if palt > 0 and (not Z or inwin(x, y, -10)) and c(2) then
       g:circle(floor(x), floor(y), 4, { fill = true, color = 0 })
       g:circle(floor(x), floor(y), 8, { color = 0 })
       label(x + 11, y, WORDS[LANG].planets[name], f_lab)
       up[#up + 1] = { name, palt, paz }
+    end
+  end
+
+  -- zoomed: the deep-sky objects in the window, a symbol each and its catalogue number
+  if Z and not view.no_objects then                 -- the app's menu: Objects off, none
+    load_cards()
+    for _, o in ipairs(OBJECTS) do
+      local x, y, u = xy(o.ra, o.dec)
+      if u > 0 and inwin(x, y, -10) and c(2) then
+        x, y = floor(x), floor(y)
+        if o.type == 'gx' then                      -- a galaxy: an oval
+          local pts = {}
+          for k = 0, 12 do
+            local a = k * (2 * math.pi / 12)
+            pts[#pts + 1] = floor(x + 10 * cos(a) + 0.5); pts[#pts + 1] = floor(y + 4 * sin(a) + 0.5)
+          end
+          g:polyline(pts, white)
+          n = n - 1
+        elseif o.type == 'nb' then                  -- a nebula: a square
+          g:rect(x - 6, y - 6, 12, 12, white)
+          n = n - 1
+        elseif o.type == 'gc' then                  -- a globular cluster: a ball
+          g:circle(x, y, 3, { fill = true, color = 0 })
+          g:circle(x, y, 7, white)
+        elseif o.type == 'pn' then                  -- a planetary nebula: a ring with a dot
+          g:circle(x, y, 1, { fill = true, color = 0 })
+          g:circle(x, y, 5, white)
+        else                                        -- an open cluster: a wide circle
+          g:circle(x, y, 9, white)
+          n = n - 1
+        end
+        label(x + 12, y, o.id, f_tiny)
+      end
     end
   end
 
@@ -746,7 +1077,7 @@ local function draw_sky(g, view, y_end)
   for i, st in ipairs(STARS) do
     if n >= room or (i % 32 == 0 and late()) then break end
     local x, y, u = xy(st[1], st[2])
-    local free = u > 0
+    local free = u > 0 and (not Z or inwin(x, y, -3))
     if free then                                -- no star on top of a label
       for _, b in ipairs(boxes) do
         if x >= b[1] - 2 and x < b[1] + b[3] + 2 and y >= b[2] and y < b[2] + b[4] then free = false; break end
@@ -762,6 +1093,19 @@ local function draw_sky(g, view, y_end)
       end
       n = n + 1
     end
+  end
+
+  -- zoomed: paper over whatever reached past the window, the header, the card under it
+  if Z then
+    if c(3) then
+      g:rect(0, 0, W, WIN_Y0, { fill = true, color = 0 })
+      g:rect(0, WY1, W, H - WY1, { fill = true, color = 0 })
+      g:line(0, WY1, W, WY1)
+    end
+    header()
+    if view.card and not view.win_y1 then draw_card(g, view.card, WY1 + 10, y_end - 6, c) end
+    dbg('draw_sky zoomed done (' .. n .. ' commands)')
+    return n
   end
 
   -- under the chart: the moon, then the night's times, then the planets that are up
@@ -812,7 +1156,8 @@ local function draw_sky(g, view, y_end)
 end
 
 if rawget(_G, '__TEST') then
-  __TEST.sky = { civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
+  __TEST.sky = { draw_sky = draw_sky, radec_to_screen = radec_to_screen, chart_to_radec = chart_to_radec, constellation_at = constellation_at,
+                 civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
                  load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end }
 end
 
@@ -828,6 +1173,28 @@ local page = 1
 local PER_PAGE, ROW_Y, ROW_H = 10, 92, 54
 local timer = nil
 local load_err = nil                             -- an error at start, shown instead of the sky
+-- 1.1.0: zoomed in (nil: the whole sky): zx, zy the chart point at the window's centre, card the
+-- constellation whose card shows; down: where the finger went down (a move over 20 px is a pan)
+local zoom = nil
+local down = nil
+-- the card under the zoomed chart: shown, or hidden for a taller chart (Card button; kept in
+-- view.txt, apart from settings.txt, which saving a place writes anew)
+-- and from the ☰ menu: names (constellations, stars, objects), lines (the figures) and objects (the
+-- deep-sky symbols of the zoomed chart: galaxy ovals, cluster circles, nebula squares)
+local card_on, names_on, lines_on, objects_on = true, true, true, true
+local menu_open = false
+local function load_view()
+  local ok, s = pcall(function() return ctx.storage:read('view.txt') end)
+  s = (ok and type(s) == 'string') and s or ''
+  card_on, names_on, lines_on = not s:match('card=0'), not s:match('names=0'), not s:match('lines=0')
+  objects_on = not s:match('objects=0')
+end
+local function save_view()
+  local b = function(v) return v and '1' or '0' end
+  pcall(function() ctx.storage:write('view.txt', 'card=' .. b(card_on) .. '\nnames=' .. b(names_on) .. '\nlines=' .. b(lines_on) .. '\nobjects=' .. b(objects_on)) end)
+end
+-- the zoomed window's bottom: above the card, or down to the buttons
+local function window_bottom() return card_on and WIN_Y1 or (BTN_Y - 8) end
 
 local function refresh() pcall(function() ctx:invalidate() end) end
 -- the host gives on_draw 1500 ms and on_load 2000 ms; the first frame opens five font sizes, and
@@ -859,7 +1226,59 @@ local function schedule()
   timer = ok and tm or nil
 end
 
+-- the view the chart is drawn with (and taps are read back through)
+local function sky_view()
+  local t = clock_now()
+  return { s = base + step * 3600, label = step == 0 and label or nil, place = place,
+           off = (t and t.offset_minutes or 0) * 60, hour12 = t and t.hour12,
+           zoom = zoom and ZOOM, zx = zoom and zoom.zx, zy = zoom and zoom.zy, card = zoom and zoom.card,
+           win_y1 = (zoom and not card_on) and window_bottom() or nil, no_names = not names_on, no_lines = not lines_on,
+           no_objects = not objects_on }
+end
+
+-- keep the window's centre on the sky (inside the horizon)
+local function clamp()
+  local dx, dy = zoom.zx - CX, zoom.zy - CY
+  local d = math.sqrt(dx * dx + dy * dy)
+  if d > R then zoom.zx, zoom.zy = CX + dx * R / d, CY + dy * R / d end
+end
+
+-- after a step in time: the window follows the card's constellation while it is up
+local function follow()
+  if not zoom then return end
+  load_data()
+  for _, cn in ipairs(CNAMES) do
+    if cn[5] == zoom.card then
+      local x, y, u = radec_to_screen(cn[1], cn[2], { s = base + step * 3600, place = place })
+      if u > 0 then zoom.zx, zoom.zy = x, y end
+      return
+    end
+  end
+end
+
+-- a tap on the chart: zoom in there (or, zoomed, pick the constellation there)
+local function tap_sky(x, y)
+  if not base then return false end
+  if zoom and not card_on then return false end      -- the card hidden: a tap picks nothing
+  if zoom and (y < WIN_Y0 or y > window_bottom()) then return false end
+  if not zoom and (x - CX) * (x - CX) + (y - CY) * (y - CY) > R * R then return false end
+  local ra, dec = chart_to_radec(x, y, sky_view())
+  if not ra then return false end
+  local ab = constellation_at(ra, dec)
+  if not ab then return false end
+  if zoom then zoom.card = ab else zoom = { zx = x, zy = y, card = ab } end
+  return true
+end
+
 local function buttons()
+  if screen == 'sky' and zoom then
+    return {
+      { word('zoom_out'), function() zoom = nil end },
+      { '-1 h', function() step = step - 1; follow(); schedule() end },
+      { '+1 h', function() step = step + 1; follow(); schedule() end },
+      { word('card'), function() card_on = not card_on; save_view() end, card_on },   -- bold while it shows
+    }
+  end
   if screen == 'place' then
     return {
       { word('coords'), function()
@@ -959,6 +1378,7 @@ function on_load(c)
   extend()
   local ok, e = xpcall(function()
     set_lang()
+    load_view()
     dbg('start: lang ' .. LANG .. ', api ' .. tostring(ctx.api and ctx.api.minor)
         .. ', firmware ' .. tostring(ctx.device and ctx.device.firmware))
     local t = clock_now()
@@ -978,6 +1398,33 @@ function on_resume(c)
   refresh(); schedule()
 end
 
+-- the ☰ under the time (three lines: the reader's fonts may lack the sign), and its list (as the
+-- Tool list in Notes): Names and Lines, each with a box ticked while on; open until a tap elsewhere
+local HAM = { x = W - 64, y = 50, w = 60, h = 40 }
+local MENU_X, MENU_Y, MENU_W, MENU_ROW = W - 228, 94, 220, 60
+local function menu_items()
+  return { { word('names'), function() names_on = not names_on end, names_on },
+           { word('lines'), function() lines_on = not lines_on end, lines_on },
+           { word('objects'), function() objects_on = not objects_on end, objects_on } }
+end
+local function draw_menu_button(g)
+  local x = HAM.x + 16
+  for k = 0, 2 do g:rect(x, HAM.y + 10 + k * 9, 28, 3, { fill = true }) end
+end
+local function draw_menu(g)
+  local items = menu_items()
+  g:rect(MENU_X, MENU_Y, MENU_W, #items * MENU_ROW + 8, { fill = true, color = 0 })
+  g:rect(MENU_X, MENU_Y, MENU_W, #items * MENU_ROW + 8, { line_width = 2 })
+  for i, it in ipairs(items) do
+    local y = MENU_Y + 4 + (i - 1) * MENU_ROW
+    g:rect(MENU_X + 4, y, MENU_W - 8, MENU_ROW - 6, { radius = 6 })
+    g:rect(MENU_X + 16, y + 15, 24, 24, { line_width = 2 })
+    if it[3] then g:rect(MENU_X + 21, y + 20, 14, 14, { fill = true }) end
+    g:text(MENU_X + 54, y + (MENU_ROW - 6) // 2, it[1], { font = font_px(22), valign = 'middle' })
+  end
+end
+local function in_rect(x, y, rx, ry, rw, rh) return x >= rx and x < rx + rw and y >= ry and y < ry + rh end
+
 function on_draw(c, g)
   if not g then return end
   extend()
@@ -996,16 +1443,18 @@ function on_draw(c, g)
       g:text(W // 2, H // 2 - 20, word('no_clock'), { font = font_px(26), align = 'center' })
       g:text(W // 2, H // 2 + 20, word('set_clock'), { font = font_px(20), align = 'center' })
     else
-      local t = clock_now()
-      draw_sky(g, { s = base + step * 3600, label = step == 0 and label or nil, place = place,
-                    off = (t and t.offset_minutes or 0) * 60, hour12 = t and t.hour12 }, BTN_Y)
+      draw_sky(g, sky_view(), BTN_Y)
     end
     local bs = buttons()
     local f = font_px(22)
     for k, b in ipairs(bs) do
       local x, y, bw, bh = button_rect(k, #bs)
-      g:rect(x, y, bw, bh, { radius = 8 })
+      g:rect(x, y, bw, bh, { radius = 8, line_width = b[3] and 4 or nil })
       g:text(x + bw // 2, y + bh // 2, b[1], { font = f, align = 'center', valign = 'middle' })
+    end
+    if screen == 'sky' and base then
+      draw_menu_button(g)
+      if menu_open then draw_menu(g) end
     end
   end, trace)
   if not ok then
@@ -1018,8 +1467,33 @@ end
 function on_input(c, ev)
   if type(ev) ~= 'table' then return false end
   extend()
-  if ev.type == 'pointer' and ev.phase == 'up' then
+  if ev.type == 'pointer' and ev.phase == 'down' then
+    down = { x = ev.x or 0, y = ev.y or 0 }
+    return true
+  elseif ev.type == 'pointer' and ev.phase == 'up' then
     local x, y = ev.x or 0, ev.y or 0
+    local d = down
+    down = nil
+    -- the ☰ list open: a tap on an item switches it (the list stays), anywhere else closes it
+    if menu_open then
+      local hit = false
+      for i, it in ipairs(menu_items()) do
+        if in_rect(x, y, MENU_X, MENU_Y + 4 + (i - 1) * MENU_ROW, MENU_W, MENU_ROW) then it[2](); save_view(); hit = true end
+      end
+      if not hit then menu_open = false end
+      refresh(); return true
+    end
+    if screen == 'sky' and base and in_rect(x, y, HAM.x, HAM.y, HAM.w, HAM.h) then
+      menu_open = true
+      refresh(); return true
+    end
+    -- zoomed, a move over 20 px from where the finger went down pans the chart
+    if zoom and screen == 'sky' and d and d.y >= WIN_Y0 and d.y <= window_bottom()
+        and (x - d.x) * (x - d.x) + (y - d.y) * (y - d.y) > 400 then
+      zoom.zx, zoom.zy = zoom.zx - (x - d.x) / ZOOM, zoom.zy - (y - d.y) / ZOOM
+      clamp()
+      refresh(); return true
+    end
     local bs = buttons()
     for k, b in ipairs(bs) do
       local bx, by, bw, bh = button_rect(k, #bs)
@@ -1027,14 +1501,26 @@ function on_input(c, ev)
         pcall(b[2]); refresh(); return true
       end
     end
-    if screen == 'place' and tap_place(x, y) then refresh() end
+    if screen == 'place' then
+      if tap_place(x, y) then refresh() end
+    elseif tap_sky(x, y) then
+      refresh()
+    end
     return true
+  elseif ev.type == 'key' and ev.key == 'back' then
+    -- on its release: zoomed, back to the whole sky; the Place page, back to the sky; else the host
+    -- asks whether to leave
+    if ev.phase ~= 'up' and ev.phase ~= nil then return true end
+    if menu_open then menu_open = false; refresh(); return true end
+    if screen == 'place' then screen = 'sky'; refresh(); return true end
+    if zoom then zoom = nil; refresh(); return true end
+    return false
   elseif ev.type == 'key' and ev.phase ~= 'up' then
     local k = ev.key
     if k == 'left' or k == 'up' or k == 'right' or k == 'down' then
       local d = (k == 'left' or k == 'up') and -1 or 1
       if screen == 'place' then page = (page - 1 + d) % pages() + 1
-      elseif base then step = step + d; schedule() end
+      elseif base then step = step + d; follow(); schedule() end
       refresh(); return true
     end
   end
@@ -1043,4 +1529,9 @@ end
 
 function on_leave(c)
   pcall(function() if timer then timer:cancel() end end)
+end
+
+if rawget(_G, '__TEST') then
+  __TEST.app = { zoom = function() return zoom end,
+                 menu_row = function(i) return { MENU_X + 60, MENU_Y + 4 + (i - 1) * MENU_ROW + 20 } end }
 end

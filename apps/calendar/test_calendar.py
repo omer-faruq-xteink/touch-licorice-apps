@@ -8,7 +8,7 @@ draw-command count.
 
   python -I apps/calendar/test_calendar.py
 """
-import calendar as pycal, gzip, os, sys
+import calendar as pycal, gzip, json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 from harness import Game, STUBS  # noqa: E402
@@ -72,7 +72,7 @@ URL1 = 'https://calendar.google.com/calendar/ical/me%40gmail.com/private-abc/bas
 URL2 = 'webcal://example.org/work.ics'
 requests = []
 sent = []                                          # (url, headers) of every request
-net = {'gzip': False, 'cut': False}
+net = {'gzip': False, 'cut': False, 'big': False}
 
 
 def answer(url, headers=None):
@@ -83,7 +83,7 @@ def answer(url, headers=None):
     if url == URL1 and gz and net['gzip']:
         return {'status': 200, 'body': gzip.compress(PERSONAL.encode())}
     if url == URL1:
-        return {'status': 200, 'body': PERSONAL}
+        return {'status': 200, 'body': BIG if net['big'] else PERSONAL}
     if url == 'https://example.org/work.ics':
         return {'status': 200, 'body': WORK}
     if url.endswith('/login'):
@@ -340,15 +340,26 @@ assert A().cfg.ws == 0
 g.tap_label('Week starts on: Sunday')
 
 
-def lock_texts(lock, extra=''):
+def lock_texts(lock, extra='', answer_first=False):
+    """a lock session: on_load, then (answer_first: the timer wake, which holds its frame until the
+    answers came) on_draw"""
     L = lua54.LuaRuntime(unpack_returned_tuples=True)
     L.execute(STUBS)
     for k, v in store.items():
         L.globals().store[k] = v
     L.globals().store['settings.txt'] = store['settings.txt'].replace('lock=agenda', 'lock=' + lock)
     setup(L)
+    # a lock session of API 2.26 (lockscreen "net": true): ctx.lock.net, done() and set_interval
+    L.execute("done_calls, wake = 0, nil; ctx.lock = { reason = 'timer', net = true, interval_sec = 3600, "
+              "done = function(self) done_calls = done_calls + 1 end, set_interval = function(self, s) wake = s; return s end }")
+    # 2.26: ctx:after works in a lock session and holds it (Lock Probe 1.9)
+    L.execute("timers = {}; ctx.after = function(self, ms, fn) timers[#timers + 1] = { ms = ms, fn = fn }; return {} end")
     L.execute(extra)
     L.execute(f"dofile([[{os.path.join(HERE, 'lockscreen.lua').replace(os.sep, '/')}]])")
+    L.execute('on_load(ctx)')
+    if answer_first:
+        while L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r) end; return f ~= nil end')():
+            pass
     L.execute('drawn, commands = {}, 0; on_draw(ctx, gg)')
     return [str(d.s) for d in L.globals().drawn.values()], int(L.globals().commands), L
 
@@ -375,15 +386,90 @@ assert '08' in t and '07' not in t and '14:00 Dentist' in t, t
 assert any(s.startswith('+1 later today: 22:00 Late show') for s in t), t
 assert '22:00 Late show' not in t and not any('Night train' in s for s in t), t
 assert not any(s.startswith('Earlier') for s in t), t
-# an old cache: the lock screen fetches again (once) and draws the new data
-t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}')   # the caches are from NOW + 7 h
+# an old cache, the first session (drawn at once): the lock screen fetches again (once, from on_load),
+# draws the old data saying when it was synced, then the new data, and only then ends the session
+man = json.load(open(os.path.join(HERE, 'manifest.json'), encoding='utf-8'))
+assert man['api'] == '2.26' and man['lockscreen'].get('net') is True and 'net' in man['permissions'], man
+t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}')   # the caches are from NOW + 7 h (19:00)
 fetch = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r) end; return f ~= nil end')
+assert 'synced yesterday 19:00' in t and int(L.globals().done_calls) == 0, t
 assert fetch() and fetch() and not fetch()
-assert any(s.startswith('synced 8 h ago') for s in t), t
 L.execute('drawn = {}; on_draw(ctx, gg)')
 t2 = [str(d.s) for d in L.globals().drawn.values()]
-assert any(s.startswith('synced 0 min ago') for s in t2) or any(s == 'synced 0 min ago' for s in t2), t2
-assert not fetch()                       # not again within the hour
+assert 'synced 03:00' in t2 and int(L.globals().done_calls) == 1, t2
+assert not fetch()                       # asked once a session
+# a timer wake: the frame waits for the answers, so its one frame is already new
+t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}', answer_first=True)
+assert 'synced 03:00' in t and int(L.globals().done_calls) == 1, t
+assert int(L.globals().wake) == 3600     # synced now: the next in 6 h, but at most an hour away
+
+# fresh caches: no request; the next wake always an hour away: the reader aligns wakes to the interval
+# (on the hour), so the Day view's next hour and midnight come by themselves; a wake up to two minutes
+# early still syncs (seen: up to a minute)
+n0 = len(requests)
+t, n, L = lock_texts('agenda', f'now_sec = {NOW + 7 * 3600 + 20 * 60}')     # 19:20, synced 19:00
+assert len(requests) == n0 and 'synced 19:00' in t and int(L.globals().done_calls) == 1, t
+assert int(L.globals().wake) == 3600, L.globals().wake
+t, n, L = lock_texts('day', f'now_sec = {NOW + 7 * 3600 + 35 * 60}')
+assert len(requests) == n0 and int(L.globals().wake) == 3600, L.globals().wake
+every1 = store['settings.txt'].replace('every=6', 'every=1')
+assert every1 != store['settings.txt']
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 7 * 3600 + 20 * 60}; store['settings.txt'] = [[{every1}]]")
+assert len(requests) == n0 and int(L.globals().wake) == 3600, L.globals().wake
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 8 * 3600 - 90}; store['settings.txt'] = [[{every1}]]")  # 19:58:30
+assert len(requests) == n0 + 1                                                  # every hour, 90 s early: synced
+# an early wake ending before the hour gets a second wake on the hour (seen: 14:59:37 then 15:00:01):
+# the session holds (ctx:after) until 2 s past the hour and only then ends
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 8 * 3600 - 90}; store['settings.txt'] = [[{every1}]]", answer_first=True)
+assert int(L.eval('#timers')) == 1 and int(L.eval('timers[1].ms')) == 92000, L.eval('#timers')
+assert int(L.globals().done_calls) == 0                                         # still held
+L.execute('now_sec = now_sec + 92; timers[1].fn(ctx); drawn = {}; on_draw(ctx, gg)')
+assert int(L.globals().done_calls) == 1 and int(L.globals().wake) == 3600
+# on time (19:20) or more than two minutes early: no hold
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 7 * 3600 + 20 * 60}")
+assert int(L.eval('#timers')) == 0 and int(L.globals().done_calls) == 1
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 8 * 3600 - 180}")
+assert int(L.eval('#timers')) == 0 and int(L.globals().done_calls) == 1
+n0 = len(requests) - 1
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 14 * 3600 + 30 * 60}")      # 02:30, synced 19:00 (7.5 h)
+assert len(requests) == n0 + 2                                                  # due: fetched
+t, n, L = lock_texts('week', f"now_sec = {NOW + 11 * 3600 + 40 * 60}")        # 23:40
+assert len(requests) == n0 + 2 and int(L.globals().wake) == 3600, L.globals().wake
+n0 += 1
+
+# no calendar to fetch (all off, or only My calendar): no connection at all, the frame, done
+cal_off = '\n'.join(l if '|' not in l else l.rsplit('|', 1)[0] + '|off' for l in store['calendars.txt'].split('\n'))
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 15 * 3600}; store['calendars.txt'] = [[{cal_off}]]")
+assert len(requests) == n0 + 1 and int(L.globals().done_calls) == 1, (cal_off, t)
+# due but no network on the lock screen: the next try a whole interval later, not at once
+t, n, L = lock_texts('agenda', f"now_sec = {NOW + 15 * 3600}; store['settings.txt'] = [[{every1}]]; ctx.net = nil; ctx.lock.net = false")
+assert len(requests) == n0 + 1 and int(L.globals().wake) == 3600 and int(L.globals().done_calls) == 1, L.globals().wake
+
+# a big calendar (Google's with years of history: 207 KB on the reader): the lock screen keeps only the
+# events it needs (repeating and moved ones, and those ending within the parser's window) before
+# reading, so it fits a lock session; the result is the same as reading the whole file
+OLD = ''.join('BEGIN:VEVENT\r\nDTSTART:2025%02d%02dT100000Z\r\nDTEND:2025%02d%02dT110000Z\r\nUID:old%d@x\r\n'
+              'SUMMARY:An old meeting number %d with a long enough title\r\nDESCRIPTION:%s\r\nEND:VEVENT\r\n'
+              % (1 + k % 12, 1 + k % 28, 1 + k % 12, 1 + k % 28, k, k, 'notes ' * 20) for k in range(900))
+BIG = PERSONAL.replace('BEGIN:VEVENT', OLD + 'BEGIN:VEVENT', 1)
+assert len(BIG) > 200000
+Lt = lua54.LuaRuntime(unpack_returned_tuples=True)
+Lt.execute(STUBS)
+Lt.execute(f"package.path = [[{os.path.join(HERE, 'src').replace(os.sep, '/')}/?.lua;]] .. package.path; C = require('cal')")
+today = (NOW + OFF) // 86400
+small, n_in, n_keep = Lt.eval('function(b, d) return C.trim_ics(b, d) end')(BIG, today - 63)
+assert len(small) < 65536 and int(n_in) == 900 + PERSONAL.count('BEGIN:VEVENT') and int(n_keep) < 20, (len(small), n_in, n_keep)
+evs = Lt.eval("function(b) local t = {} for _, e in ipairs(C.parse_ics(b, %d, %d)) do t[#t + 1] = (e.uid or '') .. '@' .. e.s .. '/' .. tostring(e.rr) end table.sort(t) return table.concat(t, ' ') end" % (OFF, today))
+assert evs(small) == evs(BIG) == evs(PERSONAL), (evs(small), evs(BIG))
+assert 'Book club' in small and 'Old thing' not in small and 'old5@x' not in small
+net['big'] = True
+t, n, L = lock_texts('agenda', f'now_sec = {NOW + 15 * 3600}', answer_first=True)
+net['big'] = False
+cache = L.globals().store[A().C.cache_name(URL1)]
+assert cache != store[A().C.cache_name(URL1)] and 'Dentist' in cache and 'old5@x' not in cache, cache[:300]
+assert 'synced 03:00' in t and int(L.globals().done_calls) == 1, t
+log = L.globals().store['wakes.txt']
+assert re.search(r'\d\d:\d\d:\d\d timer elapsed \S+ interval \S+ lock\.net true: fetch 2', log) and re.search(r'Personal: \d+ KB -> \d+ KB, \d+ events, \d+ ms', log), log
 
 g.tap_label('Lock screen: Agenda')
 g.tap_label('Lock screen: Day'); g.tap_label('Lock screen: Week'); g.tap_label('Lock screen: Month')

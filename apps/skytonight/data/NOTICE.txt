@@ -2,7 +2,7 @@ Sky Tonight packs data from these sources.
 
 Stars: the Yale Bright Star Catalogue, 5th edition (NASA HEASARC), public domain.
 
-Constellation figures and names (lines.txt, names.txt): d3-celestial by Olaf Frohn, under this licence:
+Constellation figures, names and boundaries (lines.txt, names.txt, bounds.txt): d3-celestial by Olaf Frohn, under this licence:
 
 Copyright (c) 2015, Olaf Frohn
 All rights reserved.

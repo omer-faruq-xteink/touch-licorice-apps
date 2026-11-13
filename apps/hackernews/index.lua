@@ -788,6 +788,106 @@ function N.domain(url)
   return d and (d:gsub('^www%.', '')) or nil
 end
 
+------------------------------------------------------------------ For you (1.3.0)
+-- foryou.txt, one entry a line: "rust" a topic, "-crypto" a muted word, "-site:medium.com" a
+-- muted site. Lower case (ASCII), trimmed, each once.
+
+local function trim(s) return (s:gsub('^%s+', ''):gsub('%s+$', '')) end
+-- lower case for A-Z only (string.lower and %w follow the C locale and may change UTF-8 bytes)
+local function lower(s) return (s:gsub('[A-Z]', function(c) return string.char(c:byte() + 32) end)) end
+local function add_once(list, v)
+  for _k, x in ipairs(list) do if x == v then return false end end
+  list[#list + 1] = v
+  return true
+end
+
+function N.foryou_parse(text)
+  local fy = { topics = {}, words = {}, sites = {} }
+  for line in (tostring(text or '') .. '\n'):gmatch('([^\n]*)\n') do
+    local s = lower(trim((line:gsub('\r', ''))))
+    local site = s:match('^%-%s*site:%s*(%S+)$')
+    if site then add_once(fy.sites, (site:gsub('^www%.', '')))
+    elseif s:sub(1, 1) == '-' then
+      local w = trim(s:sub(2))
+      if w ~= '' then add_once(fy.words, w) end
+    elseif s ~= '' then
+      add_once(fy.topics, (s:gsub('%s+', ' ')))
+    end
+  end
+  return fy
+end
+
+function N.foryou_text(fy)
+  local out = {}
+  for _k, t in ipairs(fy.topics) do out[#out + 1] = t end
+  for _k, w in ipairs(fy.words) do out[#out + 1] = '-' .. w end
+  for _k, s in ipairs(fy.sites) do out[#out + 1] = '-site:' .. s end
+  return table.concat(out, '\n')
+end
+
+-- one search for all the topics: each optional (a story matching more of them ranks higher, then
+-- by points), a topic of several words a phrase; the last two days, 10 points or more; 40 a page,
+-- so that some are left after the mutes
+function N.foryou_url(topics, now, page)
+  local q = {}
+  for _k, topic in ipairs(topics) do
+    local t = topic:gsub('"', '')
+    q[#q + 1] = t:find(' ', 1, true) and ('"' .. t .. '"') or t
+  end
+  local query = N.enc(table.concat(q, ' '))
+  return N.ALGOLIA .. 'search?tags=story&query=' .. query .. '&optionalWords=' .. query .. '&advancedSyntax=true'
+    .. '&numericFilters=' .. N.enc('created_at_i>' .. ((now or 0) - 172800) .. ',points>=10')
+    .. '&hitsPerPage=40&page=' .. (page or 0) .. FIELDS
+end
+
+-- the title's words, lower case (letters, digits and the like; whole UTF-8 characters)
+local function words_of(title)
+  local out = {}
+  for w in lower(tostring(title or '')):gmatch("[A-Za-z0-9\128-\255][A-Za-z0-9\128-\255'%+#%.%-]*") do
+    out[#out + 1] = (w:gsub("[%.%-']+$", ''))
+  end
+  return out
+end
+local function has_words(title_words, phrase)
+  local set = {}
+  for _k, w in ipairs(title_words) do set[w] = true end
+  for w in phrase:gmatch('%S+') do if not set[w] then return false end end
+  return true
+end
+
+function N.muted(row, fy)
+  local tw = words_of(row.title)
+  for _k, w in ipairs(fy.words) do if has_words(tw, w) then return true end end
+  local d = N.domain(row.url)
+  if d then
+    d = lower(d)
+    for _k, s in ipairs(fy.sites) do
+      if d == s or d:sub(-(#s + 1)) == '.' .. s then return true end
+    end
+  end
+  return false
+end
+
+function N.topics_in(title, topics)
+  local tw, out = words_of(title), {}
+  for _k, t in ipairs(topics) do if has_words(tw, t) then out[#out + 1] = t end end
+  return out
+end
+
+local STOP = {}
+for w in ('the and for with from that this what how why who are was were has have had not you your our its'
+    .. ' into over about after than then when will can just new now all any via using use one two out'
+    .. ' show ask tell more most some his her they them their there here been being but get got')
+    :gmatch('%S+') do STOP[w] = true end
+-- the words of a title that could be a topic (More like this): 3 letters or more, not a stop word
+function N.title_words(title)
+  local out = {}
+  for _k, w in ipairs(words_of(title)) do
+    if #w >= 3 and not STOP[w] and not w:match('^%d+$') then add_once(out, w) end
+  end
+  return out
+end
+
 function N.ago(t, now)
   if not t or t <= 0 or not now or now <= 0 then return '' end
   local s = math.max(0, now - t)
@@ -942,10 +1042,12 @@ local DOC_TOP, DOC_BOTTOM = 14, BTN_Y - 30
 local QR_PX = 200
 local MAX_ROWS = 240
 local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
-local TABS = { { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' }, { 'Find', 'find' } }
+local TABS = { { 'For you', 'foryou', 'You' }, { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' },
+               { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
 
-local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait', aisend = 'both' }
+local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait', aisend = 'both',
+              lockevery = '60' }
 for k, v in pairs(A.DEFAULTS) do cfg[k] = v end
 local screen = 'list'           -- list | story | thread | settings | aimenu | chat | aiset | aiprov | aibtns
 local L = nil                   -- the list: { tab, query, rows, top, ids, next, page, more, stale }
@@ -954,6 +1056,26 @@ local levels = {}               -- comment levels, deepest last: { parent, kids,
 local thread_from = 'list'
 local chat = { msgs = {}, lines = {}, pages = { 1 }, page = 1 }   -- the AI conversation of the open story
 local status, ERR = nil, nil
+-- For you (1.3.0): the topics and mutes of foryou.txt (N.foryou_parse)
+local fy = N.foryou_parse(nil)
+local function load_foryou() fy = N.foryou_parse(kit.read('foryou.txt')) end
+local function save_foryou() kit.write('foryou.txt', N.foryou_text(fy)) end
+-- add an entry as foryou.txt would hold it ("rust", "-crypto", "-site:x"): read again, so it is
+-- trimmed, lower-cased and kept once
+local fy_changed = false        -- the For you list is fetched again on the way back to it
+local function add_foryou(line)
+  fy = N.foryou_parse(N.foryou_text(fy) .. '\n' .. line)
+  save_foryou()
+  fy_changed = true
+end
+-- drop one line of foryou.txt ("rust", "-crypto", "-site:x")
+local function drop_foryou(line)
+  local keep = {}
+  for l in (N.foryou_text(fy) .. '\n'):gmatch('([^\n]*)\n') do if l ~= line and l ~= '' then keep[#keep + 1] = l end end
+  fy = N.foryou_parse(table.concat(keep, '\n'))
+  save_foryou()
+  fy_changed = true
+end
 
 -- a character limit set for the 480 px portrait width, scaled to the screen's width now
 local function wide(n) return math.max(8, n * W // 480) end
@@ -981,12 +1103,14 @@ local function load_cfg()
   if cfg.screen ~= 'landscape' then cfg.screen = 'portrait' end
   A.normalize(cfg)                 -- aion: a boolean
   if cfg.aisend ~= 'article' and cfg.aisend ~= 'comments' and cfg.aisend ~= 'link' then cfg.aisend = 'both' end
+  if not ({ ['30'] = true, ['60'] = true, ['180'] = true, ['360'] = true })[cfg.lockevery] then cfg.lockevery = '60' end
 end
 local function save_cfg()
   local s = 'host=' .. cfg.host .. '\ntoken=' .. cfg.token .. '\nauth=' .. cfg.auth .. '\nsize=' .. cfg.size .. '\nimages=' .. cfg.images .. '\nscreen=' .. cfg.screen
   -- the AI lines only once something of it is set
   s = s .. A.cfg_lines(cfg)
   if cfg.aisend ~= 'both' then s = s .. '\naisend=' .. cfg.aisend end
+  s = s .. '\nlockevery=' .. cfg.lockevery           -- the sleep screen's refresh, minutes (lockscreen.lua)
   kit.write('settings.txt', s)
 end
 local function worker_url(path)
@@ -1109,7 +1233,27 @@ end
 load_more = function()
   local list = L
   if list.loading_ids or not list.more then return end
-  if list.tab == 'find' then
+  if list.tab == 'foryou' then
+    -- one search for all the topics (N.foryou_url); the muted words and sites left out here
+    if #fy.topics == 0 then list.more = false; return end
+    get(N.foryou_url(fy.topics, now_sec(), list.page), 'Loading stories for you...', function(d, err)
+      if L ~= list then return end
+      if not d then status = 'For you failed: ' .. err; return end
+      local rows, hits = {}, d.hits or {}
+      for _k, h in ipairs(hits) do
+        local r = N.story(h)
+        if not N.muted(r, fy) then rows[#rows + 1] = r end
+      end
+      list.page = list.page + 1
+      list.more = list.page < (tonumber(d.nbPages) or 0) and #hits > 0
+      add_rows(rows)
+      if list.page == 1 then
+        save_list()
+        kit.write('foryou_at.txt', tostring(now_sec()))   -- when: the sleep screen shows it, and fetches after
+      end
+      if list.want and list.want <= #L.rows then list.top, list.want = list.want, nil end
+    end)
+  elseif list.tab == 'find' then
     get(N.search_url(list.query, list.page), 'Searching...', function(d, err)
       if L ~= list then return end
       if not d then status = 'Search failed: ' .. err; return end
@@ -1283,6 +1427,7 @@ local function build_story()
   add_lines(out, r.title, 'large', 16)
   add_lines(out, meta(r), 'small', 16)
   if r.url then add_lines(out, N.domain(r.url) or r.url, 'small', 16) end
+  out[#out + 1] = { s = '', f = 'small', x = 0, h = 62, likes = true }    -- More like this / Less like this
   out[#out + 1] = { s = '', f = 'small', x = 0, h = 14, rule = true }
   if S.item and S.item.text then add_text(out, N.text(S.item.text)) end
   if r.url then
@@ -1759,6 +1904,10 @@ local function draw_doc(gg, doc)
   for k = doc.pages[doc.page] or 1, last do
     local ln = doc.lines[k]
     if ln.rule then gg:line(16, y + ln.h // 2, W - 16, y + ln.h // 2)
+    elseif ln.likes then
+      local bw = (W - 48) // 2
+      kit.button(gg, 16, y + 6, bw, 48, 'More like this', { font = 'small' })
+      kit.button(gg, 32 + bw, y + 6, bw, 48, 'Less like this', { font = 'small' })
     elseif ln.qr then draw_qr(gg, ln.qr, y)
     elseif ln.img then draw_pic(gg, ln.img, y)
     elseif ln.s ~= '' then gg:text(ln.x, y, ln.s, { font = kit.font(ln.f) }) end
@@ -1767,10 +1916,27 @@ local function draw_doc(gg, doc)
   if #doc.pages > 1 then gg:text(W - 90, BTN_Y - 26, doc.page .. ' / ' .. #doc.pages, { font = kit.font('small') }) end
 end
 
+local add_rect = nil             -- the For you tab's "Add a topic" button, while it shows
 local function draw_list(gg)
   local tw = (W - 8) // #TABS
   for k, t in ipairs(TABS) do
-    kit.button(gg, 4 + (k - 1) * tw, 4, tw - 4, 48, t[1], { font = 'medium', line_width = L.tab == t[2] and 5 or 1 })
+    -- "For you" takes the small font where the medium one does not fit, then its short name "You"
+    local label, font = t[1], 'medium'
+    if t[3] and kit.width(kit.font(font), label) > tw - 12 then font = 'small' end
+    if t[3] and kit.width(kit.font(font), label) > tw - 12 then label, font = t[3], 'medium' end
+    kit.button(gg, 4 + (k - 1) * tw, 4, tw - 4, 48, label, { font = font, line_width = L.tab == t[2] and 5 or 1 })
+  end
+  add_rect = nil
+  if L.tab == 'foryou' and #fy.topics == 0 then
+    local y = 120
+    for _k, l in ipairs(N.wrap('For you: the stories of the last two days on the topics you choose. Add one here, or open a '
+        .. 'story and tap More like this.', 'medium', W - 32)) do
+      gg:text(16, y, l, { font = kit.font('medium') })
+      y = y + 30
+    end
+    add_rect = { x = 16, y = y + 20, w = W - 32, h = 64 }
+    kit.button(gg, add_rect.x, add_rect.y, add_rect.w, add_rect.h, 'Add a topic', { font = 'medium' })
+    return
   end
   if L.tab == 'find' and L.query then gg:text(16, LIST_TOP - 4, kit.short('"' .. L.query .. '"', wide(40)), { font = kit.font('small') }) end
   local now = now_sec()
@@ -1782,6 +1948,10 @@ local function draw_list(gg)
     gg:text(16, y + 6, t[1] or '', { font = kit.font('medium') })
     if t[2] then gg:text(16, y + 30, #t > 2 and kit.short(t[2], #t[2] - 2) or t[2], { font = kit.font('medium') }) end
     local m = r.points .. ' pts · ' .. r.comments .. ' comm.'
+    if L.tab == 'foryou' then                       -- the topics it was found for
+      local tp = N.topics_in(r.title, fy.topics)
+      if #tp > 0 then m = table.concat(tp, ', ') .. ' · ' .. m end
+    end
     local d = N.domain(r.url)
     if d then m = m .. ' · ' .. d end
     local ago = N.ago(r.time, now)
@@ -1792,7 +1962,12 @@ local function draw_list(gg)
     gg:line(16, y + ROW_H - 1, W - 16, y + ROW_H - 1)
   end
   if #L.rows == 0 and not busy_label() and not status then
-    gg:text(16, 200, L.tab == 'find' and 'Tap Find to search.' or 'Nothing here yet: Reload.', { font = kit.font('medium') })
+    if L.tab == 'foryou' then
+      gg:text(16, 200, 'Nothing for your topics in the last 2 days.', { font = kit.font('medium') })
+      gg:text(16, 236, fit('Topics: ' .. table.concat(fy.topics, ', '), 'small', W - 32), { font = kit.font('small') })
+    else
+      gg:text(16, 200, L.tab == 'find' and 'Tap Find to search.' or 'Nothing here yet: Reload.', { font = kit.font('medium') })
+    end
   end
 end
 
@@ -1813,6 +1988,7 @@ local function settings_list()
   for k, v in ipairs(SETTINGS) do t[k] = v end
   if can_rotate() then t[#t + 1] = { 'screen', 'Screen' } end
   t[#t + 1] = { 'ai', 'AI' }
+  t[#t + 1] = { 'foryou', 'For you' }
   return t
 end
 -- one column in portrait, three in landscape
@@ -1820,7 +1996,7 @@ local function cols() return W > H and 3 or 1 end
 local setting_rect
 -- Settings' (and the AI page's) cells: in portrait a short one shares its row with the next short
 -- one; in landscape every cell is a third. grid_rows() gives { x, row, w } per cell and the rows used
-local HALF = { size = true, images = true, screen = true, ai = true }
+local HALF = { size = true, images = true, screen = true, ai = true, foryou = true }
 local function grid_rows(items, half)
   local out, row, col = {}, 0, 0
   local n = cols() > 1 and 3 or 2
@@ -1862,6 +2038,7 @@ local function draw_settings(gg)
     if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
     if s[1] == 'ai' then v = AI.on() and A.prov(cfg).name or (cfg.aion and 'not set up yet' or 'off') end
+    if s[1] == 'foryou' then v = #fy.topics .. (#fy.topics == 1 and ' topic' or ' topics') end
     gg:text(x, y + 8, fit((cols() > 1 and s[3]) or s[2], 'small', w), { font = kit.font('small') })
     gg:text(x, y + 36, v ~= '' and fit(v, 'medium', w) or '(empty)', { font = kit.font('medium') })
     gg:line(x, y + 78, x + w, y + 78)
@@ -1872,8 +2049,60 @@ local function draw_settings(gg)
   for _k, l in ipairs(N.wrap('Stories open as text, with their pictures if you like, through your rss-opds Worker (the one RSS '
       .. 'uses, with the same host and login; it needs /api/read, so update it once). Without a Worker a story ends with its '
       .. 'address as a QR code. Tap the left third of a page to go back, elsewhere to go on.', 'small', W - 32)) do
+    if y + 22 > BTN_Y then break end               -- what does not fit above the buttons is left out
     gg:text(16, y, l, { font = kit.font('small') }); y = y + 22
   end
+end
+
+------------------------------------------------------------------ the For you page (Settings)
+-- every topic, muted word and muted site, a page at a time; a tap offers Edit / Remove / Cancel;
+-- Add a topic, Mute a word, and how often the sleep screen fetches For you again
+local FY_TOP, FY_ROW = 232, 52
+local fy_page = 1
+local EVERY = { { '0', 'Off' }, { '30', 'Every 30 min' }, { '60', 'Every hour' }, { '180', 'Every 3 hours' }, { '360', 'Every 6 hours' } }
+local function fy_per() return math.max(1, (BTN_Y - 12 - FY_TOP) // FY_ROW) end
+local function fy_entries()
+  local e = {}
+  for _k, t in ipairs(fy.topics) do e[#e + 1] = { label = t, line = t, value = t, prefix = '' } end
+  for _k, w in ipairs(fy.words) do e[#e + 1] = { label = 'muted: ' .. w, line = '-' .. w, value = w, prefix = '-' } end
+  for _k, s in ipairs(fy.sites) do e[#e + 1] = { label = 'muted site: ' .. s, line = '-site:' .. s, value = s, prefix = '-site:' } end
+  return e
+end
+local function fy_pages() return math.max(1, (#fy_entries() + fy_per() - 1) // fy_per()) end
+local function lock_is_on()
+  local ok, v = pcall(function() return ctx.lockscreen:is_default() end)
+  return ok and v == true
+end
+local function lock_label()
+  if not lock_is_on() then return 'Sleep screen: off' end
+  for _k, e in ipairs(EVERY) do if e[1] == cfg.lockevery then return 'Sleep screen: ' .. e[2]:lower() end end
+  return 'Sleep screen: on'
+end
+local function fy_rects()
+  local hw = (W - 48) // 2
+  return { add = { 16, 70, hw, 64 }, mute = { 32 + hw, 70, hw, 64 }, lock = { 16, 146, W - 32, 64 } }
+end
+local function draw_fyset(gg)
+  gg:text(16, 16, 'For you', { font = kit.font('large') })
+  local r = fy_rects()
+  kit.button(gg, r.add[1], r.add[2], r.add[3], r.add[4], 'Add a topic', { font = 'medium' })
+  kit.button(gg, r.mute[1], r.mute[2], r.mute[3], r.mute[4], 'Mute a word', { font = 'medium' })
+  kit.button(gg, r.lock[1], r.lock[2], r.lock[3], r.lock[4], lock_label(), { font = 'medium' })
+  local e = fy_entries()
+  fy_page = math.min(fy_page, fy_pages())
+  if #e == 0 then
+    gg:text(16, FY_TOP + 10, 'No topics yet.', { font = kit.font('medium') })
+    return
+  end
+  local first = (fy_page - 1) * fy_per()
+  for k = 1, fy_per() do
+    local it = e[first + k]
+    if not it then break end
+    local y = FY_TOP + (k - 1) * FY_ROW
+    gg:text(16, y + 12, fit(it.label, 'medium', W - 32), { font = kit.font('medium') })
+    gg:line(16, y + FY_ROW - 1, W - 16, y + FY_ROW - 1)
+  end
+  if fy_pages() > 1 then gg:text(W - 90, BTN_Y - 26, fy_page .. ' / ' .. fy_pages(), { font = kit.font('small') }) end
 end
 
 function AI.draw_set(gg)
@@ -1955,6 +2184,7 @@ local function buttons()
   if screen == 'chat' then
     return A.chat_bar(cfg)
   end
+  if screen == 'fyset' then return { 'Back', 'Prev', 'Next' } end
   return { 'Back' }
 end
 local function button_rects()
@@ -2005,6 +2235,7 @@ function on_draw(c, gg)
     elseif screen == 'aiset' then AI.draw_set(gg)
     elseif screen == 'aiprov' then AI.draw_prov(gg)
     elseif screen == 'aibtns' then AI.draw_btns(gg)
+    elseif screen == 'fyset' then draw_fyset(gg)
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
     -- under the buttons: above them it overlapped the last list row
@@ -2027,7 +2258,7 @@ end
 local function back()
   if screen == 'chat' then screen = ai_from
   elseif screen == 'aimenu' then screen = #chat.msgs > 0 and 'chat' or ai_from
-  elseif screen == 'aiset' then screen = 'settings'
+  elseif screen == 'aiset' or screen == 'fyset' then screen = 'settings'
   elseif screen == 'aiprov' or screen == 'aibtns' then screen = 'aiset'
   elseif screen == 'thread' and #levels > 1 then
     drop_all(); levels[#levels] = nil; build_thread(level()); thread_pump()
@@ -2036,7 +2267,10 @@ local function back()
     if screen == 'story' and (not S.item or S.reading) then open_story(S.row) end
   elseif screen == 'story' or screen == 'settings' then
     drop_all(); screen, L.loading_ids = 'list', false
-    if L.more and (#L.rows == 0 or L.stale) then load_more() end
+    if fy_changed and L.tab == 'foryou' then
+      fy_changed = false
+      open_tab('foryou')                           -- topics or mutes changed: asked again
+    elseif L.more and (#L.rows == 0 or L.stale) then load_more() end
   end
   status = nil
 end
@@ -2051,13 +2285,75 @@ local function doc_line_at(doc, y)
   end
 end
 
+-- More like this (a word of the title becomes a topic) / Less like this (a word or the site muted)
+local function like_menu(more)
+  local opts = {}
+  for _k, w in ipairs(N.title_words(S.row.title)) do opts[#opts + 1] = { w, (more and '' or '-') .. w } end
+  local d = N.domain(S.row.url)
+  if not more and d then opts[#opts + 1] = { 'site:' .. d, '-site:' .. d } end
+  local rows, row_ = {}, nil
+  for k, o in ipairs(opts) do
+    if k % 2 == 1 then row_ = {}; rows[#rows + 1] = row_ end
+    row_[#row_ + 1] = { o[1], function()
+      kit.close()
+      add_foryou(o[2])
+      status = (more and 'Topic added: ' or 'Muted: ') .. o[1]
+    end }
+  end
+  rows[#rows + 1] = { { 'Cancel', function() kit.close() end } }
+  kit.show({ title = more and 'More like this: follow a word' or 'Less like this: mute a word or the site',
+             lines = { #opts == 0 and 'No word here to pick.' or nil }, rows = rows, cancel = function() kit.close() end })
+end
+
+-- a tap on the For you page
+local function tap_fyset(x, y)
+  local function hit(r) return x >= r[1] and x < r[1] + r[3] and y >= r[2] and y < r[2] + r[4] end
+  local r = fy_rects()
+  if hit(r.add) then
+    ask('Add a topic', '', function(s) if s and s:match('%S') then add_foryou(s) end end)
+  elseif hit(r.mute) then
+    ask('Mute a word', '', function(s) if s and s:match('%S') then add_foryou('-' .. s:gsub('^%s*%-+', '')) end end)
+  elseif hit(r.lock) then
+    local rows = {}
+    for _k, e in ipairs(EVERY) do
+      rows[#rows + 1] = { { e[2], function()
+        kit.close()
+        if e[1] == '0' then
+          pcall(function() ctx.lockscreen:clear_default() end)
+        else
+          cfg.lockevery = e[1]
+          save_cfg()
+          if not lock_is_on() then pcall(function() ctx.lockscreen:set_default() end) end
+        end
+      end } }
+    end
+    kit.show({ title = 'Sleep screen: the For you stories, fetched again', rows = rows, cancel = function() kit.close() end })
+  elseif y >= FY_TOP then
+    local it = fy_entries()[(fy_page - 1) * fy_per() + (y - FY_TOP) // FY_ROW + 1]
+    if not it or y >= FY_TOP + fy_per() * FY_ROW then return end
+    kit.show({ title = it.label, rows = { {
+      { 'Edit', function()
+        kit.close()
+        ask('Edit', it.value, function(s)
+          if type(s) ~= 'string' then return end
+          drop_foryou(it.line)
+          if s:match('%S') then add_foryou(it.prefix .. s) end
+        end)
+      end },
+      { 'Remove', function() kit.close(); drop_foryou(it.line) end },
+      { 'Cancel', function() kit.close() end } } }, cancel = function() kit.close() end })
+  end
+end
+
 local function tap(x, y, long)
   if kit.tap_modal(x, y) then return end
   for _k, r in ipairs(button_rects()) do
     if x >= r.x and x < r.x + r.w and y >= r.y and y < r.y + r.h then
       local b = r.b
       status = nil
-      if b == 'Prev' then if screen == 'list' then list_page(-1) else doc_page(-1) end
+      if b == 'Prev' and screen == 'fyset' then fy_page = math.max(1, fy_page - 1)
+      elseif b == 'Next' and screen == 'fyset' then fy_page = math.min(fy_pages(), fy_page + 1)
+      elseif b == 'Prev' then if screen == 'list' then list_page(-1) else doc_page(-1) end
       elseif b == 'Next' then if screen == 'list' then list_page(1) else doc_page(1) end
       elseif b == 'Reload' then open_tab(L.tab, L.query)
       elseif b == 'Settings' then drop_all(); screen = 'settings'
@@ -2074,6 +2370,12 @@ local function tap(x, y, long)
     end
   end
   if screen == 'list' then
+    if add_rect and x >= add_rect.x and x < add_rect.x + add_rect.w and y >= add_rect.y and y < add_rect.y + add_rect.h then
+      ask('Add a topic', '', function(s)
+        if s and s:match('%S') then add_foryou(s); open_tab('foryou') end
+      end)
+      return
+    end
     if y < LIST_TOP - 8 then
       local t = TABS[math.max(1, math.min(#TABS, (x - 4) // ((W - 8) // #TABS) + 1))]
       if t[2] == 'find' then
@@ -2086,7 +2388,11 @@ local function tap(x, y, long)
       if long then open_thread(r) else open_story(r) end
     end
   elseif screen == 'story' then
-    if y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end            -- left third back, else on
+    local ln = y < DOC_BOTTOM and doc_line_at(S, y)
+    if ln and ln.likes then like_menu(x < W // 2)
+    elseif y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end        -- left third back, else on
+  elseif screen == 'fyset' then
+    tap_fyset(x, y)
   elseif screen == 'thread' then
     if y >= DOC_BOTTOM then return end
     local lv = level()
@@ -2141,6 +2447,7 @@ local function tap(x, y, long)
       local sx, sy, sw, sh = setting_rect(k)
       if x >= sx and x < sx + sw and y >= sy and y < sy + sh then
         if s[1] == 'ai' then AI.import(); screen = 'aiset'
+        elseif s[1] == 'foryou' then load_foryou(); fy_page = 1; screen = 'fyset'
         elseif s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
         elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
         elseif s[1] == 'screen' then
@@ -2203,8 +2510,9 @@ function on_load(c)
   local ok, e = pcall(function()
     load_cfg()
     AI.import()
+    load_foryou()
     if cfg.screen == 'landscape' then apply_orientation() end   -- the first frame is already turned
-    open_tab('top')
+    open_tab(#fy.topics > 0 and 'foryou' or 'top')            -- with topics, For you first
   end)
   if not ok then ERR = tostring(e) end
 end

@@ -1,0 +1,17 @@
+{
+  "app_id": "xkcd",
+  "display_name": "xkcd",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "xkcd comics by Randall Munroe: the latest, Prev, Next, Random or any number, wide ones turned to landscape, tap to zoom, the alt text, favourites, the last 20 kept to read offline, the latest on the sleep screen. Not affiliated with xkcd.",
+  "entry": "index.lua",
+  "api": "2.26",
+  "permissions": ["net"],
+  "requires": ["pointer"],
+  "lockscreen": {
+    "enabled": true,
+    "entry": "lockscreen.lua",
+    "interval_sec": 3600,
+    "net": true
+  }
+}

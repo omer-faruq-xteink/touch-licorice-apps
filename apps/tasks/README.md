@@ -1,4 +1,4 @@
-# Tasks — XTOS Licorice mini app (API 2.9)
+# Tasks — XTOS Licorice mini app (API 2.26)
 
 Lists of things to do, ticked off with a tap, and your Todoist, Google Tasks and TickTick lists.
 
@@ -42,7 +42,11 @@ change is sent a moment after you make it (several go together); while there is 
 and is sent on the next sync. Opening the app syncs too. Sub-items are drawn further in, and an
 item with a date shows "due today", "late 2 days" or its date (and Todoist's repeat, such as "every
 4 days"; a ticked repeating Todoist task comes back with its next date). In Google Tasks the done
-items come after the open ones, as in Google's app. Any of these lists can be the lock screen. The
+items come after the open ones, as in Google's app. Any of these lists can be the lock screen: it then
+asks how often the reader syncs it while locked (every 15 or 30 minutes, every hour, every 3 or 6
+hours, or never); only that list's account is synced, when it is due, and the lock screen says when
+("synced 14:05"). The lock screen wakes at that interval, on the quarter hour or the hour (hourly
+for longer intervals or a list of your own) (firmware 26111201 or later, API 2.26). The
 app needs Wi-Fi only for these lists, and loads their code only once one is set up. Unticking a
 Google task needs firmware 26110201 or later (API 2.18).
 

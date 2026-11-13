@@ -195,7 +195,10 @@ local function rec(kind) return function(self, ...) cmds[#cmds + 1] = { kind, ..
 gg = { clear = function(self) cmds = {} end, text = rec('text'), rect = rec('rect'), circle = rec('circle'),
        line = rec('line'), polyline = rec('polyline'), polygon = rec('polygon') }
 """
-DATA = {n: open(os.path.join(HERE, 'data', n), encoding='utf-8').read() for n in ('stars.txt', 'lines.txt', 'names.txt', 'stars_named.txt')}
+DATA = {n: open(os.path.join(HERE, 'data', n), encoding='utf-8').read() for n in ('stars.txt', 'lines.txt', 'names.txt', 'stars_named.txt',
+                                                                  'bounds.txt', 'objects.txt', 'cards.txt', 'cards_tr.txt',
+                                                                  'cards_de.txt', 'objects_tr.txt', 'objects_de.txt')
+        if os.path.exists(os.path.join(HERE, 'data', n))}
 
 
 def host(entry, epoch_sec, offset_min, locale='en', store=None, debug=False):
@@ -303,6 +306,249 @@ for name, es, off, loc, st in cases:
               f'{name} {entry}: {len(cm)} commands, {inside(cm)} outside{", " + errs[0] if errs else ""}; header {tx[:3]}')
         if OUT:
             render(cm, os.path.join(OUT, f'sky_{name}_{entry.split(".")[0]}.png'))
+
+# constellation names on the chart (names.txt carries the IAU abbreviation before them)
+tx = texts(frame(host('index.lua', ist(2026, 10, 29, 23), 180, 'en')))
+check('Pegasus' in tx and not any(str(t).startswith(('And ', 'Peg ')) for t in tx),
+      f'constellation names: {[t for t in tx if "dromeda" in str(t) or "egasus" in str(t)]}')
+
+# --- from a point on the chart back to the sky, and the constellation there (the zoom's tap)
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
+SK = L.eval('__TEST.sky')
+s23 = A.secs(ist(2026, 10, 29, 23))
+ISTV = L.eval('function(s, z, zx, zy) return { s = s, place = { name = "x", lat = 41.01, lon = 28.98 }, zoom = z, zx = zx, zy = zy } end')
+
+
+def round_trip(ra, dec, view):
+    x, y, u = SK.radec_to_screen(ra, dec, view)
+    back = SK.chart_to_radec(x, y, view)
+    if back is None:
+        return None
+    r2, d2 = back
+    return max(abs((r2 - ra + 180) % 360 - 180) * math.cos(math.radians(dec)), abs(d2 - dec)), SK.constellation_at(r2, d2)
+
+
+v1 = ISTV(s23, None, None, None)
+for ra, dec, want in ((37.95, 89.26, 'UMi'), (88.79, 7.41, 'Ori'), (10.68, 41.27, 'And'), (2.29, 59.15, 'Cas'), (279.23, 38.78, 'Lyr')):
+    rt = round_trip(ra, dec, v1)
+    check(rt is not None and rt[0] < 0.5 and rt[1] == want, f'{want}: the chart point leads back to it: {rt}')
+check(SK.constellation_at(359.5, 60) == 'Cas' and SK.constellation_at(0.5, 60) == 'Cas' and SK.constellation_at(0.1, 10) == 'Psc',
+      'RA 0/360 is no seam')
+check(SK.constellation_at(200, -89) == 'Oct' and SK.constellation_at(10, 89.9) == 'UMi' and SK.constellation_at(200, 82) == 'Cam',
+      'the poles and the ring around the north pole')
+check(SK.chart_to_radec(240 + 209, 322, v1) is None, 'a point outside the horizon is not in the sky')
+vz = ISTV(s23, 2.5, 200, 250)
+rt = round_trip(88.79, 7.41, vz)
+check(rt is not None and rt[0] < 0.5, f'zoomed 2.5x: the round trip holds: {rt}')
+LS = host('index.lua', epoch(2026, 1, 15, 12), 660, 'en', {'settings.txt': 'place=Sydney' + chr(10) + 'lat=-33.87' + chr(10) + 'lon=151.21' + chr(10)})
+SKS = LS.eval('__TEST.sky')
+vs = LS.eval('function(s) return { s = s, place = { name = "Sydney", lat = -33.87, lon = 151.21 } } end')(A.secs(epoch(2026, 1, 15, 12)))
+x, y, u = SKS.radec_to_screen(186.65, -63.10, vs)
+back = SKS.chart_to_radec(x, y, vs)
+check(u > 0 and back is not None and SKS.constellation_at(back[0], back[1]) == 'Cru', 'Sydney, 23:00 in January: Acrux is in the Southern Cross')
+
+# --- the zoomed view (1.1.0): the chart 2.5x around a point, objects drawn, the card under it
+BASE = {'night_now': 472, 'day_tonight': 452, 'berlin_de': 451, 'sydney': 533}
+for name, es, off, loc, st in cases:
+    n = len(frame(host('index.lua', es, off, loc, st)))
+    check(n == BASE[name] + 3, f'{name}: the full chart is as in 1.0.1, plus the 3 bars of the ☰ ({n} commands, was {BASE[name]})')
+ZF = """function(s, lat, lon, off, zx, zy, card)
+  gg:clear(0)
+  __TEST.sky.draw_sky(gg, { s = s, place = { name = 'Here', lat = lat, lon = lon }, off = off, zoom = 2.5, zx = zx, zy = zy, card = card }, 738)
+end"""
+
+
+def zoomed(L, s, lat, lon, off, ra, dec, card):
+    sk = L.eval('__TEST.sky')
+    v = L.eval('function(s, lat, lon) return { s = s, place = { name = "x", lat = lat, lon = lon } } end')(s, lat, lon)
+    zx, zy, _ = sk.radec_to_screen(ra, dec, v)
+    L.eval(ZF)(s, lat, lon, off, zx, zy, card)
+    return [[c[k] for k in range(1, len(c) + 1)] for c in L.globals().cmds.values()]
+
+
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
+cm = zoomed(L, s23, 41.01, 28.98, 10800, 10.68, 41.27, 'And')
+tx = texts(cm)
+check(len(cm) <= 1024 and inside(cm) == 0 and not any('error' in str(t) for t in tx),
+      f'zoomed on Andromeda: {len(cm)} commands, {inside(cm)} outside')
+check('Andromeda' in tx and 'M31' in tx and any('chained princess' in str(t) for t in tx), f'its card and M31: {tx[-8:]}')
+check(any(str(t).startswith('Brightest: Alpheratz') for t in tx) and any('November' in str(t) for t in tx), 'the brightest stars and when to look')
+if OUT:
+    render(cm, os.path.join(OUT, 'zoom_andromeda.png'))
+# in Turkish and German: the card's story and the objects in that language (the stars keep their names)
+def line_of(name, prefix):
+    return [l.split('|') for l in DATA.get(name, '').split('\n') if l.startswith(prefix)]
+
+
+EN_STORY = line_of('cards.txt', 'And|')[0][1]
+for loc, month, label in (('tr', 'Akşamları: Kasım', 'En parlak: '), ('de', 'Abends: November', 'Hellste: ')):
+    card, obj = line_of(f'cards_{loc}.txt', 'And|'), line_of(f'objects_{loc}.txt', 'M31|')
+    if not card or not obj:
+        check(False, f'{loc}: cards_{loc}.txt / objects_{loc}.txt')
+        continue
+    LT = host('index.lua', ist(2026, 10, 29, 23), 180, loc)
+    cmz = zoomed(LT, s23, 41.01, 28.98, 10800, 10.68, 41.27, 'And')
+    if OUT:
+        render(cmz, os.path.join(OUT, f'zoom_andromeda_{loc}.png'))
+    tx = [str(t) for t in texts(cmz)]
+    joined = ' '.join(tx)
+    check(month in tx and card[0][1].split()[0] in joined and EN_STORY not in joined, f'{loc}: the card in that language: {tx[-6:]}')
+    check(any(t.startswith('M31 ' + obj[0][1]) for t in tx) and any(t.startswith(label) for t in tx), f'{loc}: M31 by its {loc} name, {label!r}')
+
+LS = host('index.lua', epoch(2026, 7, 15, 12), 600, 'en')
+cm = zoomed(LS, A.secs(epoch(2026, 7, 15, 12)), -33.87, 151.21, 36000, 270.92, -24.38, 'Sgr')
+tx = texts(cm)
+check(len(cm) <= 1024 and inside(cm) == 0 and 'M8' in tx and 'Archer' in tx, f'Sydney, Sagittarius zoomed: {len(cm)} commands, {inside(cm)} outside')
+check(not any(str(t).startswith('M22 M22') for t in tx), 'an object named by its number is not named twice')
+last = [str(t) for t in tx][-1]
+check(last.endswith('.'), f'the card ends with a whole object, not half of one: {last!r}')
+if OUT:
+    render(cm, os.path.join(OUT, 'zoom_sagittarius.png'))
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
+L.execute('DATA["cards.txt"] = DATA["cards.txt"]:gsub("Lyr|[^\\n]*\\n", "")')
+tx = texts(zoomed(L, s23, 41.01, 28.98, 10800, 279.23, 38.78, 'Lyr'))
+check('Lyre' in tx and any('Evenings' in str(t) for t in tx) and not any('error' in str(t) for t in tx), f'a constellation without a card: its name and when to look ({tx[-3:]})')
+
+# --- touch (1.1.0): a tap on the chart zooms in there with the card of the constellation tapped; a
+# drag pans, a tap in the zoomed chart picks another card, Zoom out / Back go back
+def press(L, x0, y0, x1, y1):
+    L.execute(f'on_input(ctx, {{ type = "pointer", phase = "down", x = {x0}, y = {y0} }})')
+    L.execute(f'on_input(ctx, {{ type = "pointer", phase = "up", x = {x1}, y = {y1} }})')
+
+
+def key(L, k, phase):
+    return L.eval(f'on_input(ctx, {{ type = "key", key = "{k}", phase = "{phase}" }})')
+
+
+def zstate(L):
+    z = L.eval('__TEST.app.zoom()')
+    return None if z is None else (z.zx, z.zy, z.card)
+
+
+L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
+frame(L)
+SK = L.eval('__TEST.sky')
+ISTV = L.eval('function(s, z, zx, zy) return { s = s, place = { name = "x", lat = 41.01, lon = 28.98 }, zoom = z, zx = zx, zy = zy } end')
+fullv = ISTV(s23, None, None, None)
+x, y, _ = SK.radec_to_screen(10.68, 41.27, fullv)
+tap(L, x, y)
+z = zstate(L)
+tx = texts(frame(L))
+check(z is not None and z[2] == 'And' and abs(z[0] - x) < 1 and abs(z[1] - y) < 1, f'a tap on M31 zooms in there on Andromeda: {z}')
+check(tx[-4:] == ['Zoom out', '-1 h', '+1 h', 'Card'], f'the buttons while zoomed: {tx[-4:]}')
+press(L, 300, 300, 200, 300)
+z2 = zstate(L)
+check(z2 and abs(z2[0] - (z[0] + 40)) < 0.01 and abs(z2[1] - z[1]) < 0.01 and z2[2] == 'And', f'a drag of 100 px pans 40 px of the chart: {z2}')
+zv = ISTV(s23, 2.5, z2[0], z2[1])
+cx, cy, cu = SK.radec_to_screen(10.13, 56.54, zv)               # Schedar
+tap(L, cx, cy)
+z3 = zstate(L)
+check(92 < cy < 500 and z3 and z3[2] == 'Cas' and z3[:2] == z2[:2], f'a tap on Schedar picks Cassiopeia, the view stays: {z3}')
+tap(L, 240, 440)
+check(zstate(L)[:2] == z2[:2], 'a tap on the card does nothing')
+check(key(L, 'right', 'down') and zstate(L) is not None, 'the page keys still step the hour while zoomed')
+check(key(L, 'back', 'down') and zstate(L) is not None, 'Back acts on its release')
+check(key(L, 'back', 'up') and zstate(L) is None, 'Back zooms out')
+check(not key(L, 'back', 'up'), 'Back on the full chart is left to the host (it offers to exit)')
+tap(L, 240 + 209, 322)
+check(zstate(L) is None, 'a tap outside the horizon does not zoom')
+tap(L, x, y)
+tap(L, 300, 760)                                                # +1 h (the third of four)
+z4 = zstate(L)
+nx, ny, nu = SK.radec_to_screen(0.75, 43.0, ISTV(s23 + 2 * 3600, None, None, None))
+check(z4 and nu > 0 and abs(z4[0] - nx) < 1 and abs(z4[1] - ny) < 1, f'+1 h re-centres on Andromeda: {z4} ({nx:.0f}, {ny:.0f})')
+for _ in range(8):
+    press(L, 40, 300, 440, 300)
+z5 = zstate(L)
+check(z5 and (z5[0] - 240) ** 2 + (z5[1] - 322) ** 2 <= 206 ** 2 + 1, f'panning stops at the horizon: {z5}')
+tap(L, 80, 760)                                                 # Zoom out
+check(zstate(L) is None and texts(frame(L))[-4:-1] == ['-1 h', 'now', '+1 h'], 'Zoom out: the full chart and its buttons')
+
+# the card can be hidden: the zoomed chart takes its place, down to the buttons; the choice is kept
+def disc_bottom(cmds):
+    polys = [c for c in cmds if c[0] == 'polygon']
+    return max(polys[0][1][k] for k in range(2, len(polys[0][1]) + 1, 2)) if polys else 0
+
+
+x, y, _ = SK.radec_to_screen(10.68, 41.27, ISTV(s23 + 2 * 3600, None, None, None))
+tap(L, x, y)
+cm = frame(L)
+tx = texts(cm)
+check(tx[-4:] == ['Zoom out', '-1 h', '+1 h', 'Card'] and any('chained princess' in str(t) for t in tx), f'zoomed: a Card button: {tx[-4:]}')
+check(disc_bottom(cm) <= 500, 'with the card: the chart stops above it')
+check(len([c for c in cm if c[0] == 'line']) > 5, 'with the card: its constellation dashed')
+tap(L, 420, 760)                                                # Card: hide
+cm = frame(L)
+check(not any('chained princess' in str(t) for t in texts(cm)) and disc_bottom(cm) > 600, f'hidden: no card, the chart to the buttons ({disc_bottom(cm)})')
+if OUT:
+    render(cm, os.path.join(OUT, 'zoom_no_card.png'))
+check('card=0' in str(L.eval('store["view.txt"]')), 'kept in view.txt')
+lines_ = lambda cmds: len([c for c in cmds if c[0] == 'line'])
+check(lines_(cm) <= 1, f'hidden: no dashed outline ({lines_(cm)} lines)')
+before = zstate(L)
+vz = L.eval('function(s, zx, zy) return { s = s, place = { name = "x", lat = 41.01, lon = 28.98 }, zoom = 2.5, zx = zx, zy = zy, win_y1 = 730 } end')(
+    s23 + 2 * 3600, before[0], before[1])
+sx, sy, _ = SK.radec_to_screen(10.13, 56.54, vz)                # Schedar, in Cassiopeia
+tap(L, sx, sy)
+check(zstate(L) == before, 'hidden: a tap picks nothing')
+tap(L, 420, 760)                                                # Card: show again
+check(any('chained princess' in str(t) for t in texts(frame(L))) and 'card=1' in str(L.eval('store["view.txt"]')), 'shown again')
+LH = host('index.lua', ist(2026, 10, 29, 23), 180, 'en', {'view.txt': 'card=0'})
+frame(LH)
+SKH = LH.eval('__TEST.sky')
+vh = LH.eval('function(s) return { s = s, place = { name = "x", lat = 41.01, lon = 28.98 } } end')(s23)
+hx, hy, _ = SKH.radec_to_screen(10.68, 41.27, vh)
+tap(LH, hx, hy)
+check(not any('chained princess' in str(t) for t in texts(frame(LH))), 'hidden stays hidden on the next start')
+tap(L, 80, 760)
+
+# the ☰ menu (under the time): Names and Lines on the chart, on or off, kept in view.txt; the sleep
+# screen keeps both
+LM = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
+mrow = lambda Lx, i: (lambda t: (int(t[1]), int(t[2])))(Lx.eval('__TEST.app.menu_row')(i))
+cm = frame(LM)
+MX, MY = 480 - 34, 70                                          # the ☰ in the header
+polylines = lambda cmds: len([c for c in cmds if c[0] == 'polyline'])
+check('Pegasus' in texts(cm) and polylines(cm) > 20, 'by default: names and lines')
+tap(LM, MX, MY)
+cm = frame(LM)
+tx = texts(cm)
+check('Names' in tx and 'Lines' in tx and 'Objects' in tx, f'☰ opens the options: {tx[-6:]}')
+if OUT:
+    render(cm, os.path.join(OUT, 'sky_menu.png'))
+tap(LM, *mrow(LM, 1))  # Names: off
+cm = frame(LM)
+check('Pegasus' not in texts(cm) and 'Names' in texts(cm), 'Names off: no names on the chart, the menu stays open')
+tap(LM, *mrow(LM, 2))  # Lines: off
+cm = frame(LM)
+check(polylines(cm) == 0, f'Lines off: no figures ({polylines(cm)})')
+check('names=0' in str(LM.eval('store["view.txt"]')) and 'lines=0' in str(LM.eval('store["view.txt"]')), 'kept in view.txt')
+tap(LM, 240, 400)                                             # elsewhere: closes the menu, nothing else
+check('Names' not in texts(frame(LM)) and LM.eval('__TEST.app.zoom()') is None, 'a tap elsewhere closes it and does not zoom')
+tap(LM, 240, 400)
+cm = frame(LM)
+figures = [c for c in cm if c[0] == 'polyline' and len(c[1]) != 26]       # a galaxy's oval has 13 points
+check(LM.eval('__TEST.app.zoom()') is not None and not figures and 'M31' not in texts(cm), 'zoomed too: no lines (the objects stay), no names')
+symbols = lambda cmds: len([c for c in cmds if (c[0] == 'polyline' and len(c[1]) == 26) or c[0] == 'circle'])
+n_sym = symbols(cm)
+check(n_sym > 0, f'zoomed: the objects drawn ({n_sym} ovals and circles)')
+tap(LM, MX, MY)
+tap(LM, *mrow(LM, 3))                                         # Objects: off
+tap(LM, 10, 600)                                               # closes the list
+cm = frame(LM)
+check(symbols(cm) < n_sym and not [c for c in cm if c[0] == 'polyline' and len(c[1]) == 26] and 'objects=0' in str(LM.eval('store["view.txt"]')),
+      f'Objects off: no galaxy ovals or cluster circles ({symbols(cm)} circles left: stars and planets)')
+check(LM.eval('on_input(ctx, { type = "key", key = "back", phase = "up" })') is True, 'Back zooms out')
+st = {'view.txt': str(LM.eval('store["view.txt"]'))}
+LR = host('index.lua', ist(2026, 10, 29, 23), 180, 'en', st)
+check('Pegasus' not in texts(frame(LR)), 'off after a restart too')
+LK = host('lockscreen.lua', ist(2026, 10, 29, 23), 180, 'en', st)
+check('Pegasus' in texts(frame(LK)), 'the sleep screen keeps its names')
+tap(LR, MX, MY)
+tap(LR, *mrow(LR, 1))
+tap(LR, *mrow(LR, 2))
+tap(LR, *mrow(LR, 3))
+check('Pegasus' in texts(frame(LR)) and polylines(frame(LR)) > 20 and 'objects=1' in str(LR.eval('store["view.txt"]')), 'all on again')
 
 # the buttons: -1 h moves the time, Now shows the current time, Place lists cities and a pick is saved
 L = host('index.lua', ist(2026, 10, 29, 14), 180, 'en')

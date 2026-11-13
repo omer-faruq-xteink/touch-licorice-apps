@@ -11,6 +11,17 @@ Under the chart: the moon's phase, how much of it is lit, when it rises and sets
 - **Place**: 76 cities, A to Z, or **Coordinates** to type a latitude and longitude. Times are in
   the device's time zone. With nothing saved it starts in İstanbul (Turkish system), Berlin
   (German), else a city from the time zone.
+- **Zoom**: tap the chart to see that part of the sky 2.5 times larger, with a card about the
+  constellation you tapped: what it shows and its story, its brightest stars, the month it is best
+  seen in the evening, and the galaxies, nebulae and star clusters worth finding in it (40, from
+  the Andromeda Galaxy to the Magellanic Clouds, drawn on the zoomed chart with their catalogue
+  numbers; its boundary is dashed). Drag to move around, tap another constellation for its card,
+  **-1 h** / **+1 h** follow it through the night, **Card** hides the card for a taller chart, just the sky with
+  no outline or picking (kept for next time), **Zoom out** or Back for the whole sky. Which constellation a point is in comes
+  from the official IAU boundaries. The cards are in English, Turkish and German, like the app.
+- **☰** (under the time): **Names** (constellations, stars, objects), **Lines** (the figures) and
+  **Objects** (the zoomed chart's galaxy ovals, cluster circles and nebula squares), each on or off, for the whole sky and the zoomed one; kept for next time. The lock screen
+  keeps both.
 - **Lock screen** (on the Place page): the sky on the lock screen, redrawn every 15 minutes; the
   next new and full moon at the bottom.
 - English, Türkçe and Deutsch (constellation names too): the system language at first, then the
@@ -50,10 +61,14 @@ places) and, with a folder argument, draws each frame to a PNG.
 ## Files
 
 `make_data.py` (writes `data/`: `stars.txt` 904 stars, `lines.txt` the constellation figures,
-`names.txt` 89 constellation names in three languages, `stars_named.txt` the 30 star names the
-chart shows), `src/astro.lua`, `src/places.lua`, `src/sky.lua` (settings, words, the chart),
+`names.txt` 89 constellation names with their IAU abbreviations in three languages,
+`stars_named.txt` the 30 star names the chart shows, `bounds.txt` the IAU constellation boundaries;
+written by hand: `cards.txt` the 88 constellation cards, `objects.txt` the 40 deep-sky objects,
+`cards_tr.txt`, `cards_de.txt`, `objects_tr.txt`, `objects_de.txt` their Turkish and German), `src/astro.lua`, `src/places.lua`, `src/sky.lua` (settings, words, the chart),
 `src/app.lua`, `src/lock.lua`, `bundle.py` (makes `index.lua` and `lockscreen.lua`),
-`test_sky.py` (`python -I apps/skytonight/test_sky.py [PNG_DIR]`).
+`test_sky.py` (`python -I apps/skytonight/test_sky.py [PNG_DIR]`), `test_data.py` (every point of
+the sky in exactly one constellation, each object inside the constellation it is listed under, a
+card for each).
 
 The first frame opens five font sizes and draws up to 900 stars, which can take longer than the
 1.5 s the host gives `on_draw` (a German reader closed the app at 1.52 s), so the app calls
@@ -65,6 +80,6 @@ the time and the heap, to `debug.txt` (the lock screen: `debug_lock.txt`) in the
 ## Data and credits
 
 - Stars: the Yale Bright Star Catalogue, 5th edition (NASA HEASARC `heasarc_bsc5p`), public domain.
-- Constellation figures and names: [d3-celestial](https://github.com/ofrohn/d3-celestial)
-  (`constellations.lines.json`, `constellations.json`), Copyright (c) 2015, Olaf Frohn, BSD
+- Constellation figures, names and boundaries: [d3-celestial](https://github.com/ofrohn/d3-celestial)
+  (`constellations.lines.json`, `constellations.json`, `constellations.bounds.json`), Copyright (c) 2015, Olaf Frohn, BSD
   3-clause licence; the full notice is in `data/NOTICE.txt`, which is packed with the app.

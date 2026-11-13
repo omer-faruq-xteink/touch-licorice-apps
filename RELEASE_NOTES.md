@@ -1,20 +1,36 @@
 # v0.24.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110701**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26).
 
-Nothing yet.
+## New
+
+- **New: xkcd** (`xkcd.xtapp`): the webcomic by Randall Munroe. It opens on the latest comic; **Prev**, **Next**, **Random**, or any number. A wide comic turns the screen to landscape so it shows at nearly full size, a tall one turns it back; a tap shows it twice as large (drag to move, tap again to fit). The alt text is under the comic, in full with **Alt**. A star keeps favourites, the last 20 comics stay on the reader to read without Wi-Fi, and the latest comic can be the **sleep screen**, looked for again while locked every 3, 6 or 12 hours (the picture only when a new one is out). Every picture is prepared by a public image resizer for exactly its space on the screen, in black and white at full contrast, so the thin lines stay whole instead of breaking into dots. Needs **26111201** or later (API 2.26). Not affiliated with xkcd; the comics are CC BY-NC 2.5.
+
+## Changed
+
+- **Weather 1.1: the lock screen keeps itself up to date.** The reader now fetches a new forecast while it is locked: **Lock** asks how often (every 15 or 30 minutes, every hour, every 3 or 6 hours, or never, to only show the forecast saved last); the lock screen wakes at that interval (on the quarter hour or the hour; 3 and 6 hours wake hourly, the longest the firmware allows), with Wi-Fi on for a few seconds, and a new day always brings a new forecast. The lock screen now says when the forecast was fetched ("updated 14:05") instead of its age. Before, it showed the forecast saved last until you opened the app, and woke every 30 minutes. Needs **26111201** or later (API 2.26).
+- **Calendar 1.2.0: the lock screen syncs while locked.** Calendars that are switched on and older than the sync interval (Settings: **Sync when older than** 1, 3, 6, 12 or 24 h) are fetched again while the reader is locked, big ones too (a Google calendar with years of history: only the events it can show are read); with no internet calendar switched on (only My calendar, say) it never connects. The lock screen wakes once an hour, on the hour (so the Day view moves on with the hours and midnight brings the new day; a wake that comes a little early waits for the hour, so there is one wake an hour, not two; it used to wake every 15 minutes), and says when the calendars were synced ("synced 14:05") instead of how long ago. Needs **26111201** or later (API 2.26).
+- **Tasks 1.3.0: a Todoist, Google Tasks or TickTick list on the lock screen syncs while locked.** Putting one of their lists on the lock screen asks how often (every 15 or 30 minutes, every hour, every 3 or 6 hours, or never); the reader then syncs that list's account while it is locked, when it is due, and the lock screen says when ("synced 14:05"). A list of your own never connects. The lock screen wakes at that interval (hourly for 3 or 6 hours, never, or a list of your own: repeating items come back by day). Needs **26111201** or later (API 2.26).
+- **Sky Tonight 1.1.0: tap the sky to zoom in and read about it.** A tap on the chart shows that part of the sky 2.5 times larger, with a card about the constellation under your finger: what it shows and its story, its brightest stars, the month it is best seen in the evening, and the galaxies, nebulae and star clusters worth finding in it. 40 of them (the Andromeda Galaxy, the Orion Nebula, the Pleiades, Omega Centauri, the Magellanic Clouds...) are drawn on the zoomed chart with their catalogue numbers, and the constellation's boundary is dashed. Drag to move around, tap another constellation for its card; **-1 h** / **+1 h** follow it through the night; **Zoom out** or Back returns to the whole sky, and **Card** hides the card for a taller chart (kept for next time). A **☰** under the time turns the chart's names, the figures' lines and the deep-sky symbols off or on, in the whole sky and zoomed alike. The cards are in English, Turkish and German, following the app's language. Which constellation a point is in comes from the official IAU boundaries. Suggested by the Xteink team.
+- **Hacker News 1.3.0: For you, and on the sleep screen.** A new first tab shows the stories of the last two days on the topics you choose, best matches first, in one search. Add a topic on the tab, or on any story tap **More like this** to follow a word of its title, **Less like this** to mute a word or the story's site. Settings → **For you** lists every topic and mute to edit or remove one by one (they are also in `foryou.txt` to edit on a computer). The For you stories can be the **sleep screen**, fetched again while locked every 30 minutes, hour, 3 or 6 hours, with the time they were fetched. Needs **26111201** or later (API 2.26). Suggested by the Xteink team.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.23.0 |
+| `weather.xtapp` | Weather 1.1 |
+| `calendar.xtapp` | Calendar 1.2.0 |
+| `tasks.xtapp` | Tasks 1.3.0 |
+| `skytonight.xtapp` | Sky Tonight 1.1.0 |
+| `hackernews.xtapp` | Hacker News 1.3.0 |
+| `xkcd.xtapp` | xkcd 1.0.0 (new) |
+| all other packages | unchanged since v0.23.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 
 # v0.23.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110701**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110701**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21).
 
 ## New
 
@@ -41,7 +57,7 @@ All packages are included so one release has everything. `SHA256SUMS.txt` has th
 
 # v0.22.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18).
 
 ## Changed
 
@@ -60,7 +76,7 @@ All packages are included so one release has everything. `SHA256SUMS.txt` has th
 
 # v0.21.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS, Hacker News and Readwise need **26110201** or later (API 2.18).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26110501**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18).
 
 ## Added
 

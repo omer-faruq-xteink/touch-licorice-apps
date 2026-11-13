@@ -51,13 +51,14 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; optional AI questions about a story and its comments (off by default, your own key); needs firmware 2.18 |
+| **xkcd** | xkcd comics by Randall Munroe: the latest, Prev, Next, Random or any number, wide ones turned to landscape, tap to zoom, the alt text, favourites, the last 20 kept for offline, the latest on the sleep screen; needs firmware 26111201 |
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen; an ink octopus and a shelf dragon can join it |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Timekeeper** | timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer for exercise, counters and a log of focus time; whole minutes to save power, a flash when time is up; can be the lock screen |
-| **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; your Todoist, Google Tasks and TickTick lists too (tick and add); a list can be the lock screen |
+| **Tasks** | to-do lists ticked off with a tap, items that repeat (chores every week, every 3 months), kept as a plain text file; your Todoist, Google Tasks and TickTick lists too (tick and add); a list can be the lock screen, theirs synced while locked; needs firmware with API 2.26 |
 | **Notebook** | plain text notes written in blocks (Enter makes a new line; a long text goes on into the next block by itself), folders, tags, sorting and a search through all notes; kept as .txt files you can also edit on a computer |
-| **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen |
-| **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen |
+| **Weather** | the forecast from Open-Meteo: now, the next hours and four days; can be the lock screen, which keeps itself up to date; needs firmware with API 2.26 |
+| **Calendar** | your Google (or any iCal) calendars in Day, Week, Month and Agenda views, and My calendar for events added on the reader (an .ics file); can be the lock screen, which syncs itself; needs firmware with API 2.26 |
 | **TBR Planner** | plan your to-be-read books: wishlist, dates, a month calendar, progress from the reader; can be the lock screen |
 | **Calculator** | exact decimal arithmetic and a scientific mode; its Mode button adds Graph, Table, Stats, Distributions, Solve, Matrix, Units, Base, Finance and Dates |
 | **Anki** | flashcards with spaced repetition: a built-in English deck (B2-C1 words with examples), your own cards, Anki decks converted on a computer |
@@ -354,11 +355,19 @@ Reader with the same token; Settings can turn the app to landscape. Needs firmwa
 
 ### Hacker News
 
-Top, New, Best, Ask and Show in HN's own order, and search. A story opens with its text (Ask HN) or
+**For you**: the stories on topics you choose (More like this / Less like this on any story), also
+as the sleep screen, refreshed while locked. Top, New, Best, Ask and Show in HN's own order, and search. A story opens with its text (Ask HN) or
 the linked article as text through your rss-opds Worker (the one RSS uses), and ends with its
 address as a QR code. Comments come level by level, loaded while you read; tap "replies" to go
 down a level. Read-only: no login. The Worker needs no CommaFeed account for this, only a full-text
 service: [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/worker/), [more](apps/hackernews/README.md).
+
+### xkcd
+
+The webcomic by Randall Munroe: the latest comic, Prev, Next, Random or any number. Wide comics turn
+the screen to landscape, a tap zooms in (drag to move), the alt text is under the comic or in full
+with Alt. Favourites, the last 20 comics kept to read offline, and the latest comic on the sleep
+screen, looked for again while locked. Not affiliated with xkcd. [More](apps/xkcd/README.md)
 
 ### Bookworm
 
@@ -404,13 +413,15 @@ from the day you ticked it), with "late 2 days" or the next date under it. One l
 screen. Kept in
 `XTApps/tasks/files/lists.txt`, plain text you can also edit on a computer. **Todoist**, **Google
 Tasks** and **TickTick** lists can show after yours (Sources): tick, untick and add items on the reader, the rest in
-their own apps; changes wait while there is no Wi-Fi. [More](apps/tasks/README.md)
+their own apps; changes wait while there is no Wi-Fi. On the lock screen one of their lists is synced while the reader
+is locked, as often as you choose (firmware with API 2.26). [More](apps/tasks/README.md)
 
 ### Weather
 
 The forecast from [Open-Meteo](https://open-meteo.com) (free, no key) for a place found by name:
 now, the next 12 hours and four days, in °C or °F. The forecast is kept, so it opens at once; it
-can be the lock screen. [More](apps/weather/README.md)
+can be the lock screen, which fetches a new forecast while locked every 15 or 30 minutes, every hour, or every
+3 or 6 hours (your choice). Needs firmware with API 2.26 (26111201 or later). [More](apps/weather/README.md)
 
 ### Calendar
 
@@ -420,7 +431,7 @@ secret iCal address, on the reader or as a `calendars.txt` over USB. It syncs ov
 works offline. **+** adds an event to My calendar, kept on the reader as
 `AppFiles/calendar/My calendar.ics`, editable, repeating if you like, and readable by any calendar
 program. It can be the lock screen in any of the four views; Day then runs from the current
-hour on. A port of calendar.koplugin (AGPL v3). [More](apps/calendar/README.md)
+hour on. The lock screen syncs while the reader is locked (firmware with API 2.26, 26111201 or later). A port of calendar.koplugin (AGPL v3). [More](apps/calendar/README.md)
 
 ### TBR Planner
 
@@ -486,8 +497,9 @@ constellation figures and names, the moon in its phase, the planets. Under it th
 rise and set, sunset, dark and sunrise, and the planets that are up. At night it opens on now, by
 day on tonight; **-1 h** / **+1 h** step through the night. 76 cities or typed coordinates;
 English, Türkçe, Deutsch. Everything is computed on the reader (no network) and checked against
-the 2026 eclipses, planet oppositions and NOAA's sunrise times. It can be the lock screen,
-redrawn every 15 minutes. [More](apps/skytonight/README.md)
+the 2026 eclipses, planet oppositions and NOAA's sunrise times. Tap the sky to zoom in: a card tells
+about the constellation there and the galaxies, nebulae and clusters in it. It can be the lock
+screen, redrawn every 15 minutes. [More](apps/skytonight/README.md)
 
 ### Gamebook
 

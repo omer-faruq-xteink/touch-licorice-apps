@@ -545,6 +545,19 @@ def hackernews(p):
         p.rect((20, y, x1, y + 6), fill=True)
 
 
+def xkcd(p):
+    # a comic panel: a stick figure and a speech bubble (no logo)
+    p.rect((6, 6, 90, 90), w=5, r=6)
+    p.ellipse((22, 34, 40, 52), w=4)
+    p.line([(31, 52), (31, 74)], 4)
+    p.line([(31, 58), (20, 66)], 4)
+    p.line([(31, 58), (44, 64)], 4)
+    p.line([(31, 74), (22, 86)], 4)
+    p.line([(31, 74), (40, 86)], 4)
+    p.ellipse((46, 14, 82, 40), w=4)
+    p.poly([(52, 36), (46, 46), (58, 38)], fill=True)
+
+
 def calendar(p):
     # a desk calendar page: two rings, a header band and a grid of days, one ringed
     p.rect((10, 16, 86, 88), w=5, r=8)
@@ -775,7 +788,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'freecell': freecell, 'wikipedia': wikipedia,
          'chess': chess, 'chessplay': chessplay, 'checkers': checkers, 'backgammon': backgammon, 'notebook': notebook, 'casefiles': casefiles, 'lamplighter': lamplighter, 'timekeeper': timekeeper, 'queens': queens, 'bookworm': bookworm, 'calculator': calculator,
          'klondike': klondike, 'tasks': tasks, 'weather': weather,
-         'hackernews': hackernews, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
+         'hackernews': hackernews, 'xkcd': xkcd, 'calendar': calendar, 'tbr': tbr, 'wallabag': wallabag,
          'readwise': readwise, 'litclock': litclock,
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,

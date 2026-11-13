@@ -373,7 +373,11 @@ local BTN_Y, BTN_H = 704, 64
 local STALE_S = 30 * 60
 local UA = 'XteinkLicoriceWeather/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 
-local cfg = { name = nil, lat = nil, lon = nil, unit = 'C', lock = false }
+-- every: how often the lock screen fetches a new forecast while locked, in minutes (0: never)
+local cfg = { name = nil, lat = nil, lon = nil, unit = 'C', lock = false, every = 60 }
+local EVERY = { { 15, 'Every 15 min' }, { 30, 'Every 30 min' }, { 60, 'Every hour' }, { 180, 'Every 3 hours' },
+                { 360, 'Every 6 hours' }, { 0, 'Never' } }
+local function every_text(m) return m < 60 and (m .. ' min') or (m == 60 and 'hour' or ((m // 60) .. ' hours')) end
 local fc = nil                  -- the forecast (X.parse_cache)
 local screen = 'main'           -- main | places
 local places = {}
@@ -396,7 +400,7 @@ end
 
 local function save_cfg()
   kit.write('settings.txt', 'name=' .. (cfg.name or '') .. '\nlat=' .. (cfg.lat or '') .. '\nlon=' .. (cfg.lon or '') ..
-    '\nunit=' .. cfg.unit .. '\nlock=' .. tostring(cfg.lock))
+    '\nunit=' .. cfg.unit .. '\nlock=' .. tostring(cfg.lock) .. '\nevery=' .. cfg.every)
 end
 local function load_cfg()
   local t = kit.kv(kit.read('settings.txt'))
@@ -404,7 +408,8 @@ local function load_cfg()
   cfg.lat, cfg.lon = tonumber(t.lat), tonumber(t.lon)
   cfg.unit = t.unit == 'F' and 'F' or 'C'
   cfg.lock = t.lock == 'true'
-  fc = X.parse_cache(kit.read('forecast.txt'))
+  cfg.every = tonumber(t.every) or 60
+  fc =X.parse_cache(kit.read('forecast.txt'))
 end
 
 ------------------------------------------------------------------ network
@@ -473,19 +478,41 @@ end
 
 ------------------------------------------------------------------ lock screen
 
-local function toggle_lock()
+local function set_lock(on)
   local L = ctx.lockscreen
-  cfg.lock = not cfg.lock
+  cfg.lock = on
   save_cfg()
   if not L then status = 'This firmware has no app lock screen.'; return end
   local okd, isdef = pcall(function() return L:is_default() end)
-  if cfg.lock then
+  if on then
     if not (okd and isdef == true) then pcall(function() L:set_default() end) end
-    status = 'Lock screen: the forecast.'
+    status = 'Lock screen: the forecast' .. (cfg.every > 0 and (', updated every ' .. every_text(cfg.every)) or ', not updated') .. '.'
   else
     if okd and isdef == true then pcall(function() L:clear_default() end) end
     status = 'Lock screen: off.'
   end
+end
+
+local function lock_label()
+  if not cfg.lock then return 'Lock' end
+  if cfg.every == 0 then return 'Lock only' end
+  return 'Lock ' .. (cfg.every < 60 and (cfg.every .. ' m') or ((cfg.every // 60) .. ' h'))
+end
+
+-- the lock screen and how often it fetches a new forecast while locked (0: shows the saved one)
+local function lock_menu()
+  local rows = {}
+  for k = 1, #EVERY, 2 do
+    local row = {}
+    for j = k, math.min(k + 1, #EVERY) do
+      local m = EVERY[j][1]
+      row[#row + 1] = { EVERY[j][2], function() kit.close(); cfg.every = m; set_lock(true) end }
+    end
+    rows[#rows + 1] = row
+  end
+  if cfg.lock then rows[#rows + 1] = { { 'Lock screen off', function() kit.close(); set_lock(false) end } } end
+  kit.show({ title = 'Lock screen', lines = { 'The forecast on the lock screen. A new one is fetched while the reader is locked (Wi-Fi on for a few seconds):' },
+             rows = rows, cancel = kit.close })
 end
 
 ------------------------------------------------------------------ drawing
@@ -547,7 +574,7 @@ end
 
 local function buttons()
   if screen == 'places' then return { 'Back', 'Search again' } end
-  return { 'Refresh', 'Place', '°' .. (cfg.unit == 'C' and 'F' or 'C'), cfg.lock and 'Lock off' or 'Lock' }
+  return { 'Refresh', 'Place', '°' .. (cfg.unit == 'C' and 'F' or 'C'), lock_label() }
 end
 local function button_rect(k, n)
   local bw = math.floor((W - 24 - (n - 1) * 8) / n)
@@ -583,7 +610,7 @@ local function tap(x, y)
       if b == 'Refresh' then refresh_forecast()
       elseif b == 'Place' or b == 'Search again' then ask_place()
       elseif b == 'Back' then screen = 'main'
-      elseif b == 'Lock' or b == 'Lock off' then toggle_lock()
+      elseif b == lock_label() then lock_menu()
       else
         cfg.unit = cfg.unit == 'C' and 'F' or 'C'
         save_cfg()

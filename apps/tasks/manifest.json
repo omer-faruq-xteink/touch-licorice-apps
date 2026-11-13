@@ -1,17 +1,18 @@
 {
   "app_id": "tasks",
   "display_name": "Tasks",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "omer-faruq",
   "description": "Lists of things to do, ticked off with a tap; chores that repeat come back when due; your Todoist and Google Tasks lists too; a list can be the lock screen. Kept as a plain text file you can also edit on a computer.",
   "entry": "index.lua",
-  "api": "2.0",
+  "api": "2.26",
   "permissions": [
     "net"
   ],
   "lockscreen": {
     "enabled": true,
     "entry": "lockscreen.lua",
-    "interval_sec": 3600
+    "interval_sec": 900,
+    "net": true
   }
 }

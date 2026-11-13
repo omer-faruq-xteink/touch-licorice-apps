@@ -513,6 +513,41 @@ function C.parser(body, off, today, all)
   return p
 end
 
+-- a big calendar made small for the lock screen, which has one callback to read it in: only the
+-- events that can matter from day `from` on (days since 1970): those that repeat or move an instance
+-- (RRULE, RECURRENCE-ID), and the others whose end (or start) is on or after it. Finding the events
+-- uses the host's string search, so a 200 KB file takes little time; the reading that follows sees
+-- a few KB. -> the text (header, time zones, the events kept), the events in it, the events kept
+function C.trim_ics(body, from)
+  local y, m, d = C.civil(from)
+  local since = string.format('%04d%02d%02d', y, m, d)
+  local first = body:find('BEGIN:VEVENT', 1, true)
+  if not first then return body, 0, 0 end
+  local out, n_in, n_keep, pos = { body:sub(1, first - 1) }, 0, 0, first
+  while true do
+    local s = body:find('BEGIN:VEVENT', pos, true)
+    if not s then break end
+    local e = body:find('END:VEVENT', s, true)
+    if not e then break end
+    e = e + 9
+    local block = body:sub(s, e)
+    n_in = n_in + 1
+    local keep = block:find('RRULE', 1, true) or block:find('RECURRENCE-ID', 1, true)
+    if not keep then
+      local date = block:match('\nDTEND[^:\r\n]*:(%d%d%d%d%d%d%d%d)') or block:match('\nDTSTART[^:\r\n]*:(%d%d%d%d%d%d%d%d)')
+      keep = not date or date >= since
+    end
+    if keep then
+      out[#out + 1] = block
+      out[#out + 1] = '\r\n'
+      n_keep = n_keep + 1
+    end
+    pos = e + 1
+  end
+  out[#out + 1] = 'END:VCALENDAR\r\n'
+  return table.concat(out), n_in, n_keep
+end
+
 function C.parse_ics(body, off, today, all)
   local p = C.parser(body, off, today, all)
   while not p.step(1000000000) do end

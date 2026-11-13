@@ -1,6 +1,6 @@
-# Hacker News — XTOS Licorice mini app (API 2.18)
+# Hacker News — XTOS Licorice mini app (API 2.26)
 
-**Needs firmware with API 2.18** (XT Licorice 26110201 or later): older firmware refuses to install it
+**Needs firmware with API 2.26** (XT Licorice 26111201 or later): older firmware refuses to install it
 and asks for an update.
 
 [Hacker News](https://news.ycombinator.com) on the reader. Needs Wi-Fi; read-only (no login, no
@@ -11,6 +11,18 @@ OpenRouter, Groq, Mistral, DeepSeek, Ollama or any OpenAI-compatible server, wit
 It is **off by default**, and while it is off nothing of it shows anywhere. See
 [AI questions (optional)](#ai-questions-optional).
 
+- **For you**: the stories of the last two days (10 points or more) on the topics you choose,
+  best matches first, in one search (Algolia's HN search). **Add a topic** on the tab when it is
+  empty; on any story, **More like this** follows a word of its title and **Less like this** mutes
+  a word or the story's site. With topics, the app opens on For you. Settings → **For you** lists
+  every topic, muted word and muted site: tap one to **Edit** or **Remove** it. They are kept in
+  `foryou.txt` in the app's folder (`XTApps/hackernews/files/`), one a line, to edit on a computer
+  too: `rust` a topic, `machine learning` a phrase, `-crypto` a muted word, `-site:medium.com` a
+  muted site (and its subdomains).
+- **Sleep screen** (Settings → For you → Sleep screen): your For you stories when the reader is
+  locked, fetched again every 30 minutes, hour, 3 or 6 hours (only when that much time has passed;
+  the reader wakes at most hourly), with the time they were fetched. The store's build shows the
+  stories the app fetched last.
 - **Top, New, Best, Ask, Show** in HN's own order (the official Firebase API), 24 stories at a
   time: Next past the last one loads more. **Find** searches all stories (Algolia's HN search).
   The last list of each tab is kept, so the app opens with something to read.

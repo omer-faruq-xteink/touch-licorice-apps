@@ -1,15 +1,18 @@
 """Write Sky Tonight's data files from the star catalogue and the constellation figures.
 
-  python -I apps/skytonight/make_data.py BSC5.tdat.gz LINES.json CONSTELLATIONS.json
+  python -I apps/skytonight/make_data.py BSC5.tdat.gz LINES.json CONSTELLATIONS.json BOUNDS.json
 
 BSC5: the Yale Bright Star Catalogue, 5th edition (HEASARC heasarc_bsc5p.tdat.gz; NASA, public
 domain). LINES / CONSTELLATIONS: constellations.lines.json and constellations.json of d3-celestial
-(c) 2015 Olaf Frohn, BSD 3-clause (see README). Writes:
+(c) 2015 Olaf Frohn, BSD 3-clause (see README); BOUNDS: its constellations.bounds.json (the IAU
+boundaries). Writes:
 
   data/stars.txt   "ra dec mag" per star to magnitude 4.5, ra and dec in degrees (J2000)
   data/lines.txt   one constellation figure line per row: "ra dec ra dec ..."
-  data/names.txt   "ra dec rank en|tr|de": where each constellation's name goes, its rank (1 the
-                   best known) and its names in English, Turkish and German
+  data/names.txt   "ra dec rank ABBR en|tr|de": where each constellation's name goes, its rank (1
+                   the best known), its IAU abbreviation and its names in English, Turkish and German
+  data/bounds.txt  "ABBR N ra dec ra dec ...": one boundary polygon a row (RA 0..360); N is 1 for
+                   the one that holds the north pole (see bounds())
   data/stars_named.txt  "ra dec name": the bright stars the chart labels
 """
 import gzip, json, os, re, sys
@@ -53,8 +56,25 @@ def stars(path):
     return sorted(out, key=lambda s: s[2])
 
 
+def bounds(path):
+    """the boundary polygons as (abbr, north, [(ra, dec), ...]), RA in 0..360. A point is inside when
+    the meridian from it up to the north pole crosses the polygon's edges (each edge the short way
+    round in RA) an odd number of times; north is True for the one that holds the north pole (UMi:
+    its ring runs once round in RA), where it is an even number."""
+    out = []
+    for feat in json.load(open(path, encoding='utf-8'))['features']:
+        for ring in feat['geometry']['coordinates']:
+            pts = [(lon % 360, lat) for lon, lat in ring]
+            if pts[-1] == pts[0]:
+                pts.pop()
+            turn = sum((pts[(i + 1) % len(pts)][0] - pts[i][0] + 180) % 360 - 180 for i in range(len(pts)))
+            north = abs(turn) > 180 and sum(p[1] for p in pts) > 0
+            out.append((feat['id'], north, pts))
+    return out
+
+
 def main():
-    bsc, lines_json, names_json = sys.argv[1:4]
+    bsc, lines_json, names_json, bounds_json = sys.argv[1:5]
     os.makedirs(DATA, exist_ok=True)
     st = stars(bsc)
     with open(os.path.join(DATA, 'stars.txt'), 'w', encoding='utf-8', newline='\n') as f:
@@ -78,8 +98,12 @@ def main():
             p = feat['properties']
             lon, lat = feat['geometry']['coordinates']
             names = [plain(p['en']), plain(p.get('tr') or p['en']), plain(p.get('de') or p['en'])]
-            f.write(f"{lon % 360:.2f} {lat:.2f} {p.get('rank', '3')} {'|'.join(names)}\n")
-    print(f'{len(st)} stars to magnitude {MAG}, {len(NAMED)} named, {n} figure lines, {len(nj["features"])} names')
+            f.write(f"{lon % 360:.2f} {lat:.2f} {p.get('rank', '3')} {feat['id']} {'|'.join(names)}\n")
+    bd = bounds(bounds_json)
+    with open(os.path.join(DATA, 'bounds.txt'), 'w', encoding='utf-8', newline='\n') as f:
+        for ab, north, pts in bd:
+            f.write(ab + (' 1 ' if north else ' 0 ') + ' '.join(f'{ra:.2f} {dec:.2f}' for ra, dec in pts) + '\n')
+    print(f'{len(st)} stars to magnitude {MAG}, {len(NAMED)} named, {n} figure lines, {len(nj["features"])} names, {len(bd)} boundaries')
 
 
 if __name__ == '__main__':
