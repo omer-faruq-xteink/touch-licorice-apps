@@ -462,12 +462,21 @@ local function keep_for_lock(c, kind, sw, sh)
   end)
 end
 
+-- a host without picture decoding (Studio's preview has none; not in requires, or the preview
+-- would not open the app at all): the comic is shown without its picture, with a plain note
+local NO_DECODE = 'no image_decode'
+
 -- show comic c from its saved picture (kind png; none: no picture), the screen turned for its shape
 local function display(c, kind, sw, sh)
   release()
   status, offline, screen = nil, false, 'comic'
   cfg.last = c.num
   save_cfg()
+  if kind ~= 'none' and not ctx.image then          -- saved, but this host cannot decode it
+    turn(false)
+    cur = { c = c, kind = 'none', err = NO_DECODE }
+    return
+  end
   if kind == 'none' then
     turn(false)
     cur = { c = c, kind = 'none' }
@@ -500,15 +509,13 @@ end
 
 -- the picture of c: first the original's size (its first 64 bytes: a PNG says it there), to turn
 -- the screen for its shape; then the resizer makes it for exactly the space it gets (X.weserv_url)
-local NO_DECODE = 'no image_decode'
 local function fetch_picture(c)
   local function fail(f)
     cur = cur and cur.c and cur.c.num == c.num and cur or { c = c, kind = 'none' }
     status = f == 'net' and 'Picture: no network.' or ('Picture failed: ' .. tostring(f))
   end
-  -- a host without picture decoding (Studio's preview has none; not in requires, or the preview
-  -- would not open the app at all): say so,
-  -- fetch nothing and keep nothing, so a reader that can decode still gets the picture later
+  -- no picture decoding (NO_DECODE): fetch nothing and keep nothing, so a reader that can decode
+  -- still gets the picture later
   if not ctx.image then
     release()
     turn(false)

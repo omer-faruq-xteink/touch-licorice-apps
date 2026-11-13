@@ -326,6 +326,9 @@ L.execute('saved_image = ctx.image; ctx.image = nil')
 goto('9'); answer_all()
 t = ' '.join(texts())
 assert '9: Comic 9' in t and 'cannot show pictures' in t and 'attempt to' not in t, t
+goto('7'); answer_all()                                         # saved before (above): shown from the saved copy
+t = ' '.join(texts())
+assert '7: Comic 7' in t and 'cannot show pictures' in t and 'attempt to' not in t, t
 L.execute('ctx.image = saved_image')
 g.no_err()
 print('xkcd tests passed')
