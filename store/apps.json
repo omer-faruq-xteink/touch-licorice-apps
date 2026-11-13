@@ -364,10 +364,10 @@
     "app_id": "weather",
     "listing_id": "u_4063da1ccd8d40aaa5d281008f635f3e",
     "project_id": "7d246638-873f-49ee-918b-80b6151ef871",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-10-29"
+    "submitted": "2026-11-13"
   },
   "wikipedia": {
     "name": "Wikipedia",

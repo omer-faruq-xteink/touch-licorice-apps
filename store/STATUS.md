@@ -72,7 +72,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `tasks` | Tasks | `tasks` | 1.2.0 | published | 1.2.0 | 2026-11-09 | `547d9981-6d6c-43a4-878d-612452ce57f0` |
 | `tbr` | TBR Planner | `tbr` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `fa00e2a6-b3c6-4be5-8005-23255a6a91ea` |
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
-| `weather` | Weather | `weather` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
@@ -83,6 +82,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | in review | 1.0.1 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.1 | in review | 1.3.0 | 2026-11-12 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
+| `weather` | Weather | `weather` | 1.1.0 | in review | 1.0.0 | 2026-11-13 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `xkcd` | xkcd | `xkcd` | 1.0.0 | in review | - | 2026-11-13 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
 
-46 published, 7 in review or draft, 53 in all.
+45 published, 8 in review or draft, 53 in all.
