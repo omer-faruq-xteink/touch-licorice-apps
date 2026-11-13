@@ -47,6 +47,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.1 | published | 1.0.1 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
+| `hackernews` | Hacker News | `hackernews` | 1.3.0 | published | 1.3.0 | 2026-11-13 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
 | `instapaper` | Instapaper | `instapaper` | 1.2.1 | published | 1.2.1 | 2026-11-12 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
@@ -82,7 +83,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.0.0 | published | 1.0.0 | 2026-11-13 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
-| `hackernews` | Hacker News | `hackernews` | 1.3.0 | in review | 1.2.1 | 2026-11-13 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | in review | 1.0.1 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 
-51 published, 2 in review or draft, 53 in all.
+52 published, 1 in review or draft, 53 in all.
