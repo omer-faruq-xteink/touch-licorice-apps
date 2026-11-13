@@ -298,9 +298,13 @@ assert api().screen() == 'alt' and 'Close' in t and any('It goes on and on.' in 
 assert back() is True and api().screen() == 'comic'
 
 # Settings: the credit, the sleep screen (Off / every 3 / 6 / 12 hours)
+goto('7'); answer_all()                                         # a tall comic: portrait, 480 px, as in Studio
+assert width() == 480
 g.tap_label('More'); g.tap_label('Settings')
 t = texts()
-assert 'xkcd by Randall Munroe · xkcd.com · CC BY-NC 2.5'.encode().decode('latin-1') in t and 'Sleep screen: off' in t, t
+assert 'xkcd by Randall Munroe · xkcd.com · CC BY-NC 2.5'.encode().decode('latin-1') in ' '.join(t) and 'Sleep screen: off' in t, t
+wide = [str(r.s) for r in g.draw() if int(r.x) + 10 * len(str(r.s).encode('latin-1').decode('utf-8')) > width() - 12]
+assert not wide, f'past the screen edge (Studio cut the credit off): {wide}'
 g.tap_label('Sleep screen: off'); g.tap_label('Every 6 hours')
 assert list(L.eval('lock_calls').values()) == ['set'] and 'lockevery=6' in g.store['settings.txt'] and 'Sleep screen: every 6 hours' in texts()
 g.tap_label('Sleep screen: every 6 hours'); g.tap_label('Every 12 hours')
