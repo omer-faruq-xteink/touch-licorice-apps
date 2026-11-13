@@ -83,5 +83,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `rss` | RSS | `rss` | 1.3.1 | in review | 1.3.0 | 2026-11-12 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | in review | - | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.1 | in review | 1.3.0 | 2026-11-12 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
+| `xkcd` | xkcd | `xkcd` | 1.0.0 | in review | - | 2026-11-13 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
 
-47 published, 5 in review or draft, 52 in all.
+47 published, 6 in review or draft, 53 in all.
