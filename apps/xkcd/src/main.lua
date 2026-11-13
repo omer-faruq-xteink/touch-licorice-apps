@@ -516,8 +516,9 @@ local function draw_settings(gg)
   y = y + 24
   gg:text(12, y, 'xkcd by Randall Munroe · xkcd.com · CC BY-NC 2.5', { font = kit.font('small') })
   y = y + 30
-  for _k, l in ipairs(kit.wrap('This app is not affiliated with xkcd. Comics come from xkcd.com; the few too big for the '
-      .. 'reader are reduced through images.weserv.nl. The last ' .. KEEP .. ' comics seen are kept to read offline.',
+  for _k, l in ipairs(kit.wrap('This app is not affiliated with xkcd. Comics come from xkcd.com; their pictures are made '
+      .. 'for this screen by images.weserv.nl, in black and white, so the lines stay whole. The last ' .. KEEP
+      .. ' comics seen are kept to read offline.',
       'small', W - 24)) do
     gg:text(12, y, l, { font = kit.font('small') }); y = y + 22
   end
