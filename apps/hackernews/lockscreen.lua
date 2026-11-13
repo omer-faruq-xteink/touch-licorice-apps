@@ -322,7 +322,9 @@ for w in ('the and for with from that this what how why who are was were has hav
 function N.title_words(title)
   local out = {}
   for _k, w in ipairs(words_of(title)) do
-    if #w >= 3 and not STOP[w] and not w:match('^%d+$') then add_once(out, w) end
+    -- a dash or an ellipsis on its own (U+2000-U+206F, 3 bytes in UTF-8) is not a word
+    local bare = w:gsub('\226[\128\129][\128-\191]', '')
+    if #w >= 3 and bare ~= '' and not STOP[w] and not w:match('^%d+$') then add_once(out, w) end
   end
   return out
 end

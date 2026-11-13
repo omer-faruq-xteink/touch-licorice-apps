@@ -52,6 +52,8 @@ check(found == ['rust', 'machine learning'], f'the topics in a title: {found}')
 check(lst(N.topics_in('Rusty machines', tbl(['rust', 'machine learning']))) == [], 'whole words only')
 w = lst(N.title_words('The Rust compiler and the borrow checker: the Rust way'))
 check(w == ['rust', 'compiler', 'borrow', 'checker', 'way'], f"a title's words for More like this: {w}")
+w = lst(N.title_words('Show HN: AgentRun – open-source agents … for you'))
+check('–' not in w and '…' not in w and 'agentrun' in w, f'a dash or an ellipsis on its own is not a word: {w}')
 
 odd = N.foryou_parse('İstanbul|x"\n')
 check(lst(odd.topics) == ['İstanbul|x"'], f'odd characters kept as they are (only A-Z lowered): {lst(odd.topics)}')
