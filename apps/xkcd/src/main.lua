@@ -487,6 +487,12 @@ local function draw_favs(gg)
   if fav_pages() > 1 then gg:text(W - 90, btn_y() - 26, fav_page .. ' / ' .. fav_pages(), { font = kit.font('small') }) end
 end
 
+-- the store's build: its sleep screen cannot fetch (the store's API gives it no network), so it is
+-- only on or off there; this build fetches while locked (API 2.26) and asks how often
+local LOCK_NET = false
+-- store: cut
+LOCK_NET = true
+-- store: end
 local EVERY = { { '0', 'Off' }, { '3', 'Every 3 hours' }, { '6', 'Every 6 hours' }, { '12', 'Every 12 hours' } }
 local function lock_is_on()
   local ok, v = pcall(function() return ctx.lockscreen:is_default() end)
@@ -494,6 +500,7 @@ local function lock_is_on()
 end
 local function lock_label()
   if not lock_is_on() then return 'Sleep screen: off' end
+  if not LOCK_NET then return 'Sleep screen: on' end
   return 'Sleep screen: every ' .. cfg.lockevery .. ' hours'
 end
 local function lock_rect() return { x = 12, y = 80, w = W - 24, h = 64 } end
@@ -613,7 +620,10 @@ local function tap(x, y)
     local f = favs()[(fav_page - 1) * fav_per() + (y - FAV_TOP) // FAV_ROW + 1]
     if f then screen = 'comic'; unzoom(); show(f.n) end
   elseif screen == 'settings' then
-    if inside(x, y, lock_rect()) then lock_menu() end
+    if inside(x, y, lock_rect()) and not LOCK_NET then                -- the store's build: on or off
+      if lock_is_on() then pcall(function() ctx.lockscreen:clear_default() end)
+      else pcall(function() ctx.lockscreen:set_default() end) end
+    elseif inside(x, y, lock_rect()) then lock_menu() end
   elseif screen == 'comic' and cur then
     if inside(x, y, star_rect()) then toggle_fav(cur.c); return end
     local _zx, zy, _zw, zh = zoom_area()

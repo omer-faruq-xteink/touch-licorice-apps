@@ -31,6 +31,12 @@ local top = 1                   -- first row shown
 local lock_name = nil           -- the list on the lock screen: its name, or "<service>:<id>"
 -- how often the lock screen syncs a service's list while locked, in minutes (0: never)
 local lock_every = 60
+-- the store's build: its lock screen cannot sync (the store's API gives it no network), so a list
+-- is only put on the lock screen there; this build syncs it while locked (API 2.26), asking how often
+local LOCK_NET = false
+-- store: cut
+LOCK_NET = true
+-- store: end
 local EVERY = { { 15, 'Every 15 min' }, { 30, 'Every 30 min' }, { 60, 'Every hour' }, { 180, 'Every 3 hours' },
                 { 360, 'Every 6 hours' }, { 0, 'Never' } }
 local function every_text(m)
@@ -370,10 +376,10 @@ local function list_menu(k)
   local l = all()[k]
   if l.src then
     kit.show({ title = l.name, lines = { 'A list in ' .. remote().label(l) .. ': rename or delete it there.',
-                                         lock_name == key_of(l) and ('This list is on the lock screen, ' .. every_text(lock_every) .. '.')
+                                         lock_name == key_of(l) and ('This list is on the lock screen' .. (LOCK_NET and (', ' .. every_text(lock_every)) or '') .. '.')
                                            or 'Lock screen: its open items when the reader locks.' },
                rows = { { { lock_name == key_of(l) and 'Lock screen off' or 'Lock screen',
-                            function() kit.close(); if lock_name == key_of(l) then set_lock(l) else lock_every_menu(l) end end },
+                            function() kit.close(); if lock_name == key_of(l) or not LOCK_NET then set_lock(l) else lock_every_menu(l) end end },
                           { 'Close', kit.close } } },
                cancel = kit.close })
     return

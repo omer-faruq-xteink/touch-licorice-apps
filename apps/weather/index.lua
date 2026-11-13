@@ -378,6 +378,12 @@ local cfg = { name = nil, lat = nil, lon = nil, unit = 'C', lock = false, every 
 local EVERY = { { 15, 'Every 15 min' }, { 30, 'Every 30 min' }, { 60, 'Every hour' }, { 180, 'Every 3 hours' },
                 { 360, 'Every 6 hours' }, { 0, 'Never' } }
 local function every_text(m) return m < 60 and (m .. ' min') or (m == 60 and 'hour' or ((m // 60) .. ' hours')) end
+-- the store's build: its lock screen cannot fetch (the store's API gives it no network), so Lock is
+-- only on or off there; this build fetches while locked (API 2.26) and asks how often
+local LOCK_NET = false
+-- store: cut
+LOCK_NET = true
+-- store: end
 local fc = nil                  -- the forecast (X.parse_cache)
 local screen = 'main'           -- main | places
 local places = {}
@@ -486,7 +492,7 @@ local function set_lock(on)
   local okd, isdef = pcall(function() return L:is_default() end)
   if on then
     if not (okd and isdef == true) then pcall(function() L:set_default() end) end
-    status = 'Lock screen: the forecast' .. (cfg.every > 0 and (', updated every ' .. every_text(cfg.every)) or ', not updated') .. '.'
+    status = 'Lock screen: the forecast' .. (not LOCK_NET and '' or cfg.every > 0 and (', updated every ' .. every_text(cfg.every)) or ', not updated') .. '.'
   else
     if okd and isdef == true then pcall(function() L:clear_default() end) end
     status = 'Lock screen: off.'
@@ -495,12 +501,14 @@ end
 
 local function lock_label()
   if not cfg.lock then return 'Lock' end
+  if not LOCK_NET then return 'Lock: on' end
   if cfg.every == 0 then return 'Lock only' end
   return 'Lock ' .. (cfg.every < 60 and (cfg.every .. ' m') or ((cfg.every // 60) .. ' h'))
 end
 
 -- the lock screen and how often it fetches a new forecast while locked (0: shows the saved one)
 local function lock_menu()
+  if not LOCK_NET then set_lock(not cfg.lock); return end
   local rows = {}
   for k = 1, #EVERY, 2 do
     local row = {}

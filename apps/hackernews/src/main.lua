@@ -1036,6 +1036,12 @@ end
 -- Add a topic, Mute a word, and how often the sleep screen fetches For you again
 local FY_TOP, FY_ROW = 232, 52
 local fy_page = 1
+-- the store's build: its sleep screen cannot fetch (the store's API gives it no network), so it is
+-- only on or off there; this build fetches while locked (API 2.26) and asks how often
+local LOCK_NET = false
+-- store: cut
+LOCK_NET = true
+-- store: end
 local EVERY = { { '0', 'Off' }, { '30', 'Every 30 min' }, { '60', 'Every hour' }, { '180', 'Every 3 hours' }, { '360', 'Every 6 hours' } }
 local function fy_per() return math.max(1, (BTN_Y - 12 - FY_TOP) // FY_ROW) end
 local function fy_entries()
@@ -1052,6 +1058,7 @@ local function lock_is_on()
 end
 local function lock_label()
   if not lock_is_on() then return 'Sleep screen: off' end
+  if not LOCK_NET then return 'Sleep screen: on' end
   for _k, e in ipairs(EVERY) do if e[1] == cfg.lockevery then return 'Sleep screen: ' .. e[2]:lower() end end
   return 'Sleep screen: on'
 end
@@ -1290,6 +1297,9 @@ local function tap_fyset(x, y)
     ask('Add a topic', '', function(s) if s and s:match('%S') then add_foryou(s) end end)
   elseif hit(r.mute) then
     ask('Mute a word', '', function(s) if s and s:match('%S') then add_foryou('-' .. s:gsub('^%s*%-+', '')) end end)
+  elseif hit(r.lock) and not LOCK_NET then                      -- the store's build: on or off
+    if lock_is_on() then pcall(function() ctx.lockscreen:clear_default() end)
+    else pcall(function() ctx.lockscreen:set_default() end) end
   elseif hit(r.lock) then
     local rows = {}
     for _k, e in ipairs(EVERY) do
