@@ -616,6 +616,7 @@ python -I apps/portwren/test_town.py
 python -I apps/portwren/test_cases.py
 python -I apps/portwren/test_text.py
 python -I apps/riverstead/test_riverstead.py
+python -I apps/riverstead/test_polish.py
 python -I apps/riverstead/test_valley.py
 python -I apps/riverstead/test_rules.py
 python -I apps/riverstead/test_people.py

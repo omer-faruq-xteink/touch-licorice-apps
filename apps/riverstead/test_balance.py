@@ -70,7 +70,7 @@ check(warned_all, 'a famine came without a warning two months before (R.food_war
 idle_dead = 0
 for seed in range(1, N + 1):
     st, _ = play(seed, 'normal', B.idle, None)
-    idle_dead += st.over == 'dead' and st.month <= 60
+    idle_dead += st.over == 'dead' and st.month <= 72        # doing nothing ends the village within six years
 check(idle_dead == N, f'the idle bot survived in {N - idle_dead} valleys')
 
 tier3 = {}

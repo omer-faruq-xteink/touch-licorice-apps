@@ -16,14 +16,16 @@ strangers bring events; and the village grows one of four ways, each with its ow
     shields what is near it);
   - the mill stands on the river, the fisher's hut on the riverside, the woodcutter next to forest
     (more forest, more wood), the quarry on or next to rock;
-  - the shrine needs the valley's special spot (a spring or a standing stone), which some valleys have.
+  - the shrine needs the valley's special spot (a spring or a standing stone), which some valleys have;
+  - houses by the marsh make the village less healthy, houses next to a smithy or quarry less happy.
 - **People:** everyone with their age and job; Auto-assign puts each person where they fit best (and
   two on building sites); tap a person for their card (skill, trait, family, story) and to give them a
   job by hand.
 - **+1 month:** fields are sown in spring and harvested in September and October; people eat every
   month, more in a hard winter; stored food spoils a little (less with a storehouse). A short report
-  follows, then the month's event, if any: a choice, sometimes a gamble on someone's skill.
-- **Ledger:** last month's report, food months left, the four ways' renown and tier, the score so far.
+  follows, then the month's event, if any: a choice, sometimes a gamble on someone's skill. Back gives
+  the safe answer when there is one ("Send him on"); otherwise the event waits for a choice.
+- **Ledger:** last month's report (who was born, died, came and left), food months left, the four ways' renown and tier, the score so far.
   With a market, **Trade goods** sells what you have too much of and buys what you lack; food is dear in
   late winter and cheap after the harvest.
 
@@ -43,7 +45,7 @@ sickness or everyone leaving can end the village sooner. Finished games go into 
 ## Settings
 
 Difficulty: Gentle, Normal or Harsh (harvests, winters, floods and hard times); it applies to the next
-valley.
+valley. **New valley** starts one from here too.
 
 The game is saved on every tap (`village.txt`), with `chronicle.txt` and `prefs.txt`.
 
@@ -55,4 +57,5 @@ The game is saved on every tap (`village.txt`), with `chronicle.txt` and `prefs.
   `sim` (the game as a whole: the month, the ways, the end), `text`, `rng`, `save`, and `bots` (automated
   players for the balance tests only).
 - Tests: `test_valley.py`, `test_rules.py`, `test_people.py`, `test_events.py`, `test_sim.py`,
-  `test_balance.py` (bots over hundreds of valleys), `test_riverstead.py` (playing by taps).
+  `test_balance.py` (bots over hundreds of valleys), `test_riverstead.py` (playing by taps),
+  `test_polish.py` (the fixes before the store).

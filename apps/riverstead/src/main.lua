@@ -78,15 +78,25 @@ end
 
 ------------------------------------------------------------------ saving
 
-local function has_game()
+local saved = nil                -- the saved game: nil (none), 'playing', 'over' or 'bad'
+
+local function read_saved()
   local s = kit.read('village.txt')
-  return type(s) == 'string' and #s > 2
+  if type(s) ~= 'string' or #s <= 2 then saved = nil; return end
+  local ok, st = pcall(Save.decode, s)
+  if not ok or type(st) ~= 'table' or not st.valley then saved = 'bad'; return end
+  saved = st.over and 'over' or 'playing'
 end
+
+local function has_game() return saved ~= nil end
 
 local function save()
   kit.write('prefs.txt', Save.encode(prefs))
-  if state then kit.write('village.txt', Save.encode(state)) end
+  if state then kit.write('village.txt', Save.encode(state)); saved = state.over and 'over' or 'playing' end
 end
+
+-- a tile's name on the map: its column letter and row number (A1 top left)
+local function coord(i) return string.char(64 + (i - 1) % 11 + 1) .. ((i - 1) // 11 + 1) end
 
 ------------------------------------------------------------------ the map
 
@@ -203,11 +213,18 @@ local function mark_map() map_dirty = true end
 local function draw_map_plain(gg)
   gg:rect(MAP_X, MAP_Y, 440, 440, {})
   local v = state.valley
+  local ford = {}
+  for _, f in ipairs(v.ford) do ford[f] = true end
   for i = 1, 121 do
     local x, y = tile_xy(i)
+    local t = v.t[i]
     if state.b[i] then gg:rect(x + 4, y + 4, TILE - 8, TILE - 8, { line_width = state.b[i].left > 0 and 1 or 3 })
-    elseif v.t[i] == 'river' then gg:line(x + 4, y + 20, x + 36, y + 20, { line_width = 3 })
-    elseif v.t[i] == 'forest' then tri(gg, x + 12, y + 12, 16, true) end
+    elseif t == 'river' then gg:line(x + 4, y + 20, x + 36, y + 20, { line_width = ford[i] and 1 or 3 })
+    elseif t == 'forest' then tri(gg, x + 12, y + 12, 16, true)
+    elseif t == 'rock' then tri(gg, x + 10, y + 12, 18, false)
+    elseif t == 'fertile' then gg:line(x + 10, y + 20, x + 30, y + 20)
+    elseif t == 'marsh' then gg:line(x + 12, y + 28, x + 16, y + 18); gg:line(x + 24, y + 28, x + 28, y + 18) end
+    if v.special == i and not state.b[i] then gg:circle(x + 20, y + 20, 8, { line_width = 2 }) end
   end
 end
 
@@ -237,6 +254,7 @@ local function after_month(rep)
   if state.over then
     screen = 'end'
     save()
+    if #lines > 0 then box(month_name(rep.month), lines, { { { 'Go on', kit.close } } }, kit.close) end
     return
   end
   S.begin_month(state, Rn.new(Rn.mix(state.seed, state.month * 7 + 1)))
@@ -260,19 +278,27 @@ show_event = function()
   if not def then state.event = nil; return end
   local vars = state.event.vars
   local rr = Rn.new(Rn.mix(state.seed, state.month * 13))
+  -- the buttons name people by their first name, so the labels fit
+  local short = {}
+  for k, x in pairs(vars) do short[k] = x end
+  for _, k in ipairs({ 'who', 'who2', 'kid', 'elder', 'unhappy', 'woodsman', 'healer', 'builder' }) do
+    if type(short[k]) == 'string' then short[k] = short[k]:match('^(%S+)') end
+  end
+  local function choose(nn)
+    kit.close()
+    local text = S.answer(state, nn, Rn.new(Rn.mix(state.seed, state.month * 17 + nn)))
+    mark_map()
+    save()
+    if text ~= '' then box('', { text }, { { { 'Go on', kit.close } } }, kit.close) end
+  end
   local rows = {}
   for n, c in ipairs(S.offered(state)) do
     local nn = n
-    rows[#rows + 1] = { { T.fill(c.label, vars), function()
-      kit.close()
-      local text = S.answer(state, nn, Rn.new(Rn.mix(state.seed, state.month * 17 + nn)))
-      mark_map()
-      save()
-      if text ~= '' then box('', { text }, { { { 'Go on', kit.close } } }, kit.close) end
-    end } }
+    rows[#rows + 1] = { { T.fill(c.label, short), function() choose(nn) end } }
   end
-  -- Back does not close an event: it waits for a choice
-  box(month_name(state.month), { T.event_text(def, vars, rr) }, rows, function() end)
+  -- Back gives the safe answer when the event has one; otherwise it waits for a choice
+  local safe = S.back_choice(state)
+  box(month_name(state.month), { T.event_text(def, vars, rr) }, rows, function() if safe then choose(safe) end end)
 end
 
 local function start_game()
@@ -292,8 +318,13 @@ end
 local function continue_game()
   pcall(function() ctx.budget:extend() end)
   load_game_modules()
-  state = Save.decode(kit.read('village.txt'))
-  if not state then return end
+  local ok, st = pcall(Save.decode, kit.read('village.txt'))
+  if not ok or type(st) ~= 'table' or not st.valley then
+    state = nil
+    box('Continue', { 'The saved village could not be read. Start a new valley instead.' }, { { { 'Close', kit.close } } }, kit.close)
+    return
+  end
+  state = st
   ensure_layer()
   mark_map()
   rebuild_layer()
@@ -317,19 +348,22 @@ local HOW = {
 
 local function how_to_play() box('How to play', HOW, { { { 'Close', kit.close } } }, kit.close) end
 
+-- a new game; asks first while a village is still being guided
+local function new_valley()
+  if saved == 'playing' then
+    box('A new valley?', { 'The village you are guiding now will be lost.' },
+      { { { 'Start again', function() kit.close(); start_game() end }, { 'Cancel', kit.close } } }, kit.close)
+  else start_game() end
+end
+
 SCREENS.title = {
   draw = function(gg)
     gg:text(16, 60, 'Riverstead', { font = kit.font('large') })
     gg:text(16, 104, 'Ten years of a village by the river', { font = kit.font('small') })
     gg:line(16, 140, W - 16, 140)
     local list = {}
-    if has_game() then list[#list + 1] = { 'Continue', continue_game } end
-    list[#list + 1] = { 'New valley', function()
-      if has_game() then
-        box('A new valley?', { 'The village you are guiding now will be lost.' },
-          { { { 'Start again', function() kit.close(); start_game() end }, { 'Cancel', kit.close } } }, kit.close)
-      else start_game() end
-    end }
+    if has_game() then list[#list + 1] = { saved == 'over' and 'See the ending' or 'Continue', continue_game } end
+    list[#list + 1] = { 'New valley', new_valley }
     list[#list + 1] = { 'Chronicle', function() page = 1; screen = 'chronicle' end }
     list[#list + 1] = { 'Settings', function() screen = 'settings' end }
     list[#list + 1] = { 'How to play', how_to_play }
@@ -380,7 +414,7 @@ local function tile_panel(gg, y)
   if placing then
     local name = R.BUILD[placing].name
     if not sel then
-      gg:text(16, y, 'Tap where the ' .. name:lower() .. ' goes.', { font = kit.font('medium') })
+      gg:text(16, y, fit('Tap where the ' .. name:lower() .. ' goes.', kit.font('medium'), W - 32), { font = kit.font('medium') })
       button(gg, W - 136, y + 40, 120, 44, 'Cancel', function() placing = nil end, { font = 'small' })
       return
     end
@@ -395,6 +429,14 @@ local function tile_panel(gg, y)
     for _, k in ipairs(R.RES) do if pv[k] then parts[#parts + 1] = pv[k] .. ' ' .. k end end
     local s = name .. ' here' .. (#parts > 0 and (': about ' .. table.concat(parts, ', ') .. ' a year') or '')
     if placing == 'field' and V.riverside(v, sel) then s = s .. '; floods' end
+    if placing == 'house' then
+      if V.near(v, sel, 'marsh', 1) > 0 then s = s .. '; damp by the marsh, less healthy' end
+      local noisy = false
+      for _, j in ipairs(V.around(sel)) do local b = state.b[j]; if b and R.NOISY[b.kind] then noisy = true end end
+      if noisy then s = s .. '; noisy' end
+    elseif R.NOISY[placing] then
+      for _, j in ipairs(V.around(sel)) do local b = state.b[j]; if b and b.kind == 'house' then s = s .. '; noisy for the houses next to it'; break end end
+    end
     para(gg, s, 16, y, y + 44, 'small')
     local kind = placing
     local at = sel
@@ -415,7 +457,7 @@ local function tile_panel(gg, y)
   if not sel then return end
   local t = v.t[sel]
   local b = state.b[sel]
-  local line1 = t:gsub('^%l', string.upper)
+  local line1 = coord(sel) .. ' · ' .. t
   if v.special == sel then line1 = line1 .. ', the ' .. (v.special_kind == 'spring' and 'old spring' or 'standing stone') end
   if V.riverside(v, sel) then line1 = line1 .. ', by the river' end
   gg:text(16, y, fit(line1, kit.font('small'), W - 32), { font = kit.font('small') })
@@ -549,7 +591,7 @@ SCREENS.people = {
       local s = years(p) .. ' · ' .. job_name(p) .. (#marks > 0 and (' · ' .. table.concat(marks, ', ')) or '')
       gg:text(28, y + 38, fit(s, f, W - 56), { font = f })
       local id = p.id
-      hit(16, y, W - 32, 66, function() who = id; screen = 'person' end)
+      hit(16, y, W - 32, 66, function() who = id; jpage = 1; screen = 'person' end)
       y = y + 72
     end
     if #ids == 0 then gg:text(16, 100, 'No one is left.', { font = kit.font('medium') }) end
@@ -564,15 +606,20 @@ SCREENS.people = {
 -- the jobs a person can take: builder, idle, and every finished building with a free place
 local function jobs_for(p)
   local out = { { 'Builder', 'build' }, { 'Idle', false } }
+  local many = {}
+  for _, b in pairs(state.b) do many[b.kind] = (many[b.kind] or 0) + 1 end
   for i = 1, 121 do
     local b = state.b[i]
     if b and b.left == 0 then
       local d = R.BUILD[b.kind]
-      if d.slots > 0 and (#R.workers_of(state, i) < d.slots or p.job == i) then out[#out + 1] = { d.name, i } end
+      if d.slots > 0 and (#R.workers_of(state, i) < d.slots or p.job == i) then
+        out[#out + 1] = { d.name .. (many[b.kind] > 1 and (' ' .. coord(i)) or ''), i }
+      end
     end
   end
   return out
 end
+local jpage = 1                  -- the page of the person card's jobs
 
 SCREENS.person = {
   draw = function(gg)
@@ -597,17 +644,27 @@ SCREENS.person = {
     else
       gg:text(16, math.max(y + 10, 392), 'Job', { font = kit.font('small') })
       y = math.max(y + 36, 418)
-      local x = 16
       local f = kit.font('small')
+      -- lay the jobs out in pages that fit above the buttons
+      local pages, x, yy, top = { {} }, 16, y, y
       for _, j in ipairs(jobs_for(p)) do
-        local label = j[1]
-        local w = kit.width(f, label) + 24
-        if x + w > W - 16 then x, y = 16, y + 48 end
-        if y + 44 > BTN_Y - 4 then break end
-        local job = j[2]
-        local here = (job == false and p.job == nil) or p.job == job
-        button(gg, x, y, w, 42, label, function() p.job = job or nil; save() end, { font = 'small', line_width = here and 4 or 1 })
+        local w = math.min(W - 32, kit.width(f, j[1]) + 24)
+        if x + w > W - 16 then x, yy = 16, yy + 48 end
+        if yy + 44 > BTN_Y - 4 then pages[#pages + 1] = {}; x, yy = 16, top end
+        local pg = pages[#pages]
+        pg[#pg + 1] = { j, x, yy, w }
         x = x + w + 8
+      end
+      if jpage > #pages then jpage = 1 end
+      for _, c in ipairs(pages[jpage]) do
+        local job = c[1][2]
+        local here = (job == false and p.job == nil) or p.job == job
+        button(gg, c[2], c[3], c[4], 42, fit(c[1][1], f, c[4] - 12), function() p.job = job or nil; save() end,
+          { font = 'small', line_width = here and 4 or 1 })
+      end
+      if #pages > 1 then
+        bottom_row(gg, { { 'More jobs', function() jpage = jpage % #pages + 1 end }, { 'Back', function() screen = 'people' end } })
+        return
       end
     end
     bottom_row(gg, { { 'Back', function() screen = 'people' end } })
@@ -641,6 +698,11 @@ SCREENS.ledger = {
         if d and d ~= 0 then parts[#parts + 1] = k .. ' ' .. (d > 0 and '+' or '') .. d end
       end
       y = para(gg, s .. (#parts > 0 and table.concat(parts, ', ') or 'nothing changed') .. '.', 16, y, 200) + 4
+      local pp, folk = rep.people or {}, {}
+      for _, k in ipairs({ 'born', 'died', 'came', 'left' }) do
+        if (pp[k] or 0) > 0 then folk[#folk + 1] = pp[k] .. ' ' .. k end
+      end
+      if #folk > 0 then y = para(gg, 'People: ' .. table.concat(folk, ', ') .. '.', 16, y, 230) + 4 end
     end
     local fm = R.food_months(state)
     y = para(gg, 'Food for ' .. fm .. ' month' .. (fm == 1 and '' or 's') .. ' at the present eating; '
@@ -760,8 +822,9 @@ SCREENS.settings = {
         { line_width = (prefs.diff or 'normal') == key and 4 or 1 })
     end
     y = y + 72
-    para(gg, 'Gentle: steadier harvests, milder winters, fewer hard times. Harsh: poorer harvests, hungry winters, '
-      .. 'floods and hard times more often.', 16, y, y + 120)
+    y = para(gg, 'Gentle: steadier harvests, milder winters, fewer hard times. Harsh: poorer harvests, hungry winters, '
+      .. 'floods and hard times more often.', 16, y, y + 120) + 20
+    button(gg, 16, y, W - 32, 60, 'New valley', new_valley)
     bottom_row(gg, { { 'Back', function() screen = 'title' end } })
   end,
   back = function() screen = 'title'; return true end,
@@ -820,6 +883,7 @@ end
 
 local function load()
   prefs = Save.decode(kit.read('prefs.txt')) or { diff = 'normal' }
+  read_saved()
   screen = 'title'
 end
 
@@ -839,5 +903,6 @@ if rawget(_G, '__TEST') then
     tile_xy = function(i) return tile_xy(i) end,
     modal_open = function() return kit.modal() ~= nil end,
     modal_pick = function(n) local m = kit.modal(); local row = m.rows[n or 1]; row[1][2]() end,
+    show_event = function() show_event() end,
   }
 end

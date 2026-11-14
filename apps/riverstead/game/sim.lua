@@ -61,6 +61,12 @@ return function(Rng, V, R, P, E, T, EL)
     return out
   end
 
+  -- the place on offer of the safe answer the Back key gives, or nil when the event waits for a choice
+  function S.back_choice(state)
+    for k, c in ipairs(S.offered(state)) do if c.back then return k end end
+    return nil
+  end
+
   -- the n-th choice on offer; returns the result text
   function S.answer(state, n, r)
     local def = S.event_def(state)

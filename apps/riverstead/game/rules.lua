@@ -125,6 +125,32 @@ return function(Rng, V)
     for _, p in pairs(state.people) do if p.job == i then p.job = nil end end
   end
 
+  -- houses with a tile around them (the 8 next to it) that passes test
+  local function houses_where(state, test)
+    local n = 0
+    for i, b in pairs(state.b) do
+      if b.kind == 'house' and b.left == 0 then
+        local x, y = V.xy(i)
+        local hit = false
+        for dy = -1, 1 do for dx = -1, 1 do
+          local nx, ny = x + dx, y + dy
+          if (dx ~= 0 or dy ~= 0) and nx >= 1 and nx <= 11 and ny >= 1 and ny <= 11 and test(V.idx(nx, ny)) then hit = true end
+        end end
+        if hit then n = n + 1 end
+      end
+    end
+    return n
+  end
+  -- houses next to a terrain (the marsh: fevers)
+  function R.houses_near(state, terrain)
+    return houses_where(state, function(j) return state.valley.t[j] == terrain end)
+  end
+  -- houses next to a smithy or a quarry: noisy
+  R.NOISY = { smithy = true, quarry = true }
+  function R.houses_by_noise(state)
+    return houses_where(state, function(j) local b = state.b[j]; return (b and b.left == 0 and R.NOISY[b.kind]) or false end)
+  end
+
   ------------------------------------------------------------------ people at work
 
   local function alive(p) return p.alive and not p.gone end
@@ -195,9 +221,11 @@ return function(Rng, V)
 
   ------------------------------------------------------------------ one month
 
+  -- what really changed goes into the report (stock never falls below zero)
   local function add(state, k, n, rep)
+    local before = state.res[k]
     state.res[k] = math.max(0, state.res[k] + n)
-    rep.delta[k] = (rep.delta[k] or 0) + n
+    rep.delta[k] = (rep.delta[k] or 0) + state.res[k] - before
   end
 
   -- production, construction, eating, spoilage and storage for one month
@@ -287,7 +315,7 @@ return function(Rng, V)
     if spoil > 0 then add(state, 'food', -spoil, rep) end
     local cap = R.capacity(state)
     for _, k in ipairs(R.RES) do
-      if k ~= 'coin' and state.res[k] > cap then state.res[k] = cap end
+      if k ~= 'coin' and state.res[k] > cap then add(state, k, cap - state.res[k], rep) end
     end
     return rep
   end
@@ -346,6 +374,7 @@ return function(Rng, V)
     if amount > 0 then
       local cost = pr[k].buy * lots
       if state.res.coin < cost then return false, 'not enough coin' end
+      if state.res[k] + amount > R.capacity(state) then return false, 'no room in storage' end
       state.res.coin = state.res.coin - cost
       state.res[k] = math.min(R.capacity(state), state.res[k] + amount)
     else

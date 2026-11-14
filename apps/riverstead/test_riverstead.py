@@ -254,7 +254,7 @@ width_ok(g4)
 chron = L4.eval("function() return __TEST.api.mod('save').decode(ctx.storage:read('chronicle.txt')) end")()
 assert chron and len(list(chron.values())) == 1, chron
 g4.restart()
-g4.tap_label('Continue')
+g4.tap_label('See the ending')
 chron = L4.eval("function() return __TEST.api.mod('save').decode(ctx.storage:read('chronicle.txt')) end")()
 assert len(list(chron.values())) == 1, 'the chronicle entry is written once'
 g4.tap_label('New valley')

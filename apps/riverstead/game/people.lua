@@ -105,9 +105,33 @@ return function(Rng, R, T)
     return out
   end
 
+  -- someone leaves the valley: off work, out of their marriage
+  function P.leave(state, p)
+    p.gone, p.job = true, nil
+    p.story[#p.story + 1] = 'left in year ' .. R.year(state.month)
+    if p.spouse and state.people[p.spouse] then state.people[p.spouse].spouse = nil end
+    p.spouse = nil
+  end
+
+  -- a foundling: a baby taken in by a married couple (or by the village when there is none)
+  function P.foundling(state, r)
+    local mums = {}
+    for _, id in ipairs(P.living(state)) do
+      local m = state.people[id]
+      if m.sex == 'f' and m.spouse and state.people[m.spouse] and alive(state.people[m.spouse]) then mums[#mums + 1] = m end
+    end
+    local m = #mums > 0 and r:pick(mums) or nil
+    local f = m and state.people[m.spouse]
+    local kid = add(state, r, { sex = r:chance(0.5) and 'f' or 'm', surname = f and f.name:match('(%S+)$') or surname_free(state, r),
+                                age = r:int(0, 5), mother = m and m.id, father = f and f.id })
+    kid.story[#kid.story + 1] = 'found as a baby in year ' .. R.year(state.month)
+    return kid
+  end
+
   local function siblings(a, b) return a.mother and a.mother == b.mother end
 
   local function line(rep, s) if rep and rep.lines then rep.lines[#rep.lines + 1] = s end end
+  local function tally(rep, k) if rep then rep.people = rep.people or {}; rep.people[k] = (rep.people[k] or 0) + 1 end end
 
   local function job_fits(state, p)
     if type(p.job) ~= 'number' then return p.job == 'build' and p.skill == 'building' end
@@ -123,6 +147,7 @@ return function(Rng, R, T)
     p.story[#p.story + 1] = 'died in year ' .. R.year(state.month)
     if p.spouse and state.people[p.spouse] then state.people[p.spouse].spouse = nil end
     line(rep, T.life(kind, { a = p.name }, r))
+    tally(rep, 'died')
   end
 
   -- one month of everyone's lives
@@ -138,6 +163,9 @@ return function(Rng, R, T)
     end
     local chapel = R.has(state, 'chapel') or R.has(state, 'temple') or R.has(state, 'shrine')
     local market = R.has(state, 'market')
+    -- houses by the marsh breed fevers; houses next to the smithy or a quarry are noisy
+    local damp = math.min(2, R.houses_near(state, 'marsh'))
+    local noise = math.min(6, 3 * R.houses_by_noise(state))
     for _, id in ipairs(P.living(state)) do
       local p = state.people[id]
       p.age = p.age + 1
@@ -149,6 +177,7 @@ return function(Rng, R, T)
       local gain = (not hungry and not (winter and crowded)) and 2 or 0
       if well then gain = gain + 2 end
       if herbal then gain = gain + 3 end
+      gain = gain - damp
       if p.age > 60 * Y then gain = gain // 2 end
       p.health = math.max(0, math.min(100, p.health - loss + gain))
       -- death: weakness, then age
@@ -166,6 +195,7 @@ return function(Rng, R, T)
         if crowded then target = target - 15 end
         if chapel then target = target + 8 end
         if market then target = target + 5 end
+        target = target - noise
         if job_fits(state, p) then target = target + 6 end
         if p.trait == 'cheerful' then target = target + 10 elseif p.trait == 'quarrelsome' then target = target - 6 end
         if p.trait == 'greedy' and state.res.coin >= 50 then target = target + 6 end
@@ -176,10 +206,9 @@ return function(Rng, R, T)
         p.happy = p.happy + (target - p.happy) // 4
         if p.happy < 25 then p.sad = (p.sad or 0) + 1 else p.sad = 0 end
         if p.sad >= 4 and p.age >= 16 * Y then
-          p.gone = true
-          p.job = nil
-          p.story[#p.story + 1] = 'left in year ' .. R.year(state.month)
+          P.leave(state, p)
           line(rep, T.life('left', { a = p.name }, r))
+          tally(rep, 'left')
         end
         -- skill grows with years of fitting work
         if job_fits(state, p) then
@@ -220,6 +249,19 @@ return function(Rng, R, T)
         pop = pop + 1
         line(rep, T.life('born', { mother = m.name, father = f.name, child = kid.name, surname = surname,
                                    kind = kid.sex == 'f' and 'daughter' or 'son' }, r))
+        tally(rep, 'born')
+      end
+    end
+    -- word of a happy village with room and food to spare brings a newcomer or two
+    local ids = P.living(state)
+    if #ids > 0 and not hungry then
+      local sum = 0
+      for _, id in ipairs(ids) do sum = sum + state.people[id].happy end
+      if sum // #ids >= 65 and pop + 2 <= houses * 4 and R.food_months(state) >= 6 and r:int(1, 100) <= 6 then
+        for _, id in ipairs(P.newcomers(state, r, r:int(1, 2), 'drawn by good word')) do
+          line(rep, T.life('came', { a = state.people[id].name }, r))
+          tally(rep, 'came')
+        end
       end
     end
   end

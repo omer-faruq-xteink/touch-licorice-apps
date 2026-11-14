@@ -3,10 +3,13 @@
 -- choices with their effects. Conditions and effects are tables read by ctx below:
 --
 --   cond:    season, moy = {..}, year_at_least, pop_at_least, pop_below, has, has_all, not_has, special,
---            riverside_field, flag, not_flag, res_at_least = {..}, unhappy, hard (weighted by difficulty)
+--            riverside_field, flag, not_flag, res_at_least = {..}, food_months_at_least, unhappy,
+--            hard (weighted by difficulty)
 --   effects: food, wood, stone, tools, coin (+/-), happy, health (everyone), sick = n, hurt = role,
 --            kill = role, leave = role, newcomers = n, renown = {way = n}, destroy = kind, skill_up = role,
---            noflood (this month), mood = n (lasting, everyone)
+--            noflood (this month), mood = n (lasting, everyone), baby = 1 (a foundling, taken in by a
+--            couple); newcomers = 'n' takes the cast's {n}
+--   choices: back = true marks the safe answer the Back key gives
 --
 --   local EL = require('game.event_list')(Rng, R, P, T)  -> { defs = {...}, ctx = {...} }
 
@@ -20,14 +23,14 @@ return function(Rng, R, P, T)
                     ok_text = 'You trade sacks of grain for good iron tools.' },
                   { label = 'Sell him wood', when = { res_at_least = { wood = 20 } }, ok = { wood = -20, coin = 10 },
                     ok_text = 'He pays in silver for a cartload of timber.' },
-                  { label = 'Send him on', ok = {}, ok_text = 'He shrugs and goes on his way.' } } },
-    { id = 'family', weight = 8, cond = { pop_below = 40, year_at_least = 1, res_at_least = { food = 30 } },
+                  { back = true, label = 'Send him on', ok = {}, ok_text = 'He shrugs and goes on his way.' } } },
+    { id = 'family', weight = 8, cond = { pop_below = 40, year_at_least = 1, res_at_least = { food = 30 }, food_months_at_least = 6 },
       text = { 'A family of {n} walks in from the hills and asks to settle in {village}.',
                '{n} weary travellers ask if there is room for them by the river.',
                'A cart stops at the edge of {village}: {n} people looking for a new home.' },
       roles = { 'n' },
-      choices = { { label = 'Welcome them', ok = { newcomers = 3, food = -10 }, ok_text = 'They unload their cart. {village} grows.' },
-                  { label = 'Turn them away', ok = { happy = -3 }, ok_text = 'They leave. Some of your people look ashamed.' } } },
+      choices = { { label = 'Welcome them', ok = { newcomers = 'n', food = -10 }, ok_text = 'They unload their cart. {village} grows.' },
+                  { back = true, label = 'Turn them away', ok = { happy = -3 }, ok_text = 'They leave. Some of your people look ashamed.' } } },
     { id = 'lost_child', weight = 5, cond = { pop_at_least = 6 }, roles = { 'kid', 'woodsman' },
       text = { '{kid} has not come home from the forest, and dusk is falling.',
                'Night is coming and {kid} is still out among the trees.',
@@ -63,7 +66,7 @@ return function(Rng, R, P, T)
       text = { 'A wedding in {village}! The families want a feast.', 'Two young people are to be wed, and everyone wants a party.',
                'Wedding bells - or at least a borrowed pot to bang - in {village}.' },
       choices = { { label = 'A real feast', ok = { food = -20, happy = 10 }, ok_text = 'They dance until the moon sets.' },
-                  { label = 'Keep it simple', ok = { happy = 2 }, ok_text = 'A quiet, happy day.' } } },
+                  { back = true, label = 'Keep it simple', ok = { happy = 2 }, ok_text = 'A quiet, happy day.' } } },
     { id = 'quarrel', weight = 6, cond = { pop_at_least = 8 }, roles = { 'who', 'who2' },
       text = { '{who} and {who2} are shouting over where one field ends and the next begins.',
                '{who} accuses {who2} of moving a boundary stone.', 'A quarrel: {who} and {who2} will not speak to each other.' },
@@ -96,18 +99,18 @@ return function(Rng, R, P, T)
                'The river roars; the old men say a flood is coming.' },
       choices = { { label = 'Shore up the banks', when = { res_at_least = { wood = 10 } }, ok = { wood = -10, noflood = true },
                     ok_text = 'Sandbags and stakes hold the water back.' },
-                  { label = 'Hope it holds', ok = {}, ok_text = 'You watch the water and wait.' } } },
+                  { back = true, label = 'Hope it holds', ok = {}, ok_text = 'You watch the water and wait.' } } },
     { id = 'skilled_stranger', weight = 6, cond = { pop_below = 50, res_at_least = { food = 30 } }, roles = { 'skill' },
       text = { 'A skilled {skill} asks if {village} has work.', 'A {skill} with good hands wants to settle here.',
                'A stranger, a {skill} by trade, offers to stay.' },
       choices = { { label = 'Take them in', ok = { newcomers = 1, food = -5 }, ok_text = 'The {skill} unpacks their tools.' },
-                  { label = 'No room', ok = {}, ok_text = 'They walk on.' } } },
+                  { back = true, label = 'No room', ok = {}, ok_text = 'They walk on.' } } },
     { id = 'pilgrims', way = 'faith', weight = 6, cond = { special = true },
       text = { 'Pilgrims rest by the {spot} on their way north.', 'A band of pilgrims kneels at the {spot}.',
                'Travellers in grey stop to pray at the {spot}.' },
       choices = { { label = 'Give them bread', when = { res_at_least = { food = 10 } }, ok = { food = -10, coin = 4, renown = { faith = 5 } },
                     ok_text = 'They bless {village} and leave a few coins.' },
-                  { label = 'Let them pass', ok = {}, ok_text = 'They move on.' } } },
+                  { back = true, label = 'Let them pass', ok = {}, ok_text = 'They move on.' } } },
     { id = 'tithe', once = true, weight = 6, cond = { year_at_least = 3 },
       text = { 'A steward from the lord of the land demands a tithe from {village}.', 'Riders come: the lord wants his share.',
                'A man with a ledger and two guards asks for the lord\'s due.' },
@@ -124,7 +127,7 @@ return function(Rng, R, P, T)
                'A travelling craftsman could take {who} on as an apprentice.' },
       choices = { { label = 'Pay him', when = { res_at_least = { coin = 10 } }, ok = { coin = -10, skill_up = 'who', renown = { craft = 4 } },
                     ok_text = '{who} learns quickly.' },
-                  { label = 'Not now', ok = {}, ok_text = 'He moves on.' } } },
+                  { back = true, label = 'Not now', ok = {}, ok_text = 'He moves on.' } } },
     { id = 'market_day', way = 'trade', weight = 8, cond = { has = 'market' },
       text = { 'Market day in {village}: people from the farms around come to buy and sell.', 'The market is busy today.',
                'Stalls and shouting: it is market day.' },
@@ -135,13 +138,13 @@ return function(Rng, R, P, T)
       choices = { { label = 'Trade stone for tools', when = { res_at_least = { stone = 20 } }, ok = { stone = -20, tools = 6, renown = { trade = 3 } },
                     ok_text = 'A fair trade.' },
                   { label = 'Sell them grain', when = { res_at_least = { food = 30 } }, ok = { food = -30, coin = 15 }, ok_text = 'They pay well.' },
-                  { label = 'Wave them on', ok = {}, ok_text = 'They pole away downriver.' } } },
+                  { back = true, label = 'Wave them on', ok = {}, ok_text = 'They pole away downriver.' } } },
     { id = 'charter', way = 'trade', once = true, weight = 6, cond = { has = 'tradingpost', year_at_least = 3 },
       text = { 'A merchant guild offers {village} a market charter.', 'Guild men bring a sealed charter for {village}\'s market.',
                'The guild of the river towns invites {village} to join.' },
       choices = { { label = 'Buy the charter', when = { res_at_least = { coin = 30 } }, ok = { coin = -30 }, ok_text = 'The charter is signed.',
                     ['then'] = { id = 'charter_paid', after = 6 } },
-                  { label = 'Decline', ok = {}, ok_text = 'They leave politely.' } } },
+                  { back = true, label = 'Decline', ok = {}, ok_text = 'They leave politely.' } } },
     { id = 'charter_paid', followup = true, weight = 0, cond = {},
       text = { 'The charter pays off: traders come from far away.', 'Thanks to the charter, the market doubles.',
                'Guild traders now stop in {village} every month.' },
@@ -175,7 +178,7 @@ return function(Rng, R, P, T)
                'An order for iron tools.' },
       choices = { { label = 'Sell three tools', when = { res_at_least = { tools = 3 } }, ok = { tools = -3, coin = 12, renown = { craft = 2 } },
                     ok_text = 'He pays gladly.' },
-                  { label = 'We need them', ok = {}, ok_text = 'He goes elsewhere.' } } },
+                  { back = true, label = 'We need them', ok = {}, ok_text = 'He goes elsewhere.' } } },
     { id = 'temple_gift', way = 'faith', weight = 5, cond = { has = 'temple' },
       text = { 'A rich pilgrim leaves a gift at the temple.', 'A purse of silver is left on the temple altar.',
                'A widow from the town gives the temple her late husband\'s savings.' },
@@ -197,7 +200,7 @@ return function(Rng, R, P, T)
     { id = 'foundling', once = true, weight = 4, cond = { pop_at_least = 6, res_at_least = { food = 20 } },
       text = { 'A baby is found in a basket at the edge of {village}.', 'Someone left an infant by the well.',
                'A foundling, wrapped in a shawl, cries at a doorstep.' },
-      choices = { { label = 'Take the child in', ok = { newcomers = 1, happy = 3 }, ok_text = 'A family takes the baby as their own.' },
+      choices = { { label = 'Take the child in', ok = { baby = 1, happy = 3 }, ok_text = 'A family takes the baby as their own.' },
                   { label = 'Send to the town', ok = { happy = -4 }, ok_text = 'A carter takes the baby to the town.' } } },
     { id = 'thief', weight = 4, cond = { year_at_least = 2, hard = true },
       text = { 'A thief came in the night.', 'Things are missing from the store.', 'Someone broke into the storehouse.' },
@@ -221,15 +224,15 @@ return function(Rng, R, P, T)
     { id = 'harvest_festival', weight = 7, cond = { moy = { 10 }, res_at_least = { food = 40 } },
       text = { 'The harvest is in: time for the festival!', 'Garlands and music: harvest festival.', 'The last sheaf is in.' },
       choices = { { label = 'Feast!', ok = { food = -15, happy = 10 }, ok_text = 'A night to remember.' },
-                  { label = 'Save the food', ok = { happy = -2 }, ok_text = 'A quiet evening.' } } },
+                  { back = true, label = 'Save the food', ok = { happy = -2 }, ok_text = 'A quiet evening.' } } },
     { id = 'midwinter', weight = 7, cond = { moy = { 12 } },
       text = { 'Midwinter: the longest night.', 'The village gathers for the midwinter fire.', 'Midwinter, and snow on the hills.' },
       choices = { { label = 'A great fire', when = { res_at_least = { wood = 10 } }, ok = { wood = -10, happy = 6 }, ok_text = 'Songs until dawn.' },
-                  { label = 'Stay in', ok = {}, ok_text = 'Everyone stays by their own hearth.' } } },
+                  { back = true, label = 'Stay in', ok = {}, ok_text = 'Everyone stays by their own hearth.' } } },
     { id = 'cartwright', once = true, weight = 5, cond = { year_at_least = 2 },
       text = { 'A cartwright passes with spare wheels and axles.', 'A wheelwright offers his wares.', 'A cart-maker stops for the night.' },
       choices = { { label = 'Buy his tools', when = { res_at_least = { coin = 5 } }, ok = { coin = -5, tools = 3 }, ok_text = 'Good iron.' },
-                  { label = 'No thanks', ok = {}, ok_text = 'He moves on.' } } },
+                  { back = true, label = 'No thanks', ok = {}, ok_text = 'He moves on.' } } },
   }
 
   ------------------------------------------------------------------ roles: who an event is about
@@ -332,6 +335,7 @@ return function(Rng, R, P, T)
     if c.flag and not (state.flags or {})[c.flag] then return false end
     if c.not_flag and (state.flags or {})[c.not_flag] then return false end
     if c.res_at_least and not res_ok(state, c.res_at_least) then return false end
+    if c.food_months_at_least and R.food_months(state) < c.food_months_at_least then return false end
     if c.riverside_field then
       local any = false
       for i = 1, 121 do
@@ -378,9 +382,27 @@ return function(Rng, R, P, T)
     for _, id in ipairs(living(state)) do fn(state.people[id]) end
   end
 
+  -- the month's report, so an event's effects show in last month's figures and the ledger
+  local function note(state, k, n)
+    local rep = state.report
+    if not rep or n == 0 then return end
+    rep.delta = rep.delta or {}
+    rep.delta[k] = (rep.delta[k] or 0) + n
+  end
+  local function count(state, k, n)
+    local rep = state.report
+    if not rep or n == 0 then return end
+    rep.people = rep.people or {}
+    rep.people[k] = (rep.people[k] or 0) + n
+  end
+
   local function fx(e, state, vars, r)
     for _, k in ipairs(R.RES) do
-      if e[k] then state.res[k] = math.max(0, state.res[k] + e[k]) end
+      if e[k] then
+        local before = state.res[k]
+        state.res[k] = math.max(0, state.res[k] + e[k])
+        note(state, k, state.res[k] - before)
+      end
     end
     if e.happy then each_alive(state, function(p) p.happy = math.max(0, math.min(100, p.happy + e.happy)) end) end
     if e.health then each_alive(state, function(p) p.health = math.max(0, math.min(100, p.health + e.health)) end) end
@@ -402,16 +424,20 @@ return function(Rng, R, P, T)
         p.alive, p.job = false, nil
         p.story[#p.story + 1] = 'lost in year ' .. R.year(state.month)
         if p.spouse and state.people[p.spouse] then state.people[p.spouse].spouse = nil end
+        count(state, 'died', 1)
       end
     end
     if e.leave then
       local p = role(e.leave)
-      if p and p.alive then p.gone, p.job = true, nil; p.story[#p.story + 1] = 'left in year ' .. R.year(state.month) end
+      if p and p.alive and not p.gone then P.leave(state, p); count(state, 'left', 1) end
     end
     if e.newcomers then
-      local ids = P.newcomers(state, r, e.newcomers, 'by invitation')
+      local n = e.newcomers == 'n' and (vars.n or 3) or e.newcomers
+      local ids = P.newcomers(state, r, n, 'by invitation')
       if vars.skill_key then for _, id in ipairs(ids) do state.people[id].skill = vars.skill_key end end
+      count(state, 'came', #ids)
     end
+    if e.baby and P.foundling(state, r) then count(state, 'came', 1) end
     if e.renown then
       for way, n in pairs(e.renown) do state.renown[way] = (state.renown[way] or 0) + n end
     end

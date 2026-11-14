@@ -18,6 +18,16 @@ return function(Rng)
 
   local function inside(x, y) return x >= 1 and x <= N and y >= 1 and y <= N end
 
+  -- the (up to 8) tiles around tile i
+  function V.around(i)
+    local x, y = V.xy(i)
+    local out = {}
+    for dy = -1, 1 do for dx = -1, 1 do
+      if (dx ~= 0 or dy ~= 0) and inside(x + dx, y + dy) then out[#out + 1] = idx(x + dx, y + dy) end
+    end end
+    return out
+  end
+
   function V.riverside(v, i)
     if v.t[i] == 'river' then return false end
     local x, y = V.xy(i)
