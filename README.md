@@ -50,7 +50,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Instapaper** | your Instapaper articles as text, straight from Instapaper with an access token; progress kept in sync, archive and star; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
-| **Hacker News** | Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; optional AI questions about a story and its comments (off by default, your own key); needs firmware 2.18 |
+| **Hacker News** | For you (the stories on topics you choose, also as the sleep screen), Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; optional AI questions about a story and its comments (off by default, your own key); needs firmware with API 2.26 (26111201) |
 | **xkcd** | xkcd comics by Randall Munroe: the latest, Prev, Next, Random or any number, wide ones turned to landscape, tap to zoom, the alt text, favourites, the last 20 kept for offline, the latest on the sleep screen; needs firmware 26111201 |
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen; an ink octopus and a shelf dragon can join it |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
@@ -65,7 +65,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen; My words (every word looked up) and Review with spaced repetition |
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
-| **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; can be the lock screen |
+| **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; tap to zoom in, with a card on each constellation and the galaxies, nebulae and clusters in it; can be the lock screen |
 | **Piano Follow** | sheet music in landscape that follows your playing on a Bluetooth MIDI keyboard: turns the pages, marks the bar, or waits for the right notes in Practice; a free catalog of 51 pieces and your own MusicXML / ABC scores; needs firmware with API 2.21 |
 | **Gamebook** | choose-your-own-adventure stories: seven built in, a pack of more, and Twine, Ink or Project Aon stories converted on the tools site |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
@@ -600,12 +600,34 @@ python -I apps/notes/test_notes.py
 python -I apps/rss/test_feeds.py
 python -I apps/rss/test_rss.py
 python -I apps/rss/test_rss_local.py
+python -I apps/rss/test_ai.py
+python -I apps/wallabag/test_wallabag.py
+python -I apps/readwise/test_readwise.py
+python -I apps/hackernews/test_hackernews.py
+python -I apps/hackernews/test_foryou.py
+python -I apps/hackernews/test_lock.py
+python -I apps/hackernews/test_ai.py
+python -I apps/xkcd/test_xk.py
+python -I apps/xkcd/test_xkcd.py
+python -I apps/xkcd/test_lock.py
 python -I apps/instapaper/test_instapaper.py
 python -I apps/merchant/test_merchant.py
 python -I apps/dict/test_dict.py
+python -I apps/dict/test_lockscreen.py
 python -I apps/litclock/test_litclock.py
 python -I apps/wordclock/test_wordclock.py
 python -I apps/skytonight/test_sky.py
+python -I apps/skytonight/test_data.py
+python -I apps/weather/test_weather.py
+python -I apps/tasks/test_tasks.py
+python -I apps/tasks/test_remote.py
+python -I apps/calendar/test_calendar.py
+python -I apps/tbr/test_tbr.py
+python -I apps/notebook/test_notebook.py
+python -I apps/bookworm/test_bookworm.py
+python -I apps/backgammon/test_backgammon.py
+python -I apps/checkers/test_checkers.py
+python -I apps/chessplay/test_chessplay.py
 python -I apps/gamebook/test_gamebook.py
 python -I apps/pianofollow/test_pianofollow.py
 python -I tools/piano/test_sim.py

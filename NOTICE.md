@@ -119,7 +119,7 @@ Each quote names its book and author on screen.
 ## Sky Tonight data — `apps/skytonight/data/`
 
 Stars from the Yale Bright Star Catalogue, 5th edition (NASA HEASARC `heasarc_bsc5p`), public
-domain. Constellation figures and names from [d3-celestial](https://github.com/ofrohn/d3-celestial),
+domain. Constellation figures, names and boundaries (the IAU boundaries) from [d3-celestial](https://github.com/ofrohn/d3-celestial),
 Copyright (c) 2015, Olaf Frohn, BSD 3-clause licence; the full notice is in
 `apps/skytonight/data/NOTICE.txt`, which is packed with the app.
 
