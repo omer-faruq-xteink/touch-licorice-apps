@@ -792,6 +792,17 @@ def portwren(p):
     p.line([(18, 56), (58, 56)], 3)                         # the sea
 
 
+def riverstead(p):
+    # a house on the bank of a winding river, a field beside it
+    p.poly([(14, 40), (34, 20), (54, 40)])                 # the roof
+    p.rect((19, 40, 49, 62), w=4)                          # the walls
+    p.rect((30, 48, 38, 62), fill=True)                    # the door
+    for y in (24, 32, 40):                                 # the field's furrows
+        p.line([(62, y), (86, y)], 3)
+    p.line([(6, 78), (24, 70), (46, 80), (68, 70), (90, 78)], 4)   # the river
+    p.line([(6, 88), (24, 80), (46, 90), (68, 80), (90, 88)], 4)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -805,7 +816,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
          'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
-         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow, 'portwren': portwren}
+         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow, 'portwren': portwren, 'riverstead': riverstead}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

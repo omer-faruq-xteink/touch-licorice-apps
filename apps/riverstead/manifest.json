@@ -1,0 +1,10 @@
+{
+  "app_id": "riverstead",
+  "display_name": "Riverstead",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "A village in a river valley, guided for ten years: a new valley every game, buildings whose place matters, named villagers who live and leave, seasons and events, and four ways to grow, each with its own ending.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
