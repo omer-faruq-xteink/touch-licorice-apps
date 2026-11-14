@@ -42,10 +42,12 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `chessplay` | Chess | `chessplay` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `eb70de48-11b6-4061-baca-04d77e071955` |
 | `chess` | Chess puzzles | `chess` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
+| `delve` | Delve | `delve` | 1.0.1 | published | 1.0.1 | 2026-11-14 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `dict` | Dictionary | `dict` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 | `freecell` | FreeCell | `freecell` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.1 | published | 1.0.1 | 2026-11-03 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `a255a696-b673-481a-b444-b5ed661e84bc` |
+| `hackernews` | Hacker News | `hackernews` | 1.3.1 | published | 1.3.1 | 2026-11-14 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `hashi` | Hashi | `hashi` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `5bc739e3-198a-45ec-adec-c670eb0f2dae` |
 | `instapaper` | Instapaper | `instapaper` | 1.2.1 | published | 1.2.1 | 2026-11-12 | `900b4ce0-352d-4960-98d6-2e8c46978cd9` |
 | `kakuro` | Kakuro | `kakuro` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `81dbbe6a-3f72-438f-9db8-5c105c5328f4` |
@@ -75,14 +77,12 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `textadv` | Text adventures | `textadv` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `09148091-fa75-4eed-94f4-4cdface99a69` |
 | `timekeeper` | Timekeeper | `timekeeper` | 1.0.1 | published | 1.0.1 | 2026-11-10 | `d80faaff-07e6-4c30-8d38-a15a1ee79e64` |
 | `wallabag` | wallabag | `wallabag` | 1.3.1 | published | 1.3.1 | 2026-11-12 | `e3ab6293-9ad8-4e80-a5b6-433447d65052` |
+| `weather` | Weather | `weather` | 1.1.1 | published | 1.1.1 | 2026-11-14 | `7d246638-873f-49ee-918b-80b6151ef871` |
 | `wikipedia` | Wikipedia | `wikipedia` | 1.0.0 | published | 1.0.0 | 2026-10-29 | `a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6` |
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.0.0 | published | 1.0.0 | 2026-11-13 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
-| `delve` | Delve | `delve` | 1.0.1 | in review | 1.0.0 | 2026-11-14 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
-| `hackernews` | Hacker News | `hackernews` | 1.3.1 | in review | 1.3.0 | 2026-11-14 | `70abf652-40aa-4091-ac58-9dfa81e818a5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | in review | 1.0.1 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
-| `weather` | Weather | `weather` | 1.1.1 | in review | 1.1.0 | 2026-11-14 | `7d246638-873f-49ee-918b-80b6151ef871` |
 
-49 published, 4 in review or draft, 53 in all.
+52 published, 1 in review or draft, 53 in all.
