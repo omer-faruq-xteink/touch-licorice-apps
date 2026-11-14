@@ -125,6 +125,15 @@ fc = ev("""(function() local seen = 0
   return seen > 0 end)()""")
 assert fc, 'a navigator forecasts the coming blizzard; nobody else does'
 
+# the first spell of an expedition keeps the storm rules: 2-3 days, and no storm after it
+first = ev("""(function() local bad = 0
+  for k = 1, 400 do local s = bare(); s.weather = nil; R.weather_next(s, Rng.new(k))
+    local w = s.weather
+    if (w.kind == 'blizzard' or w.kind == 'whiteout') and (w.left > 3 or w.next == 'blizzard' or w.next == 'whiteout') then bad = bad + 1 end
+  end
+  return bad end)()""")
+assert first == 0, ('opening storms breaking the rules', first)
+
 # ---------------------------------------------------------------- depots and caches
 dp = ev("""(function() local s = bare(); R.leave_depot(s, { food = 50, fuel = 10, dogfood = 40 })
   local a = s.sup.food; local d = s.depots[s.pos]

@@ -892,7 +892,7 @@ SCREENS.map = {
     local sm = kit.font('small')
     local keys = {
       { 'goal', function(x, y) gg:rect(x + 6, y + 2, 4, 16, { fill = true }) end },
-      { 'camp, point', function(x, y) gg:circle(x + 9, y + 10, 6, {}) end },
+      { 'target', function(x, y) gg:circle(x + 9, y + 10, 6, {}) end },
       { 'cairn', function(x, y) gg:rect(x + 5, y + 10, 10, 7, {}); gg:rect(x + 7, y + 4, 6, 6, {}) end },
       { 'cache', function(x, y) gg:rect(x + 3, y + 3, 14, 14, {}); gg:line(x + 3, y + 3, x + 17, y + 17) end },
       { 'depot', function(x, y) gg:rect(x + 4, y + 4, 12, 12, { fill = true }) end },

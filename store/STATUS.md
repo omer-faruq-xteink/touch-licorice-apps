@@ -67,6 +67,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `portwren` | Port Wren | `portwren` | 1.0.0 | published | 1.0.0 | 2026-11-14 | `b4065093-1a41-46a9-a686-083806b27f9c` |
 | `queens` | Queens | `queens` | 1.0.0 | published | 1.0.0 | 2026-11-03 | `bf6810f5-1e65-4774-8cf2-4428f90b18d5` |
 | `readwise` | Readwise | `readwise` | 1.2.1 | published | 1.2.1 | 2026-11-11 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
+| `riverstead` | Riverstead | `riverstead` | 1.0.0 | published | 1.0.0 | 2026-11-14 | `298e583e-2292-44f7-837f-dc4a34d6440f` |
 | `rss` | RSS | `rss` | 1.3.1 | published | 1.3.1 | 2026-11-12 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.1 | published | 1.3.1 | 2026-10-29 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
@@ -84,7 +85,7 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.0.0 | published | 1.0.0 | 2026-11-13 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
-| `riverstead` | Riverstead | `riverstead` | 1.0.0 | in review | - | 2026-11-14 | `298e583e-2292-44f7-837f-dc4a34d6440f` |
+| `icebound` | Icebound | `icebound` | 1.0.0 | in review | - | 2026-11-14 | `40ecbc96-ad7d-42b3-83bb-0992d9ce21a5` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | in review | 1.0.1 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 
-53 published, 2 in review or draft, 55 in all.
+54 published, 2 in review or draft, 56 in all.

@@ -146,8 +146,10 @@ return function(Rng, G)
   function R.weather_next(state, r)
     local w = state.weather
     if not w or not w.kind then
-      w = { kind = draw_kind(state, r), left = r:int(2, 5) }
-      w.next = draw_kind(state, r)
+      w = { kind = draw_kind(state, r) }
+      local storm = w.kind == 'blizzard' or w.kind == 'whiteout'
+      w.left = storm and r:int(2, 3) or r:int(2, 5)
+      repeat w.next = draw_kind(state, r) until not storm or (w.next ~= 'blizzard' and w.next ~= 'whiteout')
     elseif w.left > 1 then
       w.left = w.left - 1
     else
