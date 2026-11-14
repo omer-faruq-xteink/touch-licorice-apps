@@ -10,6 +10,11 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 - **New: Icebound** (`icebound.xtapp`): a polar expedition of six, one day a turn. Every expedition has a new map, hidden until seen, and a new mission: a crossing to the far station, the pole and back with depots for the way home, a lost party to find by its cairns, or a coast to survey before the ship leaves. Pick the route through crevasses, pressure ridges, sastrugi and open water; set the pace and rations; storms come in spells and the cold deepens. The navigator sees further and forecasts storms, the doctor treats, the dog driver keeps the dogs fast, and the cook, mechanic, surveyor, hunter, geologist or photographer each help; moods and quarrels matter. Nobody dies without days of warning. The expedition ends at the goal, turned back with everyone home, rescued by radio, or lost; a survivor may return as a veteran. Easy, Normal and Hard; a chronicle of past expeditions.
 
+## Changed
+
+- **RSS 1.4.0, Instapaper 1.3.0, wallabag 1.4.0, Readwise 1.3.0 and Hacker News 1.4.0: a long press on a picture shows it on the whole screen, and a double tap zooms in.** The picture is asked again from the resizer at the screen's size, so the lettering of a screenshot in an article becomes readable; a wide one comes turned a quarter (read it with the reader on its side, it then fills the long side). **Double tap** it, or tap **Zoom in**, for the part around that place at 2x, then 4x, each part cut from the original so it stays sharp at any zoom; drag to move it, the arrow keys move half a screen. **Zoom out** goes back a step, **Back** to the whole picture and then to the article.
+- **xkcd 1.0.1: the sleep screen shows the comic again.** It freed the picture before the reader put it on the screen, so a new comic (3324, say) could leave the sleep screen with only its title. When a picture cannot be shown, the sleep screen now says why instead of staying blank.
+
 ## Files
 
 | file | content |
@@ -17,6 +22,12 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 | `portwren.xtapp` | Port Wren 1.0.0 (new) |
 | `riverstead.xtapp` | Riverstead 1.0.0 (new) |
 | `icebound.xtapp` | Icebound 1.0.0 (new) |
+| `rss.xtapp` | RSS 1.4.0 |
+| `instapaper.xtapp` | Instapaper 1.3.0 |
+| `wallabag.xtapp` | wallabag 1.4.0 |
+| `readwise.xtapp` | Readwise 1.3.0 |
+| `hackernews.xtapp` | Hacker News 1.4.0 |
+| `xkcd.xtapp` | xkcd 1.0.1 |
 | all other packages | unchanged since v0.24.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

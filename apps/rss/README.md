@@ -185,6 +185,13 @@ downloaded, one after the other, after the text; until then a frame marks their 
 resizer cannot deliver a picture, it shows as `[image]` and the article reads normally. Icons and
 emoji are left out. Needs the updated rss-opds Worker.
 
+A **long press on a picture** shows it on the whole screen, asked again from the resizer at the
+screen's size so the lettering of a screenshot stays sharp; a wide one comes turned a quarter
+(read it with the reader on its side). **Double tap** it (or **Zoom in**) for the part around that
+place at 2x, then 4x, each part cut from the original so it stays sharp; drag to move it, the
+arrow keys move half a screen. **Zoom out** goes back a step, **Back** to the whole picture and
+then to the article.
+
 ## Build
 
 ```bash

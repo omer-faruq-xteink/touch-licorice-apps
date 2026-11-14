@@ -48,6 +48,12 @@ menu's second line says `changes go straight to Readwise`, or `no access token: 
   position stays on the card. Opening an unseen document marks it seen in Reader.
 - The last page shows the source's link as a **QR code**, then the two moves and **Tags**.
 - **Text size** and **Images in articles** in Settings, as in Instapaper.
+- A **long press on a picture** shows it on the whole screen, asked again from the resizer at the
+  screen's size so the lettering of a screenshot stays sharp; a wide one comes turned a quarter
+  (read it with the reader on its side). **Double tap** it (or **Zoom in**) for the part around that
+  place at 2x, then 4x, each part cut from the original so it stays sharp; drag to move it, the
+  arrow keys move half a screen. **Zoom out** goes back a step, **Back** to the whole picture and
+  then to the article.
 - **Screen**: portrait or landscape. The app turns at once and opens that
   way next time; in landscape a list page holds 6 rows (Reader is asked for 6 at a time), the menu
   and Settings take two columns, and an open article is laid out again at about the same place.

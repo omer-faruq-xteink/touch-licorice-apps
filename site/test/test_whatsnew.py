@@ -90,7 +90,9 @@ check(S.app_version('v9.9.9', 'chess', '**Back on the main screen offers to exit
 
 # the real notes: every app with a package has its entries, xkcd's newest first
 real = S.changes_by_app(open(os.path.join(S.ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read(), S.display_names())
-check(real.get('xkcd', [[None]])[0][0] == 'v0.24.0', f'xkcd: {real.get("xkcd", [])[:1]}')
+xk = [v for v, _ in real.get('xkcd', [])]
+check(xk and xk[-1] == 'v0.24.0' and xk == sorted(xk, key=lambda v: [int(x) for x in v[1:].split('.')], reverse=True),
+      f'xkcd: newest first, back to v0.24.0: {xk}')
 check(any('Back on the main screen' in b for _, b in real.get('klondike', [])), 'Klondike has the Back change')
 check(not any('Back on the main screen' in b for _, b in real.get('notebook', [])), 'Notebook does not')
 

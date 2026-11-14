@@ -86,6 +86,12 @@ out of free credits or busy for a while: try again later.
   as greyscale JPEGs fitted to the screen width, from the free images.weserv.nl resizer, loaded
   for the page on screen only. Icons and tracking pixels are left out; a picture that cannot be
   loaded shows as `[image]`, the text never waits for it.
+- A **long press on a picture** shows it on the whole screen, asked again from the resizer at the
+  screen's size so the lettering of a screenshot stays sharp; a wide one comes turned a quarter
+  (read it with the reader on its side). **Double tap** it (or **Zoom in**) for the part around that
+  place at 2x, then 4x, each part cut from the original so it stays sharp; drag to move it, the
+  arrow keys move half a screen. **Zoom out** goes back a step, **Back** to the whole picture and
+  then to the article.
 - Opened articles and lists are saved on the card and open again without a connection. The 100
   most recently opened articles stay; older copies are removed, and an archived article's copy
   goes at once. **Articles saved offline** in Settings shows how many there are; tap it twice to

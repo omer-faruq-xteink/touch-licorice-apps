@@ -31,6 +31,12 @@ It is **off by default**, and while it is off nothing of it shows anywhere. See
   Worker, the one the RSS app uses, with its pictures where they are in the text (Settings:
   Pictures in articles, on by default). Every linked story ends with its address as a QR code,
   to open on a phone.
+- A **long press on a picture** shows it on the whole screen, asked again from the resizer at the
+  screen's size so the lettering of a screenshot stays sharp; a wide one comes turned a quarter
+  (read it with the reader on its side). **Double tap** it (or **Zoom in**) for the part around that
+  place at 2x, then 4x, each part cut from the original so it stays sharp; drag to move it, the
+  arrow keys move half a screen. **Zoom out** goes back a step, **Back** to the whole picture and
+  then to the article.
 - **Comments** (the button on a story, or a long press on a story in the list) come level by
   level in HN's order: the replies to the story, each with its author and age; tap
   "n replies >" to read the replies to that comment, Back to come up, Top for the first level.
