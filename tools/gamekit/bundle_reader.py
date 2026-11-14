@@ -1,5 +1,6 @@
 """Bundle a reading app (RSS, Instapaper, Readwise, wallabag): its src/main.lua, with the other
-src/*.lua and the shared AI modules (tools/gamekit/ai.lua, aiui.lua) as modules main reaches with
+src/*.lua and the shared modules (tools/gamekit/ai.lua, aiui.lua: the AI; imgview.lua: a picture on the
+whole screen, zoomed) as modules main reaches with
 require('<name>'), since the device has no require for package files. Each package gets its own
 copy of the shared modules: no app needs another installed. An app may ask for other shared
 modules (Dictionary: shared=('fsrs',), the review scheduler).
@@ -9,7 +10,7 @@ modules (Dictionary: shared=('fsrs',), the review scheduler).
 import os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SHARED = ('ai', 'aiui')
+SHARED = ('ai', 'aiui', 'imgview')
 
 LOADER = """
 local __mods, __loaded = {}, {}

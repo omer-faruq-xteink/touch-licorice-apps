@@ -22,6 +22,8 @@ def fake_request(url):
         if key in url and fail_next[key] > 0:
             fail_next[key] -= 1
             return 502, 'Error: CommaFeed /category/get failed: HTTP 503'
+    if url.startswith('https://images.weserv.nl/') and 'output=json' in url:   # the original's size
+        return (200, '{"format":"png","width":1200,"height":700}') if 'url=AAA' in url else (404, 'not found')
     if url.startswith('https://images.weserv.nl/'):              # article images: raw JPEG bytes
         return (200, b'\xff\xd8' + b'x' * 100) if 'url=AAA' in url else (404, 'not found')
     if url.split('?')[0].endswith('/api'):                      # the Worker's root: account list
@@ -46,7 +48,8 @@ L.execute(r'''
 drawn, store = {}, {}
 local gmt = {}
 images_drawn = 0
-gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1 end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
+img_calls = {}
+gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1; local _im, ix, iy = ...; img_calls[#img_calls + 1] = { x = ix, y = iy } end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -374,6 +377,46 @@ assert (g.released or 0) >= 1                          # the previous images wer
 g.flush()
 texts()                                                # draw the page: the image is on it again
 assert g.images_drawn >= 2, g.images_drawn
+
+# Full screen: a long press on a picture asks the resizer for the original's size, then a copy for
+# the whole screen (a wide one turned); Back returns to the article
+L.execute('img_calls = {}')
+texts()
+ix, iy = int(g.img_calls[1].x), int(g.img_calls[1].y)
+n_req, rel0 = len(requests), (g.released or 0)
+tap(ix + 20, iy + 20)                                  # a plain tap does not open it
+assert len(requests) == n_req and 'Image 1 of 2' not in texts()
+long_ev(ix + 20, iy + 20, 'hold', None); long_ev(ix + 20, iy + 20, 'up', 'long')
+assert requests[-1] == 'https://images.weserv.nl/?url=AAA&output=json', requests[-1]
+assert (g.released or 0) > rel0                        # the page's pictures are freed for the big one
+t = texts()
+assert 'Image 1 of 2' in t and 'Loading full screen...' in t and 'Before' not in t, t
+g.step()
+assert 'url=AAA' in requests[-1] and '&w=720&h=480&' in requests[-1] and '&ro=90' in requests[-1], requests[-1]
+assert 'Authorization' not in dict(g.last_headers)
+g.step()
+t = texts()
+assert 'Image 1 of 2 (turned)' in t and 'Loading full screen...' not in t, t
+tap(100, 400); key('right')                            # taps and page keys do nothing here
+assert 'Image 1 of 2 (turned)' in texts() and 'precrop' not in requests[-1]
+long_ev(240, 400, 'up', 'double_tap')                  # a double tap zooms: a part of the original
+assert 'url=AAA' in requests[-1] and '&precrop&' in requests[-1] and '&ro=90' in requests[-1], requests[-1]
+t = texts()                                            # drawn while the part loads: no drawing error
+assert not any('ERR' in x for x in t) and any('loading' in x.lower() for x in t), t
+g.step()
+assert 'Image 1 of 2 (turned)  2x' in texts()
+key('back')                                            # Back: the whole picture again
+t = texts()
+assert 'Image 1 of 2 (turned)' in t and 'Image 1 of 2 (turned)  2x' not in t, t
+key('back')                                            # and to the article
+t = texts()
+assert 'Before' in t and 'Image 1 of 2 (turned)' not in t, t
+g.flush()
+# a picture whose size cannot be had: the article stays, with the reason
+x2, y2 = recs()['[image]']
+long_ev(x2 + 5, y2 + 5, 'up', 'long'); g.flush()
+t = texts()
+assert 'Before' in t and any('Full screen failed' in s for s in t), t
 tap(50, 20)
 key('back')
 tap(100, 100 + 5 * 70 + 10)

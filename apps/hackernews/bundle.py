@@ -28,5 +28,5 @@ def bundle_lock():
 
 
 if __name__ == '__main__':
-    bundle.bundle(HERE, shared=('ai',))
+    bundle.bundle(HERE, shared=('ai', 'imgview'))
     bundle_lock()

@@ -47,6 +47,8 @@ def fake_request(method, url, body, auth):
     calls.append((method, url, body, auth))
     if not state['token_ok']:
         return 401, json.dumps({'error': {'code': 401, 'message': 'Invalid token'}})
+    if url.startswith('https://images.weserv.nl/') and 'output=json' in url:       # the original's size
+        return (404, 'no') if 'lazy.png' in url else (200, '{"format":"jpeg","width":1200,"height":700}')
     if url.startswith('https://images.weserv.nl/'):
         return (404, 'no') if 'lazy.png' in url else (200, b'\xff\xd8' + b'x' * 50)
     path = url.split('/api/2', 1)[1]
@@ -73,7 +75,8 @@ L.execute(r'''
 drawn, store = {}, {}
 local gmt = {}
 images_drawn = 0
-gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1 end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y } end end end
+img_calls = {}
+gmt.__index = function(_, k) return function(_, ...) if k == 'image' then images_drawn = images_drawn + 1; local _im, ix, iy = ...; img_calls[#img_calls + 1] = { x = ix, y = iy } end if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y } end end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -311,6 +314,29 @@ n = len(calls)
 key('back'); tap(100, row_y(6)); g.flush()
 for _ in range(4): key('left'); g.flush()
 assert not any('/parse' in c[1] for c in calls[n:]) and any('weserv' in c[1] for c in calls[n:]), calls[n:]
+assert 'Before the pictures.' in texts()
+# a long press on a picture: on the whole screen (tools/gamekit/imgview.lua), a double tap zooms,
+# Back goes from the zoomed part to the whole picture, then to the article
+L.execute('img_calls = {}')
+texts()
+ix, iy = int(g.img_calls[1].x), int(g.img_calls[1].y)
+n = len(calls)
+long_press(ix + 20, iy + 20)
+assert calls[n][1] == 'https://images.weserv.nl/?url=https%3A%2F%2Fcdn.example.com%2Fa.jpg&output=json', calls[n:]
+g.flush()
+assert '&w=720&h=480&fit=inside&ro=90&' in calls[-1][1], calls[-1][1]
+t = texts()
+assert any(x.startswith('Image 1 of ') and x.endswith('(turned)') for x in t) and 'Before the pictures.' not in t, t
+L.eval("function(x, y) on_input(ctx, {type='pointer', phase='up', gesture='double_tap', x=x, y=y}) end")(240, 400)
+assert '&precrop&' in calls[-1][1], calls[-1][1]
+t = texts()
+assert not any('ERR' in x for x in t) and 'Loading...' in t, t
+g.flush()
+assert any(x.endswith('2x') for x in texts())
+key('back')
+t = texts()
+assert not any(x.endswith('2x') for x in t) and any(x.startswith('Image 1 of ') for x in t), t
+key('back')
 assert 'Before the pictures.' in texts()
 # progress that could not be sent waits on the card and goes out at the next start
 def restart():

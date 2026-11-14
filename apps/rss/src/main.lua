@@ -156,6 +156,7 @@ local coll_list = {}
 local where, coll = nil, nil
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local draw_source_line                                    -- the source QR block, images section
+local FULL = {}               -- a picture on the whole screen: view, open, close, is_open, draw (images section)
 local settings_list, setting_rect, sync_screen   -- defined with Settings / before on_input
 local function acct_label()
   for _, a in ipairs(accounts) do if a.id == acct then return a.label end end
@@ -263,8 +264,8 @@ end
 
 -- the bytes of an article image, straight from the resizer URL the Worker gave (another host:
 -- no Worker credentials go with it); on_done(body) or on_done(nil, err)
-local function fetch_image(url, on_done)
-  local headers = { ['Accept'] = 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink RSS mini app)' }
+local function fetch_image(url, on_done, accept)
+  local headers = { ['Accept'] = accept or 'image/jpeg', ['User-Agent'] = 'Mozilla/5.0 (Xteink RSS mini app)' }
   net_submit({ url = url, method = 'GET', headers = headers }, loading or 'loading image', 30000, function(resp, err)
     if err then on_done(nil, err); return end
     local st = type(resp) == 'table' and (tonumber(resp.status) or tonumber(resp.code)) or nil
@@ -1009,7 +1010,7 @@ local function decode(n, bytes)
 end
 
 load_page_images = function()
-  if screen ~= 'article' then return end
+  if screen ~= 'article' or FULL.is_open() then return end
   local first, last = page_lines()
   local on_page = {}
   for i = first, last do
@@ -1058,6 +1059,63 @@ draw_image_line = function(gg, ln, y)
     gg:rect(x, y + 6, ln.iw, ln.ih)
     gg:text(x + 10, y + 16, 'image…', { font = F and F.small })
   end
+end
+
+-- A picture on the whole screen: a long press on it in an article (tools/gamekit/imgview.lua asks
+-- the resizer for a copy the size of the screen, turned when it is wide; a double tap zooms).
+-- Back returns.
+FULL.view = require('imgview').new({
+  get = function(url, accept, cb) fetch_image(url, cb, accept) end,
+  decode = function(bytes, mw, mh)
+    if not (ctx.capabilities and ctx.capabilities.image_decode) then return nil, 'no image decoder' end
+    pcall(function() ctx.budget:extend() end)
+    return ctx.image:decode(bytes, { max_w = mw, max_h = mh })
+  end,
+  json = function(s) return ctx.json:decode(s) end,
+  refresh = function() refresh() end,
+  fail = function(msg) note(msg); load_page_images() end,
+})
+
+-- the picture line under (x, y) on the article's page, its place among the article's pictures
+-- and how many there are
+function FULL.image_at(x, y)
+  local first, last = page_lines()
+  local ly = TOP + 4
+  for i = first, last do
+    local ln = art.lines[i]
+    if not ln then break end
+    if ln.img and y >= ly and y < ly + ln.h then
+      local k, total = 0, 0
+      for j, l in ipairs(art.lines) do
+        if l.img then total = total + 1; if j <= i then k = k + 1 end end
+      end
+      return ln, k, total
+    end
+    ly = ly + ln.h
+  end
+end
+
+function FULL.is_open() return FULL.view:is_open() end
+
+function FULL.open(x, y)
+  local ln, k, total = FULL.image_at(x, y)
+  if not ln then return end
+  note('')
+  -- the page's pictures make room for the big one (their bytes stay: they come back on return)
+  for n, d in pairs(img_mem) do
+    if d.img then pcall(function() d.img:release() end) end
+    img_mem[n] = nil
+  end
+  FULL.view:open(ln.src, k, total, W, H)
+end
+
+function FULL.close()
+  FULL.view:close()
+  load_page_images()
+end
+
+function FULL.draw(gg)
+  FULL.view:draw(gg, W, H, ctx.fonts)   -- its heading says when a picture is loading
 end
 
 ------------------------------------------------------------------ accounts
@@ -1479,7 +1537,7 @@ local function draw_impl(gg)
   if screen == 'menu' then draw_menu(gg)
   elseif screen == 'list' then draw_list(gg)
   elseif on_names() then draw_feeds(gg)
-  elseif screen == 'article' then draw_article(gg)
+  elseif screen == 'article' then if FULL.is_open() then FULL.draw(gg) else draw_article(gg) end
   elseif screen == 'settings' then draw_settings(gg)
   elseif screen == 'add' then draw_add(gg)
   elseif screen == 'catalog' then draw_catalog(gg)
@@ -1849,6 +1907,7 @@ sync_screen = function()
   PREVIEW_BOTTOM = H - 64
   list.top = window_of(list.top or 1)
   feeds.top, tags.top, catalog.top = window_of(feeds.top or 1), window_of(tags.top or 1), window_of(catalog.top or 1)
+  if FULL.is_open() then FULL.close() end
   if art.data and #art.lines > 0 then
     local share = (art.page - 1) / math.max(1, art.pages)
     release_images()
@@ -1879,12 +1938,15 @@ function on_input(c, ev)
         elseif screen == 'feeds' and feeds['local'] and (ev.y or 0) >= TOP + 26 and not suppress_up then
           local it = feeds.items[math.floor(((ev.y or 0) - (TOP + 26)) / 58) + feeds.top]
           if it and it['local'] then removing = { id = it.id, name = (it.name:gsub('  %(!%)$', '')) }; screen = 'confirm' end
+        elseif screen == 'article' and not FULL.is_open() and not suppress_up then
+          FULL.open(ev.x or 0, ev.y or 0)
         end
         suppress_up = (ev.phase ~= 'up')
         return
       end
       if ev.phase ~= 'up' then return end
       if suppress_up then suppress_up = false; return end
+      if FULL.is_open() then FULL.view:pointer(ev); return end   -- a picture on the whole screen: zoom, move
       if preview then
         local pg = ev.gesture
         if pg == 'swipe_left' or pg == 'swipe_up' then preview_step(1)
@@ -1902,6 +1964,11 @@ function on_input(c, ev)
       end
     elseif ev.type == 'key' and key_accepted(ev) then
       local k = ev.key
+      if FULL.is_open() then
+        -- Back: from a zoomed part to the whole picture, from there to the article
+        if not FULL.view:key(k) and k == 'back' then FULL.close() end
+        return
+      end
       if preview then
         if k == 'back' then close_preview()
         elseif k == 'right' or k == 'down' then preview_step(1)

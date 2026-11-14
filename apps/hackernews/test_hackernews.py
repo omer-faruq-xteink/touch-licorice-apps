@@ -81,11 +81,18 @@ def answer(url):
         body = {'url': q['url'], 'source': 'diffbot',
                 'text': '# The essay\n\nLisp is a family of languages.\n\n> A quote.\n\n' + ('[[img:1]]\n\n' if 'images' in q else '')
                         + 'More text. ' * 300 + ('\n\n[[img:2]]\n\nThe end.' if 'images' in q else '')}
-        if 'images' in q:
+        if 'images' in q and mode.get('weserv'):
+            body['images'] = [{'n': 1, 'w': 456, 'h': 304, 'src': 'https://images.weserv.nl/?url=https%3A%2F%2Fimg.example%2Fr%3Fu%3D1&w=456&h=304'},
+                              {'n': 2, 'w': 300, 'h': 200, 'src': 'https://img.example/r?u=2'}]
+        elif 'images' in q:
             body['images'] = [{'n': 1, 'w': 456, 'h': 304, 'src': 'https://img.example/r?u=1'} if not mode.get('tall') else
                               {'n': 1, 'w': 456, 'h': 640, 'src': 'https://img.example/r?u=1&w=456&h=640'},
                               {'n': 2, 'w': 300, 'h': 200, 'src': 'https://img.example/r?u=2'}]
         return {'status': 200, 'body': json.dumps(body)}
+    if u.netloc == 'images.weserv.nl':                    # the resizer: the original's size, or a copy
+        if 'output=json' in url:
+            return {'status': 200, 'body': '{"format":"jpeg","width":1200,"height":700}'}
+        return {'status': 200, 'body': b'\xff\xd8\xff\xe0 fake jpeg'}
     if u.netloc == 'img.example':
         if q['u'] == '2':
             return {'status': 404, 'body': 'gone'}
@@ -291,6 +298,33 @@ for k in range(20):
 assert 'https://img.example/r?u=2' in requests and '[picture]' in g.texts() and 'The end.' in page_text()
 g.tap_label('Back')
 assert L.globals().released == 2 and len(list(A().pics().keys())) == 0
+# a long press on a picture: on the whole screen (tools/gamekit/imgview.lua); a double tap zooms;
+# Back: the whole picture, then the story
+mode['weserv'] = True
+g.tap(100, row(1)); answer_all()
+S = A().S()
+y, k = 14, int(S.pages[S.page])
+while not S.lines[k].img:
+    y += int(S.lines[k].h); k += 1
+hold(200, y + 20)
+assert requests[-1] == 'https://images.weserv.nl/?url=https%3A%2F%2Fimg.example%2Fr%3Fu%3D1&output=json', requests[-3:]
+answer_all()
+assert '&w=720&h=480&fit=inside&ro=90&' in requests[-1], requests[-1]
+t = g.texts()
+assert 'Image 1 of 2 (turned)' in t and 'The essay' not in t, t
+L.eval("function() on_input(ctx, {type='pointer', phase='up', gesture='double_tap', x=240, y=400}) end")()
+assert '&precrop&' in requests[-1], requests[-1]
+t = g.texts()
+assert 'Loading...' in t and not any('ERR' in x for x in t), t
+answer_all()
+assert 'Image 1 of 2 (turned)  2x' in g.texts()
+g.key('back')
+t = g.texts()
+assert 'Image 1 of 2 (turned)' in t and 'Image 1 of 2 (turned)  2x' not in t, t
+g.key('back')
+assert 'The essay' in page_text()
+mode['weserv'] = False
+g.tap_label('Back')
 # pictures off
 g.tap_label('Settings'); g.tap(300, 70 + 3 * 86 + 40)
 assert A().cfg.images == 'off' and 'images=off' in g.store['settings.txt']

@@ -332,6 +332,7 @@ end
 -- fetched and decoded, one at a time; the others are released.
 
 local pics = {}                 -- src -> { img } | { failed = true } | { job } while loading
+local FULL = {}                 -- a picture on the whole screen: view, open, close, is_open (below)
 
 local function page_range(doc)
   return doc.pages[doc.page] or 1, (doc.pages[doc.page + 1] or (#doc.lines + 1)) - 1
@@ -349,6 +350,7 @@ end
 local load_pics
 load_pics = function()
   if screen ~= 'story' or not S or not S.lines then release_pics(); return end
+  if FULL.is_open() then return end
   local first, last = page_range(S)
   local on_page, todo = {}, nil
   for k = first, last do
@@ -389,6 +391,50 @@ local function draw_pic(gg, im, y)
   if p and (p.img or p.failed) then gg:text(16, y + 6, '[picture]', { font = kit.font('small') }); return end
   gg:rect(x, y + 6, im.w, im.h)
   gg:text(x + 10, y + 16, 'picture...', { font = kit.font('small') })
+end
+
+-- A picture on the whole screen: a long press on it in a story (tools/gamekit/imgview.lua asks the
+-- resizer for a copy the size of the screen, turned when it is wide; a double tap zooms). Back
+-- goes from a zoomed part to the whole picture, then to the story.
+FULL.view = require('imgview').new({
+  get = function(url, accept, cb)
+    get(url, 'Loading picture...', function(body, err) cb(body, err) end, { ['Accept'] = accept, ['User-Agent'] = UA }, 30000, true)
+  end,
+  decode = function(bytes, mw, mh)
+    if not (ctx.capabilities and ctx.capabilities.image_decode) then return nil, 'no image decoder' end
+    pcall(function() ctx.budget:extend() end)
+    return ctx.image:decode(bytes, { max_w = mw, max_h = mh })
+  end,
+  json = function(s) return ctx.json:decode(s) end,
+  refresh = function() kit.refresh() end,
+  fail = function(msg) status = msg; load_pics() end,
+})
+
+function FULL.is_open() return FULL.view:is_open() end
+
+-- open the picture under (x, y) on the story's page; true when there is one
+function FULL.open(x, y)
+  if not (S and S.lines) or y >= DOC_BOTTOM then return false end
+  local ly, k, total, hit = DOC_TOP, 0, 0, nil
+  local first, last = page_range(S)
+  for i = first, last do
+    local ln = S.lines[i]
+    if ln.img and y >= ly and y < ly + ln.h then hit = i end
+    ly = ly + ln.h
+  end
+  if not hit then return false end
+  for i, ln in ipairs(S.lines) do
+    if ln.img then total = total + 1; if i <= hit then k = k + 1 end end
+  end
+  status = nil
+  release_pics()                -- the page's pictures make room for the big one; they load again after
+  FULL.view:open(S.lines[hit].img.src, k, total, W, H)
+  return true
+end
+
+function FULL.close()
+  FULL.view:close()
+  load_pics()
 end
 
 local function meta(r)
@@ -1201,6 +1247,7 @@ local function sync_screen()
     build()
     doc.page = math.min(#doc.pages, math.floor(share * #doc.pages + 0.5) + 1)
   end
+  if FULL.is_open() then FULL.close() end
   if S and S.lines then again(S, build_story); load_pics() end
   for _k, lv in ipairs(levels) do again(lv, function() build_thread(lv) end) end
 end
@@ -1212,6 +1259,9 @@ function on_draw(c, gg)
     gg:clear(0)
     if kit.modal() then kit.draw_modal(gg); return end
     if screen == 'list' then draw_list(gg)
+    elseif screen == 'story' and FULL.is_open() then
+      FULL.view:draw(gg, W, H, { small = kit.font('small'), medium = kit.font('medium') })
+      return                                   -- the whole screen: no buttons, no status line
     elseif screen == 'story' then draw_doc(gg, S)
     elseif screen == 'thread' then draw_doc(gg, level())
     elseif screen == 'chat' then draw_doc(gg, chat)
@@ -1460,7 +1510,9 @@ function on_input(c, ev)
       local x, y = ev.x or 0, ev.y or 0
       if ev.phase == 'down' then long_done = false end
       if (ev.gesture == 'long' or ev.phase == 'hold') and not kit.modal() then
-        if not long_done then tap(x, y, true) end
+        if FULL.is_open() then long_done = true
+        elseif not long_done and screen == 'story' and FULL.open(x, y) then long_done = true
+        elseif not long_done then tap(x, y, true) end
         long_done, suppress_up = true, ev.phase ~= 'up'
         if ev.phase == 'up' then long_done = false end
         return
@@ -1468,6 +1520,7 @@ function on_input(c, ev)
       if ev.phase ~= 'up' then return end
       long_done = false
       if suppress_up then suppress_up = false; return end
+      if FULL.is_open() then FULL.view:pointer(ev); return end   -- a picture on the whole screen: zoom, move
       if kit.modal() then tap(x, y, false); return end
       local delta = ev.gesture == 'swipe_up' and 1 or ev.gesture == 'swipe_down' and -1 or nil
       if delta and (screen == 'list' or screen == 'story' or screen == 'thread' or screen == 'chat') then
@@ -1482,9 +1535,12 @@ function on_input(c, ev)
         if kit.modal().cancel then kit.modal().cancel() end
       elseif screen == 'list' then
         left = true                                -- not handled: the host asks whether to leave
+      elseif FULL.is_open() then
+        if not FULL.view:key('back') then FULL.close() end
       else back() end
     elseif ev.type == 'key' and kit.key_accepted(ev) then
-      if not kit.modal() then
+      if FULL.is_open() then FULL.view:key(ev.key)
+      elseif not kit.modal() then
         local delta = (ev.key == 'down' or ev.key == 'right') and 1 or (ev.key == 'up' or ev.key == 'left') and -1 or nil
         if delta and screen == 'list' then list_page(delta) elseif delta then doc_page(delta) end
       end
