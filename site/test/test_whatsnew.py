@@ -135,5 +135,26 @@ for tag in sorted(listed, key=S.version_key, reverse=True):
     missing = sorted(n for n in listed[tag] if not any(t == tag for t, _ in real.get(n, [])))
     check(not missing, f'{tag}: every changed package has its bullet ({len(listed[tag])} packages){" missing " + str(missing) if missing else ""}')
 
+# the site's What's new page: every release out, newest first and open, the others folded; its date
+# and time; app names in a lead linked to their pages; no Files tables; nothing not out yet
+rels = S.releases(NOTES)
+check([t for t, _, _ in rels] == ['v0.3.0', 'v0.2.0', 'v0.1.0'], f'releases newest first: {[t for t, _, _ in rels]}')
+check(rels[0][1] == ['Intro line.'] and [s for s, _ in rels[0][2]] == ['Changed'], f'intro and sections, no Files: {rels[0][1:]}')
+check('Turning a long article' in rels[1][2][0][1][1], 'wrapped bullet lines joined')
+check([t for t, _, _ in S.releases(NOTES, upto='v0.2.0')] == ['v0.2.0', 'v0.1.0'], 'a release not out yet is left out')
+linked = S.link_names('**New: Chess puzzles** — and Chess too', NAMES, {'chess', 'chessplay'})
+check(linked.startswith('**New: [Chess puzzles](../apps/chess/)**') and linked.endswith('and Chess too'),
+      f'only the lead is linked, longest name first: {linked}')
+check(S.link_names('**Weather 1.1.1: x**', NAMES, set()) == '**Weather 1.1.1: x**', 'an app without a page is not linked')
+when = {'v0.3.0': datetime(2026, 11, 14, 6, 12, tzinfo=timezone.utc)}
+page = S.whats_new_page(rels, NAMES, when.get, {'weather', 'chessplay'})
+check(page.count('<details class="fold release"') == 3 and page.count('<details class="fold release" open') == 1
+      and page.index(' open') < page.index('v0.2.0'), 'the newest release open, the others folded')
+check('<time datetime="2026-11-14T06:12:00+00:00">14 Nov 2026, 06:12 UTC</time>' in page, 'date and time of a release')
+check('<a href="../apps/weather/">Weather</a>' in page and 'weather.xtapp' not in page, 'app names linked, Files table left out')
+check('<h3>Changed</h3>' in page and 'Intro line.' in page, 'sections and the intro shown')
+real_rels = S.releases(notes, upto='v0.24.0')
+check(real_rels[0][0] == 'v0.24.0' and len(real_rels) >= 20, f'the real notes up to v0.24.0: {len(real_rels)} releases')
+
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 sys.exit(1 if fails else 0)

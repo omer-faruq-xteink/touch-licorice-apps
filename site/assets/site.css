@@ -54,6 +54,8 @@ header.site .crumb a { color: var(--muted); }
 header.site nav { margin-left: auto; display: flex; gap: 16px; }
 header.site nav a { text-decoration: none; color: var(--muted); }
 header.site nav a[aria-current] { color: var(--ink); font-weight: 600; }
+header.site nav a.fresh::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 5px;
+  border-radius: 50%; background: currentColor; vertical-align: super; }
 
 main { padding: 28px 0 40px; }
 h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }

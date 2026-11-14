@@ -29,17 +29,24 @@ export const TOOLS = [
 // chrome({ app: name }) an app's page
 export function chrome(id) {
   const tool = TOOLS.find((t) => t.id === id);
-  const root = id === null ? './' : id === 'tools' || id === 'developers' ? '../' : '../../';
+  const root = id === null ? './' : id === 'tools' || id === 'developers' || id === 'whats-new' ? '../' : '../../';
   let crumb = id === 'developers' ? '<span class="crumb">/ Add your app</span>' : '';
   if (tool) crumb = `<span class="crumb">/ <a href="${root}tools/">Tools</a> / ${esc(tool.title)}</span>`;
   else if (id && id.app) crumb = `<span class="crumb">/ ${esc(id.app)}</span>`;
-  const here = id === 'tools' || tool ? 'tools' : 'apps';
+  const here = id === 'tools' || tool ? 'tools' : id === 'whats-new' ? 'whats-new' : 'apps';
+  const cur = (k) => (here === k ? ' aria-current="page"' : '');
   const header = document.createElement('header');
   header.className = 'site';
   header.innerHTML = `<div class="wrap"><a class="home" href="${root}">Touch Licorice apps</a>${crumb}` +
-    `<nav><a href="${root}"${here === 'apps' ? ' aria-current="page"' : ''}>Apps</a>` +
-    `<a href="${root}tools/"${here === 'tools' ? ' aria-current="page"' : ''}>Tools</a></nav></div>`;
+    `<nav><a href="${root}"${cur('apps')}>Apps</a>` +
+    `<a href="${root}whats-new/"${cur('whats-new')} id="nav-new">What’s new</a>` +
+    `<a href="${root}tools/"${cur('tools')}>Tools</a></nav></div>`;
   document.body.prepend(header);
+  // a dot on What's new while the latest release is at most a week old (the apps' New badges' rule)
+  fetch(`${root}catalog.json`).then((r) => r.json()).then((c) => {
+    const t = c.release && Date.parse(c.release.date);
+    if (t && Date.now() - t <= 7 * 864e5) document.getElementById('nav-new').classList.add('fresh');
+  }).catch(() => {});
   const footer = document.createElement('footer');
   footer.className = 'site';
   footer.innerHTML = '<div class="wrap">Unofficial <a href="' + REPO + '">touch-licorice-apps</a> mini apps for the ' +

@@ -228,29 +228,118 @@ def changes_by_app(notes, names, upto=None):
     def named(text):
         return names_in(text, names)
 
-    bullets, tag, section, cur = [], None, None, None
+    out = {}
+    for tag, _, sections in releases(notes, upto):
+        for _, bullets in sections:
+            for b in bullets:
+                lead = re.match(r'\*\*(.+?)\*\*', b)
+                for app in named(lead.group(1) if lead else '') or named(b):
+                    out.setdefault(app, []).append((tag, b))
+    return out
+
+
+def releases(notes, upto=None):
+    """RELEASE_NOTES.md as [(tag, [intro paragraphs], [(section, [bullet markdown])])], newest first
+    (the file's order); a bullet's wrapped lines are joined. The Files tables are left out, and so are
+    releases after `upto` (not out yet)."""
+    out, para, cur, section = [], [], None, None
+
+    def end_para():
+        if para and out and section is None:
+            out[-1][1].append(' '.join(para))
+        para.clear()
     for line in notes.split('\n') + ['']:
         if cur is not None and line.startswith('  ') and line.strip():
-            cur += ' ' + line.strip()
+            cur.append(cur.pop() + ' ' + line.strip())
             continue
-        if cur is not None:
-            bullets.append((tag, cur))
-            cur = None
+        cur = None
         m = re.match(r'# (v\d+(?:\.\d+)*)\s*$', line)
         if m:
-            tag, section = m.group(1), None
-        elif line.startswith('## '):
-            section = line[3:].strip()
-        elif tag and section and section != 'Files' and line.startswith('- '):
-            cur = line[2:].strip()
-    out = {}
-    for tag, b in bullets:
-        if upto and version_key(tag) > version_key(upto):
+            end_para()
+            out.append((m.group(1), [], []))
+            section = None
+        elif not out:
             continue
-        lead = re.match(r'\*\*(.+?)\*\*', b)
-        for app in named(lead.group(1) if lead else '') or named(b):
-            out.setdefault(app, []).append((tag, b))
-    return out
+        elif line.startswith('## '):
+            end_para()
+            section = line[3:].strip()
+            if section != 'Files':
+                out[-1][2].append((section, []))
+        elif section is None:
+            if line.strip():
+                para.append(line.strip())
+            else:
+                end_para()
+        elif section != 'Files' and line.startswith('- '):
+            cur = out[-1][2][-1][1]
+            cur.append(line[2:].strip())
+    end_para()
+    return [r for r in out if not upto or version_key(r[0]) <= version_key(upto)]
+
+
+def link_names(bullet, names, pages):
+    """a bullet with the app names of its bold lead linked to their pages (../apps/<app>/), longer
+    names first; apps without a page (not listed) stay plain"""
+    m = re.match(r'\*\*(.+?)\*\*', bullet)
+    if not m:
+        return bullet
+    lead, keep = m.group(1), []
+    for app, name in sorted(names.items(), key=lambda kv: -len(kv[1])):
+        rx = re.compile(r'(?<![\w\0])' + re.escape(name) + r'(?![\w\0])')
+        if not rx.search(lead):
+            continue
+        keep.append(f'[{name}](../apps/{app}/)' if app in pages else name)
+        lead = rx.sub(lambda _: f'\0{len(keep) - 1}\0', lead, count=1)
+    lead = re.sub(r'\0(\d+)\0', lambda k: keep[int(k.group(1))], lead)
+    return f'**{lead}**' + bullet[m.end():]
+
+
+def when_html(d):
+    """a release's date and time: UTC in the page, turned into the reader's local time by the page's script"""
+    return f'<time datetime="{d.isoformat()}">{d.astimezone(timezone.utc).strftime("%d %b %Y, %H:%M")} UTC</time>'
+
+
+def whats_new_page(rels, names, date_of, pages):
+    """the site's What's new page: every release out, newest first and open, the others folded"""
+    parts = []
+    for k, (tag, intro_paras, sections) in enumerate(rels):
+        d = date_of(tag)
+        head = f'{H(tag)}' + (f' <span class="when">&middot; {when_html(d)}</span>' if d else '')
+        body = ''.join(f'<p>{inline(p)}</p>' for p in intro_paras)
+        for sec, bullets in sections:
+            if bullets:
+                body += f'<h3>{H(sec)}</h3><ul>' + ''.join(f'<li>{inline(link_names(b, names, pages))}</li>' for b in bullets) + '</ul>'
+        parts.append(f'<details class="fold release"{" open" if k == 0 else ""} id="{H(tag)}"><summary>{head}</summary>'
+                     f'<div class="fold-body">{body}</div></details>')
+    return f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What&rsquo;s new: Touch Licorice apps</title>
+<meta name="description" content="What changed in each release of the Touch Licorice apps for the Xteink X4 Pro.">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/store.css">
+</head>
+<body class="store">
+<main class="wrap">
+  <h1>What&rsquo;s new</h1>
+  <p class="sub">Every release of the apps, newest first. Packages: <a href="{REPO}/releases/latest">the latest release</a>.</p>
+  <div class="prose">{''.join(parts)}</div>
+</main>
+<script type="module">
+  import {{ chrome }} from '../assets/site.js';
+  chrome('whats-new');
+  for (const t of document.querySelectorAll('time[datetime]')) {{
+    const d = new Date(t.getAttribute('datetime'));
+    if (!isNaN(d)) t.textContent = d.toLocaleString(undefined, {{ dateStyle: 'medium', timeStyle: 'short' }});
+  }}
+  const d = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (d && d.tagName === 'DETAILS') {{ d.open = true; d.scrollIntoView(); }}
+</script>
+</body>
+</html>
+'''
 
 
 _versions = {}
@@ -512,7 +601,14 @@ def build(out, packages):
             label = lambda tag, b, app=app, name=name: app_version(tag, app, b, name)
             f.write(app_page(e, intro(app), whats_new_html(changes.get(app, []), label)))
     entries.sort(key=lambda e: order[e['id']])
+    rels = releases(open(os.path.join(ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read(), upto)
+    os.makedirs(os.path.join(out, 'whats-new'), exist_ok=True)
+    with open(os.path.join(out, 'whats-new', 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(whats_new_page(rels, display_names(), release_date, {e['id'] for e in entries}))
+    latest = rels[0][0] if rels else None
+    latest_date = release_date(latest) if latest else None
     catalog = {
+        'release': {'tag': latest, 'date': latest_date.isoformat() if latest_date else None},
         'categories': [{'id': k, 'name': n} for k, n, _ in CATEGORIES],
         'apps': [{k: e[k] for k in ('id', 'app_id', 'name', 'version', 'api', 'firmware', 'summary', 'category',
                                     'file', 'size', 'store', 'devices', 'badge')} | {'summary': inline(e['summary'])} for e in entries],

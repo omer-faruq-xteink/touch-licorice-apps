@@ -231,6 +231,9 @@ body.store footer.site { border-top: 0; }
 .prose details.fold > .fold-body { padding: 0 16px 6px; }
 .prose details.fold details.fold { margin: 10px 0; }
 .prose ol { padding-left: 1.4em; }
+.prose details.release > summary { font-size: 1.1em; }
+.prose details.release .when { color: var(--muted); font-weight: 400; }
+.prose details.release h3 { font-size: 1em; margin: 14px 0 6px; }
 .prose ul.changes { list-style: none; padding: 0; margin: 0 0 8px; }
 .prose ul.changes li { margin: 0 0 12px; }
 .prose ul.changes .rel { display: inline-block; font-size: .78em; font-weight: 600; padding: 1px 7px; border-radius: 6px; border: 1px solid rgba(127, 127, 127, .45); margin-right: 4px; }
