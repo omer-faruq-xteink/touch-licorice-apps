@@ -540,7 +540,13 @@ show_event = function()
     rows[#rows + 1] = { { T.fill(c.label, vars), function() choose(nn) end } }
   end
   local safe = S.back_choice(state)
-  box(month_name(), { T.event_text(def, vars, rr) }, rows, nil, function() if safe then choose(safe) end end)
+  -- what each choice costs or risks, under the story (the buttons stay short enough to fit)
+  local lines = { T.event_text(def, vars, rr) }
+  for _, c in ipairs(S.offered(state)) do
+    local hint = S.choice_hint(c)
+    if hint then lines[#lines + 1] = T.fill(c.label, vars) .. ': ' .. hint .. '.' end
+  end
+  box(month_name(), lines, rows, nil, function() if safe then choose(safe) end end)
 end
 
 local function seed_now()

@@ -135,6 +135,21 @@ lvl = ev("""(function() local a = new(22); a.over = 'goal'; a.day = a.par + 6
 check('faster' in str(lvl[0]).lower() or 'best' in str(lvl[0]).lower(), f'why not the best (slow): {lvl[0]}')
 check('best' in str(lvl[1]).lower(), f'why not the best (a loss): {lvl[1]}')
 
+# each choice says what it costs or risks
+hn = ev("""(function() local function d(id) for _, x in ipairs(EL.defs) do if x.id == id then return x end end end
+  local out = {}
+  for _, id in ipairs({ 'crevasses_ahead', 'cook_feast', 'hungry_dogs', 'quarrel' }) do
+    local parts = {}
+    for _, c in ipairs(d(id).choices) do parts[#parts + 1] = S.choice_hint(c) end
+    out[#out + 1] = table.concat(parts, ' / ')
+  end
+  return table.concat(out, ' || ') end)()""")
+hp = str(hn).split(' || ')
+check('slower' in hp[0] and 'risky' in hp[0] and 'a day' in hp[0], f'crevasses: {hp[0]}')
+check('-8 food' in hp[1] and 'morale' in hp[1], f'feast: {hp[1]}')
+check('-1 dog' in hp[2], f'the dogs: {hp[2]}')
+check('risky' in hp[3], f'the quarrel: {hp[3]}')
+
 # texts: capital letters, plurals, a warm wind only when it is mild, the ending tells what was found
 w = def_of = None
 check(ev("(function() local st = new(6); st.weather = { kind = 'wind', temp = -30, wind = 30, left = 2 }; return EL.ctx.cond((function() for _, d in ipairs(EL.defs) do if d.id == 'warm_wind' then return d end end end)(), st) end)()") is False,
@@ -289,6 +304,17 @@ g3.tap_label('Route'); g3.tap_label('Map')
 key = ' '.join(g3.texts()).lower()
 check(all(w in key for w in ('goal', 'cairn', 'cache', 'depot', 'start', 'nunatak', 'crevasse')), f'the map key: {key}')
 check(g3.commands() < 900, g3.commands())
+
+g3.L.execute("local st = __TEST.api.state(); st.event = { id = 'cook_feast', vars = { name = 'x', cook = 'Per', cook_id = 1 } }") if False else None
+g4 = Game(HERE, stubs=TIMERS, before_load=lambda gm: gm.L.execute(f"package.path = [[{HERE.replace(os.sep, '/')}/?.lua;]] .. package.path"))
+g4.L.execute('icebound_seed = 24')
+g4.tap_label('New expedition'); g4.tap_label('Set out')
+for _ in range(3):
+    if g4.api.modal_open():
+        g4.api.modal_pick(1)
+g4.L.execute("local st = __TEST.api.state(); st.event = { id = 'crevasses_ahead', vars = { name = 'x', surveyor = 'Finn', surveyor_id = 1 } }")
+g4.api.show_event()
+check(any(s_.startswith('Go round: slower') for s_ in g4.texts()) and 'Go round' in g4.texts(), f'the box shows the hints: {g4.texts()}')
 
 for f in fails:
     print('FAIL', f)

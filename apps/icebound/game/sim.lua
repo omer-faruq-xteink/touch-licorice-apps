@@ -146,6 +146,30 @@ return function(Rng, G, R, TM, E, T, EL)
     return nil
   end
 
+  -- a short hint of what a choice costs or risks, from its effects (at most two parts), or nil
+  function S.choice_hint(c)
+    local parts = {}
+    local function add(s) if #parts < 2 then parts[#parts + 1] = s end end
+    if c.chance then add('risky') end
+    local e = c.ok or {}
+    if e.camp then add('a day') end
+    if e.route == 'around' then add('slower') end
+    for _, k in ipairs({ 'food', 'fuel', 'dogfood' }) do
+      local n = e[k]
+      if n and n ~= 0 then add((n > 0 and '+' or '') .. n .. ' ' .. (k == 'dogfood' and 'dog food' or k)) end
+    end
+    if e.dogs and e.dogs < 0 then add(e.dogs .. ' dog' .. (e.dogs == -1 and '' or 's')) end
+    if e.break_sledge then add('a sledge') end
+    if e.cond then add('harmful') end
+    if e.heal then add('heals') end
+    if e.reveal then add('shows the way') end
+    if e.freeze then add('freezes the lead') end
+    if e.extras then add(e.extras.samples and 'a sample' or 'a photograph') end
+    if e.mood and e.mood > 0 then add('morale') elseif e.mood and e.mood < 0 then add('morale -') end
+    if #parts == 0 then return nil end
+    return table.concat(parts, ', ')
+  end
+
   function S.answer(state, n, r)
     local def = S.event_def(state)
     if not def then state.event = nil; return '' end
