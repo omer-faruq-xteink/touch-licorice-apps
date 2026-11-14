@@ -538,5 +538,15 @@
     "status": "published",
     "live_version": "1.0.0",
     "submitted": "2026-11-14"
+  },
+  "riverstead": {
+    "name": "Riverstead",
+    "app_id": "riverstead",
+    "listing_id": "",
+    "project_id": "298e583e-2292-44f7-837f-dc4a34d6440f",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": "",
+    "submitted": "2026-11-14"
   }
 }
