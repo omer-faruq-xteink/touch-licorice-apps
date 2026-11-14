@@ -94,10 +94,10 @@
     "app_id": "hackernews",
     "listing_id": "u_8b569131c8c94c05830297a26ec72254",
     "project_id": "70abf652-40aa-4091-ac58-9dfa81e818a5",
-    "release_version": "1.3.0",
-    "status": "published",
+    "release_version": "1.3.1",
+    "status": "in review",
     "live_version": "1.3.0",
-    "submitted": "2026-11-13"
+    "submitted": "2026-11-14"
   },
   "hashi": {
     "name": "Hashi",
@@ -364,10 +364,10 @@
     "app_id": "weather",
     "listing_id": "u_4063da1ccd8d40aaa5d281008f635f3e",
     "project_id": "7d246638-873f-49ee-918b-80b6151ef871",
-    "release_version": "1.1.0",
-    "status": "published",
+    "release_version": "1.1.1",
+    "status": "in review",
     "live_version": "1.1.0",
-    "submitted": "2026-11-13"
+    "submitted": "2026-11-14"
   },
   "wikipedia": {
     "name": "Wikipedia",
@@ -414,10 +414,10 @@
     "app_id": "delve",
     "listing_id": "",
     "project_id": "f48f0c06-c0cf-4cec-a8c9-8c0523c558e6",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.0.1",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-11-01"
+    "submitted": "2026-11-14"
   },
   "chessplay": {
     "name": "Chess",
