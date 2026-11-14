@@ -94,5 +94,27 @@ check(real.get('xkcd', [[None]])[0][0] == 'v0.24.0', f'xkcd: {real.get("xkcd", [
 check(any('Back on the main screen' in b for _, b in real.get('klondike', [])), 'Klondike has the Back change')
 check(not any('Back on the main screen' in b for _, b in real.get('notebook', [])), 'Notebook does not')
 
+# every package a release's Files table lists as changed has a bullet of that release on its page:
+# a bullet whose lead (or, for one about many apps, its text) does not name the app reaches no page
+import re  # noqa: E402
+notes = open(os.path.join(S.ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read()
+listed, tag, in_files = {}, None, False
+for line in notes.split('\n'):
+    m = re.match(r'# (v\d+(?:\.\d+)*)\s*$', line)
+    if m:
+        tag, in_files = m.group(1), False
+    elif line.startswith('## '):
+        in_files = line.strip() == '## Files'
+    elif in_files and line.startswith('| `'):
+        cells = line.split('|')
+        for n in re.findall(r'`([\w-]+?)(?:\.xtapp)?`', cells[1]):
+            if os.path.isdir(os.path.join(S.ROOT, 'apps', n)):
+                listed.setdefault(tag, set()).add(n)
+for tag in sorted(listed, key=S.version_key, reverse=True):
+    if S.version_key(tag) < (0, 17, 0):          # older notes were written before the pages had What's new
+        continue
+    missing = sorted(n for n in listed[tag] if not any(t == tag for t, _ in real.get(n, [])))
+    check(not missing, f'{tag}: every changed package has its bullet ({len(listed[tag])} packages){" missing " + str(missing) if missing else ""}')
+
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 sys.exit(1 if fails else 0)
