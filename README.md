@@ -39,6 +39,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Port Wren** | a detective in a 1920s harbour town: every murder generated and proven solvable; question suspects, catch the lie, name culprit, motive and means; a career in a town that remembers |
 | **Riverstead** | a village in a river valley for ten years: a new valley every game, buildings whose place matters, named villagers, seasons and events, four ways to grow and their endings |
+| **Icebound** | a polar expedition of six, one day a turn: a new hidden map and mission every time, routes through crevasses and pressure ice, weather, a team with skills and moods, four endings |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
@@ -270,6 +271,15 @@ named villagers marry, have children, grow old and leave; harvests, winters, flo
 strangers bring choices. The village grows into a market town, the granary of the valley, a craftsmen's
 village or a pilgrims' rest, each with its own ending; three difficulties; a chronicle of past villages.
 [More](apps/riverstead/README.md)
+
+### Icebound
+
+A team of six across an uncharted polar region, one day a turn. Every expedition has a new map, hidden
+until seen, and a new mission (a crossing, the pole and back, a lost party to find, a coast to survey);
+pick the route through crevasses, pressure ridges and open water, set the pace and rations, and answer
+what each morning brings. The navigator, the doctor, the dog driver and the rest each matter; nobody
+dies without warning; the end comes at the goal, turned back, rescued or lost; a survivor may return as
+a veteran. [More](apps/icebound/README.md)
 
 ### Tarot
 
@@ -623,6 +633,15 @@ python -I apps/riverstead/test_people.py
 python -I apps/riverstead/test_events.py
 python -I apps/riverstead/test_sim.py
 python -I apps/riverstead/test_balance.py
+python -I apps/icebound/test_icebound.py
+python -I apps/icebound/test_region.py
+python -I apps/icebound/test_rules.py
+python -I apps/icebound/test_team.py
+python -I apps/icebound/test_events.py
+python -I apps/icebound/test_sim.py
+python -I apps/icebound/test_balance.py
+python -I apps/icebound/test_fixes.py
+python -I apps/icebound/test_studio.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py

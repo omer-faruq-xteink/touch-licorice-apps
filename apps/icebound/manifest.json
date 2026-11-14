@@ -1,0 +1,10 @@
+{
+  "app_id": "icebound",
+  "display_name": "Icebound",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "Lead six people across an uncharted polar region, one day a turn: a new map and mission every expedition, routes through crevasses and pressure ice, weather, a team with skills and moods, events, and four endings.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}

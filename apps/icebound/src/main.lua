@@ -1,0 +1,979 @@
+-- Icebound for XTOS Licorice (uses tools/gamekit): a team of six across an uncharted polar region, one
+-- day a turn. The region is made anew from a seed every expedition and hidden until seen; the mission
+-- changes; the weather comes in spells; the team has skills, flaws, moods and memories; events come
+-- each morning; and the expedition ends at the goal, turned back, rescued or lost.
+--
+-- The game logic lives in package files under game/ (loaded with _G.require, since the bundle's local
+-- require shadows the host's). expedition.txt keeps the game, chronicle.txt the finished ones,
+-- prefs.txt the settings, the last mission and the veteran. The map is drawn into offscreen layers
+-- (in chunks: the reader keeps about 1024 commands per layer:draw call) after input, never in on_draw.
+
+local W, H = kit.W, kit.H
+local BTN_Y, BTN_H = 724, 60
+
+local function mod(name) return (_G.require('game.' .. name)) end
+local Rn, Save = mod('rng'), mod('save')
+
+local screen = 'title'
+local ERR = nil
+local hits = {}                  -- tap regions of the last frame: { x, y, w, h, fn }
+local state = nil
+local prefs = { diff = 'normal' }
+local saved = nil                -- the saved game: nil (none), 'playing', 'over' or 'bad'
+local who = nil                  -- the person on the person card
+local after_input = function() end    -- the map layers are rebuilt here (set by the game screens)
+
+------------------------------------------------------------------ drawing helpers
+
+local function hit(x, y, w, h, fn) hits[#hits + 1] = { x = x, y = y, w = w, h = h, fn = fn } end
+
+local function button(gg, x, y, w, h, label, fn, opts)
+  kit.button(gg, x, y, w, h, label, opts)
+  hit(x, y, w, h, fn)
+end
+
+local function bottom_row(gg, list, opts)
+  local n, gap = #list, 8
+  local bw = (W - 32 - gap * (n - 1)) // n
+  for k, b in ipairs(list) do button(gg, 16 + (k - 1) * (bw + gap), BTN_Y, bw, BTN_H, b[1], b[2], opts) end
+end
+
+local function fit(s, f, w)
+  s = tostring(s)
+  if kit.width(f, s) <= w then return s end
+  while #s > 1 and kit.width(f, s .. '...') > w do s = kit.drop_last(s) end
+  return s .. '...'
+end
+
+local function header(gg, title, sub)
+  local f = kit.font('large')
+  gg:text(16, 10, fit(title, f, W - 32), { font = f })
+  if sub then gg:text(16, 50, fit(sub, kit.font('small'), W - 32), { font = kit.font('small') }) end
+  gg:line(16, 80, W - 16, 80)
+end
+
+local function para(gg, s, x, y, y_max, fname)
+  fname = fname or 'small'
+  local lh = kit.line_h(fname) + 2
+  for _, l in ipairs(kit.wrap(s, fname, W - x - 16)) do
+    if y + lh > y_max then return y end
+    gg:text(x, y, l, { font = kit.font(fname) })
+    y = y + lh
+  end
+  return y
+end
+
+-- cancel: a tap outside the box or Back; back: Back only (an event box ignores taps outside it)
+local function box(title, lines, rows, cancel, back)
+  kit.show({ title = title, lines = lines, rows = rows, cancel = cancel, back = back })
+end
+
+------------------------------------------------------------------ saving
+
+local function read_saved()
+  local s = kit.read('expedition.txt')
+  if type(s) ~= 'string' or #s <= 2 then saved = nil; return end
+  local ok, st = pcall(Save.decode, s)
+  if not ok or type(st) ~= 'table' or not st.region then saved = 'bad'; return end
+  saved = st.over and 'over' or 'playing'
+end
+
+local function has_game() return saved ~= nil end
+
+local function save()
+  kit.write('prefs.txt', Save.encode(prefs))
+  if state then kit.write('expedition.txt', Save.encode(state)); saved = state.over and 'over' or 'playing' end
+end
+
+------------------------------------------------------------------ screens
+
+local SCREENS = {}
+
+local HOW = {
+  'Lead a team of six across an uncharted polar region, one day a turn. The map shows only what you '
+    .. 'have seen; weather and a good navigator change how far you see.',
+  'Each day: set the route on the map (or keep the old one), the pace and the rations, then March. '
+    .. 'Flat ice is fast; sastrugi, pressure ridges and slopes are slow; crevasses are quick but '
+    .. 'dangerous; open water and rock bar the way.',
+  'Food, fuel, dog food, dogs and sledges run down. The cold deepens and the season is short. Every '
+    .. 'morning may bring an event to answer.',
+  'The expedition ends at the goal, turned back with everyone alive, rescued by radio, or lost. Each '
+    .. 'expedition has a new map, a new mission and a new team.',
+}
+
+local function how_to_play() box('How to play', HOW, { { { 'Close', kit.close } } }, kit.close) end
+
+local new_expedition, resume_game     -- set by the game screens
+
+SCREENS.title = {
+  draw = function(gg)
+    gg:text(16, 60, 'Icebound', { font = kit.font('large') })
+    gg:text(16, 104, 'Six people, one crossing of the ice', { font = kit.font('small') })
+    gg:line(16, 140, W - 16, 140)
+    local list = {}
+    if has_game() then list[#list + 1] = { saved == 'over' and 'See the ending' or 'Continue', function() resume_game() end } end
+    list[#list + 1] = { 'New expedition', function() new_expedition() end }
+    list[#list + 1] = { 'Chronicle', function() screen = 'chronicle' end }
+    list[#list + 1] = { 'Settings', function() screen = 'settings' end }
+    list[#list + 1] = { 'How to play', how_to_play }
+    for k, b in ipairs(list) do button(gg, 60, 180 + (k - 1) * 84, W - 120, 64, b[1], b[2]) end
+  end,
+  back = function() return false end,
+}
+
+------------------------------------------------------------------ the game modules
+
+local T, G, R, TM, E, EL, S
+local function load_game_modules()
+  if S then return end
+  T = mod('text'); G = mod('region')(Rn); R = mod('rules')(Rn, G); TM = mod('team')(Rn, R, T)
+  E = mod('events'); EL = mod('event_list')(Rn, R, TM, T, G); S = mod('sim')(Rn, G, R, TM, E, T, EL)
+end
+
+local MAP_X, MAP_Y, TILE, VIEW_ROWS = 20, 84, 40, 6
+local layer, layer_ok, map_dirty, layer_top = nil, false, true, nil
+local info = nil                 -- what the hub shows that costs path searches: { warnings, tiles }
+local draft = nil                -- the route being drawn in route mode
+local route_msg = nil
+local open_map                   -- the whole-region map (set below)
+
+local function extend() pcall(function() ctx.budget:extend() end) end
+
+------------------------------------------------------------------ the view and the map
+
+-- the first map row in the window: the party in the fourth row, clamped at the region's edges
+local function view_top()
+  local _, y = G.xy(state.pos)
+  local ahead = (state.route and state.route[#state.route]) or (S and S.target(state))
+  local south = ahead and select(2, G.xy(ahead)) > y
+  return math.max(1, math.min(G.H - VIEW_ROWS + 1, y - (south and 1 or 3)))
+end
+
+-- tile i's top left on screen, or nil when it is outside the window
+local function tile_xy(i)
+  local x, y = G.xy(i)
+  local top = view_top()
+  if y < top or y >= top + VIEW_ROWS then return nil end
+  return MAP_X + (x - 1) * TILE, MAP_Y + (y - top) * TILE
+end
+
+local function tri(g, x, y, s, fill) g:polygon({ x, y + s, x + s // 2, y, x + s, y + s }, { fill = fill }) end
+
+local function is_in(list, i) for _, j in ipairs(list) do if j == i then return true end end return false end
+
+-- a known tile's symbol (1-bit shapes, no text); x, y its top left
+local function draw_tile(g, i, x, y)
+  local reg = state.region
+  local t = reg.t[i]
+  if t == 'sastrugi' then
+    for k = 0, 2 do g:line(x + 6 + k * 10, y + 30, x + 14 + k * 10, y + 12) end
+  elseif t == 'ridge' then
+    g:polyline({ x + 4, y + 30, x + 12, y + 12, x + 20, y + 28, x + 28, y + 10, x + 36, y + 28 }, { line_width = 2 })
+  elseif t == 'crevasse' then
+    g:polyline({ x + 8, y + 6, x + 14, y + 16, x + 10, y + 24, x + 16, y + 34 }, { line_width = 2 })
+    g:polyline({ x + 26, y + 8, x + 30, y + 18, x + 24, y + 26, x + 30, y + 34 }, {})
+  elseif t == 'water' then
+    local frozen = state.frozen[i]
+    for k = 1, 2 do
+      local yy = y + k * 13
+      g:polyline({ x + 4, yy, x + 14, yy - 4, x + 26, yy + 4, x + 36, yy }, { line_width = frozen and 1 or 2 })
+    end
+  elseif t == 'rock' then
+    tri(g, x + 8, y + 8, 24, true)
+  elseif t == 'slope' then
+    if reg.up[i] then g:polyline({ x + 10, y + 26, x + 20, y + 14, x + 30, y + 26 }, { line_width = 2 })
+    else g:line(x + 10, y + 20, x + 30, y + 20) end
+  end
+  if i == reg.goal then
+    g:line(x + 12, y + 6, x + 12, y + 34, { line_width = 2 })
+    g:polygon({ x + 13, y + 6, x + 30, y + 11, x + 13, y + 16 }, { fill = true })
+  end
+  if is_in(reg.targets, i) then g:circle(x + 20, y + 20, 9, { line_width = state.found[i] and 1 or 3 }) end
+  if is_in(reg.cairns, i) then g:rect(x + 14, y + 22, 12, 8, {}); g:rect(x + 16, y + 14, 8, 8, {}) end
+  if reg.caches[i] then g:rect(x + 12, y + 12, 16, 16, {}); g:line(x + 12, y + 12, x + 28, y + 28) end
+  if state.depots[i] then g:rect(x + 12, y + 12, 16, 16, { fill = true }) end
+  if i == reg.start and i ~= reg.goal then g:rect(x + 15, y + 15, 10, 10, { line_width = 2 }) end
+end
+
+local function draw_unknown(g, x, y)
+  for k = 0, 3 do g:line(x + k * 10, y + 39, x + 39, y + k * 10) end
+end
+
+-- the window into its layer, in two calls of three rows each
+local function rebuild_layer()
+  if not layer_ok or not state then return end
+  local top = view_top()
+  for k = 0, 1 do
+    local ok = pcall(function()
+      local _, why = layer:draw(function(g)
+        if k == 0 then g:clear(0) end
+        for row = k * 3, k * 3 + 2 do
+          for x = 1, G.W do
+            local i = G.idx(x, top + row)
+            local px, py = (x - 1) * TILE, row * TILE
+            if state.seen[i] then draw_tile(g, i, px, py) else draw_unknown(g, px, py) end
+          end
+        end
+        if k == 0 then g:rect(0, 0, 440, 240, {}) end
+      end)
+      if why then error(why) end
+    end)
+    if not ok then layer_ok = false; return end
+  end
+  layer_top = top
+  map_dirty = false
+end
+
+local function ensure_layer()
+  if layer then return end
+  local ok, l = pcall(function() return ctx.layers and ctx.layers:create(440, 240) end)
+  if ok and l then layer, layer_ok = l, true else layer, layer_ok = nil, false end
+end
+
+local function mark_map() map_dirty = true end
+
+-- without layers: a mark per known tile that isn't flat, one line per unknown tile
+local function draw_map_plain(gg)
+  local top = view_top()
+  gg:rect(MAP_X, MAP_Y, 440, 240, {})
+  for row = 0, VIEW_ROWS - 1 do
+    for x = 1, G.W do
+      local i = G.idx(x, top + row)
+      local px, py = MAP_X + (x - 1) * TILE, MAP_Y + row * TILE
+      if not state.seen[i] then gg:line(px + 4, py + 36, px + 36, py + 4)
+      else
+        local t = state.region.t[i]
+        if t == 'rock' then tri(gg, px + 10, py + 10, 20, true)
+        elseif t == 'water' then gg:line(px + 4, py + 20, px + 36, py + 20, { line_width = state.frozen[i] and 1 or 3 })
+        elseif t == 'ridge' then gg:polyline({ px + 6, py + 28, px + 20, py + 12, px + 34, py + 28 }, {})
+        elseif t == 'crevasse' then gg:line(px + 14, py + 6, px + 24, py + 34, { line_width = 2 })
+        elseif t == 'sastrugi' then gg:line(px + 10, py + 28, px + 30, py + 14)
+        elseif t == 'slope' then gg:line(px + 10, py + 24, px + 30, py + 24) end
+        if i == state.region.goal then gg:rect(px + 12, py + 6, 6, 28, { fill = true }) end
+      end
+    end
+  end
+end
+
+-- the party, the route (or the draft) and the map
+local function draw_map(gg, route)
+  if layer_ok and not map_dirty and layer_top == view_top() then gg:image(layer, MAP_X, MAP_Y) else draw_map_plain(gg) end
+  local px, py = tile_xy(state.pos)
+  local pts = { px + 20, py + 20 }
+  for _, i in ipairs(route or {}) do
+    local x, y = tile_xy(i)
+    if not x then break end
+    pts[#pts + 1] = x + 20; pts[#pts + 1] = y + 20
+  end
+  if #pts >= 4 then gg:polyline(pts, { line_width = 3 }) end
+  gg:circle(px + 20, py + 20, 9, { fill = true })
+end
+
+------------------------------------------------------------------ what the hub shows
+
+local function refresh_info()
+  if not state or state.over then return end
+  extend()
+  local tiles = S.tiles_left(state)
+  info = { warnings = S.warnings(state, tiles), tiles = tiles }
+end
+
+local function goal_text()
+  local tiles = info and info.tiles or 0
+  local reg = state.region
+  if state.mission == 'survey' then
+    local n = 0
+    for _, t in ipairs(reg.targets) do if state.found[t] then n = n + 1 end end
+    if n < #reg.targets then return n .. ' of ' .. #reg.targets .. ' points' end
+  elseif state.mission == 'lost' and not state.found[reg.targets[1]] then
+    return 'camp not found'
+  end
+  return (tiles * S.KM) .. ' km to go'
+end
+
+local function weather_text()
+  local w = state.weather
+  local k = w.kind:gsub('^%l', string.upper)
+  return k .. ' · ' .. w.temp .. ' °C · wind ' .. w.wind
+end
+
+local function month_name() return 'Day ' .. state.day .. ' of ' .. state.days end
+
+------------------------------------------------------------------ the day
+
+local show_event                  -- set below
+
+local function day_report(rep, d)
+  local lines = {}
+  if rep.moved and rep.moved > 0 then lines[#lines + 1] = 'You covered ' .. rep.moved * S.KM .. ' km.'
+  elseif state.climbed == d then lines[#lines + 1] = 'From the top of the nunatak you see far.'
+  elseif state.radio == 'called' then lines[#lines + 1] = 'You wait for the plane.'
+  elseif state.pace == 'rest' or state.camp_day == d then lines[#lines + 1] = 'The team rests in camp.'
+  else lines[#lines + 1] = 'Hard going: no new ground today.' end
+  for k = 1, math.min(6, #(rep.lines or {})) do lines[#lines + 1] = (rep.lines[k]:gsub('^%l', string.upper)) end
+  if rep.hunger then lines[#lines + 1] = 'There was not enough food.' end
+  if rep.cold then lines[#lines + 1] = 'There was no fuel for the stove.' end
+  return lines
+end
+
+local record_end                 -- set below
+
+local function after_march(rep, d)
+  local lines = day_report(rep, d)
+  if state.over then
+    screen = 'end'
+    record_end()
+    save()
+    if #lines > 0 then box('Day ' .. d, lines, { { { 'Go on', kit.close } } }, kit.close) end
+    return
+  end
+  S.morning(state, Rn.new(Rn.mix(state.seed, 200000 + state.day)))
+  refresh_info()
+  save()
+  box('Day ' .. d, lines, { { { 'Go on', function() kit.close(); show_event() end } } }, function() kit.close(); show_event() end)
+end
+
+local function march()
+  extend()
+  local d = state.day
+  local rep = S.march(state, Rn.new(Rn.mix(state.seed, 100000 + d)))
+  mark_map()
+  after_march(rep, d)
+end
+
+show_event = function()
+  if not state or not state.event then return end
+  local def = S.event_def(state)
+  if not def then state.event = nil; return end
+  local vars = state.event.vars
+  local rr = Rn.new(Rn.mix(state.seed, 300000 + state.day))
+  -- the buttons name people by their first name (names here are one word already)
+  local function choose(nn)
+    kit.close()
+    local text = S.answer(state, nn, Rn.new(Rn.mix(state.seed, 400000 + state.day * 8 + nn)))
+    mark_map()
+    refresh_info()
+    save()
+    if text ~= '' then box('', { text }, { { { 'Go on', kit.close } } }, kit.close) end
+  end
+  local rows = {}
+  for n, c in ipairs(S.offered(state)) do
+    local nn = n
+    rows[#rows + 1] = { { T.fill(c.label, vars), function() choose(nn) end } }
+  end
+  local safe = S.back_choice(state)
+  box(month_name(), { T.event_text(def, vars, rr) }, rows, nil, function() if safe then choose(safe) end end)
+end
+
+local function seed_now()
+  local s = rawget(_G, 'icebound_seed')
+  if s then return s end
+  local t = math.floor(kit.now_ms() or 1) % 100000
+  return t * 7919 + math.random(1, 1000000000)
+end
+
+local function start_game()
+  extend()
+  load_game_modules()
+  state = S.new(seed_now(), prefs.diff or 'normal', { last_mission = prefs.last_mission, veteran = prefs.take_veteran and prefs.veteran or nil })
+  prefs.take_veteran = nil
+  ensure_layer()
+  mark_map()
+  refresh_info()
+  save()
+  screen = 'start'
+  rebuild_layer()
+end
+
+local function continue_game()
+  extend()
+  load_game_modules()
+  local ok, st = pcall(Save.decode, kit.read('expedition.txt'))
+  if not ok or type(st) ~= 'table' or not st.region then
+    state = nil
+    box('Continue', { 'The saved expedition could not be read. Start a new one instead.' }, { { { 'Close', kit.close } } }, kit.close)
+    return
+  end
+  state = st
+  ensure_layer()
+  mark_map()
+  rebuild_layer()
+  refresh_info()
+  screen = state.over and 'end' or 'hub'
+  if state.over then record_end() end
+  if not state.over then show_event() end
+end
+
+resume_game = continue_game
+
+------------------------------------------------------------------ the hub
+
+local RES = { { 'Food', function() local d = R.days_left(state).food; return d .. ' days' end },
+              { 'Fuel', function() local d = R.days_left(state).fuel; return state.sup.fuel .. ' (' .. d .. ' d)' end },
+              { 'Dogs', function() return state.sup.dogs .. ' of ' .. (state.start_dogs or 12) end },
+              { 'Sledges', function() return state.sup.sledges .. ((state.broken or 0) > 0 and ' +1 broken' or '') end } }
+
+local function hub_top(gg)
+  local f = kit.font('large')
+  gg:text(16, 10, fit(month_name(), f, W - 32), { font = f })
+  local sm = kit.font('small')
+  local right = goal_text()
+  local rw = kit.width(sm, right)
+  gg:text(W - 16 - rw, 50, right, { font = sm })
+  gg:text(16, 50, fit(weather_text(), sm, W - 48 - rw), { font = sm })
+  gg:line(16, 80, W - 16, 80)
+end
+
+local function hub_body(gg, panel)
+  local sm = kit.font('small')
+  -- supplies
+  local y = MAP_Y + 246
+  local cw = (W - 32) // 4
+  for k, r in ipairs(RES) do
+    local x = 16 + (k - 1) * cw
+    gg:text(x, y, r[1], { font = sm })
+    gg:text(x, y + 20, fit(r[2](), sm, cw - 6), { font = sm })
+  end
+  hit(16, y - 4, W - 32, 46, function() screen = 'supplies' end)
+  y = y + 44
+  gg:line(16, y, W - 16, y)
+  y = y + 4
+  -- the team
+  for id = 1, state.next_id - 1 do
+    local p = state.team[id]
+    if p then
+      gg:text(16, y, fit(p.name, sm, 90), { font = sm })
+      gg:text(110, y, fit(T.ROLE_NAME[p.role], sm, 140), { font = sm })
+      local bx, bw = 256, 80
+      gg:rect(bx, y + 5, bw, 12, {})
+      if p.alive and p.health > 0 then gg:rect(bx, y + 5, bw * p.health // 100, 12, { fill = true }) end
+      local word = T.state_word(p)
+      gg:text(W - 16 - kit.width(sm, word), y, word, { font = sm })
+      local pid = id
+      hit(16, y - 2, W - 32, 26, function() who = pid; screen = 'person' end)
+      y = y + 26
+    end
+  end
+  -- the warnings
+  local warn = info and info.warnings or {}
+  local wy = y + 4
+  if #warn > 0 then
+    local ls = kit.wrap('! ' .. table.concat(warn, ' · '), 'small', W - 32)
+    for k = 1, math.min(2, #ls) do
+      local l = ls[k]
+      if k == 2 and #ls > 2 then l = fit(l .. ' ...', sm, W - 32) end
+      gg:text(16, wy, l, { font = sm })
+      wy = wy + kit.line_h('small') + 2
+    end
+  end
+  panel(gg, math.max(y + 8, wy + 4))
+end
+
+SCREENS.hub = {
+  draw = function(gg)
+    hub_top(gg)
+    draw_map(gg, state.route)
+    hub_body(gg, function(g2, py)
+      if #(state.route or {}) == 0 then para(g2, 'No route set: tap Route to plan the way ahead.', 16, py, py + 46) end
+    end)
+    local sm = { font = 'small' }
+    bottom_row(gg, { { 'Route', function() draft = {}; for k, i in ipairs(state.route or {}) do draft[k] = i end; route_msg = nil; screen = 'route' end },
+                     { 'Pace', function()
+                         local rows = {}
+                         for _, p in ipairs({ { 'Rest (camp)', 'rest' }, { 'Steady', 'steady' }, { 'Hard', 'hard' } }) do
+                           local key = p[2]
+                           rows[#rows + 1] = { { p[1] .. (state.pace == key and '  (now)' or ''), function() state.pace = key; kit.close(); save() end } }
+                         end
+                         box('Pace', { 'Hard covers more but tires people and dogs; a camp day rests everyone.' }, rows, kit.close)
+                       end },
+                     { 'Rations', function()
+                         local rows = {}
+                         for _, p in ipairs({ { 'Short', 'short' }, { 'Normal', 'normal' }, { 'Full', 'full' } }) do
+                           local key = p[2]
+                           rows[#rows + 1] = { { p[1] .. (state.ration == key and '  (now)' or ''), function() state.ration = key; kit.close(); refresh_info(); save() end } }
+                         end
+                         box('Rations', { 'Short saves food but costs health and mood; full helps recovery.' }, rows, kit.close)
+                       end },
+                     { state.radio == 'called' and 'Wait' or 'March', march } }, sm)
+  end,
+  back = function() screen = 'title'; return true end,
+}
+
+------------------------------------------------------------------ route mode
+
+local function route_cost_text()
+  if #draft == 0 then return 'No route yet.' end
+  local pts, kinds = 0, {}
+  local prev = state.pos
+  for _, i in ipairs(draft) do
+    pts = pts + (R.cost(state, i, prev) or 0)
+    local t = state.region.t[i]
+    if t == 'crevasse' or t == 'ridge' or t == 'sastrugi' then kinds[t] = true end
+    prev = i
+  end
+  local days = (pts + R.PACE.steady - 1) // R.PACE.steady
+  local parts = {}
+  for _, k in ipairs({ 'crevasse', 'ridge', 'sastrugi' }) do
+    if kinds[k] then parts[#parts + 1] = ({ crevasse = 'crevasses', ridge = 'pressure ridges', sastrugi = 'sastrugi' })[k] end
+  end
+  return #draft .. ' tile' .. (#draft == 1 and '' or 's') .. ', about ' .. days .. ' day' .. (days == 1 and '' or 's')
+    .. ' at a steady pace' .. (#parts > 0 and ('; ' .. table.concat(parts, ', ')) or '')
+end
+
+local function next_to_rock()
+  for _, j in ipairs(G.around(state.pos)) do if state.region.t[j] == 'rock' then return true end end
+  return false
+end
+
+SCREENS.route = {
+  draw = function(gg)
+    hub_top(gg)
+    draw_map(gg, draft)
+    local y = MAP_Y + 250
+    para(gg, route_msg or 'Tap the ice to plan the route, tile by tile or to a far tile you have seen.', 16, y, y + 46)
+    y = y + 54
+    para(gg, route_cost_text(), 16, y, y + 46)
+    y = y + 60
+    local bw = (W - 32 - 24) // 4
+    local list = { { 'Done', function()
+                     local ok, why = S.set_route(state, draft)
+                     if ok then screen = 'hub'; save() else route_msg = why:gsub('^%l', string.upper) .. '.' end
+                   end },
+                   { 'Clear', function() draft = {}; route_msg = nil end },
+                   { 'Map', function() open_map('route') end },
+                   { 'Cancel', function() screen = 'hub' end } }
+    for k, b in ipairs(list) do button(gg, 16 + (k - 1) * (bw + 8), y, bw, 56, b[1], b[2], { font = 'small' }) end
+    if next_to_rock() then
+      button(gg, 16, y + 70, W - 32, 56, 'Climb the nunatak (a day)', function()
+        box('Climb the nunatak?', { 'The day is spent climbing; from the top you see far.' },
+          { { { 'Climb', function() kit.close(); S.climb(state); mark_map(); screen = 'hub'; march() end }, { 'Cancel', kit.close } } }, kit.close)
+      end, { font = 'small' })
+    end
+  end,
+  tap_area = function(x, y)
+    if y < MAP_Y or y >= MAP_Y + VIEW_ROWS * TILE or x < MAP_X or x >= MAP_X + 440 then return false end
+    local tx, ty = (x - MAP_X) // TILE + 1, (y - MAP_Y) // TILE + view_top()
+    local i = G.idx(tx, ty)
+    route_msg = nil
+    for k, j in ipairs(draft) do
+      if j == i then for n = #draft, k + 1, -1 do draft[n] = nil end; return true end
+    end
+    if not state.seen[i] then route_msg = 'You can only plan over ice you have seen.'; return true end
+    local last = draft[#draft] or state.pos
+    if not R.cost(state, i, last) then route_msg = 'That ice cannot be crossed.'; return true end
+    local lx, ly = G.xy(last)
+    if math.max(math.abs(lx - tx), math.abs(ly - ty)) == 1 then draft[#draft + 1] = i; return true end
+    -- a far tile: a new route from where the party stands
+    local p = G.path(state.region, state.pos, i, function(j) return R.cost(state, j) end, state.seen)
+    if not p then route_msg = 'There is no known way there.'; return true end
+    draft = {}
+    for k = 2, #p do draft[#draft + 1] = p[k] end
+    return true
+  end,
+  back = function() screen = 'hub'; return true end,
+}
+
+------------------------------------------------------------------ the start
+
+local MISSION_TEXT = {
+  crossing = 'Cross the region from the coast where you land to the station on the far side.',
+  pole = 'Reach the pole and come back to base. Depots left on the way out wait for the way home.',
+  lost = 'Find the last camp of a party lost on the ice (their cairns point the way), then reach the pick-up point.',
+  survey = 'Fix four survey points along the coast, then reach the ship before the season ends.',
+}
+local CHAR_SHORT = { coast = 'coast', plateau = 'plateau', glacier = 'glacier', pack = 'pack ice' }
+local CHAR_TEXT = { coast = 'a broken coast of open leads', plateau = 'a high plateau of wind-cut snow',
+  glacier = 'a glacier split by crevasses', pack = 'a sea of pressure ice' }
+
+SCREENS.start = {
+  draw = function(gg)
+    header(gg, S.MISSION_NAME[state.mission]:gsub('^%l', string.upper), state.days .. ' days of season · ' .. state.diff)
+    local y = para(gg, MISSION_TEXT[state.mission] .. ' The region: ' .. CHAR_TEXT[state.region.char] .. '.', 16, 92, 230, 'small') + 8
+    gg:text(16, y, 'The team', { font = kit.font('medium') })
+    y = y + 34
+    local sm = kit.font('small')
+    for id = 1, state.next_id - 1 do
+      local p = state.team[id]
+      if p then
+        -- two lines each: the name and role, then the level, the trait and a veteran's mark
+        gg:text(16, y, fit(p.name, sm, 130), { font = sm })
+        gg:text(160, y, fit(T.ROLE_NAME[p.role], sm, W - 176), { font = sm })
+        gg:text(160, y + 22, fit('level ' .. p.lv .. ', ' .. p.trait .. (p.veteran and ', veteran' or ''), sm, W - 176), { font = sm })
+        y = y + 48
+      end
+    end
+    y = y + 8
+    local s = state.sup
+    para(gg, 'Food ' .. s.food .. ', fuel ' .. s.fuel .. ', dog food ' .. s.dogfood .. ', ' .. s.dogs .. ' dogs, ' .. s.sledges .. ' sledges, one radio call.', 16, y, y + 60)
+    bottom_row(gg, { { 'Set out', function() screen = 'hub'; show_event() end } })
+  end,
+  back = function() screen = 'title'; return true end,
+}
+
+new_expedition = function()
+  local function go()
+    local v = prefs.veteran
+    if v then
+      box('A veteran', { v.name .. ', the ' .. T.ROLE_NAME[v.role] .. ', ' .. (v.mem and v.mem[1] or 'came back') .. '. Take ' .. v.name .. ' again?' },
+        { { { 'Take ' .. v.name .. ' again', function() kit.close(); prefs.take_veteran = true; start_game() end } },
+          { { 'A new team', function() kit.close(); prefs.take_veteran = nil; start_game() end } } },
+        kit.close)
+    else start_game() end
+  end
+  if saved == 'playing' then
+    box('A new expedition?', { 'The expedition under way will be lost.' },
+      { { { 'Start again', function() kit.close(); go() end }, { 'Cancel', kit.close } } }, kit.close)
+  else go() end
+end
+
+------------------------------------------------------------------ the whole map
+
+local MAP_TILE = 20
+local MAPX, MAPY = (W - 11 * MAP_TILE) // 2, 92
+local big, big_ok, big_dirty = nil, false, true
+local map_from = 'hub'
+
+local function small_tile(g, i, x, y, plain)
+  local reg = state.region
+  if not state.seen[i] then g:line(x + 2, y + 18, x + 18, y + 2); return end
+  local t = reg.t[i]
+  if t == 'rock' then tri(g, x + 4, y + 4, 12, true)
+  elseif t == 'water' then g:line(x + 2, y + 10, x + 18, y + 10, { line_width = state.frozen[i] and 1 or 3 })
+  elseif t == 'ridge' then g:polyline({ x + 3, y + 15, x + 10, y + 5, x + 17, y + 15 }, {})
+  elseif t == 'crevasse' then g:line(x + 7, y + 3, x + 13, y + 17, { line_width = 2 })
+  elseif t == 'sastrugi' then g:line(x + 5, y + 15, x + 15, y + 6)
+  elseif t == 'slope' then g:line(x + 4, y + 12, x + 16, y + 12) end
+  if not plain then
+    if i == reg.goal then g:rect(x + 6, y + 2, 4, 16, { fill = true }) end
+    if is_in(reg.targets, i) then g:circle(x + 10, y + 10, 5, {}) end
+    if is_in(reg.cairns, i) then g:rect(x + 7, y + 7, 6, 6, {}) end
+    if state.depots[i] then g:rect(x + 6, y + 6, 8, 8, { fill = true }) end
+  elseif i == reg.goal then g:rect(x + 6, y + 2, 4, 16, { fill = true }) end
+end
+
+local function rebuild_big()
+  if not big_ok then return end
+  for k = 0, 3 do
+    local ok = pcall(function()
+      local _, why = big:draw(function(g)
+        if k == 0 then g:clear(0) end
+        for row = k * 7 + 1, k * 7 + 7 do
+          for x = 1, G.W do small_tile(g, G.idx(x, row), (x - 1) * MAP_TILE, (row - 1) * MAP_TILE) end
+        end
+        if k == 0 then g:rect(0, 0, 11 * MAP_TILE, 28 * MAP_TILE, {}) end
+      end)
+      if why then error(why) end
+    end)
+    if not ok then big_ok = false; return end
+  end
+  big_dirty = false
+end
+
+open_map = function(from)
+  map_from = from
+  if not big then
+    local ok, l = pcall(function() return ctx.layers and ctx.layers:create(11 * MAP_TILE, 28 * MAP_TILE) end)
+    if ok and l then big, big_ok = l, true end
+  end
+  big_dirty = true
+  screen = 'map'
+end
+
+SCREENS.map = {
+  draw = function(gg)
+    header(gg, 'The region', goal_text())
+    if big_ok and not big_dirty then gg:image(big, MAPX, MAPY)
+    else
+      gg:rect(MAPX, MAPY, 11 * MAP_TILE, 28 * MAP_TILE, {})
+      for i = 1, G.W * G.H do
+        local x, y = G.xy(i)
+        if state.seen[i] then small_tile(gg, i, MAPX + (x - 1) * MAP_TILE, MAPY + (y - 1) * MAP_TILE, true) end
+      end
+    end
+    local pts = {}
+    for _, i in ipairs((map_from == 'route' and draft) or state.route or {}) do
+      local x, y = G.xy(i)
+      pts[#pts + 1] = MAPX + (x - 1) * MAP_TILE + 10; pts[#pts + 1] = MAPY + (y - 1) * MAP_TILE + 10
+    end
+    local px, py = G.xy(state.pos)
+    if #pts >= 2 then table.insert(pts, 1, MAPY + (py - 1) * MAP_TILE + 10); table.insert(pts, 1, MAPX + (px - 1) * MAP_TILE + 10); gg:polyline(pts, { line_width = 2 }) end
+    gg:circle(MAPX + (px - 1) * MAP_TILE + 10, MAPY + (py - 1) * MAP_TILE + 10, 6, { fill = true })
+    if map_from == 'route' then para(gg, 'Tap a tile you have seen to plan the way there.', 16, MAPY + 28 * MAP_TILE + 6, BTN_Y - 4) end
+    bottom_row(gg, { { 'Back', function() screen = map_from end } })
+  end,
+  tap_area = function(x, y)
+    if map_from ~= 'route' then return false end
+    if x < MAPX or x >= MAPX + 11 * MAP_TILE or y < MAPY or y >= MAPY + 28 * MAP_TILE then return false end
+    local i = G.idx((x - MAPX) // MAP_TILE + 1, (y - MAPY) // MAP_TILE + 1)
+    if not state.seen[i] or not R.cost(state, i) then return true end
+    local p = G.path(state.region, state.pos, i, function(j) return R.cost(state, j) end, state.seen)
+    if not p then return true end
+    draft = {}
+    for k = 2, #p do draft[#draft + 1] = p[k] end
+    route_msg = nil
+    screen = 'route'
+    return true
+  end,
+  back = function() screen = map_from; return true end,
+}
+
+------------------------------------------------------------------ supplies
+
+local function ask(title, lines, yes, fn)
+  box(title, lines, { { { yes, function() kit.close(); fn(); mark_map(); refresh_info(); save() end }, { 'Cancel', kit.close } } }, kit.close)
+end
+
+SCREENS.supplies = {
+  draw = function(gg)
+    header(gg, 'Supplies', month_name())
+    local left = R.days_left(state)
+    local s = state.sup
+    local y = 92
+    local lines = {
+      'Food ' .. s.food .. ': ' .. left.food .. ' days at ' .. state.ration .. ' rations.',
+      'Fuel ' .. s.fuel .. ': ' .. left.fuel .. ' days in this cold.',
+      'Dog food ' .. s.dogfood .. ': ' .. left.dogfood .. ' days for ' .. s.dogs .. ' dogs.',
+      s.sledges .. ' sledge' .. (s.sledges == 1 and '' or 's') .. ((state.broken or 0) > 0 and (', ' .. state.broken .. ' broken') or '') .. '.',
+      'Radio: ' .. (state.radio == 'unused' and 'one call for rescue' or ('help is coming, in ' .. math.max(0, (state.rescue_at or 0) - state.day) .. ' days')) .. '.',
+      'The mission: ' .. goal_text() .. (state.turned and ', turned back' or '') .. '.',
+    }
+    for _, l in ipairs(lines) do y = para(gg, l, 16, y, y + 60) + 4 end
+    y = y + 8
+    local acts = {}
+    if state.mission == 'pole' and state.phase == 'out' and not state.turned then
+      acts[#acts + 1] = { 'Leave depot', function() ask('Leave a depot here?', { 'A third of the food, fuel and dog food stays here for the way back.' }, 'Leave it', function() S.leave_depot(state) end) end }
+    end
+    if s.dogs > 0 then acts[#acts + 1] = { 'Kill a dog', function() ask('Kill a dog?', { 'Food for the other dogs, and a little for you. Everyone will feel it.' }, 'Do it', function() S.kill_dog(state) end) end } end
+    if state.radio == 'unused' then acts[#acts + 1] = { 'Call rescue', function() ask('Call for rescue?', { 'A plane will come in a few days. The expedition will be over.' }, 'Call', function() S.call_rescue(state) end) end } end
+    if not state.turned and not (state.mission == 'pole' and state.phase == 'back') then acts[#acts + 1] = { 'Turn back', function() ask('Turn back?', { 'Give up the goal and head for the start. Bringing everyone home is an honourable end.' }, 'Turn back', function() S.turn_back(state) end) end } end
+    acts[#acts + 1] = { 'Map', function() open_map('supplies') end }
+    local bw = (W - 40) // 2
+    for k, a in ipairs(acts) do
+      local col, row = (k - 1) % 2, (k - 1) // 2
+      button(gg, 16 + col * (bw + 8), y + row * 64, bw, 56, a[1], a[2], { font = 'small' })
+    end
+    bottom_row(gg, { { 'Back', function() screen = 'hub' end } })
+  end,
+  back = function() screen = 'hub'; return true end,
+}
+
+------------------------------------------------------------------ the person
+
+local ROLE_HELP = {
+  navigator = 'Sees a tile further from level 3 and warns of storms a day ahead.',
+  doctor = 'Treats one person a day, the one chosen below or the worst.',
+  driver = 'Keeps the dogs fast: a little more ground each day, more at a higher level.',
+  cook = 'Makes the food go further: one ration in six saved.',
+  mechanic = 'Mends a broken sledge on a camp day; without one its load is left.',
+  surveyor = 'Halves the danger of falling into a crevasse.',
+  hunter = 'Brings in seal meat on a camp day by open water.',
+  geologist = 'Takes a rock sample from each nunatak climbed.',
+  photographer = 'Takes a photograph at each cairn, target and climb.',
+}
+
+SCREENS.person = {
+  draw = function(gg)
+    local p = state.team[who]
+    if not p then screen = 'hub'; return end
+    header(gg, p.name, T.ROLE_NAME[p.role] .. ', level ' .. p.lv .. (p.veteran and ' · veteran' or '') .. (p.alive and '' or ' · lost'))
+    local y = 92
+    local lines = { ROLE_HELP[p.role], p.trait:gsub('^%l', string.upper) .. '. Health ' .. p.health .. ', mood ' .. p.mood .. '.' }
+    local conds = {}
+    for _, k in ipairs(T.CONDS) do if p.cond[k] > 0 then conds[#conds + 1] = T.COND_NAME[k] .. ' (' .. T.STAGE[p.cond[k]] .. ')' end end
+    lines[#lines + 1] = #conds > 0 and ('Suffering from ' .. table.concat(conds, ', ') .. '.') or 'In good shape.'
+    local friends, odds = {}, {}
+    for qid, v in pairs(p.rel) do
+      local q = state.team[qid]
+      if q and q.alive then if v == 1 then friends[#friends + 1] = q.name elseif v == -1 then odds[#odds + 1] = q.name end end
+    end
+    table.sort(friends); table.sort(odds)
+    if #friends > 0 then lines[#lines + 1] = 'Friends with ' .. table.concat(friends, ', ') .. '.' end
+    if #odds > 0 then lines[#lines + 1] = 'At odds with ' .. table.concat(odds, ', ') .. '.' end
+    for _, m in ipairs(p.mem) do lines[#lines + 1] = m:gsub('^%l', string.upper) .. '.' end
+    for _, l in ipairs(lines) do y = para(gg, l, 16, y, 420) + 4 end
+    if p.role == 'doctor' and p.alive then
+      y = math.max(y + 8, 430)
+      gg:text(16, y, 'Treat first', { font = kit.font('small') })
+      y = y + 28
+      local x = 16
+      local f = kit.font('small')
+      for id = 1, state.next_id - 1 do
+        local q = state.team[id]
+        local hurt = false
+        if q and q.alive then for _, k in ipairs(T.CONDS) do if q.cond[k] > 0 then hurt = true end end end
+        if hurt then
+          local worst = 0
+          for _, k in ipairs(T.CONDS) do if q.cond[k] > worst then worst = q.cond[k] end end
+          local label = 'Treat ' .. q.name .. ' (' .. T.STAGE[worst] .. ')'
+          local w = math.min(W - 32, kit.width(f, label) + 24)
+          if x + w > W - 16 then x, y = 16, y + 50 end
+          if y + 44 <= BTN_Y - 4 then
+            local qid = id
+            button(gg, x, y, w, 44, label, function() state.treat = qid; save() end, { font = 'small', line_width = state.treat == id and 4 or 1 })
+          end
+          x = x + w + 8
+        end
+      end
+    end
+    bottom_row(gg, { { 'Back', function() screen = 'hub' end } })
+  end,
+  back = function() screen = 'hub'; return true end,
+}
+
+------------------------------------------------------------------ the end and the chronicle
+
+local function chronicle()
+  local ok, c = pcall(Save.decode, kit.read('chronicle.txt'))
+  return (ok and type(c) == 'table') and c or {}
+end
+
+record_end = function()
+  if state.recorded or not state.over then return end
+  local c = chronicle()
+  c[#c + 1] = S.chronicle_entry(state)
+  kit.write('chronicle.txt', Save.encode(c))
+  prefs.veteran = S.veteran(state, Rn.new(Rn.mix(state.seed, 99)))
+  prefs.last_mission = state.mission
+  state.recorded = true
+  save()
+end
+
+SCREENS['end'] = {
+  draw = function(gg)
+    local e = S.ending(state)
+    header(gg, e.title, S.MISSION_NAME[state.mission]:gsub('^%l', string.upper) .. ' · day ' .. (state.day - 1))
+    local y = 100
+    for _, l in ipairs(e.lines) do y = para(gg, l, 16, y, 500, 'medium') + 6 end
+    gg:text(16, y + 10, 'Score ' .. e.score, { font = kit.font('large') })
+    bottom_row(gg, { { 'New expedition', function() new_expedition() end }, { 'Title', function() screen = 'title' end } }, { font = 'small' })
+  end,
+  back = function() screen = 'title'; return true end,
+}
+
+local page = 1
+SCREENS.chronicle = {
+  draw = function(gg)
+    local c = chronicle()
+    header(gg, 'Chronicle', #c .. ' expedition' .. (#c == 1 and '' or 's') .. ' so far')
+    local per = 6
+    local pages = math.max(1, (#c + per - 1) // per)
+    page = math.max(1, math.min(page, pages))
+    local y = 92
+    local f = kit.font('small')
+    for k = #c - (page - 1) * per, math.max(1, #c - page * per + 1), -1 do
+      local e = c[k]
+      gg:text(16, y, fit((S.MISSION_NAME[e.mission] or ''):gsub('^%l', string.upper) .. ': ' .. e.title, kit.font('medium'), W - 32), { font = kit.font('medium') })
+      gg:text(16, y + 32, fit('Score ' .. e.score .. ' · ' .. (CHAR_SHORT[e.char] or e.char) .. ' · ' .. e.diff, f, W - 32), { font = f })
+      gg:text(16, y + 54, fit(e.days .. ' days · ' .. e.survivors .. ' of 6 home', f, W - 32), { font = f })
+      y = y + 96
+    end
+    if #c == 0 then para(gg, 'No expedition has ended yet.', 16, 100, 200) end
+    bottom_row(gg, { { '<', function() page = page - 1 end }, { '>', function() page = page + 1 end },
+                     { 'Back', function() screen = 'title' end } })
+  end,
+  back = function() screen = 'title'; return true end,
+}
+
+SCREENS.settings = {
+  draw = function(gg)
+    header(gg, 'Settings', 'The difficulty applies to the next expedition')
+    local y = 110
+    gg:text(16, y, 'Difficulty', { font = kit.font('medium') })
+    y = y + 36
+    local bw = (W - 48) // 3
+    for k, d in ipairs({ { 'Easy', 'easy' }, { 'Normal', 'normal' }, { 'Hard', 'hard' } }) do
+      local key = d[2]
+      button(gg, 16 + (k - 1) * (bw + 8), y, bw, 56, d[1], function() prefs.diff = key; save() end,
+        { line_width = (prefs.diff or 'normal') == key and 4 or 1 })
+    end
+    y = y + 72
+    y = para(gg, 'Easy: more supplies, a longer season, milder storms. Hard: fewer supplies, a short season, '
+      .. 'deeper cold and more storms.', 16, y, y + 120) + 20
+    button(gg, 16, y, W - 32, 60, 'New expedition', function() new_expedition() end)
+    bottom_row(gg, { { 'Back', function() screen = 'title' end } })
+  end,
+  back = function() screen = 'title'; return true end,
+}
+
+after_input = function()
+  if state and layer_ok and (map_dirty or layer_top ~= view_top()) then rebuild_layer() end
+  if state and screen == 'map' and big_ok and big_dirty then rebuild_big() end
+end
+
+------------------------------------------------------------------ host callbacks
+
+function on_draw(c, gg)
+  if not gg then return end
+  local ok, e = pcall(function()
+    gg:clear(0)
+    hits = {}
+    SCREENS[screen].draw(gg)
+    if kit.modal() then hits = {}; kit.draw_modal(gg) end
+    if ERR then gg:text(12, H - 28, kit.short('ERR ' .. ERR, 48), { font = kit.font('small') }) end
+  end)
+  if not ok then pcall(function() gg:text(12, H - 28, kit.short('ERR ' .. tostring(e), 48), { font = kit.font('small') }) end) end
+end
+
+local function tap(x, y)
+  if kit.tap_modal(x, y) then return end
+  local s = SCREENS[screen]
+  if s.tap_area and s.tap_area(x, y) then return end
+  for k = #hits, 1, -1 do
+    local h = hits[k]
+    if x >= h.x and x < h.x + h.w and y >= h.y and y < h.y + h.h then
+      hits = {}           -- until the next frame: a second tap on the old screen does nothing
+      h.fn()
+      return
+    end
+  end
+end
+
+function on_input(c, ev)
+  ERR = nil
+  local handled = true
+  local ok, e = pcall(function()
+    if type(ev) ~= 'table' then return end
+    if ev.type == 'pointer' and ev.phase == 'up' then
+      tap(ev.x or 0, ev.y or 0)
+      kit.refresh()
+    elseif ev.type == 'key' and ev.key == 'back' then
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      if kit.modal() then
+        local m = kit.modal()
+        if m.back then m.back() elseif m.cancel then m.cancel() end
+      else
+        handled = SCREENS[screen].back() ~= false
+      end
+      kit.refresh()
+    end
+  end)
+  if not ok then ERR = tostring(e); kit.refresh() end
+  pcall(after_input)
+  return handled
+end
+
+local function load()
+  prefs = Save.decode(kit.read('prefs.txt')) or { diff = 'normal' }
+  read_saved()
+  screen = 'title'
+end
+
+function on_load(c)
+  local ok, e = pcall(load)
+  if not ok then ERR = tostring(e) end
+end
+
+function on_leave() pcall(save) end
+
+if rawget(_G, '__TEST') then
+  __TEST.api = {
+    screen = function() return screen end,
+    state = function() return state end,
+    mod = mod,
+    modal_open = function() return kit.modal() ~= nil end,
+    modal_pick = function(n) local m = kit.modal(); local row = m.rows[n or 1]; row[1][2]() end,
+    tile_xy = function(i) return tile_xy(i) end,
+    layer_ok = function() return layer_ok end,
+    show_event = function() show_event() end,
+  }
+end

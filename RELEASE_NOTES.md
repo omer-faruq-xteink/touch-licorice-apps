@@ -8,12 +8,15 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 - **New: Riverstead** (`riverstead.xtapp`): a village in a river valley, guided for ten years, one month a turn. Every game is a new valley (a fertile plain, rocky hills, a wide river or marshland), and where a building stands changes what it gives: fields on fertile soil and by the river (which floods), the mill on the river, the woodcutter by the forest. Named villagers marry, have children, grow old and sometimes leave; harvests, hard winters, floods, traders and strangers bring choices, some of them a gamble on someone's skill. The village grows into a market town, the granary of the valley, a craftsmen's village or a pilgrims' rest, each with its own ending, or fails sooner through famine; warnings come months ahead. Gentle, Normal and Harsh; a chronicle of past villages.
 
+- **New: Icebound** (`icebound.xtapp`): a polar expedition of six, one day a turn. Every expedition has a new map, hidden until seen, and a new mission: a crossing to the far station, the pole and back with depots for the way home, a lost party to find by its cairns, or a coast to survey before the ship leaves. Pick the route through crevasses, pressure ridges, sastrugi and open water; set the pace and rations; storms come in spells and the cold deepens. The navigator sees further and forecasts storms, the doctor treats, the dog driver keeps the dogs fast, and the cook, mechanic, surveyor, hunter, geologist or photographer each help; moods and quarrels matter. Nobody dies without days of warning. The expedition ends at the goal, turned back with everyone home, rescued by radio, or lost; a survivor may return as a veteran. Easy, Normal and Hard; a chronicle of past expeditions.
+
 ## Files
 
 | file | content |
 |---|---|
 | `portwren.xtapp` | Port Wren 1.0.0 (new) |
 | `riverstead.xtapp` | Riverstead 1.0.0 (new) |
+| `icebound.xtapp` | Icebound 1.0.0 (new) |
 | all other packages | unchanged since v0.24.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

@@ -803,6 +803,15 @@ def riverstead(p):
     p.line([(6, 88), (24, 80), (46, 90), (68, 80), (90, 88)], 4)
 
 
+def icebound(p):
+    # a flag on a hill of ice, a sledge track winding up to it
+    p.poly([(6, 82), (40, 34), (58, 52), (90, 82)])          # the ice
+    p.line([(58, 12), (58, 46)], 4)                         # the pole
+    p.poly([(60, 12), (84, 19), (60, 26)])                  # the flag
+    p.line([(10, 92), (30, 86), (24, 78), (44, 70)], 3)      # the track
+    p.line([(16, 94), (36, 88), (30, 80), (50, 72)], 3)
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -816,7 +825,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
          'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
-         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow, 'portwren': portwren, 'riverstead': riverstead}
+         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow, 'portwren': portwren, 'riverstead': riverstead, 'icebound': icebound}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:
