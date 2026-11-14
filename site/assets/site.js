@@ -51,7 +51,8 @@ export function chrome(id) {
   footer.className = 'site';
   footer.innerHTML = '<div class="wrap">Unofficial <a href="' + REPO + '">touch-licorice-apps</a> mini apps for the ' +
     'Xteink X4 Pro. Everything runs in your browser: your files are not uploaded anywhere. ' +
-    `Made an app? <a href="${root}developers/">Add it to the list</a>.</div>`;
+    `Made an app? <a href="${root}developers/">Add it to the list</a>. ` +
+    `An idea, or found a bug? <a href="${REPO}/discussions/new/choose">Write to us</a>.</div>`;
   document.body.append(footer);
   // downloads: a package counts for its app, any other file (packs, feed lists, dictionaries) for got/
   document.addEventListener('click', (e) => {
