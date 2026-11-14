@@ -94,6 +94,25 @@ check(real.get('xkcd', [[None]])[0][0] == 'v0.24.0', f'xkcd: {real.get("xkcd", [
 check(any('Back on the main screen' in b for _, b in real.get('klondike', [])), 'Klondike has the Back change')
 check(not any('Back on the main screen' in b for _, b in real.get('notebook', [])), 'Notebook does not')
 
+# New and Updated badges: a release out for at most 7 days; New when the app arrived in it, Updated
+# when a bullet of it names the app in its lead (not a change about many apps, like the Back one)
+from datetime import datetime, timedelta, timezone  # noqa: E402
+now = datetime(2026, 11, 20, tzinfo=timezone.utc)
+dates = {'v0.3.0': now - timedelta(days=2), 'v0.2.0': now - timedelta(days=6), 'v0.1.0': now - timedelta(days=30)}
+arrived = {('v0.2.0', 'chessplay'), ('v0.1.0', 'chess'), ('v0.1.0', 'notebook')}
+b = S.badges(by_app, NAMES, now, date_of=dates.get, new_in=lambda t, a: (t, a) in arrived)
+check(b.get('chessplay') == 'new', f'arrived 6 days ago: New ({b.get("chessplay")})')
+check(b.get('weather') == 'updated', 'its own bullet 2 days ago: Updated')
+check(b.get('rss') == 'updated' and b.get('hackernews') == 'updated', 'named in a shared lead: Updated')
+check('chess' not in b and 'notes' not in b and 'game2048' not in b, f'only in a change about many apps: no badge ({sorted(b)})')
+check('notebook' not in b, 'a release a month old: no badge')
+b8 = S.badges(by_app, NAMES, now + timedelta(days=5), date_of=dates.get, new_in=lambda t, a: (t, a) in arrived)
+check('chessplay' not in b8 and b8.get('weather') == 'updated', f'a week on, the older badge is gone: {sorted(b8)}')
+check(S.badges(by_app, NAMES, now, date_of=lambda t: None, new_in=lambda t, a: False) == {}, 'no dates, no badges')
+# the real tags: xkcd arrived in v0.24.0 (its manifest is not in v0.23.0); Weather did not
+check(S.app_new_in('v0.24.0', 'xkcd') and not S.app_new_in('v0.24.0', 'weather'), 'xkcd new in v0.24.0, Weather not')
+check(S.release_date('v0.24.0') is not None and S.release_date('v9.9.9') is None, 'a tag\'s date from git')
+
 # every package a release's Files table lists as changed has a bullet of that release on its page:
 # a bullet whose lead (or, for one about many apps, its text) does not name the app reaches no page
 import re  # noqa: E402

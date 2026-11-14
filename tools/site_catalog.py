@@ -10,6 +10,7 @@ by tools/site_shots.py). build_site.py calls build(out, packages_dir), which wri
     apps/<app>/icon.png
 """
 import glob, html, json, os, re, shutil, struct, subprocess
+from datetime import datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = 'https://github.com/omer-faruq-xteink/touch-licorice-apps'
@@ -158,22 +159,74 @@ def display_names():
     return out
 
 
+def names_in(text, names):
+    """the apps whose display names appear in text, longer names first ("Chess puzzles" is not "Chess")"""
+    hits = []
+    for app, name in sorted(names.items(), key=lambda kv: -len(kv[1])):
+        rx = re.compile(r'(?<!\w)' + re.escape(name) + r'(?!\w)')
+        if rx.search(text):
+            hits.append(app)
+            text = rx.sub(lambda m: '\0' * len(m.group(0)), text)
+    return hits
+
+
+def lead_of(bullet):
+    m = re.match(r'\*\*(.+?)\*\*', bullet)
+    return m.group(1) if m else ''
+
+
+def _git(*args):
+    try:
+        out = subprocess.run(['git', '-C', ROOT, *args], capture_output=True, timeout=20)
+        return out.stdout.decode('utf-8').strip() if out.returncode == 0 else None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+_dates = {}
+
+
+def release_date(tag):
+    """when a release came out: the date of its git tag's commit (None without the tag)"""
+    if tag not in _dates:
+        s = _git('log', '-1', '--format=%cI', tag)
+        _dates[tag] = datetime.fromisoformat(s) if s else None
+    return _dates[tag]
+
+
+def app_new_in(tag, app):
+    """the app arrived in this release: its manifest is at the tag but not at the release before"""
+    tags = sorted((t for t in (_git('tag', '--list', 'v*') or '').split() if version_key(t) < version_key(tag)), key=version_key)
+    here = _git('cat-file', '-e', f'{tag}:apps/{app}/manifest.json') is not None
+    before = bool(tags) and _git('cat-file', '-e', f'{tags[-1]}:apps/{app}/manifest.json') is not None
+    return here and not before
+
+
+BADGE_DAYS = 7
+
+
+def badges(changes, names, now, date_of=release_date, new_in=app_new_in):
+    """app -> 'new' or 'updated', for a release out for at most BADGE_DAYS: New when the app arrived in
+    it, Updated when one of its bullets names the app in the lead (a change about many apps, named
+    only in its text, makes no badge: else a fix to every app would mark them all)"""
+    out = {}
+    for app, entries in changes.items():
+        recent = [(t, b) for t, b in entries if (d := date_of(t)) and timedelta(0) <= now - d <= timedelta(days=BADGE_DAYS)]
+        if any(new_in(t, app) for t, _ in recent):
+            out[app] = 'new'
+        elif any(app in names_in(lead_of(b), names) for _, b in recent):
+            out[app] = 'updated'
+    return out
+
+
 def changes_by_app(notes, names, upto=None):
     """RELEASE_NOTES.md's bullets given to the apps they are about: app -> [(tag, bullet markdown)],
     newest first. A bullet is about the apps its bold lead names ("**Weather 1.1.1: ...**", "**New:
     Chess**"); when the lead names none ("**Back on the main screen offers to exit** in ..."), about
     the apps named anywhere in it. Longer names are matched first, so "Chess puzzles" is not "Chess".
     The Files tables are not changes; releases after `upto` (not out yet) are left out."""
-    order = sorted(names.items(), key=lambda kv: -len(kv[1]))
-    rx = {app: re.compile(r'(?<!\w)' + re.escape(name) + r'(?!\w)') for app, name in order}
-
     def named(text):
-        hits = []
-        for app, _ in order:
-            if rx[app].search(text):
-                hits.append(app)
-                text = rx[app].sub(lambda m: '\0' * len(m.group(0)), text)
-        return hits
+        return names_in(text, names)
 
     bullets, tag, section, cur = [], None, None, None
     for line in notes.split('\n') + ['']:
@@ -319,6 +372,13 @@ def shot_size(f):
     return 480, 800
 
 
+BADGE_TEXT = {'new': 'New', 'updated': 'Updated'}
+
+
+def badge_html(badge):
+    return f' <span class="badge {badge}">{BADGE_TEXT[badge]}</span>' if badge in BADGE_TEXT else ''
+
+
 def app_page(e, about, whats=''):
     def shot(n, f):
         if f.endswith('-photo.jpg'):
@@ -350,7 +410,7 @@ def app_page(e, about, whats=''):
   <section class="app-top">
     <div class="appicon big"><img src="icon.png" alt=""></div>
     <div>
-      <h1>{H(e["name"])}</h1>
+      <h1>{H(e["name"])}{badge_html(e["badge"])}</h1>
       <p class="sub">{H(e["category_name"])} &middot; InkApp for the Xteink X4 Pro</p>
       <div class="acts">
         <button type="button" class="get primary big copy" data-app="{H(e["id"])}" hidden>Copy to reader</button>
@@ -415,6 +475,7 @@ def build(out, packages):
     m = re.search(r'v\d+(?:\.\d+)+$', os.path.basename(os.path.normpath(packages)))
     upto = os.environ.get('RELEASE_TAG') or (m.group(0) if m else None)
     changes = changes_by_app(open(os.path.join(ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read(), display_names(), upto)
+    badge_of = badges(changes, display_names(), datetime.now(timezone.utc))     # the daily rebuild ends them
     listed = store_apps()
     cat_of = {app: (key, name) for key, name, apps in CATEGORIES for app in apps}
     order = {app: i for i, app in enumerate(app for _, _, apps in CATEGORIES for app in apps)}
@@ -438,6 +499,7 @@ def build(out, packages):
             'shots': shot_files(app),
             'store': bool(s.get('live_version')),
             'devices': ['X4 Pro'],          # every app here is made for touch
+            'badge': badge_of.get(app),
         }
         entries.append(e)
         shutil.copyfile(path, os.path.join(out, 'packages', e['file']))
@@ -453,7 +515,7 @@ def build(out, packages):
     catalog = {
         'categories': [{'id': k, 'name': n} for k, n, _ in CATEGORIES],
         'apps': [{k: e[k] for k in ('id', 'app_id', 'name', 'version', 'api', 'firmware', 'summary', 'category',
-                                    'file', 'size', 'store', 'devices')} | {'summary': inline(e['summary'])} for e in entries],
+                                    'file', 'size', 'store', 'devices', 'badge')} | {'summary': inline(e['summary'])} for e in entries],
     }
     with open(os.path.join(out, 'catalog.json'), 'w', encoding='utf-8', newline='\n') as f:
         json.dump(catalog, f, ensure_ascii=False, indent=1)

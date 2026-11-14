@@ -234,3 +234,7 @@ body.store footer.site { border-top: 0; }
 .prose ul.changes { list-style: none; padding: 0; margin: 0 0 8px; }
 .prose ul.changes li { margin: 0 0 12px; }
 .prose ul.changes .rel { display: inline-block; font-size: .78em; font-weight: 600; padding: 1px 7px; border-radius: 6px; border: 1px solid rgba(127, 127, 127, .45); margin-right: 4px; }
+.badge { display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 1px 8px; vertical-align: 2px; }
+.badge.new { background: var(--accent); color: var(--accent-ink); }
+.badge.updated { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+h1 .badge { font-size: 0.42em; vertical-align: 0.4em; }

@@ -98,11 +98,13 @@
     .map((d, i) => `<button type="button" data-dev="${i ? d : ''}">${d}</button>`).join('');
   const devs = [...document.querySelectorAll('#devices button')];
 
+  // New: the app arrived in a release out for a week or less; Updated: it changed in one
+  const badge = (a) => a.badge ? ` <span class="badge ${a.badge}">${a.badge === 'new' ? 'New' : 'Updated'}</span>` : '';
   function tile(a) {
     const need = a.firmware ? ` <span class="tag" title="Needs firmware XT Licorice ${esc(a.firmware)} or later">FW ${esc(a.firmware)}+</span>` : '';
     return `<article class="tile">
       <div class="appicon"><img src="apps/${a.id}/icon.png" alt="" loading="lazy"></div>
-      <h3><a href="apps/${a.id}/">${esc(a.name)}</a>${need}</h3>
+      <h3><a href="apps/${a.id}/">${esc(a.name)}</a>${badge(a)}${need}</h3>
       <p class="sum">${a.summary}</p>
       <div class="foot">
         <span class="meta">${esc(catName[a.category])} · ${esc(a.version)} · ${bytesText(a.size)}</span>
