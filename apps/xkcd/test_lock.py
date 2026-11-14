@@ -59,7 +59,9 @@ ctx = {
     if w > 1024 or h > 1024 then return nil, 'limit_exceeded' end
     local s = 1
     if o and o.max_w then s = math.min(1, o.max_w / w, o.max_h / h) end
-    return { width = math.floor(w * s), height = math.floor(h * s), release = function() end }
+    local im = { width = math.floor(w * s), height = math.floor(h * s) }
+    im.release = function(self) self.released = true end
+    return im
   end },
   lock = { reason = 'timer', net = true, interval_sec = 3600,
            done = function(self) done_calls = done_calls + 1 end,
@@ -193,6 +195,22 @@ L.execute('on_draw(ctx, gg)')
 check('xkcd 31: New One' in texts(L) and int(L.globals().done_calls) == 1, 'then the new one, then done')
 log = str(L.globals().store['wakes.txt'] or '')
 check(re.search(r'^\d\d:\d\d:\d\d first lock\.net true', log, re.M) is not None and 'new comic 31' in log, f'wakes.txt: {log!r}')
+
+# the picture is not freed in on_draw: the host shows the frame after it, and a freed picture draws
+# nothing (the blank sleep screen of 2026-11-15); it is freed at the next draw
+L = session(SAVED, NOW)
+im = L.globals().images[1]
+check(not im.img.released, 'the drawn picture is kept after on_draw')
+L.execute('on_draw(ctx, gg)')
+check(im.img.released and not L.globals().images[1].img.released, 'and freed at the next draw')
+
+# a saved picture that does not decode: the reason on the screen and in wakes.txt, not a blank page
+L = session(dict(SAVED, **{'lock.png': 'not a picture'}), NOW)
+t = texts(L)
+check(len(L.globals().images) == 0 and any('invalid_argument' in s for s in t), f'undecodable: the reason shown: {t}')
+check('invalid_argument' in str(L.globals().store['wakes.txt'] or ''), 'and logged')
+L = session({k: v for k, v in SAVED.items() if k != 'lock.png'}, NOW)
+check(any('no picture' in s for s in texts(L)), f'picture file missing: said so: {texts(L)}')
 
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 sys.exit(1 if fails else 0)

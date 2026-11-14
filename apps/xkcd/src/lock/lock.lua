@@ -158,8 +158,13 @@ local function try_refresh(s)
 end
 -- store: end
 
+-- the picture drawn last: kept until the next draw, since the host shows a frame after on_draw and
+-- a picture freed in it draws nothing (the blank sleep screen of 2026-11-15)
+local shown = nil
+
 function on_draw(c, gg)
   if not gg then return end
+  if shown then pcall(function() shown:release() end); shown = nil end
   local ok, err = pcall(function()
     gg:clear(0)
     local s = saved()
@@ -176,12 +181,26 @@ function on_draw(c, gg)
     local top, bottom = 70, H - 50
     if s.kind ~= 'none' then
       local b = read(pic(s.kind))
-      local okd, im = pcall(function() return b and ctx.image:decode(b, { max_w = W - 16, max_h = bottom - top }) end)
+      local okd, im, derr = pcall(function()
+        if not b then return nil, 'no picture saved' end
+        return ctx.image:decode(b, { max_w = W - 16, max_h = bottom - top })
+      end)
+      local drew = false
       if okd and im then
         local iw, ih = tonumber(im.width) or 0, tonumber(im.height) or 0
         -- made for this box by the resizer: drawn as it is (the reader's own scaling only adds dots)
-        gg:image(im, (W - iw) // 2, top + (bottom - top - ih) // 2)
-        pcall(function() im:release() end)
+        local okg, gr, gerr = pcall(function() return gg:image(im, (W - iw) // 2, top + (bottom - top - ih) // 2) end)
+        drew = okg and not (gr == nil and gerr ~= nil)              -- nil, "invalid_handle" and the like
+        if not drew then derr = 'draw: ' .. tostring(okg and gerr or gr) end
+        shown = im
+      elseif not okd then derr = im end
+      if not drew then
+        -- a blank page tells nothing: say why (seen on the device 2026-11-15, comic 3324)
+        local why = 'picture: ' .. tostring(derr or 'not decoded') .. ' (' .. (b and #b or 0) .. ' bytes)'
+        gg:text(24, 300, kit.short(why, 40), { font = kit.font('small') })
+        -- store: cut
+        wlog(why)
+        -- store: end
       end
     else
       gg:text(24, 300, 'An interactive comic: open it in the app.', { font = kit.font('medium') })
