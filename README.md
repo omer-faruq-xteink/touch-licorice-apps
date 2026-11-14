@@ -632,6 +632,7 @@ python -I apps/gamebook/test_gamebook.py
 python -I apps/pianofollow/test_pianofollow.py
 python -I tools/piano/test_sim.py
 python -I site/test/test_converters.py
+python -I site/test/test_whatsnew.py
 ```
 
 `build_all.py` also runs `tools/lualint55.py` over every Lua file: the device's Lua 5.5 rejects an

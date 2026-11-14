@@ -141,6 +141,75 @@ def intro(app):
     return '\n'.join(out)
 
 
+NOTES_URL = REPO + '/blob/main/RELEASE_NOTES.md'
+WHATS_NEW = 6                    # changes shown on an app's page; the rest are in the release notes
+
+
+def version_key(tag):
+    return tuple(int(x) for x in re.findall(r'\d+', tag))
+
+
+def display_names():
+    """app folder -> its display name, from each app's manifest"""
+    out = {}
+    for p in glob.glob(os.path.join(ROOT, 'apps', '*', 'manifest.json')):
+        app = os.path.basename(os.path.dirname(p))
+        out[app] = json.load(open(p, encoding='utf-8')).get('display_name') or app
+    return out
+
+
+def changes_by_app(notes, names, upto=None):
+    """RELEASE_NOTES.md's bullets given to the apps they are about: app -> [(tag, bullet markdown)],
+    newest first. A bullet is about the apps its bold lead names ("**Weather 1.1.1: ...**", "**New:
+    Chess**"); when the lead names none ("**Back on the main screen offers to exit** in ..."), about
+    the apps named anywhere in it. Longer names are matched first, so "Chess puzzles" is not "Chess".
+    The Files tables are not changes; releases after `upto` (not out yet) are left out."""
+    order = sorted(names.items(), key=lambda kv: -len(kv[1]))
+    rx = {app: re.compile(r'(?<!\w)' + re.escape(name) + r'(?!\w)') for app, name in order}
+
+    def named(text):
+        hits = []
+        for app, _ in order:
+            if rx[app].search(text):
+                hits.append(app)
+                text = rx[app].sub(lambda m: '\0' * len(m.group(0)), text)
+        return hits
+
+    bullets, tag, section, cur = [], None, None, None
+    for line in notes.split('\n') + ['']:
+        if cur is not None and line.startswith('  ') and line.strip():
+            cur += ' ' + line.strip()
+            continue
+        if cur is not None:
+            bullets.append((tag, cur))
+            cur = None
+        m = re.match(r'# (v\d+(?:\.\d+)*)\s*$', line)
+        if m:
+            tag, section = m.group(1), None
+        elif line.startswith('## '):
+            section = line[3:].strip()
+        elif tag and section and section != 'Files' and line.startswith('- '):
+            cur = line[2:].strip()
+    out = {}
+    for tag, b in bullets:
+        if upto and version_key(tag) > version_key(upto):
+            continue
+        lead = re.match(r'\*\*(.+?)\*\*', b)
+        for app in named(lead.group(1) if lead else '') or named(b):
+            out.setdefault(app, []).append((tag, b))
+    return out
+
+
+def whats_new_html(entries):
+    """an app's latest changes as a folded list (empty when there are none)"""
+    if not entries:
+        return ''
+    items = ''.join(f'<li><span class="rel">{H(t)}</span> {inline(b)}</li>' for t, b in entries[:WHATS_NEW])
+    return (f'<details class="fold" id="whats-new"><summary>What&rsquo;s new</summary><div class="fold-body">'
+            f'<ul class="changes">{items}</ul><p class="fine">Every change: <a href="{NOTES_URL}">the release notes</a>.</p>'
+            '</div></details>')
+
+
 def render(body):
     """lines of markdown: paragraphs, lists and ``` blocks, as HTML"""
     out, para, items, code = [], [], [], None
@@ -228,7 +297,7 @@ def shot_size(f):
     return 480, 800
 
 
-def app_page(e, about):
+def app_page(e, about, whats=''):
     def shot(n, f):
         if f.endswith('-photo.jpg'):
             return (f'<img class="photo" src="../../shots/{f}" width="480" height="800" alt="{H(e["name"])} on the reader"'
@@ -278,7 +347,7 @@ def app_page(e, about):
   <div id="reader"></div>
   {f'<div class="gallery">{shots}</div>' if shots else ''}
   <div class="section-head"><h2>About</h2></div>
-  <div class="prose"><p class="lead">{inline(e["summary"])}</p>{about}</div>
+  <div class="prose"><p class="lead">{inline(e["summary"])}</p>{about}{whats}</div>
   {f'<div class="section-head"><h2>More for {H(e["name"])}</h2></div><ul class="more">{extras}</ul>' if extras else ''}
   <div class="section-head"><h2>How to install</h2></div>
   <ol class="how">
@@ -319,6 +388,11 @@ def size_text(n):
 
 def build(out, packages):
     summaries = readme_table()
+    # What's new: the release notes up to the release the packages come from (RELEASE_TAG in the
+    # workflow, else a release/vX.Y.Z folder's name), so a release not out yet stays off the site
+    m = re.search(r'v\d+(?:\.\d+)+$', os.path.basename(os.path.normpath(packages)))
+    upto = os.environ.get('RELEASE_TAG') or (m.group(0) if m else None)
+    changes = changes_by_app(open(os.path.join(ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read(), display_names(), upto)
     listed = store_apps()
     cat_of = {app: (key, name) for key, name, apps in CATEGORIES for app in apps}
     order = {app: i for i, app in enumerate(app for _, _, apps in CATEGORIES for app in apps)}
@@ -351,7 +425,7 @@ def build(out, packages):
         if os.path.exists(icon):
             shutil.copyfile(icon, os.path.join(page, 'icon.png'))
         with open(os.path.join(page, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
-            f.write(app_page(e, intro(app)))
+            f.write(app_page(e, intro(app), whats_new_html(changes.get(app, []))))
     entries.sort(key=lambda e: order[e['id']])
     catalog = {
         'categories': [{'id': k, 'name': n} for k, n, _ in CATEGORIES],
