@@ -37,6 +37,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Lamplighter** | turn the tiles until power from the source reaches every lamp: one network, no loose ends; lock mode; 600 puzzles in three sizes |
 | **Kakuro** | Cross sums: runs that add up to their clues, no digit twice; the ways to make each run shown; 600 puzzles |
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
+| **Port Wren** | a detective in a 1920s harbour town: every murder generated and proven solvable; question suspects, catch the lie, name culprit, motive and means; a career in a town that remembers |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
 | **FreeCell** | the solitaire with Microsoft's numbered deals; Hint follows a winning line (deals 1-1000), undo, autoplay |
@@ -250,6 +251,15 @@ dungeon (or today's dungeon, the same for everyone); pixel-art tiles of 48 px, t
 the hero. Tap near the hero to step that way, further away to walk there; tap a monster to see
 what a fight costs. The torch burns down, potions and scrolls are unknown until tried, monsters
 chase, wander, give up or flee in their own ways; death ends the run. [More](apps/delve/README.md)
+
+### Port Wren
+
+A detective game in a 1920s harbour town. Every case is a new murder, generated and proven solvable
+before you see it: search places, question suspects (their account of the evening, what they know
+when asked or shown the right clue), keep the clues in a notebook and a table of statements, and
+name the culprit, the motive and the means. A wrong accusation lets the killer strike again. A
+career in a town that remembers (rank opens false alibis, questions of time and innocent liars),
+or single cases; Short or Long cases. [More](apps/portwren/README.md)
 
 ### Tarot
 
@@ -591,6 +601,10 @@ python -I apps/casefiles/test_casefiles.py
 python -I apps/lamplighter/test_lamplighter.py
 python -I apps/timekeeper/test_timekeeper.py
 python -I apps/delve/test_delve.py
+python -I apps/portwren/test_portwren.py
+python -I apps/portwren/test_town.py
+python -I apps/portwren/test_cases.py
+python -I apps/portwren/test_text.py
 python -I apps/tarot/test_tarot.py
 python -I apps/wikipedia/test_wikipedia.py
 python -I apps/calculator/test_calculator.py

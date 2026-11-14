@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26).
 
-Nothing yet.
+## New
+
+- **New: Port Wren** (`portwren.xtapp`): a detective game in a 1920s harbour town. Every case is a new murder, generated from a seed and proven solvable before you see it: the truth comes first (who, why, how, when, and where everyone was), then the clues and the lies. Search places, question people (each suspect's account of the evening, and what they know when asked about the right person or shown the right clue), keep the clues in a notebook, a table of statements and a board, and name the culprit, the motive and the means. Physical evidence is certain, a witness is believed until caught, and a suspect's own word never clears them. A wrong accusation, or running out of time, lets the killer strike again; twice, and the killer flees. A **career** in a town that remembers (the dead and the jailed leave, families hold grudges, rank opens false alibis, questions of time and innocent liars) or **single cases** in a new town each time; Short (4 suspects, about 25 minutes) or Long cases (6 suspects, false trails, about an hour).
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.24.0 |
+| `portwren.xtapp` | Port Wren 1.0.0 (new) |
+| all other packages | unchanged since v0.24.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

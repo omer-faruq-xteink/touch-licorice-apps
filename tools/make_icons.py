@@ -780,6 +780,18 @@ def pianofollow(p):
     p.poly([(34, 10), (70, 6), (70, 13), (34, 17)])         # the beam
 
 
+def portwren(p):
+    # a magnifying glass over a lighthouse: the harbour town's detective
+    p.ellipse((10, 10, 66, 66), w=5)                        # the lens
+    p.line([(59, 59), (86, 86)], 10)                        # the handle
+    p.poly([(31, 56), (45, 56), (42, 30), (34, 30)])        # the tower
+    p.rect((32, 23, 44, 30), fill=True)                     # the lamp room
+    p.poly([(31, 23), (45, 23), (38, 17)])                  # the roof
+    p.line([(22, 24), (30, 26)], 2)                         # the light
+    p.line([(46, 26), (54, 24)], 2)
+    p.line([(18, 56), (58, 56)], 3)                         # the sea
+
+
 ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
@@ -793,7 +805,7 @@ ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': no
          'wordclock': wordclock, 'skytonight': skytonight, 'gamebook': gamebook,
          'tsumego': tsumego, 'textadv': textadv, 'wordhive': wordhive,
          'cryptogram': cryptogram, 'tarot': tarot, 'wordladder': wordladder,
-         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow}
+         'hashi': hashi, 'kakuro': kakuro, 'delve': delve, 'pianofollow': pianofollow, 'portwren': portwren}
 
 if __name__ == '__main__':
     for app in sys.argv[1:] or ICONS:

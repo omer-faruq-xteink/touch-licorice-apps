@@ -1,0 +1,10 @@
+{
+  "app_id": "portwren",
+  "display_name": "Port Wren",
+  "version": "1.0.0",
+  "author": "omer-faruq",
+  "description": "A detective game in a 1920s harbour town: every case is a new murder, generated and proven solvable. Search places, question suspects, show them clues, catch the lie and name the culprit, the motive and the means. A career in a town that remembers, or single cases.",
+  "entry": "index.lua",
+  "api": "2.0",
+  "permissions": []
+}
