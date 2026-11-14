@@ -205,4 +205,17 @@ rt2, api2 = make_rt(with_data=False)
 rt2.eval('on_load')(rt2.eval('ctx'))
 assert api2.data_ok() is False and api2.state()['set'] == 'builtin' and api2.set_by_name('builtin')[0]['count'] == 12
 print('fallback without data section OK')
+
+# Back: down then up; only the up answer counts. It closes the set list and the reset box; on the
+# board it is left to the host
+back = lambda phase: on_input(None, T(type='key', key='back', phase=phase))
+api.adopt_state(rt.table_from({'set': 'builtin', 'idx': 1, 'hist': '', 'best': {}, 'pos': {}}))
+btn(4); assert api.mode() == 'sets'
+assert back('down') is True and back('up') is True and api.mode() == 'play'
+swipe('l'); swipe('r'); swipe('u'); swipe('d')
+assert api.state()['hist'] != ''
+btn(1); assert api.confirm() is True
+assert back('down') is True and back('up') is True and api.confirm() is False and api.state()['hist'] != ''
+assert back('down') is True and back('up') is False
+print('back key OK')
 print('ALL SOKOBAN TESTS PASSED')

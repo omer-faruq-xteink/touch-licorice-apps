@@ -194,9 +194,16 @@ press('Menu')
 assert 'Text size' in g.texts() and 'Games' in g.texts()
 g.tap_label('Text size')
 assert g.store['size.txt'] == 'small'
+# Back acts on its release (only the up event's answer counts): in a game it opens the menu, a second
+# press closes it; in the library it is left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+assert back('down') is True and 'Games' not in g.texts()
+assert back('up') is True and 'Games' in g.texts()
+assert back('down') is True and back('up') is True and 'Games' not in g.texts() and str(A().screen()) == 'game'
 press('Menu'); g.tap_label('Games')
 assert str(A().screen()) == 'library'
 assert any('in progress' in s for s in screen_lines()), screen_lines()
+assert back('down') is True and back('up') is False and str(A().screen()) == 'library'
 g.no_err()
 print('textadv: library, Zork I by buttons, chips, keyboard, save/restore, continue, menu OK')
 print('textadv tests passed')

@@ -328,5 +328,14 @@ L3.eval("function() on_draw(ctx, gg) end")()
 assert any('open the app once' in str(d.s) for d in L3.globals().drawn.values())
 
 assert g.commands() < 500, g.commands()
+
+# Back acts on its release (only the up event's answer counts): it closes the list of places; on the
+# forecast it is left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Place'); typed('İzmir'); answer_now()
+assert str(A().screen()) == 'places'
+assert back('down') is True and str(A().screen()) == 'places'
+assert back('up') is True and str(A().screen()) == 'main'
+assert back('down') is True and back('up') is False and str(A().screen()) == 'main'
 g.no_err()
 print('weather tests passed')

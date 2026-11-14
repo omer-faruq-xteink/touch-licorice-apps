@@ -169,4 +169,13 @@ for k, name in ((1, 'beginner'), (2, 'intermediate'), (3, 'advanced')):
             assert g.commands() < 900, (name, i, g.commands())
             g.no_err()
 print(f'tsumego: {tot} built-in problems solved by taps; own SGF files, captures, hint, retry OK')
+# Back acts on its release (only the up event's answer counts): it closes the Problems box; on the
+# board it is left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap(*BUT(4))
+assert 'Problems' in g.texts()
+assert back('down') is True and 'Problems' in g.texts()
+assert back('up') is True and 'Problems' not in g.texts()
+assert back('down') is True and back('up') is False and 'Problems' not in g.texts()
+g.no_err()
 print('tsumego tests passed')

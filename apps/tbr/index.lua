@@ -1220,15 +1220,20 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
       local g = ev.gesture
       if not kit.modal() and (g == 'swipe_left' or g == 'swipe_right') then step(g == 'swipe_left' and 1 or -1)
       elseif g == nil or g == 'tap' then tap(ev.x or 0, ev.y or 0) end
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      -- on the main screen (no box) it is left to the host, which offers to exit
+      if not kit.modal() and screen == 'main' then handled = false else go_back() end
     elseif ev.type == 'key' and kit.key_accepted(ev) then
-      if ev.key == 'back' then go_back()
-      elseif not kit.modal() then
+      if not kit.modal() then
         if ev.key == 'left' or ev.key == 'up' then step(-1)
         elseif ev.key == 'right' or ev.key == 'down' then step(1) end
       end
@@ -1236,7 +1241,7 @@ function on_input(c, ev)
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

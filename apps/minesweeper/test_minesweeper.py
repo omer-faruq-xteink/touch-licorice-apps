@@ -146,5 +146,14 @@ for lv, name in ((1, 'Easy'), (2, 'Normal'), (3, 'Hard')):
     cs, gx, gy = (int(v) for v in A().geometry())
     rows = int(A().n()) // int(A().cols())
     assert gy + rows * cs <= 704 - 34, (name, gy + rows * cs)                 # above the message line
+
+# Back: down then up; only the up answer counts. It closes a box; on the board it is left to the host
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('New')
+g.tap(*xy(1))
+play_by_hints()
+assert 'Cleared!' in g.texts()
+assert back('down') is True and back('up') is True and 'Cleared!' not in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
 g.no_err()
 print('minesweeper tests passed')

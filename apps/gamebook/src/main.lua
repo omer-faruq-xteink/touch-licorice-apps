@@ -556,6 +556,7 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' then
@@ -563,18 +564,24 @@ function on_input(c, ev)
       if ev.gesture == 'swipe_left' and not kit.modal() then turn(1); return end
       if ev.gesture == 'swipe_right' and not kit.modal() then turn(-1); return end
       tap(ev.x or 0, ev.y or 0)
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      -- it closes a box, opens the menu in a story, goes to the library; there it is left to the host
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'back' then
-        if screen == 'play' then menu() elseif screen ~= 'library' then screen = 'library' end
-      elseif ev.key == 'down' or ev.key == 'right' then turn(1)
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif screen == 'play' then menu()
+      elseif screen ~= 'library' then screen = 'library'
+      else handled = false end
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then return end
+      if ev.key == 'down' or ev.key == 'right' then turn(1)
       elseif ev.key == 'up' or ev.key == 'left' then turn(-1) end
     end
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

@@ -88,4 +88,12 @@ S = api.state(); assert S['score'] == 0 and S['best'] == 9 and sum(1 for v in py
 b0 = pyl(api.state()['board']); on_input(None, rt.table_from({'type':'touch','gesture':'swipe_up','x':0,'y':0})); assert pyl(api.state()['board']) == b0
 print('persistence + glitch guard OK')
 print('refreshes:', dict(rt.eval('refreshes').items()))
+# --- Back: down then up; only the up answer counts. It closes the new-game box; on the board it is left to the host
+back = lambda phase: on_input(None, rt.table_from({'type': 'key', 'key': 'back', 'phase': phase}))
+on_input(None, rt.table_from({'type':'touch','gesture':'tap','x':240,'y':668}))
+rt.execute('texts = {}'); rt.eval('on_draw')(); assert any('Start a new game' in t for t in pyl(rt.eval('texts')))
+assert back('down') is True and back('up') is True
+rt.execute('texts = {}'); rt.eval('on_draw')(); assert not any('Start a new game' in t for t in pyl(rt.eval('texts')))
+assert back('down') is True and back('up') is False
+print('back key OK')
 print('ALL TESTS PASSED')

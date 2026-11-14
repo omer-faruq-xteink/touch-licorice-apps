@@ -466,5 +466,20 @@ for path in STORIES:
         c = json.loads(r.stdout)
         assert not c['errors'] and not c['warnings'], (path, c)
 
+# Back acts on its release (only the up event's answer counts): in a story it opens the menu, a second
+# press closes it; elsewhere it goes to the library; in the library it is left to the host
+back = lambda phase: L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.restart()
+g.tap_label('The Dark Lighthouse')
+assert A().screen() == 'intro'
+assert back('down') is True and A().screen() == 'intro'
+assert back('up') is True and A().screen() == 'library'
+g.tap_label('The Dark Lighthouse'); g.tap_label('Continue' if 'Continue' in g.texts() else 'Start')
+assert A().screen() == 'play'
+assert back('down') is True and back('up') is True and 'Library' in g.texts()
+assert back('down') is True and back('up') is True and 'Library' not in g.texts() and A().screen() == 'play'
+g.tap_label('Menu'); g.tap_label('Library')
+assert A().screen() == 'library'
+assert back('down') is True and back('up') is False and A().screen() == 'library'
 g.no_err()
 print('gamebook: all tests passed')

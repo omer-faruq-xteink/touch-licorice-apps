@@ -97,5 +97,13 @@ g.restart()
 assert any(x.startswith('Triangle    Pegs 13    Jumps 1    Best 1') for x in g.texts()), g.texts()
 g.tap_label('Undo')
 assert count() == 14
+
+# Back: down then up; only the up answer counts. It drops the selected peg; on the bare board it is
+# left to the host
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap(*xy(3, 1))
+assert 'Tap a marked hole to jump.' in g.texts(), g.texts()
+assert back('down') is True and back('up') is True and 'Tap a peg, then the hole to jump to.' in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
 g.no_err()
 print('pegsolitaire tests passed')

@@ -220,4 +220,9 @@ rt4.eval('ctx').state = rt4.table_from({'bank': 'easy.txt', 'idx': 42, 'givens':
 rt4.eval('on_load')(rt4.eval('ctx'))
 assert api4.state()['bank'] == 'easy.txt' and api4.state()['idx'] == 42
 print('progress in state.txt and from ctx.state OK')
+
+# Back: down then up; only the up answer counts. One screen: the up is left to the host
+back = lambda phase: on_input(None, T(type='key', key='back', phase=phase))
+assert back('down') is True and back('up') is False
+print('back key OK')
 print('ALL SUDOKU TESTS PASSED')

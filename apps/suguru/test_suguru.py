@@ -205,4 +205,9 @@ assert api2.data_ok() is False and S4['bank'] == 'builtin'
 rt2.execute('texts = {}'); rt2.eval('on_draw')()
 assert any('built-in bank' in t for t in rt2.eval('texts').values())
 print('fallback without data section OK')
+
+# Back: down then up; only the up answer counts. One screen: the up is left to the host
+back = lambda phase: on_input(None, T(type='key', key='back', phase=phase))
+assert back('down') is True and back('up') is False
+print('back key OK')
 print('ALL SUGURU TESTS PASSED')

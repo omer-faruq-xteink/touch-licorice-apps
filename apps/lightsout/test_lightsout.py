@@ -70,4 +70,13 @@ for _ in range(200):
     sol = int(g.api.solve(b))
     assert sol is not None and bin(sol).count('1') == p
 g.no_err()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.api.set(int(g.api.press_mask(12)), 1)
+g.tap(*cell_xy(12))
+assert 'All lights are off!' in g.texts()
+assert back('down') is True and back('up') is True and 'All lights are off!' not in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print('lightsout tests passed')

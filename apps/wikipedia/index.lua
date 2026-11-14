@@ -917,6 +917,7 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     keep_wifi()
@@ -924,18 +925,25 @@ function on_input(c, ev)
       if ev.gesture == 'swipe_left' or ev.gesture == 'swipe_up' then page(1)
       elseif ev.gesture == 'swipe_right' or ev.gesture == 'swipe_down' then page(-1)
       else tap(ev.x or 0, ev.y or 0) end
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      -- it closes a box, goes home, from home to the sources (with packs); the outermost of those
+      -- (the sources, or home without packs) leaves it to the host, which offers to exit
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'down' or ev.key == 'right' then page(1)
-      elseif ev.key == 'up' or ev.key == 'left' then page(-1)
-      elseif ev.key == 'back' and screen ~= 'home' then screen = 'home'
-      elseif ev.key == 'back' and #packs > 0 then screen = 'sources' end
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif screen == 'sources' or (screen == 'home' and #packs == 0) then handled = false
+      elseif screen ~= 'home' then screen = 'home'
+      else screen = 'sources' end
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then return end
+      if ev.key == 'down' or ev.key == 'right' then page(1)
+      elseif ev.key == 'up' or ev.key == 'left' then page(-1) end
     end
   end)
   if not ok then ERR = tostring(e) end
   refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

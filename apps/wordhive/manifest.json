@@ -1,7 +1,7 @@
 {
   "app_id": "wordhive",
   "display_name": "Word Hive",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "omer-faruq",
   "description": "A new hive of seven letters every day: make words that use the middle letter, find the pangram, climb the ranks. Hints, yesterday's answers, earlier days.",
   "entry": "index.lua",

@@ -211,4 +211,12 @@ tap_label('Scores')
 assert any(x.startswith('Star trader: ') and 'cr' in x for x in texts()), texts()
 assert any(x.startswith('Silk Road caravan: ') for x in texts())
 no_err()
+
+# Back: down then up; only the up answer counts. It closes a box; on the market it is left to the host
+back = lambda phase: L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+assert 'Best scores' in texts()
+assert back('down') is True and back('up') is True and 'Best scores' not in texts(), texts()
+assert back('down') is True and back('up') is False
+assert 'Day 1 / 30' in texts()
+no_err()
 print('merchant tests passed')

@@ -158,5 +158,13 @@ for fn in files:
         assert check(R, int(d), rest), (fn, d)
 assert 0 < MAX_CMDS[0] < 900, MAX_CMDS      # the host draws about 1024 commands a screen
 g.no_err()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Restart')
+assert any(t.startswith('Restart deal') for t in g.texts())
+assert back('down') is True and back('up') is True and not any(t.startswith('Restart deal') for t in g.texts()), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print(f'draw commands, most on a screen: {MAX_CMDS[0]}')
 print(f'freecell tests passed ({len(files)} solution files)')

@@ -268,6 +268,15 @@ bar(1); bar(1)
 g.tap_label('Search'); type_text('article 10')
 assert [str(r.title) for r in A().results().values()][:2] == ['Article 100', 'Article 101']
 bar(1)
+# Back acts on its release (only the up event's answer counts): results -> home -> the sources; on the
+# sources it is left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Search'); type_text('article 10')
+assert str(A().screen()) == 'results'
+assert back('down') is True and str(A().screen()) == 'results'
+assert back('up') is True and str(A().screen()) == 'home'
+assert back('down') is True and back('up') is True and str(A().screen()) == 'sources'
+assert back('down') is True and back('up') is False and str(A().screen()) == 'sources'
 # no packs anywhere: the home screen says where they go
 user.clear()
 g.L.execute("source_name = nil")
@@ -275,5 +284,8 @@ g.store['source.txt'] = None
 g.restart()
 t = g.texts()
 assert 'Offline packs (wiki2pack.py) go in' in t and '/AppFiles/u-1234abcd' in t, t
+# without packs home is the outermost screen: Back there is left to the host
+assert str(A().screen()) == 'home'
+assert back('down') is True and back('up') is False and str(A().screen()) == 'home'
 g.no_err()
 print('wikipedia tests passed')

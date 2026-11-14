@@ -174,4 +174,12 @@ no_err()
 L.execute('fake_ms = fake_ms + 5000')
 L.execute('on_leave()')
 assert 'game4.txt' in g.store
+
+# Back: down then up; only the up answer counts. It closes a box; on the board it is left to the host
+back = lambda phase: L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+tap_label('Settings')
+assert 'Reset best results' in texts()
+assert back('down') is True and back('up') is True and 'Reset best results' not in texts(), texts()
+assert back('down') is True and back('up') is False
+no_err()
 print('slidepuzzle tests passed')

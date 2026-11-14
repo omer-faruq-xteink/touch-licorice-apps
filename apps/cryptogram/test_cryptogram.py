@@ -126,4 +126,12 @@ assert len(list(A().guess().keys())) == 1
 k = next(i for i, l in enumerate(lines) if l.startswith('Proverb|'))
 A().open_day(DAY0 + k)
 assert '- Proverb' in g.texts()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Menu')
+assert 'Earlier' in g.recs()
+assert back('down') is True and back('up') is True and 'Earlier' not in g.recs(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print('Cryptogram: all tests passed')

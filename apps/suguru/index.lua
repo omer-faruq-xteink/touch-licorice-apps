@@ -338,6 +338,11 @@ function on_input(_, ev)
   if type(ev) ~= 'table' then return false end
   ev = as_touch(ev)
   if not ev then return true end
+  if ev.type == 'key' and ev.key == 'back' then
+    -- one screen: Back's release (the only answer the host reads) is left to the host, which offers to exit
+    local st = ev.phase or ev.state
+    return st ~= nil and st ~= 'up'
+  end
   if ev.type == 'key' then
     local st = ev.phase or ev.state                    -- phase on API 2.x, state on the older host
     if st ~= nil and st ~= 'down' then return true end

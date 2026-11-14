@@ -1,7 +1,7 @@
 {
   "app_id": "weather",
   "display_name": "Weather",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "omer-faruq",
   "description": "The forecast from Open-Meteo: now, the next hours and four days for a place you choose; it can be the lock screen.",
   "entry": "index.lua",

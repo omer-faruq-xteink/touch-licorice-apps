@@ -439,20 +439,26 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
       tap(ev.x or 0, ev.y or 0)
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer): it closes a box;
+      -- on the ladder it is left to the host, which offers to exit
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif puz and (ev.key == 'down' or ev.key == 'right') then pos = pos % puz.len + 1
+        if kit.modal().cancel then kit.modal().cancel() end
+      else handled = false end
+    elseif ev.type == 'key' and kit.key_accepted(ev) and not kit.modal() then
+      if puz and (ev.key == 'down' or ev.key == 'right') then pos = pos % puz.len + 1
       elseif puz and (ev.key == 'up' or ev.key == 'left') then pos = (pos - 2) % puz.len + 1 end
     end
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

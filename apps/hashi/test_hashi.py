@@ -134,4 +134,12 @@ g.no_err()
 g.tap_label('More')
 g.tap_label('Easy')
 assert str(A().bank().file) == '7x7-easy.txt' and int(A().idx()) == 2
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('More')
+assert 'Previous' in g.recs()
+assert back('down') is True and back('up') is True and 'Previous' not in g.recs(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print('all good')

@@ -270,4 +270,14 @@ assert any(s.startswith('Stephen King · 82% · 5 days left · 108 pa') for s in
 # later still: late
 t, n = lock_texts(f"now_sec = {NOW + 14 * 86400}")
 assert any('3 days late' in s for s in t), t
+
+# Back acts on its release (only the up event's answer counts): from settings to the main screen;
+# there it is left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('More')
+assert A().screen() == 'settings'
+assert back('down') is True and A().screen() == 'settings'
+assert back('up') is True and A().screen() == 'main'
+assert back('down') is True and back('up') is False and A().screen() == 'main'
+g.no_err()
 print('tbr tests passed')

@@ -170,6 +170,12 @@ name = str(A().item_name(gm.bag[nb + 1]))
 assert name.endswith(' potion'), name
 g.tap_label('Bag')
 assert str(A().screen()) == 'bag' and name in g.texts()
+# Back acts on its release (only the up event's answer counts): the bag closes; in the game it is
+# left to the host (after a save), which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+assert back('down') is True and back('up') is True and str(A().screen()) == 'game'
+assert back('down') is True and back('up') is False and str(A().screen()) == 'game'
+g.tap_label('Bag')
 g.tap(100, 196 + nb * 42 + 20)
 g.tap_label('Drink')
 assert str(A().screen()) == 'game' and int(gm.str) == 1 and 'It was a potion of strength.' in msgs(), msgs()
@@ -299,5 +305,8 @@ A().fov()
 wins = int(A().stats().wins)
 tap_tile(ax, ay)
 assert str(A().screen()) == 'end' and 'You won!' in g.texts() and int(A().stats().wins) == wins + 1, g.texts()
+# Back on the end screen: to the title; there it is left to the host
+assert back('down') is True and back('up') is True and str(A().screen()) == 'title'
+assert back('down') is True and back('up') is False and str(A().screen()) == 'title'
 g.no_err()
 print('delve tests passed')

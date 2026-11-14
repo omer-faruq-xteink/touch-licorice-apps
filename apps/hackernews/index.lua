@@ -2500,13 +2500,16 @@ function on_input(c, ev)
         return
       end
       tap(x, y, false)
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'back' and screen == 'list' then
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif screen == 'list' then
         left = true                                -- not handled: the host asks whether to leave
-      elseif ev.key == 'back' then back()
-      else
+      else back() end
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if not kit.modal() then
         local delta = (ev.key == 'down' or ev.key == 'right') and 1 or (ev.key == 'up' or ev.key == 'left') and -1 or nil
         if delta and screen == 'list' then list_page(delta) elseif delta then doc_page(delta) end
       end

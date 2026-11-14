@@ -201,6 +201,7 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
@@ -214,13 +215,18 @@ function on_input(c, ev)
       if x >= gx and x < gx + size * cell and y >= gy and y < gy + size * cell then
         tap_square((y - gy) // cell + 1, (x - gx) // cell + 1)
       end
-    elseif ev.type == 'key' and kit.key_accepted(ev) and ev.key == 'back' and kit.modal() and kit.modal().cancel then
-      kit.modal().cancel()
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer): it closes a box;
+      -- on the board it is left to the host, which offers to exit
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      if kit.modal() then
+        if kit.modal().cancel then kit.modal().cancel() end
+      else handled = false end
     end
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c) load() end

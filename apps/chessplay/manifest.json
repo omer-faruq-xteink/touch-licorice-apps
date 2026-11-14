@@ -1,7 +1,7 @@
 {
   "app_id": "chessplay",
   "display_name": "Chess",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "omer-faruq",
   "description": "A whole game of chess against the reader at four levels, or two players on one reader. Undo, hint, the game kept.",
   "entry": "index.lua",

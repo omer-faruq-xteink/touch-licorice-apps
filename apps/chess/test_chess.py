@@ -132,4 +132,12 @@ assert total >= 2390, total
 assert 0 < MAX_CMDS[0] < 900, MAX_CMDS      # every first position; the host draws about 1024 a screen
 print(f'draw commands, most on a screen: {MAX_CMDS[0]}')
 g.no_err()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap(*bw(4))
+assert 'Mate in 2' in g.recs()
+assert back('down') is True and back('up') is True and 'Mate in 2' not in g.recs(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print(f'chess tests passed ({total} puzzles solved by taps)')

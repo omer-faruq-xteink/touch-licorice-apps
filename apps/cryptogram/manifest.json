@@ -1,7 +1,7 @@
 {
   "app_id": "cryptogram",
   "display_name": "Cryptogram",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "omer-faruq",
   "description": "A quote a day with every letter swapped for another: work out the code. Tap a letter, then the key it stands for; hints, checks, earlier days.",
   "entry": "index.lua",

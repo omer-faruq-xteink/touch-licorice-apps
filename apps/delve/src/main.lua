@@ -1225,15 +1225,18 @@ function on_input(c, ev)
         elseif screen == 'end' then tap_end(x, y)
         else tap_title(x, y) end
       end
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      -- it closes a box or the bag; in the game (saved) and on the title it is left to the host
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'back' then
-        if screen == 'bag' then screen = 'game'
-        elseif screen == 'game' then save(); handled = false
-        elseif screen == 'end' then screen = 'title'
-        else handled = false end
-      elseif screen == 'game' and KEY_DIRS[ev.key] then
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif screen == 'bag' then screen = 'game'
+      elseif screen == 'game' then save(); handled = false
+      elseif screen == 'end' then screen = 'title'
+      else handled = false end
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if not kit.modal() and screen == 'game' and KEY_DIRS[ev.key] then
         msgs = {}
         step(KEY_DIRS[ev.key][1], KEY_DIRS[ev.key][2])
       end

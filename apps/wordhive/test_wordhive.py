@@ -153,4 +153,13 @@ g.restart()
 for w in lines[5].split(' ')[1:]:
     enter(w)
 assert str(A().msg()) == 'Every word found!' and str(A().rank()) == 'Queen bee', (A().msg(), A().rank())
+
+# Back: down then up; only the up answer counts. It goes back from Hints to the puzzle; on the
+# puzzle it is left to the host
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Hints')
+assert str(A().view()) == 'hints'
+assert back('down') is True and back('up') is True and str(A().view()) == 'play'
+assert back('down') is True and back('up') is False
+g.no_err()
 print('Word Hive: all tests passed')

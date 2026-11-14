@@ -188,4 +188,12 @@ tap_sq('f3')
 n = g.commands()
 assert n < 900, n
 g.no_err()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('New game')
+assert 'Two players' in g.recs()
+assert back('down') is True and back('up') is True and 'Two players' not in g.recs(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print(f'chessplay: all tests passed ({n} draw commands on a busy screen, {spent} ms of slices)')

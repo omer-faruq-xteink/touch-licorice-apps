@@ -1,7 +1,7 @@
 {
   "app_id": "merchant",
   "display_name": "Merchant",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "author": "omer-faruq",
   "description": "Turn-based trading game: buy low, sell high, 30 days",
   "entry": "index.lua",

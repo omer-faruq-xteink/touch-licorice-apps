@@ -188,5 +188,16 @@ assert A().tab() == 'three'
 g.key('left')
 g.key('left')
 assert A().tab() == 'deck'
+
+# Back acts on its release (only the up event's answer counts): it leaves the journal; on a tab it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+assert back('down') is True and back('up') is False and A().tab() == 'deck'
+g.key('right')
+g.tap_label('Journal: earlier days')
+assert A().tab() == 'journal'
+assert back('down') is True and A().tab() == 'journal'
+assert back('up') is True and A().tab() == 'today'
+assert back('down') is True and back('up') is False and A().tab() == 'today'
 g.no_err()
 print('all good')

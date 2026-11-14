@@ -1,7 +1,7 @@
 {
   "app_id": "checkers",
   "display_name": "Checkers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "omer-faruq",
   "description": "Checkers or Turkish draughts (Dama) against the reader at four levels, or two players on one reader. Undo, hint, the game kept.",
   "entry": "index.lua",

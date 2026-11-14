@@ -108,5 +108,11 @@ g.tap_label('Cancel')
 assert cells()[0] == '#'
 g.tap_label('Clear'); g.tap_label('Clear')
 assert cells().count('.') == 100
+
+# Back: down then up; only the up answer counts. It closes a box; on the board it is left to the host
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Clear')
+assert back('down') is True and back('up') is True and 'Clear this puzzle?' not in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
 g.no_err()
 print('nonogram tests passed')

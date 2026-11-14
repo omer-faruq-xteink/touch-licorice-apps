@@ -534,22 +534,29 @@ end
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
       tap(ev.x or 0, ev.y or 0)
-    elseif ev.type == 'key' and kit.key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer)
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
+      -- it closes a box or a card, leaves the journal; on the tabs it is left to the host
       if kit.modal() then
-        if ev.key == 'back' and kit.modal().cancel then kit.modal().cancel() end
-      elseif ev.key == 'back' then
-        if detail then close_detail() elseif tab == 'journal' then tab = 'today'; full_refresh() end
-      elseif ev.key == 'down' or ev.key == 'right' then step(1)
+        if kit.modal().cancel then kit.modal().cancel() end
+      elseif detail then close_detail()
+      elseif tab == 'journal' then tab = 'today'; full_refresh()
+      else handled = false end
+    elseif ev.type == 'key' and kit.key_accepted(ev) then
+      if kit.modal() then return end
+      if ev.key == 'down' or ev.key == 'right' then step(1)
       elseif ev.key == 'up' or ev.key == 'left' then step(-1) end
     end
   end)
   if not ok then ERR = tostring(e) end
   kit.refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

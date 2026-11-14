@@ -1135,21 +1135,27 @@ local SWIPES = { swipe_left = 'left', swipe_right = 'right', swipe_up = 'up', sw
 
 function on_input(c, ev)
   ERR = nil
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'pointer' and ev.phase == 'up' then
       if not modal and SWIPES[ev.gesture or ''] then slide(SWIPES[ev.gesture]) else tap(ev.x or 0, ev.y or 0) end
-    elseif ev.type == 'key' and key_accepted(ev) then
+    elseif ev.type == 'key' and ev.key == 'back' then
+      -- Back acts on its release (the host reads only the up event's answer): it closes a box;
+      -- on the board it is left to the host, which offers to exit
+      if ev.phase ~= 'up' and ev.phase ~= nil then return end
       if modal then
-        if ev.key == 'back' and modal.cancel then modal.cancel() end
-      elseif ev.key == 'left' or ev.key == 'right' or ev.key == 'up' or ev.key == 'down' then
+        if modal.cancel then modal.cancel() end
+      else handled = false end
+    elseif ev.type == 'key' and key_accepted(ev) and not modal then
+      if ev.key == 'left' or ev.key == 'right' or ev.key == 'up' or ev.key == 'down' then
         slide(ev.key)
       end
     end
   end)
   if not ok then ERR = tostring(e) end
   refresh()
-  return true
+  return handled
 end
 
 -- switch to size n: its saved puzzle, or a new one

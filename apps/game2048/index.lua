@@ -256,6 +256,17 @@ function on_input(_, ev)
   if type(ev) ~= 'table' then return false end
   ev = as_touch(ev)
   if not ev then return true end
+  if ev.type == 'key' and ev.key == 'back' then
+    -- Back acts on its release (the host reads only the up event's answer): it closes the
+    -- new-game box; on the board it is left to the host, which offers to exit
+    local st = ev.phase or ev.state
+    if st ~= nil and st ~= 'up' then return true end
+    if not confirm then return false end
+    confirm = false
+    pcall(function() ctx:invalidate('full') end)
+    pcall(function() ctx:invalidate() end)
+    return true
+  end
   if ev.type == 'key' then
     local st = ev.phase or ev.state                    -- phase on API 2.x, state on the older host
     if st ~= nil and st ~= 'down' then return true end

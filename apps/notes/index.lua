@@ -416,11 +416,16 @@ end
 
 function on_input(c, ev)
   ERR = nil   -- a new interaction clears the last error; a new one sets it again
+  local handled = true
   local ok, e = pcall(function()
     if type(ev) ~= 'table' then return end
     if ev.type == 'key' then
-      if modal and ev.key == 'back' then modal = nil end
-      if tool_menu and ev.key == 'back' then tool_menu = false end
+      -- Back acts on its release (the host reads only the up event's answer): it closes a box or
+      -- the tool list; on the page it is left to the host, which offers to exit
+      if ev.key ~= 'back' or (ev.phase ~= 'up' and ev.phase ~= nil) then return end
+      if modal then modal = nil
+      elseif tool_menu then tool_menu = false
+      else handled = false end
       return
     end
     if ev.type ~= 'pointer' then return end
@@ -491,7 +496,7 @@ function on_input(c, ev)
   end)
   if not ok then ERR = tostring(e) end
   refresh()
-  return true
+  return handled
 end
 
 function on_load(c)

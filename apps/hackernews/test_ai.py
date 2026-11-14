@@ -108,7 +108,7 @@ L.execute("files = {}; ctx.files = { path = '/AppFiles/hackernews', exists = fun
           "write = function(self, n, d) files[n] = d; return true end }")
 L.execute(f"ctx.clock.now = function(self) return {{ epoch_sec = {NOW} }} end")
 answer_one = L.eval('function() local f, r = pending_fn, pending_resp; pending_fn = nil; if f then f(ctx, r); return true end return false end')
-back_key = L.eval("function() fake_ms = fake_ms + 300; return on_input(ctx, {type='key', key='back'}) end")
+back_key = L.eval("function(ph) fake_ms = fake_ms + 300; return on_input(ctx, {type='key', key='back', phase=ph}) end")
 A = lambda: g.api
 
 
@@ -143,9 +143,12 @@ g.tap(100, 64 + 20); answer_all()
 assert screen() == 'story' and 'AI' not in g.texts() and 'Lisp is a family of languages.' in page_text(), g.texts()
 g.tap_label('5 comments'); answer_all()
 assert screen() == 'thread' and 'AI' not in g.texts()
-g.key('back'); g.key('back')
+# a press is a down, then an up; only the up's answer counts on the device, and Back acts on it
+assert back_key('down') is True and screen() == 'thread'
+assert back_key('up') is True and screen() == 'story'
+g.key('back')
 assert screen() == 'list'
-assert back_key() is False and screen() == 'list'      # Back on the list: the host asks whether to leave
+assert back_key('down') is True and back_key('up') is False and screen() == 'list'   # on the list: the host asks whether to leave
 
 # ------------------------------------------------------------------ Settings → AI
 g.tap_label('Settings')

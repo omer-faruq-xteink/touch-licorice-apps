@@ -159,4 +159,12 @@ for k in range(0, len(lines), 37):
     A().open_day(DAY0 + k)
     assert g.commands() < 1024
     g.no_err()
+
+# Back: down then up; only the up answer counts. It closes a box; on the ladder it is left to the host
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('Menu')
+assert 'Today' in g.texts()
+assert back('down') is True and back('up') is True and 'Today' not in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print('all good')

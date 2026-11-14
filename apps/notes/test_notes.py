@@ -245,6 +245,19 @@ assert 'Q 100 300 hello' in g.store['page1.txt']
 draw()
 assert not any('ERR' in str(t) for t in g.drawn.values()), list(g.drawn.values())
 
+# Back acts on its release (only the up event's answer counts): it closes a box, then the tool list;
+# on the page it is left to the host, which offers to exit
+back = lambda phase: L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+tap(*LOCK)
+assert 'With clock' in labels()
+assert back('down') is True and 'With clock' in labels()
+assert back('up') is True and 'With clock' not in labels()
+tap(*B(0))
+assert 'Text S' in labels()
+assert back('down') is True and back('up') is True and 'Text S' not in labels()
+assert back('down') is True and back('up') is False
+draw()
+assert not any('ERR' in str(t) for t in g.drawn.values()), list(g.drawn.values())
 # lock screen entry draws the chosen page with a clock
 g.store['page1.txt'] = 'S 10,100 50,140 90,100\nT 20 200 3 good morning'
 g.store['lock.txt'] = '1\nclock'

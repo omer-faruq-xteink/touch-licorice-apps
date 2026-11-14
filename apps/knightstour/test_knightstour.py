@@ -95,4 +95,14 @@ g.restart()
 assert visited() == before and int(g.api.size()) == n
 assert f'Best {n * n}    Tours 1' in ' '.join(g.texts()), g.texts()       # the full tour earlier on this size
 g.no_err()
+# Back (down, then up: the host reads only the up event's answer): closes a box; on the board it is
+# left to the host, which offers to exit
+back = lambda phase: g.L.eval(f"on_input(ctx, {{type='key', key='back', phase='{phase}'}})")
+g.tap_label('New')
+for (r, c) in path:
+    g.tap(*sq(r, c))
+assert 'No more moves' in g.texts()
+assert back('down') is True and back('up') is True and 'No more moves' not in g.texts(), g.texts()
+assert back('down') is True and back('up') is False
+g.no_err()
 print('knightstour tests passed')
