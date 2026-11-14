@@ -12,11 +12,14 @@ flaws, moods and memories; and every morning may bring an event to answer.
 - **Route:** tap the ice tile by tile, or a far tile you have seen; the panel says how many days it takes
   and what lies on the way. **Map** shows the whole region; tap a tile you have seen on it to plan the
   way there. Next to a nunatak, **Climb** spends a day on top and shows far.
-- **Pace:** rest (a camp day), steady or hard. **Rations:** short, normal or full. Both stay set.
+- **Pace:** rest (a camp day), steady or hard; after about six days on the march without a rest, people
+  wear out. **Rations:** short, normal or full. Both stay set. Supplies are packed for the journey with a
+  modest margin, so time, pace and rations matter.
 - **March:** the day passes: the party moves along the route, eats, burns fuel; people grow tired, cold
   or ill, and better with rest, food and the doctor. A short report follows, then the next morning's
   event, if any. Back gives an event's safe answer when it has one (a tap outside the box does
-  nothing). A lost party's cairns say which way they went.
+  nothing). A lost party's cairns say roughly which way they came from; their camp shows only when
+  you are close to it.
 - **The ice:** flat ice is fast; sastrugi and pressure ridges are slow and break sledges; crevasses are
   quick but people fall in (a surveyor helps); open water and rock bar the way (a hard frost freezes the
   leads); slopes are slow uphill.

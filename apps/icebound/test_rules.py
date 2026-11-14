@@ -40,7 +40,7 @@ ev = L.eval
 
 # ---------------------------------------------------------------- travel
 m = ev("moved_in_a_day(bare())")
-assert 2 <= m <= 3, ('steady on flat', m)
+assert 1 <= m <= 2, ('steady on flat', m)
 assert ev("(function() local s = bare(); s.pace = 'hard'; return moved_in_a_day(s) end)()") > m or \
     ev("(function() local s = bare(); s.pace = 'hard'; north(s, 10); R.step(s, Rng.new(3)); return s.progress end)()") > 0
 assert ev("(function() local s = bare(); s.pace = 'rest'; return moved_in_a_day(s) end)()") == 0

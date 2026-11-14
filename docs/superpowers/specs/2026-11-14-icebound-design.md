@@ -298,3 +298,20 @@ Lupa harness tests, as for Riverstead:
 - The event list's content beyond the kinds named; the ending texts; the name lists for people and
   places.
 - How the route is drawn and how many tiles ahead it may be set.
+
+## Tuning after play (2026-11-14, the user's call after the first device games)
+
+The first build was too easy: missions took about 20 of 56 days and half the food was left, so time,
+supplies, pace and rations hardly mattered, and the lost camp was found almost by walking north.
+
+- **Time and supplies matter:** travel is slower (steady 6 points a day, hard 9), so a mission takes
+  about 30-45 days; supplies are packed for the journey (the par's days at normal rations, +50% on Easy,
+  +22% on Normal, +8% on Hard; a lost-party search +20% more); the season is at least par + 12 days;
+  the cold deepens every 5 days; after about six marching days without a rest, exhaustion builds.
+- **The lost party is a real search:** the camp lies mostly off the straight line north and shows only
+  within two tiles; the pick-up is on the far side from it; the party's trail wandered (via another
+  place) with a cairn every 3-5 tiles and one buried; a cairn's note gives one of four directions, towards
+  the next cairn, and reveals nothing.
+- **Balance targets** (test_balance.py): Normal wins 60-85% (now 66%), each mission at least 40%, a
+  mission takes 26-46 days on average, at most 35% of the food is left at the goal (now 20%), and the
+  sensible bot brings everyone home to the goal at least 10 points more often than a fixed plan.

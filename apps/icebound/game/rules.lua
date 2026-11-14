@@ -9,13 +9,13 @@ return function(Rng, G)
   R.TERRAIN = { 'flat', 'sastrugi', 'ridge', 'crevasse', 'water', 'rock', 'slope' }
   R.COST = { flat = 4, sastrugi = 7, ridge = 12, crevasse = 5, slope = 8 }     -- points to enter a tile
   R.SLOPE_DOWN, R.SLOPE_FLAT = 3, 6
-  R.PACE = { rest = 0, steady = 10, hard = 14 }                                -- points a day
+  R.PACE = { rest = 0, steady = 6, hard = 9 }                                  -- points a day
   R.RATION = { short = 1, normal = 2, full = 3 }                               -- halves of food a person a day
   R.WEATHER = { 'clear', 'overcast', 'wind', 'blizzard', 'whiteout' }
   R.SEASON_TEMP = { early = -14, late = -24 }
   R.DIFF = {
     easy = { storm = 70, cold = 0 },
-    normal = { storm = 120, cold = 5 },
+    normal = { storm = 100, cold = 3 },
     hard = { storm = 135, cold = 7 },
   }
   R.FALL = 14                                                                  -- percent per crevasse tile
@@ -136,7 +136,7 @@ return function(Rng, G)
   end
 
   local function temp_for(state, kind, r)
-    local base = R.SEASON_TEMP[state.season or 'early'] - R.DIFF[state.diff or 'normal'].cold - (state.day or 1) // 3
+    local base = R.SEASON_TEMP[state.season or 'early'] - R.DIFF[state.diff or 'normal'].cold - (state.day or 1) // 5
     local adj = ({ clear = -6, overcast = 0, wind = -3, blizzard = -2, whiteout = 2 })[kind] or 0
     return base + adj + r:int(-3, 3)
   end

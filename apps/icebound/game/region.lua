@@ -160,13 +160,17 @@ return function(Rng)
     if mission == 'crossing' then
       reg.goal = idx(r:int(2, W - 1), 1)
     elseif mission == 'pole' then
-      reg.goal = idx(r:int(3, W - 2), r:int(3, 6))
+      reg.goal = idx(r:int(3, W - 2), r:int(8, 12))
     elseif mission == 'lost' then
-      local side = r:chance(0.5) and 1 or W
-      reg.goal = idx(side, r:int(8, 20))
-      local camp = idx(r:int(2, W - 1), r:int(4, 14))
+      -- the camp is mostly off the straight line north; the pick-up on the far side from it
+      local sx = G.xy(reg.start)
+      local xs = {}
+      for x = 1, W do if math.abs(x - sx) >= 3 or r:chance(0.15) then xs[#xs + 1] = x end end
+      local cx = xs[r:int(1, #xs)]
+      local camp = idx(cx, r:int(3, 14))
       flat_at(reg, camp)
       reg.targets = { camp }
+      reg.goal = idx(cx <= 6 and W or 1, r:int(14, 24))
     else
       local side = r:chance(0.5) and 1 or W
       local xs = side == 1 and { 1, 2 } or { W - 1, W }
@@ -179,12 +183,28 @@ return function(Rng)
       reg.goal = idx(side, r:int(1, 2))
     end
     flat_at(reg, reg.goal)
-    -- the lost party's cairns, every 3-5 tiles on its way from the camp towards the start
+    -- the lost party's cairns: their way wandered from the camp by another place to the start; a cairn
+    -- every 4-6 tiles, and one of them (when there are four or more) buried by the snow
     if mission == 'lost' then
-      local p = G.path(reg, reg.targets[1], reg.start, walk_cost(reg), nil)
+      local _, cy = G.xy(reg.targets[1])
+      local via = idx(r:int(1, W), r:int(math.min(H - 4, cy + 3), H - 4))
+      local p1 = G.passable(reg, nil, via) and G.path(reg, reg.targets[1], via, walk_cost(reg), nil)
+      local p2 = p1 and G.path(reg, via, reg.start, walk_cost(reg), nil)
+      local p
+      if p1 and p2 then
+        p = p1
+        for k = 2, #p2 do p[#p + 1] = p2[k] end
+      else
+        p = G.path(reg, reg.targets[1], reg.start, walk_cost(reg), nil)
+      end
       if p then
+        local seen = {}
         local k = r:int(3, 5)
-        while k < #p - 1 do reg.cairns[#reg.cairns + 1] = p[k]; k = k + r:int(3, 5) end
+        while k < #p - 1 do
+          if not seen[p[k]] then reg.cairns[#reg.cairns + 1] = p[k]; seen[p[k]] = true end
+          k = k + r:int(3, 5)
+        end
+        if #reg.cairns >= 4 then table.remove(reg.cairns, r:int(2, #reg.cairns - 1)) end
       end
     end
     -- caches of earlier parties; some are empty

@@ -66,6 +66,8 @@ def survivors(st):
 
 t0 = time.perf_counter()
 win, clean, by_mission, slowest, unwarned, ended = {}, {}, {}, 0.0, 0, True
+lengths, food_left = {}, []
+clean_win = 0
 for diff in ('easy', 'normal', 'hard'):
     w = c = 0
     for seed in range(1, N + 1):
@@ -79,15 +81,26 @@ for diff in ('easy', 'normal', 'hard'):
             m = by_mission.setdefault(str(st.mission), [0, 0])
             m[0] += st.over == 'goal'
             m[1] += 1
+            if st.over == 'goal' and survivors(st) == 6:
+                clean_win += 1
+            if st.over == 'goal':
+                lengths.setdefault(str(st.mission), []).append(st.day - 1)
+                food_left.append(st.sup.food / st.start_food)
     win[diff], clean[diff] = w / N, c / N
 check(0.60 <= win['normal'] <= 0.85, f'the sensible bot wins 60-85% on Normal: {win}')
 check(win['easy'] > win['normal'] > win['hard'], f'difficulty order {win}')
 for m, (a, b) in by_mission.items():
     check(a / b >= 0.40, f'{m} is won in {a}/{b} Normal runs')
 check(clean['normal'] >= 0.60, f'nobody lost in most Normal runs: {clean}')
+# time and supplies matter: a mission takes most of a month or more, and little food is left at the end
+for m, ds in lengths.items():
+    a = sum(ds) / len(ds)
+    check(26 <= a <= 46, f'{m} takes {a:.1f} days on average (26-46 wanted)')
+fl = sum(food_left) / max(1, len(food_left))
+check(fl <= 0.35, f'{fl:.2f} of the food is left at the goal on average (0.35 at most)')
 
 rw = rl = 0
-fixed_top = 0
+fixed_top = fixed_win = 0
 outcomes = Counter()
 for seed in range(1, N + 1):
     st, ok, _ = play(seed, 'normal', B.reckless)
@@ -100,10 +113,12 @@ for seed in range(1, N + 1):
     unwarned += not ok
     ended = ended and bool(st.over) and st.day <= st.days + 1
     fixed_top += st.over == 'goal' and S.ending(st).level == 1
+    fixed_win += st.over == 'goal' and survivors(st) == 6
 reckless_win, reckless_loss = rw / N, rl / N
 check(reckless_win <= win['normal'] - 0.20 or reckless_loss >= 2 * (1 - clean['normal']),
       f'recklessness costs: wins {reckless_win:.2f} vs {win["normal"]:.2f}, losses {reckless_loss:.2f} vs {1 - clean["normal"]:.2f}')
 check(fixed_top / N < 0.50, f'a fixed plan reaches the best ending in {fixed_top}/{N}')
+check(fixed_win / N <= clean_win / N - 0.10, f'decisions matter: a fixed plan brings everyone home to the goal {fixed_win / N:.2f} vs {clean_win / N:.2f}')
 check(unwarned == 0, f'{unwarned} runs had a death without two days of warning')
 check(ended, 'every run ends by the last day of the season')
 check(slowest < 30, f'the slowest day took {slowest:.1f} ms')
@@ -112,6 +127,7 @@ dt = time.perf_counter() - t0
 for f in fails:
     print('FAIL', f)
 print(f"balance: win {win}, nobody lost {clean}, by mission { {m: round(a / b, 2) for m, (a, b) in by_mission.items()} }, "
+      f"days { {m: round(sum(d) / len(d), 1) for m, d in lengths.items()} }, food left {fl:.2f}, clean wins {clean_win / N:.2f} vs fixed {fixed_win / N:.2f}, "
       f"reckless win {reckless_win:.2f} loss {reckless_loss:.2f} {dict(outcomes)}, fixed best {fixed_top}/{N}, "
       f"slowest day {slowest:.1f} ms, all {dt:.0f} s")
 assert not fails, f'{len(fails)} failures'

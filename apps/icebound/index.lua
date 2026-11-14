@@ -250,6 +250,17 @@ end
 
 local SCREENS = {}
 
+local HOW2 = {
+  'Each expedition has one of four missions, drawn at random and never the same twice in a row:',
+  'Crossing: reach the station on the far side (the flag). Pole and back: reach the pole (the flag), then '
+    .. 'come home to the base (the square); leave depots on the way out. Lost expedition: find a lost '
+    .. 'party\'s camp (a circle, seen only up close) by following their cairns, then reach the pick-up point '
+    .. '(the flag). Survey: fix four survey points (circles) along a coast, then reach the ship (the flag).',
+  'On the map: stacked stones are a cairn; a box with a cross, an old cache; a black box, your depot; a black '
+    .. 'triangle, a nunatak to climb; zigzags, pressure ridges; cracks, crevasses; waves, open water; hatching, '
+    .. 'ice you have not seen. The Map screen has a key, and the hub\'s Now line says what to do next.',
+}
+
 local HOW = {
   'Lead a team of six across an uncharted polar region, one day a turn. The map shows only what you '
     .. 'have seen; weather and a good navigator change how far you see.',
@@ -262,9 +273,15 @@ local HOW = {
     .. 'expedition has a new map, a new mission and a new team.',
 }
 
-local function how_to_play() box('How to play', HOW, { { { 'Close', kit.close } } }, kit.close) end
+local function how_to_play()
+  box('How to play', HOW, { { { 'Next', function()
+    kit.close()
+    box('Missions and the map', HOW2, { { { 'Close', kit.close } } }, kit.close)
+  end }, { 'Close', kit.close } } }, kit.close)
+end
 
 local new_expedition, resume_game     -- set by the game screens
+local extend_title = function() end    -- loads the game modules (set by the game screens)
 
 SCREENS.title = {
   draw = function(gg)
@@ -274,7 +291,7 @@ SCREENS.title = {
     local list = {}
     if has_game() then list[#list + 1] = { saved == 'over' and 'See the ending' or 'Continue', function() resume_game() end } end
     list[#list + 1] = { 'New expedition', function() new_expedition() end }
-    list[#list + 1] = { 'Chronicle', function() screen = 'chronicle' end }
+    list[#list + 1] = { 'Chronicle', function() extend_title(); screen = 'chronicle' end }
     list[#list + 1] = { 'Settings', function() screen = 'settings' end }
     list[#list + 1] = { 'How to play', how_to_play }
     for k, b in ipairs(list) do button(gg, 60, 180 + (k - 1) * 84, W - 120, 64, b[1], b[2]) end
@@ -349,7 +366,7 @@ local function draw_tile(g, i, x, y)
     g:line(x + 12, y + 6, x + 12, y + 34, { line_width = 2 })
     g:polygon({ x + 13, y + 6, x + 30, y + 11, x + 13, y + 16 }, { fill = true })
   end
-  if is_in(reg.targets, i) then g:circle(x + 20, y + 20, 9, { line_width = state.found[i] and 1 or 3 }) end
+  if is_in(reg.targets, i) and S.camp_visible(state) then g:circle(x + 20, y + 20, 9, { line_width = state.found[i] and 1 or 3 }) end
   if is_in(reg.cairns, i) then g:rect(x + 14, y + 22, 12, 8, {}); g:rect(x + 16, y + 14, 8, 8, {}) end
   if reg.caches[i] then g:rect(x + 12, y + 12, 16, 16, {}); g:line(x + 12, y + 12, x + 28, y + 28) end
   if state.depots[i] then g:rect(x + 12, y + 12, 16, 16, { fill = true }) end
@@ -436,7 +453,7 @@ local function refresh_info()
   if not state or state.over then return end
   extend()
   local tiles = S.tiles_left(state)
-  info = { warnings = S.warnings(state, tiles), tiles = tiles }
+  info = { warnings = S.warnings(state, tiles), tiles = tiles, now = S.now_text(state, tiles) }
 end
 
 local function goal_text()
@@ -470,7 +487,7 @@ local function day_report(rep, d)
   elseif state.climbed == d then lines[#lines + 1] = 'From the top of the nunatak you see far.'
   elseif state.radio == 'called' then lines[#lines + 1] = 'You wait for the plane.'
   elseif state.pace == 'rest' or state.camp_day == d then lines[#lines + 1] = 'The team rests in camp.'
-  else lines[#lines + 1] = 'Hard going: no new ground today.' end
+  else lines[#lines + 1] = S.progress_line(state) or 'Hard going: no new ground today.' end
   for k = 1, math.min(6, #(rep.lines or {})) do lines[#lines + 1] = (rep.lines[k]:gsub('^%l', string.upper)) end
   if rep.hunger then lines[#lines + 1] = 'There was not enough food.' end
   if rep.cold then lines[#lines + 1] = 'There was no fuel for the stove.' end
@@ -615,9 +632,11 @@ local function hub_body(gg, panel)
       y = y + 26
     end
   end
+  -- what to do now
+  local wy = y + 4
+  if info and info.now then wy = para(gg, info.now, 16, wy, wy + 46) end
   -- the warnings
   local warn = info and info.warnings or {}
-  local wy = y + 4
   if #warn > 0 then
     local ls = kit.wrap('! ' .. table.concat(warn, ' · '), 'small', W - 32)
     for k = 1, math.min(2, #ls) do
@@ -771,7 +790,10 @@ SCREENS.start = {
   back = function() screen = 'title'; return true end,
 }
 
+extend_title = function() pcall(function() ctx.budget:extend() end); load_game_modules() end
+
 new_expedition = function()
+  extend_title()               -- the app may have just started: the veteran's role needs the text
   local function go()
     local v = prefs.veteran
     if v then
@@ -789,7 +811,7 @@ end
 
 ------------------------------------------------------------------ the whole map
 
-local MAP_TILE = 20
+local MAP_TILE = 18
 local MAPX, MAPY = (W - 11 * MAP_TILE) // 2, 92
 local big, big_ok, big_dirty = nil, false, true
 local map_from = 'hub'
@@ -806,7 +828,7 @@ local function small_tile(g, i, x, y, plain)
   elseif t == 'slope' then g:line(x + 4, y + 12, x + 16, y + 12) end
   if not plain then
     if i == reg.goal then g:rect(x + 6, y + 2, 4, 16, { fill = true }) end
-    if is_in(reg.targets, i) then g:circle(x + 10, y + 10, 5, {}) end
+    if is_in(reg.targets, i) and S.camp_visible(state) then g:circle(x + 10, y + 10, 5, {}) end
     if is_in(reg.cairns, i) then g:rect(x + 7, y + 7, 6, 6, {}) end
     if state.depots[i] then g:rect(x + 6, y + 6, 8, 8, { fill = true }) end
   elseif i == reg.goal then g:rect(x + 6, y + 2, 4, 16, { fill = true }) end
@@ -859,7 +881,27 @@ SCREENS.map = {
     local px, py = G.xy(state.pos)
     if #pts >= 2 then table.insert(pts, 1, MAPY + (py - 1) * MAP_TILE + 10); table.insert(pts, 1, MAPX + (px - 1) * MAP_TILE + 10); gg:polyline(pts, { line_width = 2 }) end
     gg:circle(MAPX + (px - 1) * MAP_TILE + 10, MAPY + (py - 1) * MAP_TILE + 10, 6, { fill = true })
-    if map_from == 'route' then para(gg, 'Tap a tile you have seen to plan the way there.', 16, MAPY + 28 * MAP_TILE + 6, BTN_Y - 4) end
+    -- the key
+    local ky = MAPY + 28 * MAP_TILE + 6
+    local sm = kit.font('small')
+    local keys = {
+      { 'goal', function(x, y) gg:rect(x + 6, y + 2, 4, 16, { fill = true }) end },
+      { 'camp, point', function(x, y) gg:circle(x + 9, y + 10, 6, {}) end },
+      { 'cairn', function(x, y) gg:rect(x + 5, y + 10, 10, 7, {}); gg:rect(x + 7, y + 4, 6, 6, {}) end },
+      { 'cache', function(x, y) gg:rect(x + 3, y + 3, 14, 14, {}); gg:line(x + 3, y + 3, x + 17, y + 17) end },
+      { 'depot', function(x, y) gg:rect(x + 4, y + 4, 12, 12, { fill = true }) end },
+      { 'start', function(x, y) gg:rect(x + 5, y + 5, 10, 10, { line_width = 2 }) end },
+      { 'nunatak', function(x, y) tri(gg, x + 3, y + 3, 14, true) end },
+      { 'crevasse', function(x, y) gg:line(x + 6, y + 2, x + 12, y + 18, { line_width = 2 }) end },
+    }
+    local cw = (W - 32) // 4
+    for k, e in ipairs(keys) do
+      local x = 16 + ((k - 1) % 4) * cw
+      local y = ky + ((k - 1) // 4) * 24
+      e[2](x, y)
+      gg:text(x + 24, y, fit(e[1], sm, cw - 26), { font = sm })
+    end
+    if map_from == 'route' then para(gg, 'Tap a tile you have seen to plan the way there.', 16, ky + 50, BTN_Y - 4) end
     bottom_row(gg, { { 'Back', function() screen = map_from end } })
   end,
   tap_area = function(x, y)

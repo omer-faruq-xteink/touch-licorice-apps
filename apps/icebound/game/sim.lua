@@ -14,6 +14,7 @@ return function(Rng, G, R, TM, E, T, EL)
     hard = { food = 210, fuel = 52, dogfood = 380, dogs = 11, sledges = 3 },
   }
   S.KM = 10                          -- a tile
+  S.MARGIN = { easy = 150, normal = 122, hard = 108 }   -- supplies, in percent of the par's need
 
   local MISSION_NAME = { crossing = 'the crossing', pole = 'the pole', lost = 'the lost expedition', survey = 'the survey' }
   S.MISSION_NAME = MISSION_NAME
@@ -39,6 +40,13 @@ return function(Rng, G, R, TM, E, T, EL)
     R.weather_next(st, r)
     R.reveal(st)
     st.par = S.par(st)
+    -- supplies packed for this journey: the par's days at normal rations, with a margin by difficulty
+    local f = S.MARGIN[diff] + (mission == 'lost' and 20 or 0)    -- a search packs extra
+    st.sup.food = st.par * 6 * f // 100
+    st.sup.fuel = st.par * 2 * f // 100
+    st.sup.dogfood = st.par * st.sup.dogs * f // 100
+    st.start_food = st.sup.food
+    st.days = math.max(st.days, st.par + 12)
     st.total_left = S.tiles_left(st)
     st.best_left = st.total_left
     S.morning(st, Rng.new(Rng.mix(seed, 3)))
@@ -58,11 +66,27 @@ return function(Rng, G, R, TM, E, T, EL)
     end
     local n = pts(reg.start, reg.goal)
     if state.mission == 'pole' then n = n * 2
-    elseif state.mission == 'lost' then n = pts(reg.start, reg.targets[1]) + pts(reg.targets[1], reg.goal)
-    elseif state.mission == 'survey' then
+    elseif state.mission == 'lost' then
+      -- the search follows the lost party's cairns back to their camp, then on to the pick-up
       local at = reg.start
       n = 0
-      for _, t in ipairs(reg.targets) do n = n + pts(at, t); at = t end
+      for k = #reg.cairns, 1, -1 do n = n + pts(at, reg.cairns[k]); at = reg.cairns[k] end
+      n = n + pts(at, reg.targets[1]) + pts(reg.targets[1], reg.goal)
+    elseif state.mission == 'survey' then
+      -- the points nearest first, then the ship
+      local todo, at = {}, reg.start
+      for _, t in ipairs(reg.targets) do todo[#todo + 1] = t end
+      n = 0
+      while #todo > 0 do
+        local best, bk, bd
+        local x, y = G.xy(at)
+        for k, t in ipairs(todo) do
+          local tx, ty = G.xy(t)
+          local d = math.max(math.abs(tx - x), math.abs(ty - y))
+          if not best or d < bd then best, bk, bd = t, k, d end
+        end
+        n = n + pts(at, best); at = best; table.remove(todo, bk)
+      end
       n = n + pts(at, reg.goal)
     end
     return n // R.PACE.steady + 7
@@ -80,6 +104,24 @@ return function(Rng, G, R, TM, E, T, EL)
       end
     end
     if ev then state.event = { id = ev.id, vars = vars } end
+  end
+
+  -- the lost camp shows only once the party has come within two tiles of it (or found it)
+  function S.camp_visible(state)
+    if state.mission ~= 'lost' then return true end
+    local c = state.region.targets[1]
+    return state.found[c] or state.camp_spotted or false
+  end
+
+  local function spot_camp(state, rp)
+    if state.mission ~= 'lost' or state.camp_spotted then return end
+    local c = state.region.targets[1]
+    local cx, cy = G.xy(c)
+    local x, y = G.xy(state.pos)
+    if math.max(math.abs(cx - x), math.abs(cy - y)) <= 2 then
+      state.camp_spotted = true
+      if rp and not state.found[c] then rp.lines[#rp.lines + 1] = 'A broken sledge and a buried tent: the lost party\'s camp is close by.' end
+    end
   end
 
   function S.event_def(state)
@@ -285,26 +327,23 @@ return function(Rng, G, R, TM, E, T, EL)
             or 'A survey point is fixed.'
         end
       end
-      -- a cairn of the lost party: a note says which way they went, and the way ahead shows
-      for _, c in ipairs(reg.cairns) do
+      -- a cairn of the lost party: a note says, roughly, which way they came from (towards their camp)
+      for k, c in ipairs(reg.cairns) do
         if i == c and not (state.cairns_seen or {})[c] then
           state.cairns_seen = state.cairns_seen or {}
           state.cairns_seen[c] = true
-          local camp = reg.targets[1]
+          local nxt = reg.cairns[k - 1] or reg.targets[1]
           local cx, cy = G.xy(c)
-          local tx, ty = G.xy(camp)
-          local ns = ty < cy and 'north' or (ty > cy and 'south' or '')
-          local ew = tx > cx and 'east' or (tx < cx and 'west' or '')
-          local dir = (ns ~= '' and ew ~= '' and math.abs(tx - cx) * 2 >= math.abs(ty - cy)) and (ns .. '-' .. ew) or (ns ~= '' and ns or ew)
-          rp.lines[#rp.lines + 1] = 'A cairn of the lost party. A note in a tin says they went on ' .. dir .. '.'
-          -- the next stretch of their way comes into sight
-          local nx = cx + (tx > cx and 2 or (tx < cx and -2 or 0))
-          local ny = cy + (ty > cy and 2 or (ty < cy and -2 or 0))
-          nx, ny = math.max(1, math.min(G.W, nx)), math.max(1, math.min(G.H, ny))
-          local save = state.pos
-          state.pos = G.idx(nx, ny); R.reveal(state, 1); state.pos = save
+          local tx, ty = G.xy(nxt)
+          local dir
+          if math.abs(ty - cy) >= math.abs(tx - cx) then dir = ty < cy and 'north' or 'south'
+          else dir = tx > cx and 'east' or 'west' end
+          state.clue = { at = c, dir = dir }
+          state.clue_day = state.day
+          rp.lines[#rp.lines + 1] = 'A cairn of the lost party. A note in a tin says they came from somewhere to the ' .. dir .. '.'
         end
       end
+      spot_camp(state, rp)
       if state.mission == 'pole' and state.phase == 'out' and not state.turned and i == reg.goal then
         state.phase = 'back'
         rp.lines[#rp.lines + 1] = 'You have reached the pole. Now for home.'
@@ -317,7 +356,9 @@ return function(Rng, G, R, TM, E, T, EL)
     state.pace = pace
     if eff ~= pace and pace == 'hard' and eff == 'steady' then rep.lines[#rep.lines + 1] = 'Someone refused to march hard today.' end
     rep.month = state.day
+    if eff == 'rest' then state.streak = 0 else state.streak = (state.streak or 0) + 1 end
     TM.day(state, r, rep)
+    S.sight_cairns(state, rep)
     if not state.turned then
       state.tiles_now = S.tiles_left(state)
       state.best_left = math.min(state.best_left or 999, state.tiles_now)
@@ -336,12 +377,72 @@ return function(Rng, G, R, TM, E, T, EL)
     return rep
   end
 
+  -- a day that ended inside a slow tile: how far across it the party got
+  function S.progress_line(state)
+    local nxt = state.route and state.route[1]
+    if not nxt or (state.progress or 0) <= 0 then return nil end
+    local c = R.cost(state, nxt)
+    if not c then return nil end
+    local pct = math.min(90, state.progress * 100 // c)
+    local name = ({ sastrugi = 'sastrugi', ridge = 'pressure ridges', crevasse = 'crevasse field', slope = 'slope', water = 'frozen lead' })[state.region.t[nxt]] or 'snow'
+    local part = pct >= 60 and 'most of the way' or (pct >= 35 and 'about half way' or 'a little way')
+    return 'Slow going into the ' .. name .. ': ' .. part .. ' across.'
+  end
+
+  ------------------------------------------------------------------ what to do now
+
+  local function coast(i) return select(1, G.xy(i)) <= 6 and 'west' or 'east' end
+
+  -- one line for the hub: the next thing the mission wants (tiles: what is left, for the distance)
+  function S.now_text(state, tiles)
+    local reg = state.region
+    local km = (tiles or 0) * S.KM .. ' km'
+    if state.radio == 'called' then return 'Now: wait for the plane.' end
+    if state.turned then return 'Now: head back to the start (the square), ' .. km .. '.' end
+    if state.mission == 'crossing' then return 'Now: cross to the station (the flag), ' .. km .. '.' end
+    if state.mission == 'pole' then
+      if state.phase == 'back' then return 'Now: home to the base (the square), ' .. km .. '.' end
+      return 'Now: reach the pole (the flag), then come home; ' .. km .. ' in all.'
+    end
+    if state.mission == 'survey' then
+      local n = 0
+      for _, t in ipairs(reg.targets) do if state.found[t] then n = n + 1 end end
+      if n < #reg.targets then
+        return 'Now: fix the survey points (circles) along the ' .. coast(reg.targets[1]) .. ' coast: ' .. n .. ' of ' .. #reg.targets .. ' done.'
+      end
+      return 'Now: reach the ship (the flag), ' .. km .. '.'
+    end
+    -- the lost party
+    local camp = reg.targets[1]
+    if state.found[camp] then return 'Now: reach the pick-up point (the flag) on the ' .. coast(reg.goal) .. ' coast, ' .. km .. '.' end
+    if S.camp_visible(state) then return 'Now: the lost camp (the circle) is close: go to it.' end
+    if state.clue then return 'Now: follow the cairns; the last note says they came from the ' .. state.clue.dir .. '.' end
+    return 'Now: find the lost party\'s cairns (stacked stones) and follow them to their camp.'
+  end
+
+  -- cairns that came into sight today, told once each with where they lie
+  local function sight_cairns(state, rp)
+    if state.mission ~= 'lost' then return end
+    state.cairns_told = state.cairns_told or {}
+    local x, y = G.xy(state.pos)
+    for _, c in ipairs(state.region.cairns) do
+      if state.seen[c] and not state.cairns_told[c] and not (state.cairns_seen or {})[c] and c ~= state.pos then
+        state.cairns_told[c] = true
+        local cx, cy = G.xy(c)
+        local dir
+        if math.abs(cy - y) >= math.abs(cx - x) then dir = cy < y and 'north' or 'south' else dir = cx > x and 'east' or 'west' end
+        rp.lines[#rp.lines + 1] = 'A cairn of stacked stones in sight to the ' .. dir .. ': the lost party left it. Walk to it to read their note.'
+      end
+    end
+  end
+  S.sight_cairns = sight_cairns
+
   ------------------------------------------------------------------ warnings
 
   function S.warnings(state, tiles)
     local out = {}
     local left = R.days_left(state)
-    local need_days = math.max(1, ((tiles or S.tiles_left(state)) + 1) // 2)
+    local need_days = math.max(1, ((tiles or S.tiles_left(state)) * 5 + 5) // 6)   -- about 1.2 tiles a day
     if left.food <= 3 or left.food < need_days then out[#out + 1] = 'Food for ' .. left.food .. ' day' .. (left.food == 1 and '' or 's') end
     if left.fuel <= 3 or left.fuel < need_days then out[#out + 1] = 'Fuel for ' .. left.fuel .. ' day' .. (left.fuel == 1 and '' or 's') end
     if state.sup.dogs > 0 and (left.dogfood <= 3) then out[#out + 1] = 'Dog food for ' .. left.dogfood .. ' day' .. (left.dogfood == 1 and '' or 's') end
@@ -410,6 +511,10 @@ return function(Rng, G, R, TM, E, T, EL)
       lv = level(state)
       title = TITLES[state.mission][lv]
       lines[#lines + 1] = 'The expedition reached its goal on day ' .. (state.day - 1) .. '.'
+      if lv > 1 then
+        lines[#lines + 1] = #lost > 0 and 'Losing anyone keeps an expedition from the best ending.'
+          or ('Everyone came home, but the best ending needs the goal by day ' .. (state.par or 0) .. ': a faster expedition.')
+      end
     elseif kind == 'back' then
       title = 'Turned back'
       lines[#lines + 1] = #lost > 0 and 'The goal was not reached; you brought the survivors home.'

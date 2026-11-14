@@ -75,6 +75,66 @@ cn = ev("""(function()
   return table.concat(lines, ' | ') end)()""")
 check('cairn' in str(cn).lower() and any(w in str(cn) for w in ('north', 'south', 'east', 'west')), f'cairn line: {cn}')
 
+# the lost camp shows only from next to it
+hid = ev("""(function() local st = new(14, 'lost'); local c = st.region.targets[1]
+  local x, y = G.xy(c); local far = G.idx(x, math.min(28, y + 4)); st.region.t[far] = 'flat'; st.pos = far
+  for i = 1, 308 do st.seen[i] = true end
+  local a = S.camp_visible(st)
+  local mid = G.idx(x, math.min(28, y + 3)); local near = G.idx(x, math.min(28, y + 2)); st.region.t[mid] = 'flat'; st.region.t[near] = 'flat'; st.route = { mid, near }; st.weather = { kind = 'clear', temp = -20, wind = 5, left = 3 }
+  st.pace = 'hard'; st.event = nil; S.march(st, Rng.new(1)); st.event = nil; S.march(st, Rng.new(2))
+  return a, S.camp_visible(st) end)()""")
+check(hid == (False, True), f'the camp hides until the party is next to it: {hid}')
+# a cairn's clue is vague: one of four directions, nothing revealed
+vg = ev("""(function() local st = new(15, 'lost'); local c = st.region.cairns[1]
+  local p = G.path(st.region, st.pos, c, function(i) return R.cost(st, i) end, nil); table.remove(p, 1)
+  st.route = p; st.days = 400; st.pace = 'steady'; local line = ''
+  for k = 1, 40 do if st.pos == c then break end; st.event = nil; st.weather = { kind = 'clear', temp = -20, wind = 5, left = 3 }
+    local rep = S.march(st, Rng.new(k)); for _, l in ipairs(rep.lines) do if l:find('cairn') then line = l end end end
+  return line end)()""")
+check('-' not in str(vg).split('went')[-1] and any(w in str(vg) for w in ('north', 'south', 'east', 'west')), f'a vague clue: {vg}')
+
+# the Now line says what to do next, for every mission and phase
+nw = ev("""(function()
+  local out = {}
+  local st = new(16, 'lost'); out[#out + 1] = S.now_text(st, 30)
+  st.cairns_seen = { [st.region.cairns[1]] = true }; st.clue = { at = st.region.cairns[1], dir = 'north' }; out[#out + 1] = S.now_text(st, 30)
+  st.camp_spotted = true; out[#out + 1] = S.now_text(st, 30)
+  st.found[st.region.targets[1]] = true; out[#out + 1] = S.now_text(st, 14)
+  local sv = new(17, 'survey'); sv.found[sv.region.targets[1]] = true; out[#out + 1] = S.now_text(sv, 20)
+  local pl = new(18, 'pole'); out[#out + 1] = S.now_text(pl, 40); pl.phase = 'back'; out[#out + 1] = S.now_text(pl, 20)
+  local cr = new(19, 'crossing'); out[#out + 1] = S.now_text(cr, 25); cr.radio = 'called'; out[#out + 1] = S.now_text(cr, 25)
+  return table.concat(out, ' || ') end)()""")
+parts = str(nw).split(' || ')
+check('cairn' in parts[0].lower(), f'lost, at first: {parts[0]}')
+check('north' in parts[1], f'lost, after a note: {parts[1]}')
+check('camp' in parts[2].lower() and 'close' in parts[2], f'lost, camp spotted: {parts[2]}')
+check('flag' in parts[3] and 'km' in parts[3], f'lost, then the pick-up: {parts[3]}')
+check('1 of 4' in parts[4], f'survey: {parts[4]}')
+check('pole' in parts[5].lower() and 'home' in parts[6].lower(), f'pole: {parts[5]} / {parts[6]}')
+check('station' in parts[7] and 'plane' in parts[8], f'crossing and waiting: {parts[7]} / {parts[8]}')
+# a cairn coming into sight is announced once, with where it is
+sg = ev("""(function() local st = new(20, 'lost'); local c = st.region.cairns[#st.region.cairns]
+  local x, y = G.xy(c); local p = G.path(st.region, st.pos, c, function(i) return R.cost(st, i) end, nil); table.remove(p, 1)
+  st.route = p; st.days = 400; st.pace = 'steady'; local said = {}
+  for k = 1, 30 do if st.pos == c then break end; st.event = nil; st.weather = { kind = 'clear', temp = -20, wind = 5, left = 3 }
+    local rep = S.march(st, Rng.new(k)); for _, l in ipairs(rep.lines) do if l:find('in sight') then said[#said + 1] = l end end end
+  return #said, said[1] or '' end)()""")
+check(sg[0] >= 1 and 'cairn' in str(sg[1]).lower() and any(w in str(sg[1]) for w in ('north', 'south', 'east', 'west')), f'a cairn in sight: {sg}')
+
+# a day inside a slow tile says how far across it is; the ending says why it is not the best
+sl = ev("""(function() local st = new(21); local x, y = G.xy(st.pos); local n = G.idx(x, y - 1)
+  st.region.t[n] = 'sastrugi'; st.seen[n] = true; st.route = { n }; st.progress = 0; st.pace = 'steady'
+  st.weather = { kind = 'overcast', temp = -20, wind = 10, left = 3 }; st.event = nil
+  local rep = S.march(st, Rng.new(1)); return table.concat(rep.lines, ' | '), rep.moved, st.progress end)()""")
+check(sl[1] == 0 and sl[2] > 0, f'setup: {sl}')
+pl_ = ev("(function() local st = new(21); local x, y = G.xy(st.pos); local n = G.idx(x, y - 1); st.region.t[n] = 'sastrugi'; st.route = { n }; st.progress = 3; return S.progress_line(st) end)()")
+check('sastrugi' in str(pl_) and 'across' in str(pl_), f'a slow day says how far across: {pl_}')
+lvl = ev("""(function() local a = new(22); a.over = 'goal'; a.day = a.par + 6
+  local b = new(22); b.over = 'goal'; b.day = b.par; b.team[1].alive = false
+  return table.concat(S.ending(a).lines, ' | '), table.concat(S.ending(b).lines, ' | ') end)()""")
+check('faster' in str(lvl[0]).lower() or 'best' in str(lvl[0]).lower(), f'why not the best (slow): {lvl[0]}')
+check('best' in str(lvl[1]).lower(), f'why not the best (a loss): {lvl[1]}')
+
 # texts: capital letters, plurals, a warm wind only when it is mild, the ending tells what was found
 w = def_of = None
 check(ev("(function() local st = new(6); st.weather = { kind = 'wind', temp = -30, wind = 30, left = 2 }; return EL.ctx.cond((function() for _, d in ipairs(EL.defs) do if d.id == 'warm_wind' then return d end end end)(), st) end)()") is False,
@@ -166,7 +226,7 @@ g.tap_label('Map')
 far = next((i for i in range(1, 309) if sg.seen[i] and i != sg.pos and abs(((i - 1) // 11) - ((sg.pos - 1) // 11)) >= 2
             and g.L.eval(f"__TEST.api.mod('rules')(__TEST.api.mod('rng'), __TEST.api.mod('region')(__TEST.api.mod('rng'))).cost(__TEST.api.state(), {i})") is not None), None)
 if far:
-    fx_, fy_ = (480 - 220) // 2 + ((far - 1) % 11) * 20 + 10, 92 + ((far - 1) // 11) * 20 + 10
+    fx_, fy_ = (480 - 198) // 2 + ((far - 1) % 11) * 18 + 9, 92 + ((far - 1) // 11) * 18 + 9
     g.tap(fx_, fy_)
     check(g.api.screen() == 'route', f'a tap on the map returns to the route with a plan: {g.api.screen()}')
     check(any(s.startswith(tuple('123456789')) and 'tile' in s for s in g.texts()), f'the plan is shown: {g.texts()}')
@@ -198,6 +258,37 @@ for _ in range(4):
     if g.api.modal_open():
         g.api.modal_pick(1)
 check(g.api.screen() == 'hub', f'after a climb: {g.api.screen()}')
+
+# straight after the app starts (modules not loaded yet): New expedition with a veteran, and the Chronicle
+g2 = Game(HERE, stubs=TIMERS, before_load=lambda gm: gm.L.execute(f"package.path = [[{HERE.replace(os.sep, '/')}/?.lua;]] .. package.path"))
+g2.L.execute("store['prefs.txt'] = __TEST.api.mod('save').encode({ diff = 'normal', last_mission = 'lost', veteran = { name = 'Agnes', role = 'doctor', lv = 3, trait = 'nervous', mem = { 'came back' } } })")
+g2.L.execute("store['chronicle.txt'] = __TEST.api.mod('save').encode({ { mission = 'lost', char = 'coast', kind = 'goal', level = 1, title = 'The lost found', score = 1517, days = 11, survivors = 6, diff = 'normal', seed = 1 } })")
+g2.restart()
+g2.tap_label('Chronicle')
+check(not any('ERR' in s_ for s_ in g2.texts()) and any('1517' in s_ for s_ in g2.texts()), f'the Chronicle right after starting: {g2.texts()}')
+g2.key('back')
+g2.tap_label('New expedition')
+check(not any('ERR' in s_ for s_ in g2.texts()) and g2.api.modal_open() and any('Agnes' in s_ for s_ in g2.texts()), f'New expedition right after starting: {g2.texts()}')
+
+# the hub shows the Now line; the Map has a key of symbols; How to play explains missions and symbols
+g3 = Game(HERE, stubs=TIMERS, before_load=lambda gm: gm.L.execute(f"package.path = [[{HERE.replace(os.sep, '/')}/?.lua;]] .. package.path"))
+g3.L.execute('icebound_seed = 23')
+g3.tap_label('How to play')
+how = ' '.join(g3.texts())
+check(g3.api.modal_open() and 'Next' in g3.texts(), f'How to play has a next page: {g3.texts()}')
+g3.tap_label('Next')
+how2 = ' '.join(g3.texts()).lower()
+check(all(w in how2 for w in ('crossing', 'pole', 'lost', 'survey', 'cairn', 'flag')), f'the second page: {how2[:300]}')
+g3.api.modal_pick(1)
+g3.tap_label('New expedition'); g3.tap_label('Set out')
+for _ in range(3):
+    if g3.api.modal_open():
+        g3.api.modal_pick(1)
+check(any(s_.startswith('Now:') for s_ in g3.texts()), f'the hub says what to do now: {g3.texts()}')
+g3.tap_label('Route'); g3.tap_label('Map')
+key = ' '.join(g3.texts()).lower()
+check(all(w in key for w in ('goal', 'cairn', 'cache', 'depot', 'start', 'nunatak', 'crevasse')), f'the map key: {key}')
+check(g3.commands() < 900, g3.commands())
 
 for f in fails:
     print('FAIL', f)

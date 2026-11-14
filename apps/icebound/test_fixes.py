@@ -92,7 +92,7 @@ check(pw, 'losing a sledge never makes the party faster')
 
 # 5. caches and depots say what they held
 ca = ev("""(function()
-  local st = new(11); local route = corridor(st, 2); st.pace = 'steady'
+  local st = new(11); local route = corridor(st, 2); st.pace = 'hard'
   st.region.caches[route[1]] = { food = 25, fuel = 4, dogfood = 10 }; st.region.caches[route[2]] = {}
   local rep = R.step(st, Rng.new(1)); local s = table.concat(rep.lines, ' | ')
   return s end)()""")

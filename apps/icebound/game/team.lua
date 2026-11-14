@@ -151,11 +151,14 @@ return function(Rng, R, T)
       local fb = math.max(0, -temp - 30) * 2 + (rep.cold and 25 or 0) + (hard and 8 or 0)
         + ((marching and (w.kind == 'blizzard' or w.kind == 'wind')) and 10 or 0) - careful
       if p.trait == 'reckless' then fb = fb + 5 end
+      if resting then fb = fb // 2 end                -- in the tent, out of the wind
       if not worsen('frostbite', fb) and fb < 15 then heal('frostbite', (resting and 30 or 10) + treated) end
       -- snow blindness: marching in bright sun
       if not (marching and w.kind == 'clear' and worsen('snowblind', 6 - careful // 2)) then heal('snowblind', (resting and 50 or 20) + treated) end
       -- exhaustion: the hard pace, short rations
+      -- days on the march without a rest wear people down
       local ex = (hard and 30 or 0) + ((state.ration == 'short' and not resting) and 8 or 0)
+        + (resting and 0 or 6 * math.max(0, (state.streak or 0) - 5))
       if not worsen('exhaustion', ex) then heal('exhaustion', (resting and 70 or 15) + treated // 2) end
       -- injuries heal slowly
       heal('injury', (resting and 20 or 5) + treated)

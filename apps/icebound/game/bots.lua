@@ -62,10 +62,10 @@ return function(G, R, TM, S)
   function B.sensible(state, r)
     if state.event then B.answer(state, r) end
     local left = R.days_left(state)
-    local need = math.max(1, (S.tiles_left(state) + 1) // 2)
+    local need = math.max(1, (S.tiles_left(state) * 5 + 5) // 6)
     -- turn back when the goal is out of reach and home is not; call for help when neither is
     if not state.turned and state.radio == 'unused' and left.food < need then
-      local home = math.max(1, (tiles_from_start(state) + 1) // 2)
+      local home = math.max(1, (tiles_from_start(state) * 5 + 5) // 6)
       if left.food >= home and state.mission ~= 'pole' then S.turn_back(state)
       elseif left.food < 4 then S.call_rescue(state) end
     end
@@ -76,8 +76,9 @@ return function(G, R, TM, S)
       if back >= to_pole and back > 2 then S.leave_depot(state); state.flags.bot_depot = true end
     end
     if left.dogfood <= 2 and state.sup.dogs > 3 then S.kill_dog(state) end
-    -- the route
-    local target = nearby_cache(state) or S.target(state)
+    -- the route; on a lost-party search the bot knows only what a player knows: the camp once seen,
+    -- cairns in sight, the last note's direction
+    local target = nearby_cache(state) or B.search_target(state) or S.target(state)
     plan(state, target, false)
     -- pace: rest through storms and grave illness, push when the season runs short
     local w = state.weather.kind
@@ -86,7 +87,10 @@ return function(G, R, TM, S)
     for _, id in ipairs(TM.living(state)) do if state.team[id].cond.exhaustion >= 2 then tired = tired + 1 end end
     local season_left = state.days - state.day + 1
     local tight = left.food < need + 4 or need > season_left - 4
-    if w == 'whiteout' or (w == 'blizzard' and not tight) or ws >= 9 or tired >= 2 then state.pace = 'rest'
+    local cold = 0
+    for _, id in ipairs(TM.living(state)) do if state.team[id].cond.frostbite >= 2 then cold = cold + 1 end end
+    if w == 'whiteout' or (w == 'blizzard' and cold > 0 and not tight) or ws >= 9 or tired >= 2
+      or (state.streak or 0) >= 6 then state.pace = 'rest'
     elseif need > season_left - 3 and tired == 0 then state.pace = 'hard'
     else state.pace = 'steady' end
     -- rations by what is left
@@ -97,18 +101,62 @@ return function(G, R, TM, S)
     state.treat = p and p.id or nil
   end
 
+  function B.search_target(state)
+    if state.mission ~= 'lost' or state.turned then return nil end
+    local reg = state.region
+    local camp = reg.targets[1]
+    if state.found[camp] then return nil end
+    if S.camp_visible(state) then return camp end
+    for _, c in ipairs(reg.cairns) do
+      if state.seen[c] and not (state.cairns_seen or {})[c] then return c end
+    end
+    local from, dir = state.pos, 'north'
+    if state.clue then from, dir = state.clue.at, state.clue.dir end
+    -- unseen ice within five tiles of the last cairn, on the side the note points to: the nearest of it
+    if state.clue then
+      local fx, fy = G.xy(from)
+      local px, py = G.xy(state.pos)
+      local best, bd
+      for i = 1, G.W * G.H do
+        if not state.seen[i] then
+          local x, y = G.xy(i)
+          local dx, dy = x - fx, y - fy
+          local ok = math.max(math.abs(dx), math.abs(dy)) <= 5
+            and ((dir == 'north' and dy < 0) or (dir == 'south' and dy > 0) or (dir == 'east' and dx > 0) or (dir == 'west' and dx < 0))
+          if ok then
+            local d = math.max(math.abs(x - px), math.abs(y - py))
+            if not best or d < bd then best, bd = i, d end
+          end
+        end
+      end
+      if best then return best end
+    end
+    local x, y = G.xy(from)
+    local step = ({ north = { 0, -4 }, south = { 0, 4 }, east = { 4, 0 }, west = { -4, 0 } })[dir]
+    -- about one cairn-gap along the clue from the cairn where it was found, then further while nothing shows
+    local k = 5 + 3 * ((state.day - (state.clue_day or 0)) // 5)
+    local tx = math.max(1, math.min(G.W, x + step[1] * k // 4))
+    local ty = math.max(1, math.min(G.H, y + step[2] * k // 4))
+    if tx == x and ty == y then ty = math.max(1, y - 2) end
+    local t = G.idx(tx, ty)
+    if not G.passable(reg, state.frozen, t) then
+      for _, j in ipairs(G.around(t)) do if G.passable(reg, state.frozen, j) then return j end end
+    end
+    return t
+  end
+
   function B.reckless(state, r)
     if state.event then
       local offered = S.offered(state)
       S.answer(state, #offered > 0 and 1 or 1, r)
     end
-    plan(state, S.target(state), true)
+    plan(state, B.search_target(state) or S.target(state), true)
     state.pace, state.ration = 'hard', 'full'
   end
 
   function B.fixed(state, r)
     if state.event then B.answer(state, r) end
-    plan(state, S.target(state), true)
+    plan(state, B.search_target(state) or S.target(state), true)
     state.pace, state.ration = 'steady', 'normal'
   end
 

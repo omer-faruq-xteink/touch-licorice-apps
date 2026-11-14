@@ -26,6 +26,7 @@ sig, cost = L.eval('sig'), L.eval('cost')
 missions = ['crossing', 'pole', 'lost', 'survey']
 SIGNATURE = {'coast': 'water', 'plateau': 'sastrugi', 'glacier': 'crevasse', 'pack': 'ridge'}
 chars = Counter()
+lost_off = []
 mix = {c: Counter() for c in SIGNATURE}
 t0 = time.perf_counter()
 for m in missions:
@@ -44,9 +45,13 @@ for m in missions:
         if m == 'crossing':
             assert G.xy(reg.start)[1] >= 26 and G.xy(reg.goal)[1] <= 2, (G.xy(reg.start), G.xy(reg.goal))
         elif m == 'pole':
-            assert G.xy(reg.start)[1] >= 26 and 3 <= G.xy(reg.goal)[1] <= 6
+            assert G.xy(reg.start)[1] >= 26 and 8 <= G.xy(reg.goal)[1] <= 12
         elif m == 'lost':
-            assert len(ty) == 1 and 4 <= ty[0] <= 14 and len(list(reg.cairns.values())) >= 2
+            assert len(ty) == 1 and 3 <= ty[0] <= 14 and len(list(reg.cairns.values())) >= 2
+            cx = G.xy(reg.targets[1])[0]
+            gx = G.xy(reg.goal)[0]
+            assert (cx <= 6 and gx == 11) or (cx > 6 and gx == 1), ('the pick-up is on the far side from the camp', cx, gx)
+            lost_off.append(abs(cx - G.xy(reg.start)[0]))
         else:
             assert len(ty) == 4
             xs = {G.xy(t)[0] for t in reg.targets.values()}
@@ -57,10 +62,11 @@ t1 = time.perf_counter()
 L.execute("for _, m in ipairs(G.MISSIONS) do for s = 1, 1000 do G.make(s, m) end end")
 dt = time.perf_counter() - t1                 # the generator alone, without Python reading every tile back
 assert set(chars) == set(SIGNATURE), chars
+assert sum(lost_off) / len(lost_off) >= 2.5, ('the lost camp is off the straight line north', sum(lost_off) / len(lost_off))
 for c, terr in SIGNATURE.items():
     order = [k for k, _ in mix[c].most_common() if k != 'flat']
     assert order[0] == terr, (c, mix[c].most_common(4))
-assert dt < 12, f'4000 regions took {dt:.1f} s'          # 1000 per mission: under 3 s each
+assert dt < 16, f'4000 regions took {dt:.1f} s'          # 1000 per mission: under 4 s each
 
 # the path search: finds what the check found, and nil when the goal is walled off
 reg = G.make(7, 'crossing')

@@ -51,10 +51,10 @@ for seed in range(1, 201):
     st = S.new(seed, 'normal', L.table_from({'last_mission': 'pole'}))
     assert st.mission != 'pole', seed
     ms[str(S.new(seed, 'normal', L.table_from({})).mission)] += 1
-    assert st.day == 1 and st.month == 1 and st.days == 56 and len(list(st.team.values())) == 6
+    assert st.day == 1 and st.month == 1 and st.days >= 56 and st.days >= st.par + 12 and len(list(st.team.values())) == 6
     assert st.seen[st.pos] and st.season in ('early', 'late')
 assert set(ms) == {'crossing', 'pole', 'lost', 'survey'}, ms
-assert [S.new(5, 'hard', L.table_from({})).days, S.new(5, 'easy', L.table_from({})).days] == [50, 68]
+assert S.new(5, 'hard', L.table_from({})).sup.food < S.new(5, 'normal', L.table_from({})).sup.food < S.new(5, 'easy', L.table_from({})).sup.food
 assert ev("S.new(9, 'normal', {}).region.t[1] == S.new(9, 'normal', {}).region.t[1] and S.new(9, 'normal', {}).mission == S.new(9, 'normal', {}).mission")
 
 # ---------------------------------------------------------------- the missions
