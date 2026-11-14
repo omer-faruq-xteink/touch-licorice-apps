@@ -535,8 +535,8 @@
     "listing_id": "",
     "project_id": "b4065093-1a41-46a9-a686-083806b27f9c",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": "",
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-14"
   }
 }
