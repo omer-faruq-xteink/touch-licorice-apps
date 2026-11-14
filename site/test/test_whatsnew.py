@@ -77,6 +77,17 @@ check(html.startswith('<details class="fold" id="whats-new"><summary>What') and 
       f'a folded list: {html[:120]}')
 check(S.whats_new_html([]) == '', 'nothing to show, nothing drawn')
 
+# the badge: the app's own version in that release, the release in its tooltip
+html = S.whats_new_html(by_app['weather'], lambda tag, b: '1.1.1')
+check('<span class="rel" title="release v0.3.0">1.1.1</span>' in html, f'the app\'s version on the badge: {html[:200]}')
+# from the manifest at the release's git tag, else the version the bullet gives the app, else the release
+check(S.app_version('v0.24.0', 'klondike', '**Back on the main screen offers to exit**', 'Klondike') == '1.0.1',
+      'Klondike 1.0.1 in v0.24.0, from its manifest at the tag')
+check(S.app_version('v9.9.9', 'weather', '**Weather 1.1.1: the lock screen.**', 'Weather') == '1.1.1',
+      'no such tag: the version in the bullet')
+check(S.app_version('v9.9.9', 'chess', '**Back on the main screen offers to exit**', 'Chess puzzles') == 'v9.9.9',
+      'neither: the release')
+
 # the real notes: every app with a package has its entries, xkcd's newest first
 real = S.changes_by_app(open(os.path.join(S.ROOT, 'RELEASE_NOTES.md'), encoding='utf-8').read(), S.display_names())
 check(real.get('xkcd', [[None]])[0][0] == 'v0.24.0', f'xkcd: {real.get("xkcd", [])[:1]}')

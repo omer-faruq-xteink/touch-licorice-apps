@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # the release tags: each app's version in What's new
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'

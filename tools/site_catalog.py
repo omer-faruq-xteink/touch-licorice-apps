@@ -9,7 +9,7 @@ by tools/site_shots.py). build_site.py calls build(out, packages_dir), which wri
     apps/<app>/index.html        a page per app, with its own address to share
     apps/<app>/icon.png
 """
-import glob, html, json, os, re, shutil, struct
+import glob, html, json, os, re, shutil, struct, subprocess
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO = 'https://github.com/omer-faruq-xteink/touch-licorice-apps'
@@ -200,11 +200,33 @@ def changes_by_app(notes, names, upto=None):
     return out
 
 
-def whats_new_html(entries):
-    """an app's latest changes as a folded list (empty when there are none)"""
+_versions = {}
+
+
+def app_version(tag, app, bullet, name):
+    """the app's version in a release: its manifest at the release's git tag (exact; the workflow
+    fetches the tags), else the version the bullet gives it ("Weather 1.1.1"), else the release"""
+    key = (tag, app)
+    if key not in _versions:
+        try:
+            out = subprocess.run(['git', '-C', ROOT, 'show', f'{tag}:apps/{app}/manifest.json'],
+                                 capture_output=True, timeout=20)
+            _versions[key] = json.loads(out.stdout.decode('utf-8')).get('version') if out.returncode == 0 else None
+        except (OSError, ValueError, subprocess.SubprocessError):
+            _versions[key] = None
+    if _versions[key]:
+        return _versions[key]
+    m = re.search(r'(?<!\w)' + re.escape(name) + r' (\d+(?:\.\d+)+)', bullet)
+    return m.group(1) if m else tag
+
+
+def whats_new_html(entries, label=lambda tag, bullet: tag):
+    """an app's latest changes as a folded list (empty when there are none); label(tag, bullet) is
+    the badge (the app's version), the release goes in its tooltip"""
     if not entries:
         return ''
-    items = ''.join(f'<li><span class="rel">{H(t)}</span> {inline(b)}</li>' for t, b in entries[:WHATS_NEW])
+    items = ''.join(f'<li><span class="rel" title="release {H(t)}">{H(label(t, b))}</span> {inline(b)}</li>'
+                    for t, b in entries[:WHATS_NEW])
     return (f'<details class="fold" id="whats-new"><summary>What&rsquo;s new</summary><div class="fold-body">'
             f'<ul class="changes">{items}</ul><p class="fine">Every change: <a href="{NOTES_URL}">the release notes</a>.</p>'
             '</div></details>')
@@ -425,7 +447,8 @@ def build(out, packages):
         if os.path.exists(icon):
             shutil.copyfile(icon, os.path.join(page, 'icon.png'))
         with open(os.path.join(page, 'index.html'), 'w', encoding='utf-8', newline='\n') as f:
-            f.write(app_page(e, intro(app), whats_new_html(changes.get(app, []))))
+            label = lambda tag, b, app=app, name=name: app_version(tag, app, b, name)
+            f.write(app_page(e, intro(app), whats_new_html(changes.get(app, []), label)))
     entries.sort(key=lambda e: order[e['id']])
     catalog = {
         'categories': [{'id': k, 'name': n} for k, n, _ in CATEGORIES],
