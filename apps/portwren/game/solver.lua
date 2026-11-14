@@ -217,6 +217,9 @@ function V.check(case, town, G)
   end
   local cost = G.cost(case, town)
   if cost > math.floor(0.6 * G.TOTAL[case.size]) then return false, 'too many actions: ' .. cost end
+  if G.day_cost and G.day_cost(case, town) > math.floor(G.DAY_SHARE * case.days * 2 * 3) then
+    return false, 'too many talks by day'
+  end
   return true
 end
 

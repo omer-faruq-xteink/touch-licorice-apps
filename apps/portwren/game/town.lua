@@ -164,6 +164,28 @@ return function(T, R)
       end
     end
     W.fill(town, R.new(R.mix(town.seed, no * 7 + 1)))
+    W.prune(town)
+  end
+
+  -- drop the dead, jailed and gone whom no one alive remembers, and the relationships they leave,
+  -- so the saved town does not grow case after case
+  function W.prune(town)
+    local keep = {}
+    for id = 1, town.next_id - 1 do
+      local p = town.people[id]
+      if p and p.status == 'alive' then
+        keep[id] = true
+        for _, h in ipairs(p.hist) do if h.who then keep[h.who] = true end end
+      end
+    end
+    for id = 1, town.next_id - 1 do
+      if town.people[id] and not keep[id] then town.people[id] = nil end
+    end
+    local rel = {}
+    for _, rl in ipairs(town.rel) do
+      if town.people[rl.a] and town.people[rl.b] then rel[#rel + 1] = rl end
+    end
+    town.rel = rel
   end
 
   local THRESHOLDS = { 0, 30, 80, 160 }

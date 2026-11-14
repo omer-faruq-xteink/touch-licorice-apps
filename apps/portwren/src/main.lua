@@ -88,7 +88,8 @@ local function save()
   kit.write('case.txt', (rec.prep or rec.case) and S.encode(rec) or '')
 end
 
-local function career_saved() return S.decode(kit.read('town.txt')) ~= nil end
+-- a career is on the card (a quick look: the title asks on every frame, decoding the town is slow)
+local function career_saved() local s = kit.read('town.txt'); return type(s) == 'string' and #s > 2 end
 local function has_game() return case ~= nil or career_saved() end
 
 ------------------------------------------------------------------ the clock
@@ -143,8 +144,10 @@ end
 local function new_seed()
   local s = rawget(_G, 'portwren_seed')
   if s then return s end
-  -- the reader has no os library; math.random is seeded anew every session
-  return ((kit.now_ms() or 1) * 7919 + math.random(1, 2147483000)) % 2147483000 + 1
+  -- the reader has no os library; math.random is seeded anew every session. Every step stays under
+  -- 2^31, so 32-bit integers never overflow
+  local t = math.floor(kit.now_ms() or 1) % 100000
+  return t * 7919 + math.random(1, 1000000000)
 end
 
 local function schedule(fn)
@@ -252,7 +255,8 @@ local HOW = {
     .. 'after that, nothing they say counts.',
   'A suspect\'s own account never clears them. Someone is cleared when they could not get the means, '
     .. 'or when a believed witness or evidence puts them elsewhere at the time of the crime.',
-  'The culprit had the means and the motive, and their account of that time is shown to be a lie.',
+  'The culprit had the means and the motive, and their account of that time is shown to be a lie, '
+    .. 'or they are placed at the scene at that time.',
   'Searching a place or talking to someone takes an action; a day has four parts of three. '
     .. 'A wrong accusation, or running out of time, lets the killer strike again. A second one, and the killer flees.',
 }
@@ -263,6 +267,7 @@ end
 
 local function continue()
   if case then screen = case.over and 'end' or 'case'
+  elseif prefs.mode == 'single' then new_town('single')
   elseif town or career_saved() then
     town = town or S.decode(kit.read('town.txt'))
     next_case()
@@ -755,7 +760,9 @@ SCREENS.accuse = {
     for k, pid in ipairs(case.suspects) do
       local x = 16 + ((k - 1) % 2) * (bw + 8)
       local p = pid
-      button(gg, x, y + ((k - 1) // 2) * 54, bw, 48, name(pid), function() guess.who = p end,
+      local label = name(pid)
+      if #label > 16 then label = first(pid) .. ' ' .. surname(pid):sub(1, 1) .. '.' end
+      button(gg, x, y + ((k - 1) // 2) * 54, bw, 48, label, function() guess.who = p end,
         { font = 'small', line_width = guess.who == pid and 4 or 1 })
     end
     y = y + ((#case.suspects + 1) // 2) * 54 + 6
@@ -987,5 +994,6 @@ if rawget(_G, '__TEST') then
     act_left = function() return act_left() end,
     place_of = function(pid) return place_of(pid) end,
     prefs = function() return prefs end,
+    drop_case = function() case = nil; save() end,
   }
 end

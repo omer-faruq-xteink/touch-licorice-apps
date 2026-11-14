@@ -71,6 +71,12 @@ def name_of(pid):
     return str(A().town().people[pid].name)
 
 
+def status_of(tw, pid):
+    """a person's status; the dead, jailed and gone whom nobody remembers are dropped from the town"""
+    p = tw.people[pid]
+    return str(p.status) if p is not None else 'forgotten'
+
+
 def first_of(pid):
     return name_of(pid).split()[0]
 
@@ -237,7 +243,7 @@ width_ok()
 v1 = c.victim
 next_case()
 tw = A().town()
-assert tw.people[v1].status == 'dead' and tw.people[k].status == 'jailed' and tw.case_no == 2
+assert status_of(tw, v1) in ('dead', 'forgotten') and status_of(tw, k) in ('jailed', 'forgotten') and tw.case_no == 2
 c = A().case()
 assert all(tw.people[p].status == 'alive' for p in list(c.suspects.values()) + [c.victim])
 
@@ -445,7 +451,7 @@ k = c.killer
 accuse(next(p for p in c.suspects.values() if p != c.killer), 'debt', 'poison')
 assert A().case().over == 'lost'
 next_case()
-assert A().town().people[k].status == 'gone', A().town().people[k].status
+assert status_of(A().town(), k) in ('gone', 'forgotten'), status_of(A().town(), k)
 
 # 7: finishing a career case after choosing Single cases keeps the career's town up to date
 c = A().case()
@@ -455,7 +461,7 @@ L.execute('portwren_seed = 91')
 accuse(k, str(c.motive), str(c.means))
 next_case()
 saved = L.eval('function() return __TEST.api.mod("save").decode(ctx.storage:read("town.txt")) end')()
-assert saved.people[v].status == 'dead' and saved.people[k].status == 'jailed', (saved.people[v].status, saved.people[k].status)
+assert status_of(saved, v) in ('dead', 'forgotten') and status_of(saved, k) in ('jailed', 'forgotten')
 
 # 7: starting single cases from the title with a career case open asks first; giving up counts as lost
 g.tap_label('Menu'); g.tap_label('Settings'); g.tap_label('Career'); g.key('back')
@@ -472,8 +478,54 @@ g.tap_label('Single cases')
 assert 'Give up' in g.texts(), g.texts()
 g.tap_label('Give up')
 saved = L.eval('function() return __TEST.api.mod("save").decode(ctx.storage:read("town.txt")) end')()
-assert saved.lost == lost + 1 and saved.people[k].status == 'gone', (saved.lost, lost, saved.people[k].status)
+assert saved.lost == lost + 1 and status_of(saved, k) in ('gone', 'forgotten'), (saved.lost, lost)
 L.eval('run_timers')()
 assert A().town().mode == 'single' and A().screen() == 'case'
+g.no_err()
+
+
+# ---------------------------------------------------------------- the small fixes
+# the how-to names both proofs of guilt
+g.tap_label('How to play') if A().screen() == 'title' else None
+while A().screen() != 'title':
+    g.key('back')
+g.tap_label('How to play')
+assert 'placed at the scene' in ' '.join(g.texts()), g.texts()
+g.key('back')
+
+# place short names fit a Statements cell: six letters at most
+for key in T.PLACES.keys():
+    assert len(str(T.PLACES[key].short)) <= 6, (key, str(T.PLACES[key].short))
+
+# long names on the Accuse buttons become first name and initial
+c = A().case()
+long_name = next((p for p in c.suspects.values() if len(name_of(p)) > 16), None)
+A().town().people[c.suspects[1]].name = 'Archibald Fairweather'
+while A().screen() != 'case':
+    g.key('back') if A().screen() != 'title' else g.tap_label('Continue')
+g.tap_label('Accuse')
+assert 'Archibald F.' in g.texts(), g.texts()
+g.key('back')
+
+# Continue with Single cases chosen and no open case starts a single case
+while A().screen() != 'title':
+    g.key('back')
+g.tap_label('Settings'); g.tap_label('Single cases'); g.key('back')
+L.execute("__TEST.api.drop_case()")
+assert A().case() is None
+L.execute('portwren_seed = 123')
+g.tap_label('Continue')
+L.eval('run_timers')()
+assert A().screen() == 'case' and A().town().mode == 'single', (A().screen(), A().town().mode)
+
+# a new seed stays inside 32-bit integers, even with a clock in the trillions
+L.execute('portwren_seed = nil; fake_ms = 1794650000000')
+while A().screen() != 'title':
+    g.key('back')
+g.tap_label('Single cases')
+if 'Give up' in g.texts():
+    g.tap_label('Give up')
+L.eval('run_timers')()
+assert 0 < A().town().seed < 2 ** 31 - 1, A().town().seed
 g.no_err()
 print('portwren: all tests passed')

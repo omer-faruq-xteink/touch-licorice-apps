@@ -364,18 +364,23 @@ return function(T, R, W)
     local dw = way == 3 and witness_at(case, held, r, wpool, s, scene) or nil
     if way == 3 and not dw then way = 2 end
     local fact = { { t = 'at', who = killer, place = scene, slot = s } }
+    -- in a question of time it names only the doctor's window: the time clues must fix the slot
+    local span = pattern == 'timeline' and { lo = case.window.lo, hi = case.window.hi } or nil
+    if span then
+      for t = span.lo, span.hi do case.says[killer][t] = claim end
+    end
     -- none of them comes for free: the killer gives themself away only when faced with their motive,
     -- and what they dropped was picked up by someone who must be asked about them
     if way == 1 then
       clue('observation', 'cert', fact, { k = 'show', who = killer, clue = kmotive.id }, true, 'faced',
-        { who = killer, place = scene, slot = s })
+        { who = killer, place = scene, slot = s, span = span })
     elseif way == 2 then
       local w = r:pick(wpool)
       clue('physical', 'cert', fact, { k = 'ask', who = w, topic = topic_of(killer) }, true, 'handed',
-        { who = killer, witness = w, place = scene, slot = s })
+        { who = killer, witness = w, place = scene, slot = s, span = span })
     else
       clue('testimony', dw, fact, person_gate(dw, topic_of(killer)), true, 'seen',
-        { who = killer, witness = dw, place = scene, slot = s })
+        { who = killer, witness = dw, place = scene, slot = s, span = span })
     end
 
     -- the rest: true details that decide nothing, up to the size's number of clues
@@ -480,6 +485,34 @@ return function(T, R, W)
     end
     return n
   end
+
+  -- the talks with people who can only be met by day (at work, mornings and afternoons): they must
+  -- fit in 60% of the daytime actions, so a town that trusts little still leaves slack
+  function G.day_cost(case, town)
+    local need = {}
+    for _, c in ipairs(case.clues) do if c.need then need[c.id] = true end end
+    local changed = true
+    while changed do
+      changed = false
+      for _, c in ipairs(case.clues) do
+        if need[c.id] and c.gate.k == 'show' and not need[c.gate.clue] then need[c.gate.clue] = true; changed = true end
+      end
+    end
+    local people = { [case.killer] = true }
+    for _, c in ipairs(case.clues) do
+      if need[c.id] and c.gate.k ~= 'search' then people[c.gate.who] = true end
+    end
+    local n = 0
+    for pid in pairs(people) do
+      local sc = case.sched[pid]
+      if sc and not has(case.places, sc[3]) and not has(case.places, sc[4]) then
+        n = n + 1
+        if town.people[pid].trust < 30 then n = n + 1 end
+      end
+    end
+    return n
+  end
+  G.DAY_SHARE = 0.6
 
   ------------------------------------------------------------------ the killer strikes again
 

@@ -333,4 +333,33 @@ for size in SIZES:
             bad = {k: v for k, v in witness_places(c).items() if len(v) > 1}
             assert not bad, (seed, size, 'after a strike, a witness in two places', bad)
 print('cases: witnesses are in one place at a time; suspects have their own first names')
+# people who can only be met by day leave slack: their talks fit in 60% of the daytime actions,
+# even in a town that trusts nobody
+def day_talks(c, tw):
+    need = {cl['id'] for cl in lst(c['clues']) if cl['need']}
+    more = True
+    while more:
+        more = False
+        for cl in lst(c['clues']):
+            if cl['id'] in need and cl['gate']['k'] == 'show' and cl['gate']['clue'] not in need:
+                need.add(cl['gate']['clue']); more = True
+    people = {c['killer']} | {cl['gate']['who'] for cl in lst(c['clues']) if cl['id'] in need and cl['gate']['k'] != 'search'}
+    places = set(lst(c['places']))
+    n = 0
+    for p in people:
+        sc = c['sched'][p]
+        if sc[3] not in places and sc[4] not in places:
+            n += 1 + (1 if tw.people[p].trust < 30 else 0)
+    return n
+
+
+for seed in range(1, 151):
+    tw = Wn.make(6000 + seed, 'career')
+    for pid in py(Wn.living(tw)).values():
+        tw.people[pid].trust = 0
+    for size in SIZES:
+        cl, c = new_case(tw, seed, size)
+        cap = int(0.6 * c['days'] * 2 * 3)
+        assert day_talks(c, tw) <= cap, (seed, size, day_talks(c, tw), cap)
+print('cases: daytime talks leave slack')
 print('cases: all tests passed')

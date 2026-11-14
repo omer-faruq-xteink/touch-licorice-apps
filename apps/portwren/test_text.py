@@ -79,6 +79,9 @@ for seed in range(1, 301):
         facts = lst(clue['facts'])
         slots = {f.get('slot') for f in facts} | {f.get('lo') for f in facts} | {f.get('hi') for f in facts}
         allowed_times = {str(T.time(x)) for x in slots if x}
+        sp = clue['vars'].get('span')
+        if sp:
+            allowed_times |= {str(T.time(sp['lo'])), str(T.clock(int(T.minutes(sp['hi'])) + 30))}
         for ph in TIME_RX.findall(s):
             check(ph in allowed_times, f'seed {seed} clue {clue["id"]} ({clue["tpl"]}): time "{ph}" not in {allowed_times}: {s}')
         allowed_places = {f.get('place') for f in facts} | {clue['gate'].get('place')}
@@ -111,6 +114,25 @@ for seed in range(1, 301):
 
 for tpl, seen in sorted(by_tpl.items()):
     check(len(seen) >= 3, f'template {tpl} has {len(seen)} distinct forms')
+
+# a question of time: the clue that puts the killer at the scene names only the doctor's window,
+# so the exact time still has to come from the time clues
+for seed in range(1, 201):
+    tw = Wn.make(4000 + seed % 9, 'career')
+    size = 'long' if seed % 2 else 'short'
+    cl = G.new_case(tw, L.table_from({'seed': seed, 'size': size, 'pattern': 'timeline', 'no': 1}))
+    c = py(cl)
+    if c['pattern'] != 'timeline':
+        continue
+    k, s_, lo, hi = c['killer'], c['slot'], c['window']['lo'], c['window']['hi']
+    window_words = {str(T.time(lo)), str(T.clock(int(T.minutes(hi)) + 30))}
+    for clue in lst(c['clues']):
+        if any(f['t'] == 'at' and f['who'] == k and f['slot'] == s_ and f['place'] == c['scene'] for f in lst(clue['facts'])):
+            txt = str(T.clue(cl, tw, cl.clues[clue['id']], None))
+            found_times = set(TIME_RX.findall(txt))
+            check(found_times <= window_words and found_times, f'seed {seed}: the decisive clue tells the exact time: {txt}')
+    for t in range(lo, hi + 1):
+        check(c['says'][k][t] != c['scene'], f'seed {seed}: the killer admits the scene inside the window')
 
 # short names are told apart: the topics of one talk, and everyone of the case
 labels_bad = 0

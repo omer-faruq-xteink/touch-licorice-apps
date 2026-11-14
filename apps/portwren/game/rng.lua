@@ -33,7 +33,9 @@ function R.new(seed) return setmetatable({ s = seed31(seed) }, Rng) end
 function R.mix(a, b)
   local r = R.new(a)
   r:next()
-  r.s = seed31(r.s + seed31(b) % 1000003)
+  -- the sum wraps below 2^31 by hand, so 32-bit integers never overflow
+  local k = seed31(b) % 1000003
+  if r.s > M31 - k then r.s = seed31(r.s - (M31 - k)) else r.s = seed31(r.s + k) end
   r:next(); r:next()
   return r:next()
 end

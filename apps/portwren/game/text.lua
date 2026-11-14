@@ -9,21 +9,21 @@ local T = {}
 -- places of the pool: a town has 10 of them (the inn, the cottages and the pier always)
 T.PLACES = {
   inn = { name = 'the Anchor inn', short = 'Inn', jobs = { 'innkeeper', 'barmaid', 'potboy' }, means = { 'knife', 'poison' } },
-  harbour_office = { name = 'the harbour office', short = 'Harbour', jobs = { 'harbourmaster', 'clerk' }, means = { 'blunt' } },
+  harbour_office = { name = 'the harbour office', short = 'Harbr', jobs = { 'harbourmaster', 'clerk' }, means = { 'blunt' } },
   pier = { name = 'the ferry pier', short = 'Pier', jobs = { 'ferry_master', 'deckhand' }, means = { 'drowning' } },
   fish_market = { name = 'the fish market', short = 'Market', jobs = { 'fishwife', 'fishmonger' }, means = { 'knife' } },
-  warehouse = { name = 'the bonded warehouse', short = 'Warehse', jobs = { 'warehouseman', 'foreman' }, means = { 'blunt' } },
+  warehouse = { name = 'the bonded warehouse', short = 'Bonded', jobs = { 'warehouseman', 'foreman' }, means = { 'blunt' } },
   chapel = { name = 'the seamen\'s chapel', short = 'Chapel', jobs = { 'chaplain', 'organist' }, means = {} },
   doctor = { name = 'the doctor\'s house', short = 'Doctor', jobs = { 'doctor', 'nurse' }, means = { 'poison' } },
   lighthouse = { name = 'the lighthouse', short = 'Light', jobs = { 'keeper' }, means = { 'drowning', 'blunt' } },
-  boarding = { name = 'the boarding house', short = 'Lodging', jobs = { 'landlady', 'maid' }, means = { 'poison' } },
+  boarding = { name = 'the boarding house', short = 'Lodge', jobs = { 'landlady', 'maid' }, means = { 'poison' } },
   bank = { name = 'the harbour bank', short = 'Bank', jobs = { 'bank_manager', 'teller' }, means = {} },
-  chemist = { name = 'the chemist\'s shop', short = 'Chemist', jobs = { 'chemist', 'apprentice' }, means = { 'poison' } },
+  chemist = { name = 'the chemist\'s shop', short = 'Chem.', jobs = { 'chemist', 'apprentice' }, means = { 'poison' } },
   boatyard = { name = 'the boatyard', short = 'Yard', jobs = { 'shipwright', 'caulker' }, means = { 'blunt', 'drowning' } },
-  customs = { name = 'the customs house', short = 'Customs', jobs = { 'customs_officer', 'tide_waiter' }, means = { 'blunt' } },
+  customs = { name = 'the customs house', short = 'Custom', jobs = { 'customs_officer', 'tide_waiter' }, means = { 'blunt' } },
   bakery = { name = 'the bakery on Gull Street', short = 'Bakery', jobs = { 'baker' }, means = { 'knife' } },
   school = { name = 'the schoolhouse', short = 'School', jobs = { 'teacher' }, means = {} },
-  cottages = { name = 'the fishermen\'s cottages', short = 'Cottage', jobs = { 'fisherman', 'net_mender' }, means = { 'knife', 'drowning' } },
+  cottages = { name = 'the fishermen\'s cottages', short = 'Cott.', jobs = { 'fisherman', 'net_mender' }, means = { 'knife', 'drowning' } },
 }
 T.PLACE_KEYS = { 'inn', 'harbour_office', 'pier', 'fish_market', 'warehouse', 'chapel', 'doctor', 'lighthouse',
   'boarding', 'bank', 'chemist', 'boatyard', 'customs', 'bakery', 'school', 'cottages' }
@@ -196,23 +196,23 @@ local CLUE = {
   access_no = { '{who} could not have got {means}: {he} has no key and no reason to be near it.',
                 'The register shows {who} never had {means} in reach.', '{who} has no way to {means}, the record shows.',
                 'Whatever {who} did, {he} did not get {means}: the book proves it.' },
-  seen = { '{witness}: "I saw {who} at {place} at {time}."', '{witness}: "{who}? At {place}, at {time}. I\'m sure of it."',
-           '{witness}: "At {time} {who} was at {place}. I saw {him} plain as day."',
-           '{witness} remembers {who} at {place} at {time}.' },
+  seen = { '{witness}: "I saw {who} at {place} {when}."', '{witness}: "{who}? At {place}, {when}. I\'m sure of it."',
+           '{witness}: "{who} was at {place} {when}. I saw {him} plain as day."',
+           '{witness} remembers {who} at {place} {when}.' },
   record = { 'A chit at {place}: {who} paid there at {time}.', 'The book at {place}: {who} signed in at {time}.',
              'A dated slip from {place} shows {who} there at {time}.', 'Written down at {place}: {who}, {time}.' },
-  faced = { 'Faced with it, {who} goes pale, and you notice {detail}. It puts {him} at {place} at {time}.',
-            '{who} has no answer to that. But you notice {detail}: {he} was at {place} at {time}.',
-            'Shown the paper, {who} fumbles, and you see {detail}. That only comes from {place}, around {time}.' },
+  faced = { 'Faced with it, {who} goes pale, and you notice {detail}. It puts {him} at {place} {when}.',
+            '{who} has no answer to that. But you notice {detail}: {he} was at {place} {when}.',
+            'Shown the paper, {who} fumbles, and you see {detail}. That only comes from being at {place} {when}.' },
   observed = { 'As {who} talks, you notice {detail}. It puts {him} at {place} at {time}.',
                'You see {detail} on {who}. That only comes from {place}, around {time}.',
                '{who} has {detail}: {he} was at {place} at {time}, whatever {he} says.' },
   dropped = { 'At {place} you find {item}. It is {who}\'s, dropped at {time}: the rain began then and it lies dry underneath.',
               'Under a bench at {place}: {item}, {who}\'s. The lamplighter swept there just before {time}.',
               'At {place}, {item}, plainly {who}\'s. It was not there when the watch went by just before {time}.' },
-  handed = { '{witness} hands you {item}: {who}\'s, picked up at {place} just after {time}.',
-             '{witness}: "This was lying at {place} at {time}. It\'s {who}\'s, isn\'t it?" It is {item}.',
-             '{witness} kept {item}, found at {place} soon after {time}. It belongs to {who}.' },
+  handed = { '{witness} hands you {item}: {who}\'s, dropped at {place} {when}.',
+             '{witness}: "This was dropped at {place} {when}. It\'s {who}\'s, isn\'t it?" It is {item}.',
+             '{witness} kept {item}, dropped at {place} {when}. It belongs to {who}.' },
   alibi = { '{witness}: "{who} was with me at {place} at {time}. I\'ll swear to it."',
             '{witness}: "At {time}? {who} was at {place} with me, the whole time."',
             '{witness} insists {who} was at {place} at {time}.' },
@@ -246,7 +246,10 @@ function T.clue(case, town, c, r)
   local slot = v.slot or f.slot
   if c.tpl == 'stopped' then slot = fact_of(c, 'window').hi end
   if c.tpl == 'last_seen' then slot = fact_of(c, 'window').lo end
-  if slot then vals.time = T.time(slot) end
+  if slot then vals.time = T.time(slot); vals.when = 'at ' .. T.time(slot) end
+  if v.span then
+    vals.when = 'some time between ' .. T.time(v.span.lo) .. ' and ' .. T.clock(T.minutes(v.span.hi) + 30)
+  end
   local means = v.means or f.means
   if means then
     vals.means = MEANS_GENERIC[means]
