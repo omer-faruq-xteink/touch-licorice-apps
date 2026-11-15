@@ -1,14 +1,22 @@
 # v0.26.0
 
-Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26).
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26), Offline Map **26111201** (API 2.26).
 
-Nothing yet.
+## New
+
+- **New: Offline Map** (`offlinemap.xtapp`): a map of any area of the world on the reader, without a connection, like a folding paper map. On the site's new **Offline maps** tool, choose an area and a detail (**Overview**, zoom 8–13; **Streets**, 10–17; **Close-up**, 10–19) and make a map pack in the browser, with a progress bar, time left and Cancel; **Copy to reader** writes it to the card. On the reader: drag, double tap and − / + through twelve zoom levels; zoom stops where the pack does, and says so; several packs side by side, the most detailed one wherever it has the place. **Search** finds towns, districts, streets, stations and places by name in every pack; long press for a point's coordinates and a bookmark; **Go to coordinates**; GPX routes drawn as a bold line of beads, with the names of the streets they follow beside them (Menu → Street names on or off). The tool also draws routes: click at each turn, drag the points, and it looks up the street names. Map data © OpenStreetMap contributors, vector tiles from VersaTiles; no account or key.
+
+## Changed
+
+- **xkcd 1.1.0: a random comic on the sleep screen.** Settings → Sleep screen → **A random comic each time** shows a different comic every time the reader goes to sleep. The next one is fetched while locked, ready for the next time, so the screen is drawn only once. The latest comic, checked every 3, 6 or 12 hours, is still the default. A wide comic is now turned a quarter on the sleep screen, so it fills the screen instead of a strip across the middle.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.25.0 |
+| `offlinemap.xtapp` | Offline Map 1.0.0 (new) |
+| `xkcd.xtapp` | xkcd 1.1.0 |
+| all other packages | unchanged since v0.25.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 

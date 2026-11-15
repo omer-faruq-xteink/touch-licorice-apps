@@ -1,0 +1,190 @@
+# input<TAB>folded: the same rules in site/tools/offlinemap/fold.js and apps/offlinemap/src/fold.lua
+Kadıköy	kadikoy
+İstanbul	istanbul
+Straße	strasse
+Hà Nội	ha noi
+Москва	москва
+東京	東京
+Rue de l'Église	rue de l eglise
+ÇAĞLAYAN	caglayan
+Şişli	sisli
+Iğdır	igdir
+Ørsted	orsted
+Łódź	lodz
+Ærø	aero
+Þingvellir	thingvellir
+Αθήνα	αθηνα
+Θεσσαλονίκη	θεσσαλονικη
+ΟΔΟΣ	οδοσ
+Санкт-Петербург	санкт петербург
+  Bağdat   Caddesi 	bagdat caddesi
+St. John’s (Old Town)	st john s old town
+A/B_C	a b c
+Ḩalab	halab
+Đà Nẵng	da nang
+Thành phố Hồ Chí Minh	thanh pho ho chi minh
+서울	서울
+Ñuñoa	nunoa
+São Paulo	sao paulo
+Zürich	zurich
+Kraków	krakow
+Plzeň	plzen
+Gölcük	golcuk
+Üsküdar	uskudar
+Beşiktaş	besiktas
+Eyüpsultan	eyupsultan
+Çankaya	cankaya
+Ağrı	agri
+Muğla	mugla
+Kütahya	kutahya
+Düzce	duzce
+Şanlıurfa	sanliurfa
+Ödemiş	odemis
+Ürgüp	urgup
+Göreme	goreme
+München	munchen
+Köln	koln
+Düsseldorf	dusseldorf
+Nürnberg	nurnberg
+Görlitz	gorlitz
+Weißenfels	weissenfels
+Gießen	giessen
+Fürth	furth
+Lübeck	lubeck
+Mönchengladbach	monchengladbach
+Besançon	besancon
+Orléans	orleans
+Nîmes	nimes
+Sète	sete
+Châlons-en-Champagne	chalons en champagne
+Saint-Étienne	saint etienne
+Île-de-France	ile de france
+Aÿ-Champagne	ay champagne
+Évreux	evreux
+Gdańsk	gdansk
+Wrocław	wroclaw
+Poznań	poznan
+Białystok	bialystok
+Częstochowa	czestochowa
+Rzeszów	rzeszow
+Zielona Góra	zielona gora
+Świnoujście	swinoujscie
+Bielsko-Biała	bielsko biala
+Brno	brno
+České Budějovice	ceske budejovice
+Ústí nad Labem	usti nad labem
+Hradec Králové	hradec kralove
+Mariánské Lázně	marianske lazne
+Třebíč	trebic
+Žďár nad Sázavou	zdar nad sazavou
+Reykjavík	reykjavik
+Akureyri	akureyri
+Ísafjörður	isafjordur
+Höfn	hofn
+Egilsstaðir	egilsstadir
+Sauðárkrókur	saudarkrokur
+Þórshöfn	thorshofn
+Hải Phòng	hai phong
+Huế	hue
+Cần Thơ	can tho
+Biên Hòa	bien hoa
+Nha Trang	nha trang
+Buôn Ma Thuột	buon ma thuot
+Quy Nhơn	quy nhon
+Vũng Tàu	vung tau
+Новосибирск	новосибирск
+Екатеринбург	екатеринбург
+Нижний Новгород	нижний новгород
+Казань	казань
+Челябинск	челябинск
+Самара	самара
+Омск	омск
+Ростов-на-Дону	ростов на дону
+Уфа	уфа
+Красноярск	красноярск
+Йошкар-Ола	йошкар ола
+Пермь	пермь
+Воронеж	воронеж
+Волгоград	волгоград
+Київ	київ
+Харків	харків
+Львів	львів
+Одеса	одеса
+Минск	минск
+Брест	брест
+Πάτρα	πατρα
+Ηράκλειο	ηρακλειο
+Λάρισα	λαρισα
+Βόλος	βολοσ
+Ιωάννινα	ιωαννινα
+Χανιά	χανια
+Ρόδος	ροδοσ
+Καλαμάτα	καλαματα
+Κέρκυρα	κερκυρα
+Ζάκυνθος	ζακυνθοσ
+大阪	大阪
+京都	京都
+名古屋	名古屋
+札幌	札幌
+福岡	福岡
+横浜	横浜
+神戸	神戸
+北京	北京
+上海	上海
+广州	广州
+深圳	深圳
+香港	香港
+台北	台北
+København	kobenhavn
+Århus	arhus
+Ålborg	alborg
+Tromsø	tromso
+Bodø	bodo
+Malmö	malmo
+Göteborg	goteborg
+Västerås	vasteras
+Jönköping	jonkoping
+Umeå	umea
+Linköping	linkoping
+Málaga	malaga
+Córdoba	cordoba
+León	leon
+Cádiz	cadiz
+A Coruña	a coruna
+Logroño	logrono
+Alcalá de Henares	alcala de henares
+Jaén	jaen
+Ávila	avila
+Cáceres	caceres
+Timișoara	timisoara
+Iași	iasi
+Brașov	brasov
+Constanța	constanta
+Târgu Mureș	targu mures
+Pécs	pecs
+Győr	gyor
+Székesfehérvár	szekesfehervar
+Debrecen	debrecen
+Szeged	szeged
+Ljubljana	ljubljana
+Maribor	maribor
+Čakovec	cakovec
+Šibenik	sibenik
+Zadar	zadar
+Niš	nis
+Novi Sad	novi sad
+Skopje	skopje
+Tiranë	tirane
+Durrës	durres
+Vilnius	vilnius
+Kaunas	kaunas
+Šiauliai	siauliai
+Klaipėda	klaipeda
+Panevėžys	panevezys
+Rīga	riga
+Daugavpils	daugavpils
+Liepāja	liepaja
+Jūrmala	jurmala
+Tallinn	tallinn
+Tartu	tartu
+Pärnu	parnu

@@ -141,6 +141,16 @@ dataset licensed CC BY 4.0); only pieces marked public domain or CC0, by compose
 Engraved with [Verovio](https://www.verovio.org/) (LGPL v3), which the converter loads from a
 public CDN (site) or npm (`tools/piano`); Verovio itself is not part of this repository.
 
+## Offline maps — `site/tools/offlinemap/`, `apps/offlinemap/`
+
+Map packs are made in the user's browser from [OpenStreetMap](https://www.openstreetmap.org/copyright)
+data (© OpenStreetMap contributors, ODbL 1.0), as Shortbread vector tiles served by
+[VersaTiles](https://versatiles.org/), with their glyphs; every pack carries the attribution, and
+the app shows it under About. The tool loads [MapLibre GL JS](https://maplibre.org/) (BSD 3-Clause)
+and the VersaTiles map style from public CDNs; place search uses
+[Nominatim](https://nominatim.org/) under its usage policy. None of these is part of this
+repository, and no map data is either.
+
 ## Tools site — `site/`
 
 `site/assets/unescape.js` holds the HTML5 entity table of Python's `html` module (PSF licence),

@@ -20,6 +20,8 @@ export const TOOLS = [
     blurb: 'Zork I, II and III as a free pack, and where to find more games for the reader.' },
   { id: 'piano', title: 'Piano scores', app: 'Piano Follow',
     blurb: 'Engrave your own MusicXML or ABC sheet music for the reader’s screen and write it to the card.' },
+  { id: 'offlinemap', title: 'Offline maps', app: 'Offline Map',
+    blurb: 'Choose any area of the world and make a map pack for the reader: streets, paths and names, offline.' },
   { id: 'worker', title: 'Worker setup', app: 'RSS, Hacker News',
     blurb: 'Step by step: your own free Cloudflare Worker for the apps that use one, and what to type on the reader.' },
 ];

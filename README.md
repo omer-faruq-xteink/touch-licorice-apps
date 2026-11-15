@@ -39,6 +39,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Delve** | a small roguelike: ten depths, a new dungeon every run or today's dungeon, one torch burning down, a dragon guarding the Amulet |
 | **Port Wren** | a detective in a 1920s harbour town: every murder generated and proven solvable; question suspects, catch the lie, name culprit, motive and means; a career in a town that remembers |
 | **Riverstead** | a village in a river valley for ten years: a new valley every game, buildings whose place matters, named villagers, seasons and events, four ways to grow and their endings |
+| **Offline Map** | a map of any area of the world without a connection, made on the Tools page: streets and paths with their names, search, bookmarks, GPX routes with their street names, coordinates; 12 zoom levels |
 | **Icebound** | a polar expedition of six, one day a turn: a new hidden map and mission every time, routes through crevasses and pressure ice, weather, a team with skills and moods, four endings |
 | **Tarot** | tarot cards as prompts for reflection, not fortune telling: a card a day and three-card readings with the 1909 Pamela Colman Smith deck |
 | **Klondike** | the classic solitaire, draw one or three; hint, undo, Finish; numbered deals |
@@ -54,7 +55,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **wallabag** | your wallabag articles as text, from your own server or a hosted one; archive, star, tags, offline copies; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **Readwise** | your Readwise Reader documents and feed as text, straight from Reader; archive, Later and tags straight to Reader; optional AI questions about an article (off by default, your own key); portrait or landscape; needs firmware 2.18 |
 | **Hacker News** | For you (the stories on topics you choose, also as the sleep screen), Top, New, Best, Ask and Show in HN's order, search, comments level by level; articles as text through the rss-opds Worker; portrait or landscape; optional AI questions about a story and its comments (off by default, your own key); needs firmware with API 2.26 (26111201) |
-| **xkcd** | xkcd comics by Randall Munroe: the latest, Prev, Next, Random or any number, wide ones turned to landscape, tap to zoom, the alt text, favourites, the last 20 kept for offline, the latest on the sleep screen; needs firmware 26111201 |
+| **xkcd** | xkcd comics by Randall Munroe: the latest, Prev, Next, Random or any number, wide ones turned to landscape, tap to zoom, the alt text, favourites, the last 20 kept for offline, the latest or a random one on the sleep screen; needs firmware 26111201 |
 | **Bookworm** | a little pet that lives on your reading time: it hatches, grows through four stages and a new generation, gets hungry when you stop, takes after how you read, and sleeps on the sleep screen; an ink octopus and a shelf dragon can join it |
 | **Wikipedia** | search or a random article over Wi-Fi, in the language you choose; articles read are kept for offline reading |
 | **Timekeeper** | timers, a focus timer (Pomodoro), a stopwatch with laps, an interval timer for exercise, counters and a log of focus time; whole minutes to save power, a flash when time is up; can be the lock screen |
@@ -272,6 +273,15 @@ strangers bring choices. The village grows into a market town, the granary of th
 village or a pilgrims' rest, each with its own ending; three difficulties; a chronicle of past villages.
 [More](apps/riverstead/README.md)
 
+### Offline Map
+
+A map of any area of the world on the reader, without a connection, like a folding paper map. Make a
+map pack on the Tools page (an area, and Overview, Streets or Close-up detail, up to 19 zoom levels
+deep), copy it to the card, and drag, double tap and zoom through it. Search finds towns, streets and
+places by name; bookmarks, coordinates, and GPX routes drawn as a bold line with the names of the
+streets they follow (routes can be drawn on the Tools page too). Several packs work side by side. Map
+data © OpenStreetMap contributors, through VersaTiles. [More](apps/offlinemap/README.md)
+
 ### Icebound
 
 A team of six across an uncharted polar region, one day a turn. Every expedition has a new map, hidden
@@ -397,7 +407,7 @@ service: [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/
 The webcomic by Randall Munroe: the latest comic, Prev, Next, Random or any number. Wide comics turn
 the screen to landscape, a tap zooms in (drag to move), the alt text is under the comic or in full
 with Alt. Favourites, the last 20 comics kept to read offline, and the latest comic on the sleep
-screen, looked for again while locked. Not affiliated with xkcd. [More](apps/xkcd/README.md)
+screen, looked for again while locked, or a random one each time the reader goes to sleep. Not affiliated with xkcd. [More](apps/xkcd/README.md)
 
 ### Bookworm
 
@@ -633,6 +643,8 @@ python -I apps/riverstead/test_people.py
 python -I apps/riverstead/test_events.py
 python -I apps/riverstead/test_sim.py
 python -I apps/riverstead/test_balance.py
+python -I apps/offlinemap/test_offlinemap.py
+node site/test/test_offlinemap.mjs
 python -I apps/icebound/test_icebound.py
 python -I apps/icebound/test_region.py
 python -I apps/icebound/test_rules.py

@@ -812,7 +812,19 @@ def icebound(p):
     p.line([(16, 94), (36, 88), (30, 80), (50, 72)], 3)
 
 
-ICONS = {'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
+def offlinemap(p):
+    # a folded paper map in three panels, a dashed path across it and a pin
+    p.poly([(8, 24), (34, 14), (62, 24), (88, 14), (88, 76), (62, 86), (34, 76), (8, 86)], fill=False, w=4)
+    p.line([(34, 14), (34, 76)], 3)
+    p.line([(62, 24), (62, 86)], 3)
+    for a, b in (((14, 70), (22, 62)), ((27, 56), (35, 50)), ((41, 48), (50, 46)), ((56, 44), (63, 38))):
+        p.line([a, b], 3)
+    p.ellipse((60, 18, 84, 42), fill=True)
+    p.white_ellipse((67, 25, 77, 35))
+    p.poly([(62, 34), (82, 34), (72, 54)])
+
+
+ICONS = {'offlinemap': offlinemap, 'game2048': game2048, 'sudoku': sudoku, 'sokoban': sokoban, 'notes': notes, 'rss': rss,
          'merchant': merchant, 'dict': dict_, 'instapaper': instapaper, 'suguru': suguru,
          'slidepuzzle': slidepuzzle, 'knightstour': knightstour, 'nonogram': nonogram,
          'lightsout': lightsout, 'pegsolitaire': pegsolitaire,
