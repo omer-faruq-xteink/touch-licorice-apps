@@ -35,8 +35,8 @@
     "listing_id": "u_3d83a98143704c7a9ae504446dd50101",
     "project_id": "835f1944-5c56-492c-a83d-f0348e3844cd",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "cryptogram": {
@@ -45,8 +45,8 @@
     "listing_id": "",
     "project_id": "9cf7c2da-b43d-4604-b2a8-20831b432999",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "dict": {
@@ -55,8 +55,8 @@
     "listing_id": "u_a5c7f6860ecb4e05ac313fcf7fe9a0a3",
     "project_id": "2f18566f-7cf9-46ee-80bc-bf455514b984",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-15"
   },
   "freecell": {
@@ -75,8 +75,8 @@
     "listing_id": "u_9d11ac663d3a4bf9882f0845afbb5eec",
     "project_id": "d2ef365a-0cbc-486a-9188-f2a3588bc7ca",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "gamebook": {
@@ -85,8 +85,8 @@
     "listing_id": "u_141e0f7c824e4b9aa42bfa0315dc06b9",
     "project_id": "89c08996-c25d-4eda-9977-a0b19f50e23d",
     "release_version": "1.0.2",
-    "status": "in review",
-    "live_version": "1.0.1",
+    "status": "published",
+    "live_version": "1.0.2",
     "submitted": "2026-11-15"
   },
   "hackernews": {
@@ -105,8 +105,8 @@
     "listing_id": "",
     "project_id": "5bc739e3-198a-45ec-adec-c670eb0f2dae",
     "release_version": "1.0.2",
-    "status": "in review",
-    "live_version": "1.0.1",
+    "status": "published",
+    "live_version": "1.0.2",
     "submitted": "2026-11-15"
   },
   "instapaper": {
@@ -125,8 +125,8 @@
     "listing_id": "",
     "project_id": "81dbbe6a-3f72-438f-9db8-5c105c5328f4",
     "release_version": "1.0.2",
-    "status": "in review",
-    "live_version": "1.0.1",
+    "status": "published",
+    "live_version": "1.0.2",
     "submitted": "2026-11-15"
   },
   "klondike": {
@@ -135,8 +135,8 @@
     "listing_id": "u_42e7055cf9f84888b7a3d22490437d55",
     "project_id": "cb0f7994-54d7-41a6-963d-fc1fd466c3d6",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "knightstour": {
@@ -145,8 +145,8 @@
     "listing_id": "u_9cd96770f048472fa650d97326b4744c",
     "project_id": "34c4be95-b474-4ee7-8224-ead826489eb8",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "lightsout": {
@@ -155,8 +155,8 @@
     "listing_id": "u_15d1f187763445e6ab8709edb81c9ae4",
     "project_id": "5cc3b0a4-112a-4124-8f3c-9799f92cf3eb",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "litclock": {
@@ -175,8 +175,8 @@
     "listing_id": "u_001717b65daa4be59d6f3d169e4dd4c6",
     "project_id": "3d8374a5-4b5a-403a-941f-caacaed40dd9",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "merchant": {
@@ -185,8 +185,8 @@
     "listing_id": "u_5b779b19bc9c487da42f92935bfe47c8",
     "project_id": "42e7380e-eef7-40ee-aa93-1736c028bd0b",
     "release_version": "2.0.3",
-    "status": "in review",
-    "live_version": "2.0.2",
+    "status": "published",
+    "live_version": "2.0.3",
     "submitted": "2026-11-15"
   },
   "minesweeper": {
@@ -195,8 +195,8 @@
     "listing_id": "u_30d50f4fcffb4070bc73b850e061db6d",
     "project_id": "0f0322cf-6f46-4bbf-9ca1-01175a6614a7",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "nonogram": {
@@ -205,8 +205,8 @@
     "listing_id": "u_2d2aea09f8a14620a1519c7576624141",
     "project_id": "9bf0893d-da29-41a1-9fb2-9c9be3fdd561",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "notes": {
@@ -215,8 +215,8 @@
     "listing_id": "u_87bf7fe523124e389f09d97a2956d993",
     "project_id": "10ee478f-e339-4bc9-a0d1-370a22228ec1",
     "release_version": "1.1.2",
-    "status": "in review",
-    "live_version": "1.1.1",
+    "status": "published",
+    "live_version": "1.1.2",
     "submitted": "2026-11-15"
   },
   "pegsolitaire": {
@@ -225,8 +225,8 @@
     "listing_id": "u_72dc4dd393db4480bdbefe946d522803",
     "project_id": "6870b261-a98d-4f66-af51-be27150a7c30",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "readwise": {
@@ -265,8 +265,8 @@
     "listing_id": "u_36d1a5f0a3d04075a2f8368e184435a9",
     "project_id": "115c852b-a613-4070-adab-d4ec60954c63",
     "release_version": "1.3.2",
-    "status": "in review",
-    "live_version": "1.3.1",
+    "status": "published",
+    "live_version": "1.3.2",
     "submitted": "2026-11-15"
   },
   "sokoban": {
@@ -275,8 +275,8 @@
     "listing_id": "u_ebc5d0c6bc664f2cb9b98d4304bdf7c1",
     "project_id": "be00b928-97d8-49c6-b97c-7852606ef8d8",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "sudoku": {
@@ -285,8 +285,8 @@
     "listing_id": "u_d42fe31d32f64f9b8f91ec1241f25cf8",
     "project_id": "9fdc3d51-738a-4331-a16f-e6509c7d2aeb",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "suguru": {
@@ -295,8 +295,8 @@
     "listing_id": "u_cf97c97f38304a9cb6fbdff2450fee46",
     "project_id": "2901167c-5036-4bdd-b439-d5a7a7ffea8f",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "tarot": {
@@ -305,8 +305,8 @@
     "listing_id": "",
     "project_id": "e505686d-eb7a-4648-a224-859c17aa76f2",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "tasks": {
@@ -325,8 +325,8 @@
     "listing_id": "u_911458e9f03b405186a4b18814220627",
     "project_id": "fa00e2a6-b3c6-4be5-8005-23255a6a91ea",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "textadv": {
@@ -565,8 +565,8 @@
     "listing_id": "",
     "project_id": "7f57203c-f82e-4665-88e8-549f97c8cca2",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": "",
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-15"
   }
 }
