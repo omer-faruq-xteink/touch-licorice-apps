@@ -85,8 +85,8 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordclock` | Word Clock | `wordclock` | 0.1.0 | published | 0.1.0 | 2026-10-29 | `cbe64711-6b8e-455e-8394-4a12e4435fbe` |
 | `wordhive` | Word Hive | `wordhive` | 1.0.0 | published | 1.0.0 | 2026-10-31 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.1 | published | 1.0.1 | 2026-11-01 | `0975b389-101d-444e-9d66-ee8856c15112` |
+| `xkcd` | xkcd | `xkcd` | 1.1.0 | published | 1.1.0 | 2026-11-15 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
 | `offlinemap` | Offline Map | `offlinemap` | 1.0.0 | in review | - | 2026-11-15 | `7f57203c-f82e-4665-88e8-549f97c8cca2` |
 | `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | in review | 1.0.1 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
-| `xkcd` | xkcd | `xkcd` | 1.1.0 | in review | 1.0.1 | 2026-11-15 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
 
-54 published, 3 in review or draft, 57 in all.
+55 published, 2 in review or draft, 57 in all.

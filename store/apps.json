@@ -525,8 +525,8 @@
     "listing_id": "",
     "project_id": "b45610aa-b27a-46f2-8fe1-a32035cc0f0b",
     "release_version": "1.1.0",
-    "status": "in review",
-    "live_version": "1.0.1",
+    "status": "published",
+    "live_version": "1.1.0",
     "submitted": "2026-11-15"
   },
   "portwren": {
