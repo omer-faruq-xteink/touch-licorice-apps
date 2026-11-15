@@ -35,6 +35,8 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 4. Developer Center > the app > Release new version: a higher release version (the field comes
    filled with the old one: replace it), release notes, new screenshots if the screens changed.
    Orientation can come back empty (Sky Tonight 1.0.1): set it, or the submit does nothing.
+   The version must have three numbers (1.0.0, not 1.0): "1.0" makes the page fail and show an
+   empty "Untitled app" form (Literary Clock, 2026-11-15).
    Save draft keeps the version and release notes but not the orientation, the reviewer note or
    changes to About / How to use (RSS 1.3.0, 2026-11-08): set those in the same visit, then
    Submit for review. The top Save in Studio offers "Submit this version", which leads here.
