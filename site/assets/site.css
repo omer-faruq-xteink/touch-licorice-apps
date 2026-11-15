@@ -87,6 +87,7 @@ ol.steps > li::marker { font-weight: 700; }
 .drop input { display: none; }
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 14px 0; }
+[hidden] { display: none !important; }    /* .row, button and the like would show them */
 .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 8px 0; }
 label.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; color: var(--muted); }
 label.check { display: flex; gap: 8px; align-items: center; }
