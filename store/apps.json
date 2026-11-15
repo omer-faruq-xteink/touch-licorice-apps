@@ -335,8 +335,8 @@
     "listing_id": "u_5ec84a25fa204b668ae4b1e285efdd47",
     "project_id": "09148091-fa75-4eed-94f4-4cdface99a69",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "tsumego": {
@@ -345,8 +345,8 @@
     "listing_id": "u_c5cf65256c1c41789c575e33aa1de633",
     "project_id": "a255a696-b673-481a-b444-b5ed661e84bc",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "wallabag": {
@@ -375,8 +375,8 @@
     "listing_id": "u_bdbee3035e8547c2bf7234199df59cfa",
     "project_id": "a7bacca0-d2fc-437d-a9f9-fae6d2b6efe6",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "wordclock": {
@@ -385,8 +385,8 @@
     "listing_id": "u_e3feab598fd14f6cbccf29e174f70b2a",
     "project_id": "cbe64711-6b8e-455e-8394-4a12e4435fbe",
     "release_version": "1.0.0",
-    "status": "in review",
-    "live_version": "0.1.0",
+    "status": "published",
+    "live_version": "1.0.0",
     "submitted": "2026-11-15"
   },
   "wordhive": {
@@ -395,8 +395,8 @@
     "listing_id": "u_386d38f5838b498598eacb22006ef48c",
     "project_id": "7e35f8f2-a168-4c3c-b22a-492b83ef84ac",
     "release_version": "1.0.1",
-    "status": "in review",
-    "live_version": "1.0.0",
+    "status": "published",
+    "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
   "wordladder": {
@@ -405,8 +405,8 @@
     "listing_id": "",
     "project_id": "0975b389-101d-444e-9d66-ee8856c15112",
     "release_version": "1.0.2",
-    "status": "in review",
-    "live_version": "1.0.1",
+    "status": "published",
+    "live_version": "1.0.2",
     "submitted": "2026-11-15"
   },
   "delve": {
