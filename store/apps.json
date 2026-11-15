@@ -524,8 +524,8 @@
     "app_id": "xkcd",
     "listing_id": "",
     "project_id": "b45610aa-b27a-46f2-8fe1-a32035cc0f0b",
-    "release_version": "1.0.1",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.1",
     "submitted": "2026-11-15"
   },
@@ -558,5 +558,15 @@
     "status": "published",
     "live_version": "1.0.0",
     "submitted": "2026-11-14"
+  },
+  "offlinemap": {
+    "name": "Offline Map",
+    "app_id": "offlinemap",
+    "listing_id": "",
+    "project_id": "7f57203c-f82e-4665-88e8-549f97c8cca2",
+    "release_version": "1.0.0",
+    "status": "in review",
+    "live_version": "",
+    "submitted": "2026-11-15"
   }
 }
