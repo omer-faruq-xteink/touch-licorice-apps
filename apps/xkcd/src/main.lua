@@ -17,7 +17,7 @@ local MSG_H = 26                -- a row above the buttons for messages, kept fr
 local KEEP = 20                 -- comics kept for reading offline
 local UA = 'XteinkLicoriceXKCD/1.0 (https://github.com/omer-faruq/touch-licorice-apps)'
 
-local cfg = { last = nil, lockevery = '6' }
+local cfg = { last = nil, lockevery = '6', lockpick = 'latest' }
 local screen = 'comic'          -- comic | alt | favs | settings
 local cur = nil                 -- the comic shown: { c, img, file, kind, reduced }
 local latest = nil              -- the latest number, once known
@@ -35,9 +35,10 @@ local function load_cfg()
   local t = kit.kv(kit.read('settings.txt'))
   cfg.last = tonumber(t.last)
   if t.lockevery == '0' or t.lockevery == '3' or t.lockevery == '6' or t.lockevery == '12' then cfg.lockevery = t.lockevery end
+  if t.lockpick == 'random' then cfg.lockpick = 'random' end
 end
 local function save_cfg()
-  kit.write('settings.txt', 'last=' .. tostring(cfg.last or '') .. '\nlockevery=' .. cfg.lockevery)
+  kit.write('settings.txt', 'last=' .. tostring(cfg.last or '') .. '\nlockevery=' .. cfg.lockevery .. '\nlockpick=' .. cfg.lockpick)
 end
 
 -- cache.txt: one comic a line, newest viewed first: "<kind>[:<w>x<h>]\t<X.line>"; kind png (the
@@ -192,7 +193,7 @@ local function keep_for_lock(c, kind, sw, sh)
   local s = kit.read('lock.txt') or ''
   if s:match('^%a+\t' .. c.num .. '\t') then return end           -- has it already
   if kind == 'none' then kit.write('lock.txt', 'none\t' .. X.line(c) .. '\nat=' .. now_sec()); return end
-  get(X.weserv_url(c.img, LOCK_W, LOCK_H, sw, sh), 'lock.png', nil, function(res)
+  get(X.weserv_url(c.img, LOCK_W, LOCK_H, sw, sh, X.turn_for(sw, sh, LOCK_W, LOCK_H)), 'lock.png', nil, function(res)
     if failed(res) or not res.saved then return end
     pcall(function() ctx.storage:remove('lock.jpg') end)
     kit.write('lock.txt', 'png\t' .. X.line(c) .. '\nat=' .. now_sec())
@@ -520,6 +521,7 @@ end
 local function lock_label()
   if not lock_is_on() then return 'Sleep screen: off' end
   if not LOCK_NET then return 'Sleep screen: on' end
+  if cfg.lockpick == 'random' then return 'Sleep screen: a random comic' end
   return 'Sleep screen: every ' .. cfg.lockevery .. ' hours'
 end
 local function lock_rect() return { x = 12, y = 80, w = W - 24, h = 64 } end
@@ -528,8 +530,13 @@ local function draw_settings(gg)
   local r = lock_rect()
   kit.button(gg, r.x, r.y, r.w, r.h, lock_label(), { font = 'medium' })
   local y = r.y + r.h + 10
-  for _k, l in ipairs(kit.wrap('The latest comic on the sleep screen, looked for again while locked when that much time '
-      .. 'has passed (the picture only when a new comic is out).', 'small', W - 24)) do
+  local about = 'The latest comic on the sleep screen, looked for again while locked when that much time '
+      .. 'has passed (the picture only when a new comic is out).'
+  if LOCK_NET and cfg.lockpick == 'random' then
+    about = 'A random comic on the sleep screen, a new one each time the reader goes to sleep (fetched while '
+      .. 'locked, ready for the next time).'
+  end
+  for _k, l in ipairs(kit.wrap(about, 'small', W - 24)) do
     gg:text(12, y, l, { font = kit.font('small') }); y = y + 22
   end
   y = y + 24
@@ -606,12 +613,19 @@ local function lock_menu()
       if e[1] == '0' then pcall(function() ctx.lockscreen:clear_default() end)
       else
         cfg.lockevery = e[1]
+        cfg.lockpick = 'latest'
         save_cfg()
         if not lock_is_on() then pcall(function() ctx.lockscreen:set_default() end) end
       end
     end } }
   end
-  kit.show({ title = 'Sleep screen: the latest comic', rows = rows, cancel = function() kit.close() end })
+  rows[#rows + 1] = { { 'A random comic each time', function()
+    kit.close()
+    cfg.lockpick = 'random'
+    save_cfg()
+    if not lock_is_on() then pcall(function() ctx.lockscreen:set_default() end) end
+  end } }
+  kit.show({ title = 'Sleep screen', rows = rows, cancel = function() kit.close() end })
 end
 
 local function press(b)

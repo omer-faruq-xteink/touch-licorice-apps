@@ -23,11 +23,22 @@ function X.page_url(n) return X.SITE .. n .. '/' end
 -- greyscale at full contrast. xkcd's lines are thin and grey at their edges; the reader's dithering
 -- turned them into dotted lines, while this keeps them whole (checked 2026-11-13). Its own resampling
 -- is better than the reader's, which only scales down.
-function X.weserv_url(img, bw, bh, sw, sh)
+function X.weserv_url(img, bw, bh, sw, sh, turn)
+  -- turned a quarter: the resizer fits the picture first and turns it after, so ask for the box on its side
+  if turn then bw, bh = bh, bw end
   local w, h = bw, bh
   if sw and sh and sw > 0 and sh > 0 then w, h = math.min(bw, 2 * sw), math.min(bh, 2 * sh) end
   return 'https://images.weserv.nl/?url=' .. X.enc(img) .. '&w=' .. math.floor(w) .. '&h=' .. math.floor(h)
-    .. '&fit=inside&output=png&filt=greyscale&con=100'
+    .. '&fit=inside&output=png&filt=greyscale&con=100' .. (turn and '&ro=90' or '')
+end
+
+-- a picture of sw x sh in a box of bw x bh (a portrait sleep screen): turn it a quarter when it then
+-- shows at least a quarter larger (the wide comics)
+function X.turn_for(sw, sh, bw, bh)
+  if not (sw and sh and sw > 0 and sh > 0) then return false end
+  local up = math.min(bw / sw, bh / sh)
+  local side = math.min(bw / sh, bh / sw)
+  return side >= up * 1.25
 end
 
 -- the decoded JSON as a comic; nil without a number. Interactive (shown as title, alt and a QR

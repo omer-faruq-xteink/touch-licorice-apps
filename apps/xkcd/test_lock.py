@@ -95,10 +95,14 @@ def answer(L):
         L.eval('table.remove(pending, 1)')
         opts, fn = p.opts, p.fn
         u = urllib.parse.urlsplit(str(opts.url))
-        if u.netloc == 'xkcd.com':
+        if u.netloc == 'xkcd.com' and u.path != '/info.0.json':        # a comic by number (the random pick)
+            k = int(u.path.split('/')[1])
+            res = {'ok': True, 'status': 200, 'body': json.dumps({'num': k, 'title': f'Comic {k}', 'safe_title': f'Comic {k}',
+                   'alt': 'Alt.', 'img': f'https://imgs.xkcd.com/comics/c{k}.png', 'year': '2026', 'month': '1', 'day': '2'})}
+        elif u.netloc == 'xkcd.com':
             res = {'ok': True, 'status': 200, 'body': json.dumps(LATEST)}
         else:
-            src = png(1500, 500) if big['on'] else png(740, 300)
+            src = png(1500, 500) if big['on'] else png(400, 900) if big.get('tall') else png(740, 300)
             hd = opts.headers
             if u.netloc == 'imgs.xkcd.com':                    # only its first 64 bytes are asked
                 assert hd is not None and str(hd.Range) == 'bytes=0-63', 'a Range request'
@@ -107,10 +111,10 @@ def answer(L):
                 continue
             q = dict(urllib.parse.parse_qsl(u.query))
             assert q['con'] == '100' and q['filt'] == 'greyscale' and q['output'] == 'png', q
-            sizes.append((int(q['w']), int(q['h'])))
+            sizes.append((int(q['w']), int(q['h']), q.get('ro')))
             sw, sh = struct.unpack('>II', src[16:24].encode('latin-1'))
-            k = min(int(q['w']) / sw, int(q['h']) / sh)
-            body = png(int(sw * k), int(sh * k))
+            k = min(int(q['w']) / sw, int(q['h']) / sh)                 # the resizer fits, then turns
+            body = png(int(sh * k), int(sw * k)) if q.get('ro') else png(int(sw * k), int(sh * k))
             L.globals().store[str(opts.save.name)] = body
             res = {'ok': True, 'status': 200, 'saved': True, 'body': ''}
         fn(L.globals().ctx, to_lua(L, res))
@@ -165,7 +169,7 @@ L = session(same, NOW)
 r = reqs(L)
 check(len(r) == 3 and r[:2] == ['https://xkcd.com/info.0.json', 'https://imgs.xkcd.com/comics/new_one.png'] and r[2].startswith('https://images.weserv.nl/'),
       f'a new one: its size, then its picture made for the sleep screen: {r}')
-check(sizes[-1] == (464, 600), f'made for 464 x 680, at most twice its 300 px height: {sizes[-1]}')
+check(sizes[-1] == (680, 464, '90'), f'a wide comic is turned a quarter for the sleep screen: made for 680 x 464, then turned: {sizes[-1]}')
 check('xkcd 31: New One' in texts(L) and str(L.globals().store['lock.txt']).startswith('png\t31\t') and int(L.globals().done_calls) == 1,
       f'drawn and kept: {texts(L)}')
 # 90 s early still looks, and the session holds until 2 s past the hour
@@ -179,8 +183,13 @@ big['on'] = True
 L = session(same, NOW)
 big['on'] = False
 r = reqs(L)
-check(str(L.globals().store['lock.txt']).startswith('png	31	') and sizes[-1] == (464, 680), f'too wide (1500 px): made for the box all the same: {sizes[-1]}')
+check(str(L.globals().store['lock.txt']).startswith('png	31	') and sizes[-1] == (680, 464, '90'), f'too wide (1500 px): turned and made for the box all the same: {sizes[-1]}')
 check(L.globals().store['lock.png'] is not None, 'its picture kept')
+# a tall comic stays upright
+big['tall'] = True
+L = session(same, NOW)
+big['tall'] = False
+check(sizes[-1] == (464, 680, None), f'a tall comic is not turned: {sizes[-1]}')
 # every 12 h: 6 h old is not due
 L = session(dict(same, **{'settings.txt': 'lockevery=12'}), NOW)
 check(reqs(L) == [], 'every 12 h: 6 h old, not yet')
@@ -211,6 +220,43 @@ check(len(L.globals().images) == 0 and any('invalid_argument' in s for s in t), 
 check('invalid_argument' in str(L.globals().store['wakes.txt'] or ''), 'and logged')
 L = session({k: v for k, v in SAVED.items() if k != 'lock.png'}, NOW)
 check(any('no picture' in s for s in texts(L)), f'picture file missing: said so: {texts(L)}')
+
+# a random comic each time the reader goes to sleep (settings.txt lockpick=random): the one fetched
+# at the last lock is shown at once, and the next one is fetched quietly for the next lock
+RND = dict(SAVED, **{'settings.txt': 'last=30\nlockevery=6\nlockpick=random'})
+LATEST.update({'num': 31, 'title': 'New One', 'img': 'https://imgs.xkcd.com/comics/new_one.png'})
+L = session(RND, NOW, reason='first', answer_first=False)
+check('xkcd 30: Comic 30' in texts(L) and int(L.globals().done_calls) == 0, f'random, nothing fetched yet: the saved one at once: {texts(L)}')
+inv0 = int(L.globals().inval)
+answer(L)
+r = reqs(L)
+m = re.match(r'^https://xkcd\.com/(\d+)/info\.0\.json$', r[1]) if len(r) > 1 else None
+check(len(r) == 4 and r[0] == 'https://xkcd.com/info.0.json' and m is not None and 1 <= int(m.group(1)) <= 31 and int(m.group(1)) != 404,
+      f'random: the latest number, then a random comic, its size, its picture: {r}')
+n1 = m.group(1) if m else '0'
+nxt = str(L.globals().store['lock_next.txt'] or '')
+check(nxt.startswith('png\t' + n1 + '\t') and L.globals().store['lock_next.png'] is not None, f'kept for the next lock: {nxt!r}')
+check(str(L.globals().store['lock.txt']).startswith('png\t30\t'), 'the comic on the screen is not changed')
+check(int(L.globals().inval) == inv0 and int(L.globals().done_calls) == 1, 'no second draw; done after the quiet fetch')
+# the next lock: the kept one comes on the screen, and another is fetched for the lock after
+RND2 = dict(RND, **{'lock_next.txt': nxt or 'png\t7\tComic 7\tAlt.\thttps://imgs.xkcd.com/comics/c7.png\t2026-01-02\t0\nat=1',
+                    'lock_next.png': png(300, 200)})
+n1 = (RND2['lock_next.txt'].split('\t')[1])
+L = session(RND2, NOW + 600, reason='first', answer_first=False)
+check(f'xkcd {n1}: Comic {n1}' in texts(L) and str(L.globals().store['lock.txt']).startswith('png\t' + n1 + '\t'),
+      f'the kept one shown at the lock: {texts(L)}')
+check(len(L.globals().images) == 1 and int(L.globals().images[1].img.width) == 300, 'with its own picture')
+answer(L)
+check(str(L.globals().store['lock_next.txt'] or '').startswith('png\t') and len(reqs(L)) == 4, f'and the next one fetched: {reqs(L)}')
+# timer wakes in random mode change nothing and ask nothing
+L = session(RND2, NOW + 3600, reason='timer')
+check(reqs(L) == [] and str(L.globals().store['lock.txt']).startswith('png\t30\t'), f'random: a timer wake asks nothing: {reqs(L)}')
+# random with nothing saved yet: fetched straight for the screen, then drawn
+L = session({'settings.txt': 'lockpick=random'}, NOW, reason='first', answer_first=False)
+answer(L)
+L.execute('on_draw(ctx, gg)')
+check(str(L.globals().store['lock.txt'] or '').startswith('png\t') and any(s.startswith('xkcd ') for s in texts(L)),
+      f'random, nothing saved: fetched for the screen: {texts(L)}')
 
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 sys.exit(1 if fails else 0)

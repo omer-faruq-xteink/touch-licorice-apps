@@ -7,11 +7,15 @@
 -- until the answers, the first session draws at once and again after them. ctx.lock:done() ends
 -- the session once nothing is pending. Each session sets the next wake an hour away (the longest
 -- the host allows; the reader aligns it to the hour).
+-- Random (settings.txt lockpick=random): each time the reader goes to sleep, the comic fetched at the
+-- last lock (lock_next.txt, lock_next.png) comes on the screen at once, and the next random one is
+-- fetched quietly for the next lock, so the screen is drawn only once. Timer wakes do nothing.
 
 local W, H = 480, 800
 local MAX_WAKE_S = 3600         -- ctx.lock:set_interval takes 30-3600 s
 local SLACK_S = 120             -- a wake may come early (seen: up to a minute)
 local pending = false           -- requests out in this session
+local drawn_once = false        -- on_draw ran in this session
 -- store: cut (the store's API gives a lock screen no network; tools/store_export.py drops this)
 local asked = false
 local holding = false           -- an early wake waiting for the aligned time it was woken for
@@ -53,7 +57,7 @@ local function saved()
   if not c then return nil end
   return { kind = kind, c = c, at = tonumber(s:match('\nat=(%d+)')) }
 end
-local function save(kind, c, at) write('lock.txt', kind .. '\t' .. X.line(c) .. '\nat=' .. at) end
+local function save(kind, c, at, name) write(name or 'lock.txt', kind .. '\t' .. X.line(c) .. '\nat=' .. at) end
 local function pic(kind) return (kind == 'png') and 'lock.png' or 'lock.jpg' end
 
 -- store: cut
@@ -84,9 +88,14 @@ local function hold_if_early()
   holding = ok and tm ~= nil
 end
 
+local quiet = false             -- random: the fetch is for the next lock; the screen stays as it is
 local function finish(what)
   pending = false
   wlog(what)
+  if quiet then
+    if drawn_once then pcall(function() ctx.lock:done() end) end
+    return
+  end
   pcall(function() ctx:invalidate() end)              -- draw again; that draw ends the session
 end
 local function request(url, save_name, fn, range)
@@ -112,18 +121,19 @@ end
 -- 64 bytes, then the resizer makes it for the box below the title (at most twice its size),
 -- greyscale at full contrast (X.weserv_url)
 local BOX_W, BOX_H = W - 16, H - 50 - 70
-local function fetch_pic(c)
+local function fetch_pic(c, to)
+  to = to or { pic = 'lock.png', txt = 'lock.txt' }
   local sent = request(c.img, nil, function(res)
     local b = bad(res)
     if b == 'no network' then finish('picture: ' .. b); return end
     local sw, sh
     if not b and type(res.body) == 'string' then sw, sh = X.png_size(res.body) end
-    local sent2 = request(X.weserv_url(c.img, BOX_W, BOX_H, sw, sh), 'lock.png', function(r2)
+    local sent2 = request(X.weserv_url(c.img, BOX_W, BOX_H, sw, sh, X.turn_for(sw, sh, BOX_W, BOX_H)), to.pic, function(r2)
       local b2 = bad(r2)
       if b2 then finish('picture: ' .. b2); return end
       if not r2.saved then finish('picture not saved: ' .. tostring(r2.err)); return end
-      pcall(function() ctx.storage:remove('lock.jpg') end)
-      save('png', c, now_sec())
+      if to.pic == 'lock.png' then pcall(function() ctx.storage:remove('lock.jpg') end) end
+      save('png', c, now_sec(), to.txt)
       finish('new comic ' .. c.num)
     end)
     if not sent2 then finish('picture not sent') end
@@ -156,6 +166,56 @@ local function try_refresh(s)
   if not sent then pending = false; return 'not sent' end
   return 'asking'
 end
+
+-- random: the latest number, then a random comic (an interactive one is passed over once), then its
+-- picture into `to`
+local function fetch_random(to, tries)
+  local sent = request(X.json_url(nil), nil, function(res)
+    local b = bad(res)
+    if b then finish('latest: ' .. b); return end
+    local okd, d = pcall(function() return ctx.json:decode(res.body) end)
+    local latest = okd and X.comic(d)
+    if not latest then finish('latest: not a comic'); return end
+    local n = X.random(latest.num, math.random())
+    local sent2 = request(X.json_url(n), nil, function(r2)
+      local b2 = bad(r2)
+      if b2 then finish('random ' .. n .. ': ' .. b2); return end
+      local okc, d2 = pcall(function() return ctx.json:decode(r2.body) end)
+      local c = okc and X.comic(d2)
+      if not c then finish('random ' .. n .. ': not a comic'); return end
+      if c.interactive and (tries or 0) < 1 then fetch_random(to, (tries or 0) + 1); return end
+      if c.interactive then save('none', c, now_sec(), to.txt); finish('random ' .. n .. ' (interactive)'); return end
+      fetch_pic(c, to)
+    end)
+    if not sent2 then finish('random not sent') end
+  end)
+  if not sent then finish('not sent') end
+  return sent
+end
+
+-- a lock in random mode: the one kept at the last lock on the screen, then the next one fetched
+local function random_lock()
+  if not ctx.net then return 'no network on the lock screen' end
+  local nxt = read('lock_next.txt')
+  if nxt then
+    local ok = true
+    if nxt:match('^png\t') then
+      local b = read('lock_next.png')
+      ok = b ~= nil and pcall(function() ctx.storage:write('lock.png', b) end)
+      if ok then pcall(function() ctx.storage:remove('lock.jpg') end) end
+    end
+    if ok then write('lock.txt', (nxt:gsub('\nat=%d+', '')) .. '\nat=' .. now_sec()) end
+    pcall(function() ctx.storage:remove('lock_next.txt') end)
+    pcall(function() ctx.storage:remove('lock_next.png') end)
+  end
+  pending = true
+  asked = true
+  local to = { pic = 'lock.png', txt = 'lock.txt' }
+  if saved() then quiet = true; to = { pic = 'lock_next.png', txt = 'lock_next.txt' } end
+  if fetch_random(to) then return quiet and 'random: next asked' or 'random: asked for the screen' end
+  pending = false
+  return 'random: not sent'
+end
 -- store: end
 
 -- the picture drawn last: kept until the next draw, since the host shows a frame after on_draw and
@@ -164,6 +224,7 @@ local shown = nil
 
 function on_draw(c, gg)
   if not gg then return end
+  drawn_once = true
   if shown then pcall(function() shown:release() end); shown = nil end
   local ok, err = pcall(function()
     gg:clear(0)
@@ -222,8 +283,11 @@ function on_load()
     local every = hours * 3600
     local s = saved()
     local did = 'not due'
-    if not s or not s.at or now_sec() - s.at >= every - SLACK_S then did = try_refresh(s) end
-    hold_if_early()
+    local random = (read('settings.txt') or ''):match('lockpick=random') ~= nil
+    if random then
+      if not (ctx.lock and ctx.lock.reason == 'timer') then did = random_lock() end
+    elseif not s or not s.at or now_sec() - s.at >= every - SLACK_S then did = try_refresh(s) end
+    if not random then hold_if_early() end
     if holding then did = did .. '; early: held' end
     pcall(function() ctx.lock:set_interval(MAX_WAKE_S) end)
     wlog(string.format('%s lock.net %s every %dh: %s', ctx.lock and tostring(ctx.lock.reason) or '?',

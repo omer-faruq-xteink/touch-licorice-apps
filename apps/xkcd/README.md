@@ -27,13 +27,16 @@ with xkcd; the comics come from xkcd.com's own JSON interface (no account) under
   Very faint grey details may come out lighter. A comic larger than the 1024 px the reader decodes is
   marked "(reduced)"; its Alt page has a QR code of the comic's page for the full size on a phone.
   Interactive comics show their title, alt text and a QR code to open them elsewhere.
-- **Sleep screen** (Settings → Sleep screen: every 3, 6 or 12 hours, or off): the latest comic with
-  its number, title and when it was looked for. While locked the reader asks xkcd.com again when that
-  much time has passed, and fetches the picture only when a new comic is out. The store's build shows
-  the latest comic the app saw.
+- **Sleep screen** (Settings → Sleep screen: every 3, 6 or 12 hours, a random comic each time, or
+  off): the latest comic with its number, title and when it was looked for. While locked the reader
+  asks xkcd.com again when that much time has passed, and fetches the picture only when a new comic is
+  out. **A random comic each time** shows a different comic every time the reader goes to sleep: the
+  next one is fetched while locked, ready for the next time, so the screen is drawn only once. A wide
+  comic is turned a quarter, so it fills the screen (read it with the reader on its side). The store's
+  build shows the latest comic the app saw.
 
 Private files (`XTApps/xkcd/files/` on the card): `cache.txt` and `c_<n>.png` (the saved comics),
-`favourites.txt`, `settings.txt`, `lock.txt` and `lock.png` (the sleep screen's comic), `wakes.txt`
+`favourites.txt`, `settings.txt`, `lock.txt` and `lock.png` (the sleep screen's comic), `lock_next.txt` and `lock_next.png` (the next random one), `wakes.txt`
 (a log of the sleep screen's last 20 wakes).
 
 ## Files

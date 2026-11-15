@@ -155,7 +155,7 @@ assert g.commands() < 1024
 assert 'last=30' in g.store['settings.txt']
 # the latest comic is also kept for the sleep screen, made for its size (the store's build cannot fetch there)
 lockq = [dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(u).query)) for u, f in requests if f == 'lock.png']
-assert lockq and (lockq[0]['w'], lockq[0]['h']) == ('464', '600'), lockq             # at most twice its own 300 px height
+assert lockq and (lockq[0]['w'], lockq[0]['h'], lockq[0].get('ro')) == ('680', '464', '90'), lockq   # a wide comic: turned a quarter for the sleep screen
 assert g.store['lock.txt'].startswith('png\t30\tComic 30\t') and g.store['lock.png'] is not None, g.store['lock.txt']
 # Prev: a tall one turns the screen back; its alt text under it
 g.tap_label('Prev'); answer_all()
@@ -309,7 +309,11 @@ g.tap_label('Sleep screen: off'); g.tap_label('Every 6 hours')
 assert list(L.eval('lock_calls').values()) == ['set'] and 'lockevery=6' in g.store['settings.txt'] and 'Sleep screen: every 6 hours' in texts()
 g.tap_label('Sleep screen: every 6 hours'); g.tap_label('Every 12 hours')
 assert 'lockevery=12' in g.store['settings.txt'] and 'Sleep screen: every 12 hours' in texts()
-g.tap_label('Sleep screen: every 12 hours'); g.tap_label('Off')
+g.tap_label('Sleep screen: every 12 hours'); g.tap_label('A random comic each time')
+assert 'lockpick=random' in g.store['settings.txt'] and 'lockevery=12' in g.store['settings.txt'] and 'Sleep screen: a random comic' in texts(), texts()
+g.tap_label('Sleep screen: a random comic'); g.tap_label('Every 6 hours')
+assert 'lockpick=latest' in g.store['settings.txt'] and 'Sleep screen: every 6 hours' in texts()
+g.tap_label('Sleep screen: every 6 hours'); g.tap_label('Off')
 assert list(L.eval('lock_calls').values())[-1] == 'clear' and 'Sleep screen: off' in texts()
 assert back() is True and api().screen() == 'comic'
 assert back() is False
