@@ -279,8 +279,9 @@ A map of any area of the world on the reader, without a connection, like a foldi
 map pack on the Tools page (an area, and Overview, Streets or Close-up detail, up to 19 zoom levels
 deep), copy it to the card, and drag, double tap and zoom through it. Search finds towns, streets and
 places by name; bookmarks, coordinates, and GPX routes drawn as a bold line with the names of the
-streets they follow (routes can be drawn on the Tools page too). Several packs work side by side. Map
-data © OpenStreetMap contributors, through VersaTiles. [More](apps/offlinemap/README.md)
+streets they follow (routes can be drawn on the Tools page too); mountain peaks with their heights.
+Several packs work side by side. Map data © OpenStreetMap contributors, through OpenFreeMap or
+VersaTiles. [More](apps/offlinemap/README.md)
 
 ### Icebound
 

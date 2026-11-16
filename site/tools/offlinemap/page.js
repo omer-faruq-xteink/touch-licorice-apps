@@ -4,7 +4,7 @@
 import { chrome, download, message, bytesText, esc } from '../../assets/site.js';
 import { canCopy, card } from '../../assets/store.js';
 import { PRESETS, estimate } from './tiles.js';
-import { pickSource } from './sources.js';
+import { SOURCES, forcedSource, chooseSource, fitsOpenFreeMap, fallbackSource } from './sources.js';
 import { TileFetcher } from './fetcher.js';
 import { renderPack, makeRouteGpx } from './render.js';
 import { lengthM, bboxWithMargin, parseGpx } from './route.js';
@@ -13,17 +13,20 @@ const APP = 'offlinemap';
 const $ = (id) => document.getElementById(id);
 chrome('offlinemap');
 
-const source = pickSource(location.search);
-const schema = await import(`./schema/${source.schema}.js`);
+// a pack's source is chosen when it is made (sources.js); ?source=versatiles|openfreemap forces one
+const forced = forcedSource(location.search);
+const schemas = {};
+const schemaOf = async (src) => (schemas[src.id] ||= await import(`./schema/${src.schema}.js`));
+const routeSource = forced || SOURCES.versatiles;   // a route only needs street names: VersaTiles (my call)
 const maplibregl = window.maplibregl;
 let bbox = null, packed = null, run = null, lastSearch = 0;
 let route = [], routeGpx = null;                  // route: [[lon, lat]]
 
-$('credits').innerHTML = `Map data ${esc(source.attribution)} (<a href="https://www.openstreetmap.org/copyright">ODbL</a>),
-  vector tiles from <a href="${source.id === 'versatiles' ? 'https://versatiles.org/' : 'https://openfreemap.org/'}">${esc(source.title)}</a>,
+$('credits').innerHTML = `Map data © OpenStreetMap contributors (<a href="https://www.openstreetmap.org/copyright">ODbL</a>),
+  vector tiles from <a href="https://openfreemap.org/">OpenFreeMap</a> (OpenMapTiles) for packs that fit its limits and
+  <a href="https://versatiles.org/">VersaTiles</a> for larger or denser ones and for routes,
   drawn with <a href="https://maplibre.org/">MapLibre GL JS</a> (BSD); place search by
-  <a href="https://nominatim.org/">Nominatim</a>. Nothing is uploaded: everything is made in this browser.` +
-  (source.enabled ? '' : ' <strong>Test source: do not use for real packs yet.</strong>');
+  <a href="https://nominatim.org/">Nominatim</a>. Nothing is uploaded: everything is made in this browser.`;
 
 // ------------------------------------------------------------------ the map
 const map = new maplibregl.Map({
@@ -185,9 +188,19 @@ $('rmake').addEventListener('click', async () => {
   showRoute(null);
   message($('rresult'), 'Looking up the streets…');
   try {
-    const { gpx, labels } = await makeRouteGpx({ name: $('rname').value.trim() || 'My route', points: route, lang: $('lang').value,
-      source, schema, maplibregl, fetcher: new TileFetcher(source),
+    const look = async (src) => makeRouteGpx({ name: $('rname').value.trim() || 'My route', points: route, lang: $('lang').value,
+      source: src, schema: await schemaOf(src), maplibregl, fetcher: new TileFetcher(src),
       onProgress: (p) => message($('rresult'), `Looking up the streets… ${p.done} of ${p.total}`) });
+    let res;
+    try {
+      res = await look(routeSource);
+    } catch (e) {
+      // a route is a few tiles: it always fits OpenFreeMap
+      const other = fallbackSource({ used: routeSource, code: e.code, fitsOfm: true, forced });
+      if (!other) throw e;
+      try { res = await look(other); } catch (e2) { throw new Error(`Both map sources failed. ${routeSource.title}: ${e.message} ${other.title}: ${e2.message}`); }
+    }
+    const { gpx, labels } = res;
     const names = [...new Set(labels.map((l) => l.name))];
     message($('rresult'), `Done: ${(lengthM(route) / 1000).toFixed(2)} km` + (names.length ? `, along ${names.slice(0, 6).map(esc).join(', ')}${names.length > 6 ? '…' : ''}.` : ', no street names found.'), 'ok');
     showRoute(gpx);
@@ -241,10 +254,14 @@ const timeText = (s) => (s < 60 ? `${Math.max(1, Math.round(s))} s` : s < 3600 ?
 function update() {
   showPack(null);
   if (!bbox) { message($('estimate'), 'Choose an area first.'); $('make').disabled = true; return; }
-  const est = estimate(bbox, PRESETS[preset()], source.limits);
+  const levels = PRESETS[preset()];
+  const est = estimate(bbox, levels, (forced || SOURCES.versatiles).limits);
   if (est.refused) { message($('estimate'), esc(est.advice), 'err'); $('make').disabled = true; return; }
+  const from = forced ? `Map data from ${forced.title}.`
+    : !fitsOpenFreeMap(bbox, levels) ? 'Map data from VersaTiles: the area is too large for OpenFreeMap, so no peaks.'
+    : 'Map data from OpenFreeMap, with peaks; from VersaTiles if the area is a dense city (checked when you press Make).';
   message($('estimate'), `${est.tiles.toLocaleString('en')} tiles, about ${bytesText(est.bytesLow)}–${bytesText(est.bytesHigh)} ` +
-    `(countryside to dense city), roughly ${timeText(est.seconds)}; ${est.vectorTiles.toLocaleString('en')} map tiles to fetch.`);
+    `(countryside to dense city), roughly ${timeText(est.seconds)}; ${est.vectorTiles.toLocaleString('en')} map tiles to fetch. ${from}`);
   $('make').disabled = !!run;
 }
 for (const r of document.querySelectorAll('input[name=preset]')) r.addEventListener('change', update);
@@ -263,19 +280,49 @@ $('make').addEventListener('click', async () => {
   $('fill').style.width = '0';
   $('ptext').textContent = 'Starting…';
   message($('result'), '');
-  const fetcher = new TileFetcher(source, { signal: ac.signal });
+  const levels = PRESETS[preset()];
+  const fetchers = {};
+  const fetcherOf = (src) => (fetchers[src.id] ||= new TileFetcher(src, { signal: ac.signal }));
+  const make = async (src) => renderPack({ bbox, levels, name: $('name').value.trim() || 'My map',
+    lang: $('lang').value, source: src, schema: await schemaOf(src), maplibregl, fetcher: fetcherOf(src), signal: ac.signal,
+    onProgress: (p) => {
+      $('fill').style.width = `${(100 * p.done / p.total).toFixed(1)}%`;
+      $('ptext').textContent = `${p.done.toLocaleString('en')} of ${p.total.toLocaleString('en')} tiles` +
+        (p.eta !== null && p.done < p.total ? `, about ${timeText(p.eta)} left` : '') +
+        ` · map tiles from ${src.title}: fetched ${p.vectorTiles.toLocaleString('en')}, from cache ${p.fromCache.toLocaleString('en')}`;
+    } });
   try {
-    const { bytes, stats } = await renderPack({ bbox, levels: PRESETS[preset()], name: $('name').value.trim() || 'My map',
-      lang: $('lang').value, source, schema, maplibregl, fetcher, signal: ac.signal,
-      onProgress: (p) => {
-        $('fill').style.width = `${(100 * p.done / p.total).toFixed(1)}%`;
-        $('ptext').textContent = `${p.done.toLocaleString('en')} of ${p.total.toLocaleString('en')} tiles` +
-          (p.eta !== null && p.done < p.total ? `, about ${timeText(p.eta)} left` : '') +
-          ` · map tiles fetched ${p.vectorTiles.toLocaleString('en')}, from cache ${p.fromCache.toLocaleString('en')}`;
-      } });
+    $('ptext').textContent = 'Checking the area…';
+    // the sampled tiles go through the pack's own fetcher: cached, and counted in its 50 MB
+    const pick = await chooseSource({ bbox, levels, search: location.search, size: async (src, z, x, y) => {
+      const f = fetcherOf(src);
+      await f.resolve();
+      const b = await f.get(z, x, y);
+      return b ? b.length : 0;
+    } });
+    if (ac.signal.aborted) throw new DOMException('The run was cancelled.', 'AbortError');
+    const WHY = { dense: ' (the area is too dense for OpenFreeMap)', 'too-large': ' (too large for OpenFreeMap)', unreachable: ' (OpenFreeMap did not answer)' };
+    let used = pick.source, why = WHY[pick.reason] || '', out;
+    try {
+      out = await make(used);
+    } catch (e) {
+      // OpenFreeMap's limits ran out, or a tile server failed mid-pack: start again from the other source
+      const other = fallbackSource({ used, code: e.code, fitsOfm: fitsOpenFreeMap(bbox, levels), forced });
+      if (!other) throw e;
+      why = e.code === 'source' ? ` (${used.title} failed: ${e.message})` : ' (the area was bigger than it looked for OpenFreeMap’s limits)';
+      $('ptext').textContent = `${used.title} failed; starting again from ${other.title}…`;
+      try {
+        out = await make(other);
+      } catch (e2) {
+        if (e2.name === 'AbortError') throw e2;
+        throw new Error(`Both map sources failed. ${used.title}: ${e.message} ${other.title}: ${e2.message}`);
+      }
+      used = other;
+    }
+    const { bytes, stats } = out;
     showPack(bytes);
     message($('result'), `Done: ${bytesText(bytes.length)}, ${stats.tiles.toLocaleString('en')} tiles (${stats.empty.toLocaleString('en')} empty), ` +
-      `${stats.names.toLocaleString('en')} names for search.`, 'ok');
+      `${stats.names.toLocaleString('en')} names for search. Map data from ${esc(used.title)}${used.id === 'openfreemap' ? ', with peaks' : ''}${esc(why)}.`, 'ok');
   } catch (e) {
     if (e.name === 'AbortError') message($('result'), 'Cancelled. Press Make again to continue: what was fetched is kept in this browser.');
     else message($('result'), esc(e.message || e), 'err');

@@ -9,13 +9,13 @@ import { bmp1, zlib, isBlank } from '../tools/offlinemap/bmpz.js';
 import { writePack } from '../tools/offlinemap/pack.js';
 import { readPack, unzlib } from './mapread.mjs';
 import { lengthM, bboxWithMargin, toGpx, parseGpx, streetLabels } from '../tools/offlinemap/route.js';
-import { metatiles, toBits, cut } from '../tools/offlinemap/render.js';
+import { metatiles, toBits, cut, firstView, failureCode } from '../tools/offlinemap/render.js';
 import { ROLES, symbolImage, patternImage } from '../tools/offlinemap/eink.js';
 import * as shortbread from '../tools/offlinemap/schema/shortbread.js';
 import * as openmaptiles from '../tools/offlinemap/schema/openmaptiles.js';
-import { SOURCES, pickSource } from '../tools/offlinemap/sources.js';
+import { SOURCES, forcedSource, downloadEstimate, samplePoints, chooseSource, fallbackSource } from '../tools/offlinemap/sources.js';
 import { TileFetcher } from '../tools/offlinemap/fetcher.js';
-import { lonLatToTile, tileRange, PRESETS, vectorZoom, vectorTiles, estimate, MAX_TILES } from '../tools/offlinemap/tiles.js';
+import { lonLatToTile, tileToLonLat, tileRange, PRESETS, vectorZoom, vectorTiles, estimate, MAX_TILES } from '../tools/offlinemap/tiles.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 let bad = 0, n = 0;
@@ -123,16 +123,73 @@ const tk = estimate([26, 36, 45, 42], PRESETS.streets, VT);
 check('estimate: Turkey at Streets is refused', tk.refused === 'tiles' && /Overview/.test(tk.advice), tk.advice);
 check('estimate: over MAX_TILES output tiles is refused (the browser holds the pack in memory)', MAX_TILES === 50000 &&
   estimate([28.3, 40.7, 30.1, 41.4], PRESETS.streets, VT).refused === 'tiles' && /smaller area/i.test(estimate([28.3, 40.7, 30.1, 41.4], PRESETS.streets, VT).advice));
-const mid = [28.8, 40.9, 29.3, 41.15];
-check('estimate: VersaTiles accepts what OpenFreeMap refuses', estimate(mid, PRESETS.streets, VT).refused === null &&
-  estimate(mid, PRESETS.streets, OFM).refused !== null, estimate(mid, PRESETS.streets, VT).vectorTiles);
+const mid = [26, 38, 32, 41];
+check('estimate: VersaTiles accepts what OpenFreeMap refuses', estimate(mid, PRESETS.overview, VT).refused === null &&
+  estimate(mid, PRESETS.overview, OFM).refused !== null, estimate(mid, PRESETS.overview, VT).vectorTiles);
+
+{
+  // the map opens on the first view it draws, not at zoom 0 (which fetched four world tiles per run)
+  const v = firstView(BOX, PRESETS.streets), r = tileRange(BOX, 17), c = tileToLonLat(r.x0 + 2, r.y0 + 2, 17);
+  check('firstView: the first metatile of the deepest level, at map zoom z - 1', v.zoom === 16 &&
+    Math.abs(v.center[0] - c.lon) < 1e-9 && Math.abs(v.center[1] - c.lat) < 1e-9, JSON.stringify(v));
+}
+
+check('failureCode: tile server failures are source, limits keep their names, the rest none',
+  failureCode('Could not fetch map tile 14/1/2: Failed to fetch') === 'source' && failureCode('Map tile 14/1/2: HTTP 502') === 'source' &&
+  failureCode('The map server asks to wait about 3 min. Press Make again then: what was fetched is kept.') === 'source' &&
+  failureCode('The map server keeps asking to wait (tile 14/1/2).') === 'source' &&
+  failureCode('The map tiles did not all arrive in a minute. Check the connection and press Make again: what was fetched is kept.') === 'source' &&
+  failureCode('A map tile failed to load.') === 'source' && failureCode('limit') === 'limit' && failureCode('budget') === 'budget' &&
+  failureCode('Something else broke') === undefined);
 
 // ---------------------------------------------------------------- sources and the polite fetcher
-check('pickSource: the dormant one only by name', pickSource('?source=openfreemap').id === 'openfreemap' &&
-  pickSource('').id === 'versatiles' && pickSource('?source=nope').id === 'versatiles');
-check('sources: VersaTiles live, OpenFreeMap dormant', SOURCES.versatiles.enabled === true && SOURCES.openfreemap.enabled === false &&
+check('forcedSource: only by name, else automatic', forcedSource('?source=openfreemap').id === 'openfreemap' &&
+  forcedSource('?source=versatiles').id === 'versatiles' && forcedSource('') === null && forcedSource('?source=nope') === null);
+check('sources: both live', SOURCES.versatiles.enabled === true && SOURCES.openfreemap.enabled === true &&
   SOURCES.versatiles.schema === 'shortbread' && SOURCES.openfreemap.schema === 'openmaptiles' &&
-  SOURCES.versatiles.limits.maxVectorTiles === 10000 && SOURCES.openfreemap.limits.maxVectorTiles === 3000);
+  SOURCES.versatiles.limits.maxVectorTiles === 10000 && SOURCES.openfreemap.limits.maxVectorTiles === 3000 &&
+  SOURCES.openfreemap.limits.maxBytes === 50e6);
+{
+  const closeBox = [29.0, 40.95, 29.1, 41.02];
+  const e = estimate(closeBox, PRESETS.closeup, OFM);
+  check('estimate: a pack bigger than 50 MB is not refused for OpenFreeMap (its 50 MB is the download)', e.bytesHigh > 50e6 && e.refused === null, `${e.bytesHigh} ${e.refused}`);
+}
+{
+  let want = 0;
+  const vzs = [...new Set(PRESETS.streets.map(vectorZoom))], top = Math.max(...vzs);
+  for (const vz of vzs) { const q = tileRange(BOX, vz); want += (q.nx + 2) * (q.ny + 2) * (vz === top ? 1000 : 500); }
+  check('downloadEstimate: tiles per vector zoom x the sampled size, top and lower, x 1.25', Math.round(downloadEstimate(BOX, PRESETS.streets, { top: 1000, low: 500 })) === Math.round(want * 1.25));
+  const pts = samplePoints(BOX, 14, 3), r14 = tileRange(BOX, 14);
+  check('samplePoints: at most k x k distinct tiles inside the range', pts.length <= 9 && pts.length >= 4 &&
+    new Set(pts.map((p) => `${p.x}/${p.y}`)).size === pts.length &&
+    pts.every((p) => p.z === 14 && p.x >= r14.x0 && p.x < r14.x0 + r14.nx && p.y >= r14.y0 && p.y < r14.y0 + r14.ny), JSON.stringify(pts));
+  check('samplePoints: one tile for a one-tile range', samplePoints([29.02, 41.0, 29.021, 41.001], 14, 3).length === 1);
+}
+{
+  const calls = [];
+  const size = (b) => async (src2, z, x, y) => { calls.push([src2.id, z, x, y]); return b; };
+  const forced = await chooseSource({ bbox: BOX, levels: PRESETS.streets, search: '?source=versatiles', size: size(1) });
+  check('chooseSource: a forced source wins, nothing sampled', forced.source.id === 'versatiles' && forced.reason === 'forced' && calls.length === 0);
+  const big = await chooseSource({ bbox: mid, levels: PRESETS.overview, search: '', size: size(1) });
+  check('chooseSource: too many tiles for OpenFreeMap -> VersaTiles, nothing sampled', big.source.id === 'versatiles' && big.reason === 'too-large' && calls.length === 0);
+  const hills = await chooseSource({ bbox: [29.05, 40.03, 29.25, 40.13], levels: PRESETS.streets, search: '', size: size(2000) });
+  check('chooseSource: a light area -> OpenFreeMap', hills.source.id === 'openfreemap' && hills.reason === 'fits' &&
+    calls.length > 0 && calls.length <= 13 && calls.every((c) => c[0] === 'openfreemap'), `${hills.reason} ${calls.length}`);
+  calls.length = 0;
+  const city = await chooseSource({ bbox: BOX, levels: PRESETS.streets, search: '', size: size(400 * 1024) });
+  check('chooseSource: a dense city -> VersaTiles', city.source.id === 'versatiles' && city.reason === 'dense' && calls.length <= 13, `${city.reason} ${city.download}`);
+  const O = SOURCES.openfreemap, V = SOURCES.versatiles;
+  check('fallbackSource: OpenFreeMap out of tiles or bytes, or failing -> VersaTiles',
+    fallbackSource({ used: O, code: 'budget', fitsOfm: true }) === V && fallbackSource({ used: O, code: 'limit', fitsOfm: true }) === V &&
+    fallbackSource({ used: O, code: 'source', fitsOfm: true }) === V);
+  check('fallbackSource: VersaTiles failing -> OpenFreeMap only when the pack fits it',
+    fallbackSource({ used: V, code: 'source', fitsOfm: true }) === O && fallbackSource({ used: V, code: 'source', fitsOfm: false }) === null);
+  check('fallbackSource: none when forced, for other errors, or for a cancel',
+    fallbackSource({ used: O, code: 'source', fitsOfm: true, forced: O }) === null && fallbackSource({ used: O, code: undefined, fitsOfm: true }) === null &&
+    fallbackSource({ used: V, code: 'budget', fitsOfm: true }) === null);
+  const failing = await chooseSource({ bbox: [29.05, 40.03, 29.25, 40.13], levels: PRESETS.streets, search: '', size: async () => { throw new Error('offline'); } });
+  check('chooseSource: OpenFreeMap not answering -> VersaTiles', failing.source.id === 'versatiles' && failing.reason === 'unreachable');
+}
 
 function fakeCaches() {
   const m = new Map();
@@ -159,7 +216,10 @@ const src = { ...SOURCES.versatiles, tiles: 'https://t.example/{z}/{x}/{y}' };
   await Promise.all(Array.from({ length: 20 }, (_, i) => f.get(14, i, 1)));
   check('fetcher: never more than 4 in flight', net.max <= 4 && net.max >= 2 && net.calls.length === 20, net.max);
   const again = await f.get(14, 3, 1);
-  check('fetcher: the second get comes from the cache', net.calls.length === 20 && f.fromCache === 1 && again.length === 3);
+  check('fetcher: the second get in a run is not fetched again', net.calls.length === 20 && again.length === 3);
+  const next = new TileFetcher(src, { fetch: net.fetch, caches: f.caches, sleep: async () => {} });
+  const later = await next.get(14, 3, 1);
+  check('fetcher: a later run gets it from Cache Storage', net.calls.length === 20 && next.fromCache === 1 && later.length === 3);
   check('fetcher: a 404 is empty paper', (await f.get(14, 404, 1)) === null || (await new TileFetcher({ ...src, tiles: 'https://t.example/404/{z}/{x}/{y}' }, { fetch: net.fetch, caches: fakeCaches(), sleep: async () => {} }).get(1, 1, 1)) === null);
 }
 {
@@ -192,6 +252,35 @@ const src = { ...SOURCES.versatiles, tiles: 'https://t.example/{z}/{x}/{y}' };
   ac.abort();
   const res = await Promise.all(ps);
   check('fetcher: abort rejects pending gets and starts nothing more', res.filter((r) => r === 'AbortError').length >= 8 && net.calls.length <= 4, `${res} ${net.calls.length}`);
+}
+
+{
+  const tj = 'https://ofm.example/planet';
+  const fetch = async (u) => (u === tj ? new Response(JSON.stringify({ tiles: ['https://ofm.example/planet/20261101_080013_pt/{z}/{x}/{y}.pbf'] })) : new Response(new Uint8Array([1])));
+  const f = new TileFetcher({ ...SOURCES.openfreemap, tileJson: tj }, { fetch, caches: null, sleep: async () => {} });
+  await f.resolve(); await f.resolve();
+  check('fetcher: the data date from the build in the tile URL when the TileJSON has none', f.dataDate === '2026-11-01' &&
+    f.url(14, 1, 2) === 'https://ofm.example/planet/20261101_080013_pt/14/1/2.pbf', `${f.dataDate} ${f.url(14, 1, 2)}`);
+}
+{
+  // the browser pane's Cache Storage fails; MapLibre asks a tile again after leaving a view (Moda: 57
+  // requests for 20 tiles at z14, 2026-11-16): a run never downloads a tile twice
+  const net = fakeNet();
+  const broken = { open: async () => { throw new Error('UnknownError'); } };
+  const f = new TileFetcher(src, { fetch: net.fetch, caches: broken, sleep: async () => {} });
+  const a = await f.get(14, 5, 5), b2 = await f.get(14, 5, 5);
+  check('fetcher: without Cache Storage a tile is fetched once (memory cache)', net.calls.length === 1 && f.count === 1 && a.length === 3 && b2.length === 3, net.calls.length);
+  const g = new TileFetcher(src, { fetch: net.fetch, caches: null, sleep: async () => {}, memoryBytes: 7 });
+  await g.get(14, 1, 9); await g.get(14, 2, 9); await g.get(14, 3, 9); await g.get(14, 1, 9);
+  check('fetcher: the memory cache stays under its size (oldest out)', g.memBytes <= 7 && g.count === 4, `${g.memBytes} ${g.count}`);
+}
+{
+  const net = fakeNet();
+  const f = new TileFetcher({ ...src, limits: { ...src.limits, maxBytes: 7 } }, { fetch: net.fetch, caches: fakeCaches(), sleep: async () => {} });
+  await f.get(14, 1, 2); await f.get(14, 2, 2); await f.get(14, 3, 2);
+  let err = '';
+  try { await f.get(14, 4, 2); } catch (e) { err = String(e.message || e); }
+  check('fetcher: past maxBytes it stops with budget', err === 'budget' && net.calls.length === 3, err);
 }
 
 // ---------------------------------------------------------------- e-ink roles and the two schemas
@@ -227,7 +316,32 @@ const line = { type: 'MultiLineString', coordinates: [[[29.0, 40.98], [29.001, 4
 const moda = shortbread.nameEntry('street_labels', { kind: 'residential', name: 'Moda Caddesi' }, line, 'local');
 check('shortbread: a street is kind 6 at the middle of its longest part', moda && moda.kind === 6 && moda.lon === 29.025 && moda.lat === 40.981, JSON.stringify(moda));
 check('shortbread: a station is kind 7', shortbread.nameEntry('public_transport', { kind: 'station', name: 'Haydarpaşa' }, pt(29.019, 40.997), 'local')?.kind === 7);
-check('openmaptiles: a peak is kind 8', openmaptiles.nameEntry('mountain_peak', { name: 'Uludağ', ele: 2543 }, pt(29.22, 40.07), 'local')?.kind === 8);
+check('openmaptiles: a peak is kind 8', openmaptiles.nameEntry('mountain_peak', { class: 'peak', name: 'Uludağ', ele: 2543 }, pt(29.22, 40.07), 'local')?.kind === 8);
+check('openmaptiles: bus and tram stops are not search names, stations are (like Shortbread)',
+  openmaptiles.nameEntry('poi', { class: 'bus', subclass: 'bus_stop', name: 'Moda' }, pt(29.03, 40.98), 'local') === null &&
+  openmaptiles.nameEntry('poi', { class: 'railway', subclass: 'tram_stop', name: 'Moda' }, pt(29.03, 40.98), 'local') === null &&
+  openmaptiles.nameEntry('poi', { class: 'railway', subclass: 'station', name: 'Söğütlüçeşme' }, pt(29.04, 40.99), 'local')?.kind === 7);
+check('openmaptiles: a saddle or a country is not a search name', openmaptiles.nameEntry('mountain_peak', { class: 'saddle', name: 'Pass' }, pt(29.2, 40.1), 'local') === null &&
+  openmaptiles.nameEntry('place', { class: 'country', name: 'Türkiye' }, pt(35, 39), 'local') === null);
+{
+  const ls = openmaptiles.layers({ lang: 'local' });
+  const peak = ls.find((l) => l.id === 'peak'), place = ls.find((l) => l.id === 'place');
+  check('openmaptiles: peaks show their height, only peaks and volcanoes', JSON.stringify(peak.layout['text-field']).includes('ele') &&
+    JSON.stringify(peak.filter).includes('volcano') && !JSON.stringify(peak.filter).includes('saddle'), JSON.stringify(peak.layout['text-field']));
+  // OpenMapTiles files tram stops and subway stations under class railway (Kadıköy tiles, 2026-11-16)
+  const stop = ls.find((l) => l.id === 'bus'), station = ls.find((l) => l.id === 'station');
+  check('openmaptiles: tram stops with the bus stops, subway stations with the stations (like Shortbread)',
+    JSON.stringify(stop.filter).includes('tram_stop') && JSON.stringify(stop.filter).includes('"bus"') && JSON.stringify(station.filter).includes('subway'));
+  const parks = ls.filter((l) => l.id.startsWith('park'));
+  // OpenMapTiles' park layer holds protected areas (national parks, "historic", "sustainable"); city parks
+  // are landcover subclasses and playgrounds a landuse class (seen in Kadıköy and Uludağ tiles, 2026-11-16)
+  check('openmaptiles: city parks, not national parks or protected areas (like Shortbread)',
+    parks.length > 0 && parks.every((l) => l['source-layer'] !== 'park') &&
+    parks.some((l) => l['source-layer'] === 'landcover' && String(JSON.stringify(l.filter ?? null)).includes('"park"') && String(JSON.stringify(l.filter ?? null)).includes('garden')) &&
+    parks.some((l) => l['source-layer'] === 'landuse' && String(JSON.stringify(l.filter ?? null)).includes('playground')),
+    JSON.stringify(parks.map((l) => [l.id, l['source-layer'], l.filter])));
+  check('openmaptiles: no country or state labels', JSON.stringify(place.filter || []).includes('country') && JSON.stringify(place.filter).includes('state'));
+}
 check('openmaptiles: a town is kind 2', openmaptiles.nameEntry('place', { class: 'town', name: 'Bursa' }, pt(29, 40.2), 'local')?.kind === 2);
 check('no name -> null', shortbread.nameEntry('place_labels', { kind: 'suburb' }, pt(29, 41), 'local') === null &&
   openmaptiles.nameEntry('poi', { class: 'cafe' }, pt(29, 41), 'local') === null);
@@ -269,7 +383,7 @@ check('metatiles: 3 x 2, the last ones narrower', mts.length === 6 && mts[0].x =
   const f = new TileFetcher(src, { fetch: net.fetch, caches: broken, sleep: async () => {} });
   const b1 = await f.get(14, 1, 2);
   const b2 = await f.get(14, 1, 2);
-  check('fetcher: no Cache Storage, still fetches', b1.length === 3 && b2.length === 3 && f.cacheOk === false && net.calls.length === 2);
+  check('fetcher: no Cache Storage, still fetches (once)', b1.length === 3 && b2.length === 3 && f.cacheOk === false && net.calls.length === 1);
 }
 
 // ---------------------------------------------------------------- review fixes

@@ -26,6 +26,21 @@ export function metatiles(range, n = N) {
   return out;
 }
 
+// a run's failure message -> 'limit' | 'budget' (a source's per-pack limits) | 'source' (the tile
+// server failed or never answered) | undefined
+export function failureCode(failure) {
+  if (failure === 'limit' || failure === 'budget') return failure;
+  if (/map tile|map server|did not all arrive/i.test(failure)) return 'source';
+  return undefined;
+}
+
+// where the map opens: the first view drawn (deepest level first), so it fetches nothing else
+export function firstView(bbox, levels) {
+  const z = Math.max(...levels), r = tileRange(bbox, z);
+  const c = tileToLonLat(r.x0 + N / 2, r.y0 + N / 2, z);
+  return { center: [c.lon, c.lat], zoom: z - 1 };
+}
+
 // device-pixel RGBA (w x h) -> output bits (w/scale x h/scale), 1 = black
 export function toBits(rgba, w, h, scale = 2, threshold = THRESHOLD) {
   const ow = Math.floor(w / scale), oh = Math.floor(h / scale);
@@ -87,14 +102,14 @@ export async function renderPack({ bbox, levels, name, lang = 'local', source, s
   let failure = null;
   const map = new maplibregl.Map({
     container: box, pixelRatio: 2, interactive: false, fadeDuration: 0, preserveDrawingBuffer: true,
-    attributionControl: false, center: [0, 0], zoom: 0, maxZoom: 22,
+    attributionControl: false, ...firstView(bbox, levels), maxZoom: 22,
     style: { version: 8, glyphs: GLYPHS, sources: { xt: { type: 'vector', tiles: ['xtmap://{z}/{x}/{y}'], maxzoom: source.maxzoom } },
       layers: schema.layers({ lang }) },
   });
   // any failed map tile fails the run (a pack with holes is worse than none; Make again resumes)
   map.on('error', (e) => {
     const m = String(e?.error?.message || e?.error || '');
-    if (e?.sourceId === 'xt' || e?.tile || /^limit$|cancelled|map tile|map server|HTTP/.test(m)) failure = failure || m || 'A map tile failed to load.';
+    if (e?.sourceId === 'xt' || e?.tile || /^limit$|^budget$|cancelled|map tile|map server|HTTP/.test(m)) failure = failure || m || 'A map tile failed to load.';
   });
   const scratch = document.createElement('canvas');
   scratch.width = scratch.height = side * 2;
@@ -123,7 +138,11 @@ export async function renderPack({ bbox, levels, name, lang = 'local', source, s
         map.jumpTo({ center: [c.lon, c.lat], zoom: z - 1 });
         const settled = await waitIdle(map, signal);
         if (!settled && (fetcher.busy() || !map.areTilesLoaded())) failure = failure || 'The map tiles did not all arrive in a minute. Check the connection and press Make again: what was fetched is kept.';
-        if (failure) throw new Error(failure === 'limit' ? 'The area needs more map tiles than one pack may use.' : failure);
+        if (failure) {
+          const err = new Error(failure === 'limit' ? 'The area needs more map tiles than one pack may use.' : failure);
+          err.code = failureCode(failure);   // the page can start again from the other source
+          throw err;
+        }
         c2.clearRect(0, 0, side * 2, side * 2);
         c2.drawImage(map.getCanvas(), 0, 0, side * 2, side * 2);
         const bits = toBits(c2.getImageData(0, 0, side * 2, side * 2).data, side * 2, side * 2, 2, THRESHOLD);
@@ -202,7 +221,7 @@ export async function makeRouteGpx({ name, points, lang = 'local', source, schem
   // the street labels only: nothing else needs drawing
   const layers = schema.layers({ lang }).filter((l) => l['source-layer'] === schema.streetLabelLayer);
   const map = new maplibregl.Map({
-    container: box, interactive: false, fadeDuration: 0, attributionControl: false, center: [0, 0], zoom: 0,
+    container: box, interactive: false, fadeDuration: 0, attributionControl: false, center: points[0], zoom: 14,
     style: { version: 8, glyphs: GLYPHS, sources: { xt: { type: 'vector', tiles: ['xtmap://{z}/{x}/{y}'], maxzoom: source.maxzoom } }, layers },
   });
   map.on('error', (e) => { if (e?.sourceId === 'xt' || e?.tile) failure = failure || String(e?.error?.message || 'A map tile failed to load.'); });
@@ -228,7 +247,7 @@ export async function makeRouteGpx({ name, points, lang = 'local', source, schem
       map.jumpTo({ center: [c.lon, c.lat], zoom: z - 1 });
       const settled = await waitIdle(map, signal);
       if (!settled && (fetcher.busy() || !map.areTilesLoaded())) failure = failure || 'The map tiles did not all arrive in a minute. Check the connection and try again.';
-      if (failure) throw new Error(failure);
+      if (failure) { const err = new Error(failure); err.code = failureCode(failure); throw err; }
       collectStreets(map, schema, points, streets, lang);
       onProgress?.({ done: ++done, total: centres.size });
     }

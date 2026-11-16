@@ -348,6 +348,39 @@ data, buildings kept one by one, fewer POIs and no peaks; data of 2026-10-19 aga
 build of 2026-11-01 (VersaTiles builds come every few weeks to months). The user emailed OpenFreeMap
 on 2026-11-15; a yes adds it as a second source for peaks, behind the same data-source module.
 
+**Addendum (2026-11-16): OpenFreeMap agreed.** Its founder replied that a browser tool is identified
+well enough by Origin and Referer (no User-Agent needed) and that our limits and caching are right:
+at most 3000 tiles and 50 MB downloaded per pack, every tile cached. **Decision (user): automatic by
+size.**
+- A pack that fits the 3000 tiles (with the estimate's quarter for MapLibre's margins) is checked when
+  Make is pressed: up to 9 tiles at its deepest vector zoom and 4 two zooms up are sampled, and the
+  download is estimated from them. Under 70% of 50 MB it comes from OpenFreeMap, otherwise from
+  VersaTiles. Dense city z14 tiles are 0.4–1.2 MB on OpenFreeMap and mountains about 1 KB, so cities
+  hit the bytes and mountains the tiles.
+- The fetcher stops at 50 MB. If OpenFreeMap's tiles or bytes run out mid-pack, the pack starts again
+  from VersaTiles.
+- If a tile server fails mid-run (HTTP errors, no connection, tiles that never come), the run starts
+  again from the other source: from OpenFreeMap to VersaTiles always, and from VersaTiles to
+  OpenFreeMap when the pack fits it. Routes always fit OpenFreeMap. If both fail, one message names
+  both errors. Tested in the browser with faked 502s: a Moda pack and a Moda route (same five street
+  names) came out of the other source.
+- Routes stay on VersaTiles: they need only street names. `?source=openfreemap|versatiles` forces
+  one source.
+- The OpenMapTiles style matches the Shortbread one, with these differences:
+  - **Peaks:** only peaks and volcanoes are drawn, with their height in metres.
+  - **Parks:** come from landcover and landuse. OpenMapTiles' park layer is protected areas (the whole
+    of Uludağ National Park), so it is not drawn.
+  - **Stops:** tram stops are drawn with the bus stops, and subway stations with the stations.
+  - **Labels:** no country or state labels.
+  - **Search:** bus and tram stops are left out of search, as in Shortbread.
+- Known difference: OpenMapTiles has paths and small lakes only from vector zoom 14, so they appear
+  from output zoom 15, one level later than with VersaTiles.
+- Found while measuring: MapLibre asks a tile again after leaving a view. Where Cache Storage fails
+  (the app's browser pane), that downloaded tiles 2–3 times. The fetcher now keeps up to 200 MB of
+  tiles in memory and joins requests for the same tile. The map also opens on its first view, not at
+  zoom 0. Afterwards a run fetched 96 tiles against an estimate of 92 (Moda) and 428 against 408
+  (Uludağ), samples included.
+
 ## Left to the builder
 
 - The exact e-ink style: widths, patterns, label sizes, which POIs at which zoom.

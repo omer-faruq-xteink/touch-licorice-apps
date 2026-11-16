@@ -23,8 +23,12 @@ A pack holds at most 50,000 tiles; a bigger area can be several packs. Several p
 an overview of a country and detailed packs of two cities, say. On each part of the screen the app
 uses the most detailed pack that has it.
 
-The map data is OpenStreetMap, as vector tiles from [VersaTiles](https://versatiles.org/) (no account
-or key needed), drawn in black and white for e-ink in your browser.
+The map data is OpenStreetMap, drawn in black and white for e-ink in your browser, with no account or
+key. The tool takes it from [OpenFreeMap](https://openfreemap.org/) when the pack fits its limits (about
+3000 map tiles and 50 MB to download: a city, or a mountain range at Streets detail), which adds
+mountain peaks with their heights and is updated every week or two; larger or denser packs, and
+routes, come from [VersaTiles](https://versatiles.org/). The tool says which one it used. If one of them
+fails while a pack or a route is being made, the tool starts again from the other.
 
 ## On the reader
 

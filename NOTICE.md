@@ -144,9 +144,10 @@ public CDN (site) or npm (`tools/piano`); Verovio itself is not part of this rep
 ## Offline maps — `site/tools/offlinemap/`, `apps/offlinemap/`
 
 Map packs are made in the user's browser from [OpenStreetMap](https://www.openstreetmap.org/copyright)
-data (© OpenStreetMap contributors, ODbL 1.0), as Shortbread vector tiles served by
-[VersaTiles](https://versatiles.org/), with their glyphs; every pack carries the attribution, and
-the app shows it under About. The tool loads [MapLibre GL JS](https://maplibre.org/) (BSD 3-Clause)
+data (© OpenStreetMap contributors, ODbL 1.0): as OpenMapTiles vector tiles served by
+[OpenFreeMap](https://openfreemap.org/) for packs within its limits (agreed with its founder,
+2026-11-16), otherwise as Shortbread vector tiles served by [VersaTiles](https://versatiles.org/),
+with VersaTiles' glyphs; every pack carries its source's attribution, and the app shows it under About. The tool loads [MapLibre GL JS](https://maplibre.org/) (BSD 3-Clause)
 and the VersaTiles map style from public CDNs; place search uses
 [Nominatim](https://nominatim.org/) under its usage policy. None of these is part of this
 repository, and no map data is either.

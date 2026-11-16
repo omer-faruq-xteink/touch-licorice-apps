@@ -61,15 +61,12 @@ export function estimate(bbox, levels, limits) {
   // MapLibre also fetches the tiles around each view: about a quarter more than the area needs
   if (tiles > MAX_TILES) refused = 'tiles';
   else if (vt * 1.25 > limits.maxVectorTiles) refused = 'vector-tiles';
-  else if (limits.maxBytes && bytesHigh > limits.maxBytes) refused = 'bytes';
   let advice = '';
   if (refused) {
     const less = levels.at(-1) > 13 ? ' or less detail (Overview)' : '';
     advice = refused === 'tiles'
       ? `This would be ${tiles.toLocaleString('en')} tiles, more than the ${MAX_TILES.toLocaleString('en')} one pack can hold. Choose a smaller area${less}; a big area can be several packs.`
-      : refused === 'vector-tiles'
-      ? `This needs ${vt.toLocaleString('en')} map tiles from the data source, more than the ${limits.maxVectorTiles.toLocaleString('en')} one pack may use. Choose a smaller area${less || ' (Overview is already the least detail)'}; a big area can be several packs.`
-      : `This pack could reach ${(bytesHigh / 1e6).toFixed(0)} MB, more than the ${(limits.maxBytes / 1e6).toFixed(0)} MB the data source allows for one download. Choose a smaller area${less}.`;
+      : `This needs ${vt.toLocaleString('en')} map tiles from the data source, more than the ${limits.maxVectorTiles.toLocaleString('en')} one pack may use. Choose a smaller area${less || ' (Overview is already the least detail)'}; a big area can be several packs.`;
   }
   return { tiles, vectorTiles: vt, bytesLow, bytesHigh, seconds: tiles * 0.03 + vt * 0.03, refused, advice };
 }

@@ -1,16 +1,17 @@
 // The map maker's polite tile fetcher: at most `parallel` requests at a time, Retry-After obeyed on
 // 429, three retries with backoff on a network error, every tile kept in Cache Storage (a cancelled
 // or failed run continues without fetching a tile twice), and at most maxVectorTiles different
-// tiles per pack. registerProtocol() puts it behind MapLibre as xtmap://{z}/{x}/{y}.
+// tiles and at most maxBytes (when the source sets it) per pack. registerProtocol() puts it behind MapLibre as xtmap://{z}/{x}/{y}.
 
 export const CACHE = 'offlinemap-tiles-v1';
+export const MEMORY_BYTES = 200e6;   // tiles kept in memory per run (Cache Storage can fail)
 export const MAX_WAIT_S = 45;           // the longest Retry-After waited out (render.js waits 60 s for a view)
 
 const abortError = () => new DOMException('The run was cancelled.', 'AbortError');
 
 export class TileFetcher {
   constructor(source, { fetch = globalThis.fetch.bind(globalThis), caches = globalThis.caches, signal = null,
-    sleep = (ms) => new Promise((r) => setTimeout(r, ms)), onCount = null } = {}) {
+    sleep = (ms) => new Promise((r) => setTimeout(r, ms)), onCount = null, memoryBytes = MEMORY_BYTES } = {}) {
     this.source = source;
     this.fetch = fetch;
     this.caches = caches;
@@ -27,16 +28,40 @@ export class TileFetcher {
     this.cache = null;
     this.cacheOk = caches ? null : false;    // null: not tried yet
     this.dataDate = null;
+    this.pending = new Map();
+    this.mem = new Map();    // url -> bytes, oldest first: MapLibre asks a tile again after leaving a view
+    this.memBytes = 0;
+    this.memoryBytes = memoryBytes;
+  }
+
+  remember(url, b) {
+    if (b.length > this.memoryBytes) return;
+    this.mem.delete(url);
+    this.mem.set(url, b);
+    this.memBytes += b.length;
+    for (const [k, v] of this.mem) {
+      if (this.memBytes <= this.memoryBytes) break;
+      this.mem.delete(k);
+      this.memBytes -= v.length;
+    }
   }
 
   // a TileJSON source: the tile URL (and the data date) from it
-  async resolve() {
+  resolve() {
+    this.resolving ||= this.resolveOnce();
+    return this.resolving;
+  }
+
+  async resolveOnce() {
     if (!this.source.tileJson) return;
     try {
       const j = await (await this.fetch(this.source.tileJson, { signal: this.signal })).json();
       if (!this.template) this.template = j.tiles[0];
       const t = j['planetiler:osm:osmosisreplicationtime'] || j['planetiler:buildtime'];
       if (t) this.dataDate = String(t).slice(0, 10);
+      // OpenFreeMap names its build in the tile URL: /planet/20261101_080013_pt/
+      const b = !t && /\/(\d{4})(\d{2})(\d{2})_\d{6}/.exec(this.template || '');
+      if (b) this.dataDate = `${b[1]}-${b[2]}-${b[3]}`;
     } catch (e) {
       if (!this.template) throw e;
     }
@@ -64,15 +89,31 @@ export class TileFetcher {
     else this.active--;
   }
 
-  // -> the tile's bytes, or null for empty paper (404, empty body)
-  async get(z, x, y) {
+  // -> the tile's bytes, or null for empty paper (404, empty body); the same tile asked twice at once
+  // is fetched once
+  get(z, x, y) {
+    const url = this.url(z, x, y);
+    if (this.pending.has(url)) return this.pending.get(url);
+    const p = this.load(z, x, y).finally(() => this.pending.delete(url));
+    this.pending.set(url, p);
+    return p;
+  }
+
+  async load(z, x, y) {
     if (this.signal?.aborted) throw abortError();
     const key = `${z}/${x}/${y}`;
     if (!this.seen.has(key)) {
       if (this.seen.size >= this.source.limits.maxVectorTiles) throw new Error('limit');
+      if (this.source.limits.maxBytes && this.bytes >= this.source.limits.maxBytes) throw new Error('budget');
       this.seen.add(key);
     }
     const url = this.url(z, x, y);
+    const kept = this.mem.get(url);
+    if (kept) {
+      this.mem.delete(url);                          // newest again
+      this.mem.set(url, kept);
+      return kept.length ? kept : null;
+    }
     if (this.caches && this.cacheOk === null) {
       // Cache Storage can fail (private windows, some embedded browsers): fetch on without it
       try { this.cache = await this.caches.open(CACHE); this.cacheOk = true; } catch { this.cache = null; this.cacheOk = false; }
@@ -82,6 +123,7 @@ export class TileFetcher {
     if (hit) {
       this.fromCache++;
       const b = new Uint8Array(await hit.arrayBuffer());
+      this.remember(url, b);
       this.onCount?.(this);
       return b.length ? b : null;
     }
@@ -123,6 +165,7 @@ export class TileFetcher {
         this.count++;
         this.bytes += b.length;
         if (this.cache) { try { await this.cache.put(url, new Response(b)); } catch { /* a full or broken cache: go on */ } }
+        this.remember(url, b);
         this.onCount?.(this);
         return b.length ? b : null;
       }

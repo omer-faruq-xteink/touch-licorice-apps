@@ -68,6 +68,12 @@ export const draw = {
     layout: { 'icon-image': `xt-${role}`, 'icon-allow-overlap': false, 'icon-padding': 2,
       ...(withName ? { 'text-field': textField(lang), 'text-font': FONT, 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-optional': true } : {}) },
     paint: withName ? { 'text-color': B, 'text-halo-color': W, 'text-halo-width': 2 } : {} })],
+  // a peak: the triangle, its name and its height in metres under it (OpenMapTiles' ele)
+  peak: (id, sl, filter, minzoom, lang) => [layer(id, 'peak', 'symbol', sl, filter, { minzoom,
+    layout: { 'icon-image': 'xt-peak', 'icon-allow-overlap': false, 'icon-padding': 2,
+      'text-field': ['case', ['has', 'ele'], ['concat', textField(lang), '\n', ['to-string', ['get', 'ele']], ' m'], textField(lang)],
+      'text-font': FONT, 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-optional': true },
+    paint: { 'text-color': B, 'text-halo-color': W, 'text-halo-width': 2 } })],
 };
 
 // ------------------------------------------------------------------ pictures (1-bit, RGBA)
