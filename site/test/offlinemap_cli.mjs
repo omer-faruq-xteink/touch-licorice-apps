@@ -1,7 +1,8 @@
 // Fixture packs for the Offline Map app's tests (apps/offlinemap/test_offlinemap.py), written by the
 // tool's own pack writer so both sides read the same bytes.
 //   node site/test/offlinemap_cli.mjs fixtures OUT_DIR
-// city.map     z15-16 around Kadıkoy, two empty z16 tiles, one z16 row of noise (> 70 KB), names
+// city.map     z15-16 around Kadıkoy, two empty z16 tiles, one z16 row of noise (> 70 KB), names, and
+//              the nearest-name section (buckets at z14): two streets, a path, the district, a peak, a lake
 // inner.map    z15-17, smaller, inside city.map
 // overview.map z8-13 over 28-30 E, 40.5-41.5 N
 // Each tile's picture encodes where it is: its first (x + y) % 200 + 1 pixels are black.
@@ -9,6 +10,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { bmp1, zlib } from '../tools/offlinemap/bmpz.js';
 import { writePack } from '../tools/offlinemap/pack.js';
+import { nearSection } from '../tools/offlinemap/near.js';
 
 const [, , what, out] = process.argv;
 if (what !== 'fixtures' || !out) { console.error('usage: node offlinemap_cli.mjs fixtures OUT_DIR'); process.exit(2); }
@@ -54,6 +56,14 @@ const city = writePack({
     { name: 'Haydarpaşa', kind: 7, lon: 29.019, lat: 40.997 },
     { name: 'Fenerbahçe Parkı', kind: 9, lon: 29.037, lat: 40.986 },
   ],
+  near: nearSection([
+    { name: 'Moda Caddesi', kind: 6, from: 12, lines: [[[29.026, 40.975], [29.026, 40.985], [29.026, 40.995]]] },
+    { name: 'Ara Sokak', kind: 6, from: 15, lines: [[[29.045, 40.98], [29.045, 40.99]]] },
+    { name: 'Patika', kind: 12, from: 15, lines: [[[29.05, 40.975], [29.05, 41.0]]] },
+    { name: 'Kadıköy', kind: 4, from: 0, lines: [[[29.0275, 40.9903]]] },
+    { name: 'Tepe', kind: 8, from: 13, lines: [[[29.035, 40.975]]] },
+    { name: 'Göl', kind: 10, from: 0, area: true, lines: [[[29.01, 40.98], [29.015, 40.98], [29.015, 40.985], [29.01, 40.985], [29.01, 40.98]]] },
+  ], [29.0, 40.97, 29.06, 41.01], 14),
 });
 const inner = writePack({
   meta: meta('Inner', [29.02, 40.98, 29.04, 41.0], [15, 16, 17], '2026-11-10'),

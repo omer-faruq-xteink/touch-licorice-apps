@@ -15,6 +15,7 @@ export function readPack(bytes) {
     magic: dec.decode(bytes.subarray(0, 8)), version: v.getUint16(8, true), levels: bytes[10], format: bytes[11],
     tileSize: v.getUint16(12, true), metaOff: v.getUint32(16, true), metaLen: v.getUint32(20, true),
     zoomOff: v.getUint32(24, true), namesOff: v.getUint32(28, true), namesLen: v.getUint32(32, true),
+    nearOff: v.getUint32(36, true), nearLen: v.getUint32(40, true),
   };
   if (header.magic !== 'XTMAP1\0\0' || header.version !== 1) throw new Error('not a map pack');
   const meta = JSON.parse(dec.decode(bytes.subarray(header.metaOff, header.metaOff + header.metaLen)));
@@ -75,5 +76,27 @@ export function readPack(bytes) {
     }
     return out;
   }
-  return { header, meta, levels, nameBlocks: dir.length, tile, search };
+  // the nearest-name section (near.js)
+  function nearHead() {
+    if (!header.nearLen) return null;
+    const o = header.nearOff;
+    return { zb: bytes[o], x0: v.getUint32(o + 4, true), y0: v.getUint32(o + 8, true), nx: v.getUint16(o + 12, true), ny: v.getUint16(o + 14, true) };
+  }
+  function nearBucket(bx, by) {
+    const h = nearHead();
+    if (!h || bx < h.x0 || by < h.y0 || bx >= h.x0 + h.nx || by >= h.y0 + h.ny) return null;
+    const e = header.nearOff + 16 + 8 * ((by - h.y0) * h.nx + (bx - h.x0));
+    let p = header.nearOff + v.getUint32(e, true);
+    const end = p + v.getUint32(e + 4, true), out = [];
+    while (p < end) {
+      const kind = bytes[p], from = bytes[p + 1], shape = bytes[p + 2], nl = bytes[p + 3];
+      const name = dec.decode(bytes.subarray(p + 4, p + 4 + nl)); p += 4 + nl;
+      const n = v.getUint16(p, true); p += 2;
+      const pts = [];
+      for (let i = 0; i < n; i++) { pts.push([v.getInt16(p, true), v.getInt16(p + 2, true)]); p += 4; }
+      out.push({ kind, from, shape, name, pts });
+    }
+    return out;
+  }
+  return { header, meta, levels, nameBlocks: dir.length, tile, search, nearHead, nearBucket };
 }

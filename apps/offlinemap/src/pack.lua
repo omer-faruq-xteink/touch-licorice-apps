@@ -38,7 +38,8 @@ function P.open(name)
   if not okj or type(meta) ~= 'table' then return nil, 'a damaged map pack' end
   local zt = span(name, zoom_off, 20 * nlev)
   if not zt then return nil, 'a damaged map pack' end
-  local self = setmetatable({ name = name, meta = meta, levels = {}, zmin = 99, zmax = -1 }, P)
+  local self = setmetatable({ name = name, meta = meta, levels = {}, zmin = 99, zmax = -1,
+    near_off = u32(h, 37), near_len = u32(h, 41) }, P)   -- the nearest-name section (src/near.lua), 0 in old packs
   local deepest
   for i = 0, nlev - 1 do
     local o = 1 + 20 * i

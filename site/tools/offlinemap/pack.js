@@ -1,7 +1,8 @@
 // The Offline Map pack, format v1 (docs/superpowers/plans/2026-11-15-offline-map.md, "Pack format
 // v1"; apps/offlinemap/src/pack.lua reads it). Little endian:
 //   header (64 B) | meta JSON | zoom table (20 B a level) | an index per level (8 B a tile) |
-//   the tiles, row-major per level | the name index (directory, then blocks of <= 4096 B)
+//   the tiles, row-major per level | the name index (directory, then blocks of <= 4096 B) |
+//   the nearest-name section (near.js; header bytes 36-43, zero in packs made before 2026-11-16)
 import { fold } from './fold.js';
 
 const enc = new TextEncoder();
@@ -70,8 +71,9 @@ export function nameSection(names) {
   return out;
 }
 
-// {meta, levels: [{z, x0, y0, nx, ny, tiles: (Uint8Array|null)[] row-major}], names} -> the file
-export function writePack({ meta, levels, names = [] }) {
+// {meta, levels: [{z, x0, y0, nx, ny, tiles: (Uint8Array|null)[] row-major}], names, near (nearSection's
+// bytes, or null)} -> the file
+export function writePack({ meta, levels, names = [], near = null }) {
   const lv = [...levels].sort((a, b) => a.z - b.z);
   const metaB = enc.encode(JSON.stringify(meta));
   const names_ = nameSection(names);
@@ -82,7 +84,8 @@ export function writePack({ meta, levels, names = [] }) {
   for (const l of lv) for (const t of l.tiles) if (t) dataLen += t.length;
   const tilesOff = idxOff;
   const namesOff = tilesOff + dataLen;
-  const total = namesOff + (names_ ? names_.length : 0);
+  const nearOff = namesOff + (names_ ? names_.length : 0);
+  const total = nearOff + (near ? near.length : 0);
   if (total >= 2 ** 31) throw new Error('pack too large');
   const out = new Uint8Array(total);
   const v = new DataView(out.buffer);
@@ -96,6 +99,8 @@ export function writePack({ meta, levels, names = [] }) {
   v.setUint32(24, zoomOff, true);
   v.setUint32(28, names_ ? namesOff : 0, true);
   v.setUint32(32, names_ ? names_.length : 0, true);
+  v.setUint32(36, near ? nearOff : 0, true);
+  v.setUint32(40, near ? near.length : 0, true);
   out.set(metaB, 64);
   let p = tilesOff;
   lv.forEach((l, i) => {
@@ -118,5 +123,6 @@ export function writePack({ meta, levels, names = [] }) {
     });
   });
   if (names_) out.set(names_, namesOff);
+  if (near) out.set(near, nearOff);
   return out;
 }

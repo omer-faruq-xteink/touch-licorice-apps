@@ -8,6 +8,7 @@ local view = require('view')
 local names = require('names')
 local gpx = require('gpx')
 local labels = require('labels')
+local near = require('near')
 
 local TOOLS_URL = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/offlinemap/'
 local HEAD, BAR = 34, 52
@@ -298,7 +299,9 @@ end
 
 local function long_press(x, y)
   local lon7, lat7 = point_at(x, y)
-  kit.show({ title = 'This point', lines = { geo.fmt(lat7, lon7) },
+  local lines = { geo.fmt(lat7, lon7) }
+  for _, l in ipairs(near.lines(packs, lon7, lat7, V.z)) do lines[#lines + 1] = l end   -- what is held: a street, a peak, a lake
+  kit.show({ title = 'This point', lines = lines,
     rows = { { { 'Add bookmark here', function() kit.close(); add_bookmark(lat7, lon7) end } }, { { 'Close', function() kit.close() end } } },
     cancel = function() kit.close() end })
 end
@@ -770,7 +773,7 @@ end
 if rawget(_G, '__TEST') then
   __TEST.api = {
     fold = fold.fold,
-    geo = geo, pack = pack, choose = choose, view = view, names = names, gpx = gpx, labels = labels,
+    geo = geo, pack = pack, choose = choose, view = view, names = names, gpx = gpx, labels = labels, near = near,
     state = function() return { screen = screen, z = V and V.z, cx = V and V.cx, cy = V and V.cy, modal = kit.modal(), marker = marker, route = route, vw = V and V.w } end,
     layer_ops = function() return V and V.layer.ops or {} end,
     clear_ops = function() V.layer.ops = {}; V.spare.ops = {} end,     -- the test stub's record

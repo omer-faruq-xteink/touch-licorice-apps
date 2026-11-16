@@ -7,14 +7,16 @@ import { dirname, join } from 'node:path';
 import { fold } from '../tools/offlinemap/fold.js';
 import { bmp1, zlib, isBlank } from '../tools/offlinemap/bmpz.js';
 import { writePack } from '../tools/offlinemap/pack.js';
+import { nearSection, nameAreas, inRing, STYLE_FROM, UNIT } from '../tools/offlinemap/near.js';
 import { readPack, unzlib } from './mapread.mjs';
 import { lengthM, bboxWithMargin, toGpx, parseGpx, streetLabels } from '../tools/offlinemap/route.js';
-import { metatiles, toBits, cut, firstView, failureCode } from '../tools/offlinemap/render.js';
+import { metatiles, toBits, cut, firstView, failureCode, nearFeatures } from '../tools/offlinemap/render.js';
 import { ROLES, symbolImage, patternImage } from '../tools/offlinemap/eink.js';
 import * as shortbread from '../tools/offlinemap/schema/shortbread.js';
 import * as openmaptiles from '../tools/offlinemap/schema/openmaptiles.js';
 import { SOURCES, forcedSource, downloadEstimate, samplePoints, chooseSource, fallbackSource } from '../tools/offlinemap/sources.js';
 import { TileFetcher } from '../tools/offlinemap/fetcher.js';
+import { writeChunked } from '../tools/offlinemap/copy.js';
 import { lonLatToTile, tileToLonLat, tileRange, PRESETS, vectorZoom, vectorTiles, estimate, MAX_TILES } from '../tools/offlinemap/tiles.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -432,6 +434,97 @@ check('route: 1 degree of meridian', Math.abs(lengthM([[29, 40], [29, 41]]) - 11
   const lab = streetLabels(r, [along, cross]);
   check('route: street labels name the street it follows, not one it crosses', lab.length === 1 && lab[0].name === 'Moda Caddesi' &&
     Math.abs(lab[0].lat - 40.9865) < 0.001, JSON.stringify(lab));
+}
+
+// ---------------------------------------------------------------- the nearest-name section
+{
+  const zb = 14, bbox = [29.0, 40.97, 29.06, 41.01], r = tileRange(bbox, zb);
+  const at = (fx, fy) => { const t = tileToLonLat(r.x0 + fx, r.y0 + fy, zb); return [t.lon, t.lat]; };
+  const moda = { name: 'Moda Caddesi', kind: 6, from: 14, lines: [[at(0.5, 0.5), at(1.5, 0.5)]] };
+  const lake = { name: 'Göl', kind: 10, from: 0, area: true, lines: [[at(0.1, 0.1), at(0.3, 0.1), at(0.3, 0.3), at(0.1, 0.3), at(0.1, 0.1)]] };
+  const feats = [moda, { ...moda }, { name: 'Kadıköy', kind: 4, from: 0, lines: [[at(0.25, 0.75)]] }, lake,
+    { name: 'Far', kind: 6, from: 12, lines: [[[10, 10], [10.1, 10]]] }];
+  const nm = { name: 'N', bounds: bbox, levels: [15], lang: 'local', made: '2026-11-16', tool: 1 };
+  const p = readPack(writePack({ meta: nm, levels: [{ z: 15, x0: 0, y0: 0, nx: 1, ny: 1, tiles: [null] }], near: nearSection(feats, bbox, zb) }));
+  const h = p.nearHead();
+  check('near: the head names the bucket zoom and grid', h && h.zb === zb && h.x0 === r.x0 && h.y0 === r.y0 && h.nx === r.nx && h.ny === r.ny, JSON.stringify(h));
+  const b0 = p.nearBucket(r.x0, r.y0) || [], b1 = p.nearBucket(r.x0 + 1, r.y0) || [];
+  const m0 = b0.filter((e) => e.name === 'Moda Caddesi'), m1 = b1.filter((e) => e.name === 'Moda Caddesi');
+  check('near: a street in both buckets it crosses, once each, a line from its zoom', m0.length === 1 && m1.length === 1 && m0[0].kind === 6 &&
+    m0[0].from === 14 && m0[0].shape === 1, JSON.stringify(b0));
+  const close = (a, b) => Math.abs(a - b) <= 1;
+  check('near: points are pixels at zb + 5 from the bucket corner', m0.length && m1.length && close(m0[0].pts[0][0], UNIT / 2) && close(m0[0].pts[0][1], UNIT / 2) &&
+    close(m0[0].pts[1][0], 1.5 * UNIT) && close(m1[0].pts[0][0], -UNIT / 2), JSON.stringify(m0[0]?.pts) + JSON.stringify(m1[0]?.pts));
+  const k = b0.find((e) => e.name === 'Kadıköy');
+  check('near: a named point is one point, shape 0', k && k.kind === 4 && k.shape === 0 && k.pts.length === 1 && close(k.pts[0][0], UNIT / 4) && close(k.pts[0][1], 0.75 * UNIT));
+  const g = b0.find((e) => e.name === 'Göl');
+  check('near: an area is its ring, shape 2, in its bucket only', g && g.shape === 2 && g.kind === 10 && g.pts.length === 5 && !b1.some((e) => e.name === 'Göl'), JSON.stringify(g));
+  check('near: what lies outside the grid is left out', !b0.concat(b1).some((e) => e.name === 'Far'));
+  check('near: a pack without the section has no head', readPack(writePack({ meta: nm, levels: [{ z: 15, x0: 0, y0: 0, nx: 1, ny: 1, tiles: [null] }] })).nearHead() === null);
+  // areas get their names from labels: the same id, else a label of the kind inside
+  const sq = (x, y, d) => [[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]];
+  const areas = nameAreas([
+    { id: 7, kind: 10, ring: sq(29.0, 41.0, 0.01) },          // labelled by id (the label outside: a line label's middle)
+    { id: 8, kind: 9, ring: sq(29.1, 41.0, 0.01) },           // by a park label inside
+    { id: 9, kind: 9, ring: sq(29.2, 41.0, 0.01) },           // a water label inside a park: not its name
+    { id: null, kind: 10, ring: sq(29.3, 41.0, 0.01) },       // nothing: left out
+  ], [
+    { id: 7, name: 'Göl', kind: 10, lon: 28.9, lat: 41.0 },
+    { id: 99, name: 'Park', kind: 9, lon: 29.105, lat: 41.005 },
+    { id: 98, name: 'Su', kind: 10, lon: 29.205, lat: 41.005 },
+  ]);
+  check('near areas: named by id, or by a label of their kind inside', JSON.stringify(areas.map((a) => [a.name, a.kind, a.id])) === JSON.stringify([['Göl', 10, 7], ['Park', 9, 8]]), JSON.stringify(areas));
+  check('near areas: inRing', inRing([29.005, 41.005], sq(29.0, 41.0, 0.01)) && !inRing([29.015, 41.005], sq(29.0, 41.0, 0.01)));
+  check('near: the style draws streets from 12, paths from 13, peaks from 13, places and rivers always',
+    STYLE_FROM[6] === 12 && STYLE_FROM[12] === 13 && STYLE_FROM[8] === 13 && STYLE_FROM[4] === 0 && STYLE_FROM[13] === 0);
+  // the schemas
+  const ln = { type: 'MultiLineString', coordinates: [[[29.0, 40.98], [29.001, 40.98]], [[29.02, 40.98], [29.03, 40.982]]] };
+  const pnt = { type: 'Point', coordinates: [29.03, 40.98] };
+  const om = openmaptiles.nearEntry?.('transportation_name', { class: 'minor', name: 'Moda Caddesi' }, ln, 'local');
+  check('openmaptiles near: a street keeps its lines', om && om.kind === 6 && om.lines.length === 2 && om.lines[1][1][0] === 29.03, JSON.stringify(om));
+  check('openmaptiles near: a path is kind 12, a river 13, a station a point; a cafe, a park or a lake label nothing', !!openmaptiles.nearEntry &&
+    openmaptiles.nearEntry('transportation_name', { class: 'path', name: 'Patika' }, ln, 'local')?.kind === 12 &&
+    openmaptiles.nearEntry('waterway', { class: 'river', name: 'Nilüfer' }, ln, 'local')?.kind === 13 &&
+    JSON.stringify(openmaptiles.nearEntry('poi', { class: 'railway', subclass: 'station', name: 'Söğütlüçeşme' }, pnt, 'local')) === JSON.stringify({ name: 'Söğütlüçeşme', kind: 7, lines: [[[29.03, 40.98]]] }) &&
+    openmaptiles.nearEntry('poi', { class: 'cafe', name: 'Kahve' }, pnt, 'local') === null &&
+    openmaptiles.nearEntry('poi', { class: 'park', name: 'Park' }, pnt, 'local') === null &&
+    openmaptiles.nearEntry('water_name', { class: 'lake', name: 'Göl' }, pnt, 'local') === null);
+  check('openmaptiles near: the kind from properties alone', openmaptiles.nearKind?.('transportation_name', { class: 'primary' }) === 6 &&
+    openmaptiles.nearKind('place', { class: 'suburb' }) === 4 && openmaptiles.nearKind('poi', { class: 'cafe' }) === null);
+  check('openmaptiles areas: water, city parks, playgrounds', openmaptiles.areaKind?.('water', { class: 'lake' }) === 10 &&
+    openmaptiles.areaKind('landcover', { class: 'grass', subclass: 'park' }) === 9 && openmaptiles.areaKind('landuse', { class: 'playground' }) === 9 &&
+    openmaptiles.areaKind('landcover', { class: 'wood' }) === null && openmaptiles.areaKind('park', { class: 'national_park' }) === null &&
+    eq(openmaptiles.areaLayers, ['water', 'landcover', 'landuse']));
+  check('shortbread near: a footway is kind 12, a river line 13', !!shortbread.nearEntry &&
+    shortbread.nearEntry('street_labels', { kind: 'footway', name: 'Yol' }, ln, 'local')?.kind === 12 &&
+    shortbread.nearEntry('water_lines_labels', { kind: 'river', name: 'Nilüfer' }, ln, 'local')?.kind === 13 &&
+    shortbread.nearEntry('street_labels', { kind: 'residential', name: 'Moda Caddesi' }, ln, 'local')?.lines.length === 2 &&
+    shortbread.nearEntry('pois', { leisure: 'park', name: 'Park' }, pnt, 'local') === null);
+  check('shortbread areas: water and parks', shortbread.areaKind?.('water_polygons', { kind: 'water' }) === 10 &&
+    shortbread.areaKind('land', { kind: 'park' }) === 9 && shortbread.areaKind('land', { kind: 'forest' }) === null && eq(shortbread.areaLayers, ['water_polygons', 'land']));
+  check('near layers: the line layers', !!openmaptiles.nearLayers && openmaptiles.nearLayers.includes('waterway') && openmaptiles.nearLayers.includes('transportation_name') &&
+    shortbread.nearLayers.includes('street_labels') && shortbread.nearLayers.includes('water_lines_labels'));
+}
+
+{
+  const sq = [[29, 41], [29.01, 41], [29.01, 41.01], [29, 41.01], [29, 41]];
+  const nf = nearFeatures({ list: [{ name: 'Ana Cadde', kind: 6, lines: [] }, { name: 'Sokak', kind: 6, lines: [] }, { name: 'Patika', kind: 12, lines: [] }, { name: 'Semt', kind: 4, lines: [] }],
+    polys: [{ id: 5, kind: 10, ring: sq }], labels: [{ id: 5, name: 'Göl', kind: 10, lon: 29.005, lat: 41.005 }],
+    first: new Map([['6|Ana Cadde', 10], ['4|Semt', 8], ['a|5', 9]]) }, 15);
+  const from = Object.fromEntries(nf.map((f) => [f.name, f.from]));
+  check('near features: drawn from the first level whose data holds them, not before the style draws them',
+    from['Ana Cadde'] === 12 && from.Sokak === 15 && from.Patika === 15 && from.Semt === 8 && from['Göl'] === 9, JSON.stringify(from));
+}
+
+// ---------------------------------------------------------------- copying to the card, with progress
+{
+  const log = [];
+  const w = { write: async (b) => { log.push(['write', b.length, b[0]]); }, close: async () => { log.push(['close']); } };
+  const bytes = new Uint8Array(600 * 1024).map((_, i) => (i >> 18) + 1);
+  await writeChunked(w, bytes, (p) => log.push(['p', p.done, p.total, !!p.closing]), 256 * 1024);
+  const want = [['write', 262144, 1], ['p', 262144, 614400, false], ['write', 262144, 2], ['p', 524288, 614400, false],
+    ['write', 90112, 3], ['p', 614400, 614400, false], ['p', 614400, 614400, true], ['close']];
+  check('copying writes in pieces, reports each, then says it is finishing before close', JSON.stringify(log) === JSON.stringify(want), JSON.stringify(log));
 }
 
 console.log('\n' + (bad ? `${bad} of ${n} FAILED` : `all passed (${n})`));

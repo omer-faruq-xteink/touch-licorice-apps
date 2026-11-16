@@ -153,4 +153,32 @@ export function anchorOf(g) {
   for (const [a, b] of ring) { x += a; y += b; }
   return [x / ring.length, y / ring.length];
 }
+// a line geometry -> its parts as [[lon, lat], ...], else null
+export function linesOf(g) {
+  if (g?.type === 'LineString') return [g.coordinates];
+  if (g?.type === 'MultiLineString') return g.coordinates;
+  return null;
+}
+// the long press kinds (site/tools/offlinemap/near.js): lines 6 (street), 12 (path), 13 (river); points
+// of the search kinds 1-5 (places), 7 (station), 8 (peak). Parks (9) and lakes (10) come as areas,
+// shops and the like (11) never: a long press asks for a street, not the cafe beside it
+const LINE_KINDS = [6, 12, 13], POINT_KINDS = [1, 2, 3, 4, 5, 7, 8];
+export function nearOf(sourceLayer, props, nameKind) {
+  const k = nameKind(sourceLayer, props);
+  return POINT_KINDS.includes(k) ? k : null;
+}
+// -> { name, kind, lines } of a long press kind, or null
+export function nearFeature(k, props, geometry, lang) {
+  const name = nameOf(props, lang);
+  if (!k || !name || !geometry) return null;
+  if (LINE_KINDS.includes(k)) { const lines = linesOf(geometry); return lines ? { name, kind: k, lines } : null; }
+  const at = anchorOf(geometry);
+  return at ? { name, kind: k, lines: [[at]] } : null;
+}
+// an area's outer rings, one a polygon
+export function ringsOf(g) {
+  if (g?.type === 'Polygon') return g.coordinates.length ? [g.coordinates[0]] : [];
+  if (g?.type === 'MultiPolygon') return g.coordinates.filter((p) => p.length).map((p) => p[0]);
+  return [];
+}
 export const nameOf = (props, lang) => (lang === 'en' && props.name_en) || props.name || null;

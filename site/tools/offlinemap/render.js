@@ -4,9 +4,10 @@
 // BMPs). Names for the search index come from the vector features of one level.
 import { bmp1, zlib, isBlank } from './bmpz.js';
 import { writePack } from './pack.js';
+import { nearSection, nameAreas, STYLE_FROM } from './near.js';
 import { tileRange, tileToLonLat, vectorZoom } from './tiles.js';
 import { TileFetcher, registerProtocol } from './fetcher.js';
-import { GLYPHS, SYMBOL_ROLES, PATTERN_NAMES, symbolImage, patternImage, doubled } from './eink.js';
+import { GLYPHS, SYMBOL_ROLES, PATTERN_NAMES, symbolImage, patternImage, doubled, nameOf, ringsOf } from './eink.js';
 import { fold } from './fold.js';
 import { streetLabels, toGpx } from './route.js';
 
@@ -127,6 +128,7 @@ export async function renderPack({ bbox, levels, name, lang = 'local', source, s
     const total = plans.reduce((s, p) => s + p.range.nx * p.range.ny, 0);
     const nl = nameLevel(levels);
     const names = new Map();
+    const near = { list: [], polys: [], labels: [], seen: new Set(), first: new Map() };
     const t0 = performance.now();
     let done = 0, empty = 0;
     const out = [];
@@ -154,7 +156,8 @@ export async function renderPack({ bbox, levels, name, lang = 'local', source, s
             tiles[i] = await zlib(bmp1(t));
           }
         }
-        if (z === nl) collectNames(map, schema, lang, bbox, names);
+        if (z === nl) { collectNames(map, schema, lang, bbox, names); collectNear(map, schema, lang, near, z); }
+        else if (z < nl) seeNear(map, schema, lang, near, z);
         done += mt.cols * mt.rows;
         const el = (performance.now() - t0) / 1000;
         onProgress?.({ done, total, vectorTiles: fetcher.count, fromCache: fetcher.fromCache, eta: done ? (el / done) * (total - done) : null });
@@ -164,7 +167,7 @@ export async function renderPack({ bbox, levels, name, lang = 'local', source, s
     const list = [...names.values()].flat();
     const meta = { name, bounds: bbox, levels, lang, made: new Date().toISOString().slice(0, 10),
       data_date: fetcher.dataDate || '', source: source.id, attribution: source.attribution, tool: 1 };
-    const bytes = writePack({ meta, levels: out, names: list });
+    const bytes = writePack({ meta, levels: out, names: list, near: nearSection(nearFeatures(near, nl), bbox, vectorZoom(nl)) });
     return { bytes, stats: { tiles: total, empty, names: list.length, vectorTiles: fetcher.count, fromCache: fetcher.fromCache } };
   } finally {
     map.remove();
@@ -187,6 +190,76 @@ function collectNames(map, schema, lang, [w, s, e, n], names) {
       names.set(key, have);
     }
   }
+}
+
+// what a long press names (near.js), gathered at the name level nl: the named lines and points
+// (near.list), the pieces of the drawn areas (near.polys) and the labels that name them (near.labels),
+// each piece once (a feature comes again in every view whose vector tiles hold it). Every level, nl
+// and the ones below it, notes the first level whose data holds each name (near.first), so the reader
+// names only what the map shows at its zoom.
+function collectNear(map, schema, lang, near, z) {
+  if (!schema.nearEntry) return;
+  const query = (sl) => { try { return map.querySourceFeatures('xt', { sourceLayer: sl }); } catch { return []; } };
+  const piece = (pts) => pts.map(([x, y]) => `${x.toFixed(6)},${y.toFixed(6)}`).join(' ');
+  for (const sl of schema.nearLayers) {
+    for (const f of query(sl)) {
+      const ent = schema.nearEntry(sl, f.properties || {}, f.geometry, lang);
+      if (!ent) continue;
+      const key = `${ent.kind}|${ent.name}|${ent.lines.map(piece).join('/')}`;
+      if (near.seen.has(key)) continue;
+      near.seen.add(key);
+      near.list.push(ent);
+    }
+  }
+  for (const sl of schema.nameLayers) {
+    for (const f of query(sl)) {
+      const ent = schema.nameEntry(sl, f.properties || {}, f.geometry, lang);
+      if (!ent || (ent.kind !== 9 && ent.kind !== 10)) continue;
+      const key = `l|${f.id}|${ent.name}|${ent.lon.toFixed(6)},${ent.lat.toFixed(6)}`;
+      if (near.seen.has(key)) continue;
+      near.seen.add(key);
+      near.labels.push({ id: f.id ?? null, ...ent });
+    }
+  }
+  for (const sl of schema.areaLayers) {
+    for (const f of query(sl)) {
+      const kind = schema.areaKind(sl, f.properties || {});
+      if (!kind) continue;
+      for (const ring of ringsOf(f.geometry)) {
+        const key = `a|${f.id}|${piece(ring)}`;
+        if (near.seen.has(key)) continue;
+        near.seen.add(key);
+        near.polys.push({ id: f.id ?? null, kind, ring });
+      }
+    }
+  }
+  seeNear(map, schema, lang, near, z);
+}
+
+// the names whose features this view's data holds -> near.first (the lowest level for each)
+function seeNear(map, schema, lang, near, z) {
+  if (!schema.nearKind) return;
+  const note = (key) => { if (!(near.first.get(key) <= z)) near.first.set(key, z); };
+  for (const sl of schema.nearLayers) {
+    let feats = [];
+    try { feats = map.querySourceFeatures('xt', { sourceLayer: sl }); } catch { continue; }
+    for (const f of feats) {
+      const props = f.properties || {}, k = schema.nearKind(sl, props), name = nameOf(props, lang);
+      if (k && name) note(`${k}|${name}`);
+    }
+  }
+  for (const sl of schema.areaLayers) {
+    let feats = [];
+    try { feats = map.querySourceFeatures('xt', { sourceLayer: sl }); } catch { continue; }
+    for (const f of feats) if (f.id != null && schema.areaKind(sl, f.properties || {})) note(`a|${f.id}`);
+  }
+}
+
+// -> nearSection's features, each with the zoom the map first draws it at
+export function nearFeatures(near, nl) {
+  const out = near.list.map((e) => ({ ...e, from: Math.max(STYLE_FROM[e.kind] ?? 0, near.first.get(`${e.kind}|${e.name}`) ?? nl) }));
+  for (const a of nameAreas(near.polys, near.labels)) out.push({ ...a, from: a.id != null ? near.first.get(`a|${a.id}`) ?? nl : nl });
+  return out;
 }
 
 // the street label lines with a vertex near the route's box (50 m), for streetLabels

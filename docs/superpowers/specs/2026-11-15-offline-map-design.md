@@ -260,7 +260,8 @@ Portrait and landscape. No network permission. Data:
 - **Drag** to pan; the picture follows on release, as in the reader apps' picture zoom.
 - **Double tap** to zoom in at that point; − and + zoom on the middle.
 - **The page keys** pan by half a screen.
-- **Long press:** a box with the point's coordinates, and Add bookmark here.
+- **Long press:** a box with the point's coordinates, the name of what is held (see the addendum of
+  2026-11-16, "Names on a long press"), and Add bookmark here.
 - **Back:** closes a box, or leaves search and menus; on the map itself it exits, as the firmware
   intends.
 - **Pack switching:**
@@ -380,6 +381,29 @@ size.**
   tiles in memory and joins requests for the same tile. The map also opens on its first view, not at
   zoom 0. Afterwards a run fetched 96 tiles against an estimate of 92 (Moda) and 428 against 408
   (Uludağ), samples included.
+
+**Addendum (2026-11-16): names on a long press.** Not every street has its name drawn, so the user
+wants to hold a thing on the map and read its name: a street (hard to hold exactly, so the nearest
+one), a peak, a lake. Only what the map shows at that zoom is named, with no distance limit.
+- The pack gets a nearest-name section (header bytes 36-43, `site/tools/offlinemap/near.js`): named
+  lines (streets, paths, rivers), points (places, stations, peaks) and areas (lakes, city parks) in
+  buckets of one tile at the deepest vector zoom, as 16-bit offsets from the bucket's corner. Each
+  record has the zoom the map first draws it at: the later of the style's minimum zoom and the first
+  level whose vector data holds that name (noted while each level is drawn). Shops and other POIs are
+  left out: a long press asks for the street, not the cafe beside it.
+- Areas have no names in the data; a piece of a lake or park takes the name of the label with the
+  same feature id (OpenFreeMap: lakes and parks; VersaTiles: lakes) or of a label of its kind inside it.
+- The app (`src/near.lua`): a point under the finger (32 px) wins; else, from zoom 12 where streets
+  are drawn, the nearest line; else the nearest point. Rings of buckets are read outwards until
+  nothing unread can be nearer (at most 60 bucket reads). The box says `In: <area>` when the point
+  is inside a lake or park, and `Nearest: <name>, <distance>` unless it is inside an area and the
+  nearest name is more than 96 px away.
+- Device test (2026-11-16): held in Bursa on an old pack (no section), the box said `Nearest: Uludağ,
+  17 km` from a small summit pack nearby. Now only packs that hold the point are asked, and nothing
+  farther than 240 px at the view's zoom (half the screen's width) is called near; the user agreed to
+  drop "no distance limit" for this.
+- Measured: the section is 29 KB for a 0.8 x 0.8 km Moda pack (OpenFreeMap) and 1 KB for a mountain
+  top; a lookup takes 0-3 ms in the desktop harness. Both sources gave the same street names in Moda.
 
 ## Left to the builder
 

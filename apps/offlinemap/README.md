@@ -37,7 +37,11 @@ fails while a pack or a route is being made, the tool starts again from the othe
 - The header shows the pack, the zoom level and a scale bar. Zoom stops where the pictures stop: at the
   closest or widest level a pack has there, the button is faded and the header says so. Outside every
   pack the map is white with a dotted frame ("Edge of the map").
-- **Long press** a point for its coordinates and **Add bookmark here**.
+- **Long press** a point for its coordinates, the name of what is there and **Add bookmark here**:
+  the street (or path, river) nearest the finger, so a thin line need not be held exactly, a peak or
+  a station under the finger, and the lake or park the point is in. Only what the map shows at that
+  zoom is named, up to half a screen away, and only from the packs that hold the point. Packs made
+  before 2026-11-16 have no such names: make them again.
 - **Search** finds towns, districts, streets, stations, parks and places by name (accents and capitals
   do not matter), in every pack.
 - **Menu**:
