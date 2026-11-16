@@ -8,6 +8,7 @@ import { SOURCES, forcedSource, chooseSource, fitsOpenFreeMap, fallbackSource } 
 import { TileFetcher } from './fetcher.js';
 import { renderPack, makeRouteGpx } from './render.js';
 import { lengthM, bboxWithMargin, parseGpx } from './route.js';
+import { writeChunked } from './copy.js';
 
 const APP = 'offlinemap';
 const $ = (id) => document.getElementById(id);
@@ -334,25 +335,40 @@ $('make').addEventListener('click', async () => {
 });
 $('cancel').addEventListener('click', () => run?.abort());
 
-// copy a file into AppFiles/offlinemap/ on the reader's card
-async function toCard(name, bytes) {
+// copy a file into AppFiles/offlinemap/ on the reader's card; onProgress as in copy.js, first with done 0
+// once the card is chosen
+async function toCard(name, bytes, onProgress = () => {}) {
   if (!card.handle) await card.connect();
   const files = await card.handle.getDirectoryHandle('AppFiles', { create: true });
   const dir = await files.getDirectoryHandle(APP, { create: true });
   const fh = await dir.getFileHandle(name, { create: true });
   const w = await fh.createWritable();
-  await w.write(bytes);
-  await w.close();
+  onProgress({ done: 0, total: bytes.length });
+  await writeChunked(w, bytes, onProgress);
 }
 $('download').addEventListener('click', () => packed && download(safeName($('name').value, '.map'), packed));
 $('write').hidden = !canCopy;
 $('write').addEventListener('click', async () => {
   if (!packed) return;
   const name = safeName($('name').value, '.map');
+  let t0 = 0;
+  $('write').disabled = true;
+  message($('saved'), '');
   try {
-    await toCard(name, packed);
+    await toCard(name, packed, (p) => {
+      if (p.done === 0) { t0 = performance.now(); $('cprogress').hidden = false; }
+      const s = (performance.now() - t0) / 1000;
+      $('cfill').style.width = `${(100 * p.done / p.total).toFixed(1)}%`;
+      $('ctext').textContent = p.closing ? 'Finishing on the card…'
+        : `Copying… ${bytesText(p.done)} of ${bytesText(p.total)}` +
+          (p.done > 0 && s > 1 ? `, about ${timeText(s * (p.total - p.done) / p.done)} left` : '') +
+          '. Keep the reader connected.';
+    });
     message($('saved'), `Written to AppFiles/${APP}/${esc(name)}. Eject the card, then open Offline Map.`, 'ok');
-  } catch (e) { message($('saved'), esc(e.message), 'err'); }
+  } catch (e) { message($('saved'), esc(e.message), 'err'); } finally {
+    $('cprogress').hidden = true;
+    $('write').disabled = false;
+  }
 });
 $('rdownload').addEventListener('click', () => routeGpx && download(safeName($('rname').value, '.gpx'), new TextEncoder().encode(routeGpx), 'application/gpx+xml'));
 $('rwrite').hidden = !canCopy;
