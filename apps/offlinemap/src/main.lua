@@ -73,15 +73,38 @@ local function centre_pack()
   return choose.pick(packs, V.z, V.cx >> 8, V.cy >> 8)
 end
 
+-- packnames.txt: file<TAB>name a line, the names given in Map packs (the card cannot rename a file,
+-- and copying a pack of tens of MB on the reader would take minutes)
+local function read_pack_names()
+  local out = {}
+  for l in (kit.read('packnames.txt') or ''):gmatch('[^\n]+') do
+    local f, n = l:match('^(.-)\t(.+)$')
+    if f then out[f] = n end
+  end
+  return out
+end
+local function write_pack_names(t)
+  local lines = {}
+  for f, n in pairs(t) do lines[#lines + 1] = f .. '\t' .. (n:gsub('[\t\n]', ' ')) end
+  table.sort(lines)
+  kit.write('packnames.txt', table.concat(lines, '\n') .. '\n')
+end
+
 local function load_packs()
   packs, broken = {}, {}
+  local given = read_pack_names()
   local ok, list = pcall(function() return ctx.files:list() end)
   if not ok or type(list) ~= 'table' then return end
   for _, f in ipairs(list) do
     local n = tostring(f.name or '')
     if n:lower():match('%.map$') then
       local p, err = pack.open(n)
-      if p then packs[#packs + 1] = p else broken[#broken + 1] = { name = n, err = err } end
+      if p then
+        p.title = given[n] or tostring(p.meta.name or n)
+        packs[#packs + 1] = p
+      else
+        broken[#broken + 1] = { name = n, err = err }
+      end
     end
   end
   table.sort(packs, function(a, b) return a.area < b.area end)
@@ -416,18 +439,70 @@ local function go_to_coords()
 end
 
 local function size_text(n) return n < 1048576 and (((n + 512) // 1024) .. ' KB') or string.format('%.1f MB', n / 1048576) end
-local function open_packs()
+local open_packs
+
+-- file was deleted: it leaves the packs (the others are not opened again: in a tap's 1 s that is
+-- too slow with many packs); the map keeps its place, or the start screen when none is left
+local function pack_deleted(file)
+  local function drop(t) for i = #t, 1, -1 do if t[i].name == file then table.remove(t, i) end end end
+  drop(packs); drop(broken)
+  if #packs == 0 then
+    if V then V:release(); V = nil end
+    screen = 'start'
+    local okq, im = pcall(function() return ctx.qr:encode(TOOLS_URL, { size = 200 }) end)
+    qr = okq and im or nil
+    return
+  end
+  if V then V.packs = packs; update_limits(); V:refresh() end
+  open_packs()
+end
+
+-- a long press on a pack in Map packs: Rename (the name in the app), Delete (the file, after asking)
+local function pack_menu(file, title, can_rename)
+  local function delete()
+    kit.show({ title = 'Delete ' .. kit.short(title, 24) .. '?', lines = { 'The file ' .. file .. ' is removed from the card.' },
+      rows = { { { 'Delete', function()
+        kit.close()
+        pcall(function() ctx.budget:extend() end)  -- removing a file of tens of MB can take longer than a tap's 1 s
+        local ok, done, err = pcall(function() return ctx.files:remove(file) end)
+        if not ok or not done then say('Not deleted: ' .. tostring(ok and err or done)); return end
+        local given = read_pack_names()
+        if given[file] then given[file] = nil; write_pack_names(given) end
+        pack_deleted(file)
+      end }, { 'Cancel', function() kit.close() end } } },
+      cancel = function() kit.close() end })
+  end
+  local row = { { 'Delete', function() kit.close(); delete() end } }
+  if can_rename then
+    table.insert(row, 1, { 'Rename', function()
+      kit.close()
+      ask('A new name', title, function(n)
+        n = n:gsub('^%s+', ''):gsub('%s+$', '')
+        if n == '' then return end
+        local given = read_pack_names()
+        given[file] = n
+        write_pack_names(given)
+        for _, p in ipairs(packs) do if p.name == file then p.title = n end end
+        open_packs()
+      end)
+    end })
+  end
+  kit.show({ title = title, lines = { file }, rows = { row, { { 'Close', function() kit.close() end } } }, cancel = function() kit.close() end })
+end
+
+function open_packs()
   local items = {}
   for _, p in ipairs(packs) do
-    items[#items + 1] = { tostring(p.meta.name or p.name), 'z' .. p.zmin .. '-' .. p.zmax .. ', ' .. size_text(p.file_size) .. ', ' .. p.made,
+    items[#items + 1] = { p.title, 'z' .. p.zmin .. '-' .. p.zmax .. ', ' .. size_text(p.file_size) .. ', ' .. p.made,
       function()                                   -- go to the pack
         local z, x, y = first_view(p)
         screen = 'map'
         V:set(z, x, y)
         moved()
-      end }
+      end,
+      function() pack_menu(p.name, p.title, true) end }
   end
-  for _, b in ipairs(broken) do items[#items + 1] = { b.name, tostring(b.err), nil } end
+  for _, b in ipairs(broken) do items[#items + 1] = { b.name, tostring(b.err), nil, function() pack_menu(b.name, b.name, false) end } end
   show_list('Map packs', items)
 end
 
@@ -488,7 +563,7 @@ local function packs_btn() return W // 2 - 90, HEAD + map_h() // 2 - 30, 180, 60
 
 local function draw_header(gg)
   local p = centre_pack()
-  local title = (now() < msg_until and msg) or (V and V.edge and 'Edge of the map') or (p and tostring(p.meta.name or p.name)) or ''
+  local title = (now() < msg_until and msg) or (V and V.edge and 'Edge of the map') or (p and p.title) or ''
   local f = kit.font('small')
   local zs = 'z' .. V.z
   local m, px = geo.scale_bar(V.z, select(2, geo.from_px(geo.anchor(V.z, V.cx, V.cy), V.cx, V.cy)))
@@ -539,7 +614,7 @@ local function draw_search(gg)
     if not e then break end
     local x, y = result_rect(i)
     gg:text(x, y, kit.short(e.name, 30), { font = kit.font('medium') })
-    gg:text(x, y + 30, (names.KIND[e.kind] or 'place') .. ', ' .. kit.short(tostring(e.pack.meta.name or e.pack.name), 28), { font = kit.font('small') })
+    gg:text(x, y + 30, (names.KIND[e.kind] or 'place') .. ', ' .. kit.short(tostring(e.pack.title), 28), { font = kit.font('small') })
   end
   local pages = math.max(1, (#results + n - 1) // n)
   if pages > 1 then gg:text(W - 90, H - 100, rpage .. ' / ' .. pages, { font = kit.font('small') }) end
@@ -775,6 +850,7 @@ if rawget(_G, '__TEST') then
     fold = fold.fold,
     geo = geo, pack = pack, choose = choose, view = view, names = names, gpx = gpx, labels = labels, near = near,
     state = function() return { screen = screen, z = V and V.z, cx = V and V.cx, cy = V and V.cy, modal = kit.modal(), marker = marker, route = route, vw = V and V.w } end,
+    packs = function() return packs end,
     layer_ops = function() return V and V.layer.ops or {} end,
     clear_ops = function() V.layer.ops = {}; V.spare.ops = {} end,     -- the test stub's record
   }

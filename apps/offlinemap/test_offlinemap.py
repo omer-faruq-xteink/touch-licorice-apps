@@ -41,6 +41,7 @@ ctx.files = {
   list = function(self) local t = {}; for n, b in pairs(files_store) do t[#t + 1] = { name = n, size = #b } end
     table.sort(t, function(a, b) return a.name < b.name end); return t end,
   size = function(self, n) local b = files_store[n]; if not b then return nil, 'not_found' end; return #b end,
+  remove = function(self, n) remove_extends = extends or 0; remove_reads = #read_log; files_store[n] = nil; return true end,
   read = function(self, n, off, len)
     off = off or 0; len = len or 65536
     assert(len <= 65536, 'a read of more than 65536 bytes: ' .. len)
@@ -660,6 +661,52 @@ L.eval('ev_long')(240, 34 + 357)
 t = g.texts()
 check(any(s.startswith('Nearest: ') for s in t) and 'Add bookmark here' in t, f'the long press box names the nearest: {t[-6:]}')
 L.eval('ev_key')('back')
+
+# ------------------------------------------------------------------ the map pack list: Rename and Delete
+L.globals().files_store['bad.map'] = 'NOTAMAP!' + chr(0) * 60
+L.eval('on_load')()
+def packs_list():
+    L.eval('ev_key')('back'); L.eval('ev_key')('back')
+    g.tap_label('Menu'); g.tap_label('Map packs')
+def hold(label):
+    x, y = g.recs()[label]
+    L.eval('ev_long')(x + 3, y + 5)
+packs_list()
+hold('Overview')
+t = g.texts()
+check('Rename' in t and 'Delete' in t and 'Close' in t, f'long press on a pack: Rename and Delete: {t[-6:]}')
+g.tap_label('Rename')
+L.globals().inputs[len(L.globals().inputs)](L.globals().ctx, 'Whole city')
+t = g.texts()
+check('Whole city' in t and 'Overview' not in t and 'overview.map' + chr(9) + 'Whole city' in str(L.globals().store['packnames.txt']),
+      f'renamed: the list shows the new name, kept in storage, the file keeps its name: {t[:8]}')
+L.eval('on_load')()
+packs_list()
+check('Whole city' in g.texts(), 'the new name stays after the app opens again')
+hold('Whole city')
+g.tap_label('Delete')
+t = g.texts()
+check(any('overview.map' in x for x in t) and 'Cancel' in t and L.globals().files_store['overview.map'] is not None,
+      f'Delete asks first, naming the file: {t[-5:]}')
+g.tap_label('Cancel')
+check(L.globals().files_store['overview.map'] is not None and 'Whole city' in g.texts(), 'Cancel keeps it')
+hold('Whole city')
+g.tap_label('Delete')
+L.execute('extends = 0; read_log = {}')
+g.tap_label('Delete')
+t = g.texts()
+check(L.globals().files_store['overview.map'] is None and 'Whole city' not in t and 'overview.map' not in str(L.globals().store['packnames.txt'] or ''),
+      f'deleted: the file is gone from the card, the list and the names: {t[:8]}')
+check(int(L.globals().remove_extends) > 0, 'the time budget is extended before the file is removed (a big file takes a while)')
+check(not any(int(x.off) == 0 for x in L.globals().read_log.values()), f'and the other packs are not opened again (no header read) ({[(str(x.n), int(x.off), int(x.len)) for x in L.globals().read_log.values()]})')
+check(all(str(pk.name) != 'overview.map' for pk in g.api.packs().values()), 'and from the packs the map draws')
+hold('bad.map')
+g.tap_label('Delete'); g.tap_label('Delete')
+check(L.globals().files_store['bad.map'] is None and 'bad.map' not in g.texts(), 'a pack that does not open can be deleted too')
+for n in [str(pk.name) for pk in g.api.packs().values()]:
+    packs_list(); hold(next(str(pk.title) for pk in g.api.packs().values() if str(pk.name) == n))
+    g.tap_label('Delete'); g.tap_label('Delete')
+check(g.api.state().screen == 'start' and len(g.api.packs()) == 0, f'the last pack deleted: the start screen ({g.api.state().screen})')
 
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 shutil.rmtree(FIX, ignore_errors=True)

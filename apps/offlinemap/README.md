@@ -50,7 +50,8 @@ fails while a pack or a route is being made, the tool starts again from the othe
     `AppFiles/offlinemap/` are drawn as a bold line: opening one goes to it, all of it on the screen,
     and shows its length (**Fit route** goes back to that view).
   - **Go to coordinates**: `41.0082, 28.9784` or `41°0'29.5"N 28°58'42.2"E`, read off a phone.
-  - **Map packs**, **Screen** (portrait or landscape) and **About**.
+  - **Map packs**: tap one to go there; long press to rename it (the name in the app; the file keeps
+    its name) or delete its file from the card. **Screen** (portrait or landscape) and **About**.
 
 There is no live position: the reader has no GPS, and the phone apps for other e-ink maps cannot
 connect to it.
