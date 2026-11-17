@@ -19,14 +19,24 @@
 local kit = {}
 kit.W, kit.H = 480, 800
 
-function kit.font(name) return ctx.fonts and ctx.fonts[name] end
+-- a font by name ('small' / 'medium' / 'large'), or a number: that many pixels (ctx.fonts:size,
+-- API 2.3: the reader's .ttf font, or the nearest system font when there is none)
+function kit.font(name)
+  local F = ctx.fonts
+  if not F then return nil end
+  if type(name) == 'number' then
+    local ok, f = pcall(function() return F:size(name) end)
+    return ok and f or F.medium
+  end
+  return F[name]
+end
 function kit.width(f, s)
   local ok, w = pcall(function() return f:measure(s) end)
   return (ok and type(w) == 'number') and w or #s * 11
 end
 function kit.line_h(name)
   local ok, h = pcall(function() return kit.font(name).line_height end)
-  return (ok and tonumber(h)) or (name == 'large' and 30 or name == 'small' and 20 or 24)
+  return (ok and tonumber(h)) or (type(name) == 'number' and name * 5 // 4) or (name == 'large' and 30 or name == 'small' and 20 or 24)
 end
 
 -- drop the last character (a whole UTF-8 sequence)

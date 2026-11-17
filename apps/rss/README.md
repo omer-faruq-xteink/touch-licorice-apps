@@ -28,8 +28,11 @@ CommaFeed, or full text for feeds on the reader:
    there: no CommaFeed account is needed.
 2. Open the app's **Settings**. Fill **Host**, then **Token** (the part
    after `/k/`) or **user:password**, and switch **Full text** on if the Worker has a sanitizer
-   token. Each field opens the firmware's keyboard. **Text size** (small / default / large) sets
-   the type of articles and previews; tap it to change. **Images in articles** (off by default)
+   token. Each field opens the firmware's keyboard. **Text size** sets the type of articles and
+   previews: one of the three system sizes (**Small**, **Default**, **Large**, the fastest), or
+   any size from 16 to 40 px with **Smaller** / **Larger**, drawn in the reader's .ttf font (the
+   one chosen in Ink App settings → Font, or else the reader's body font; with no .ttf on the card
+   the page says so and the nearest system size is used). A sample shows the chosen size. **Images in articles** (off by default)
    shows article pictures where they are in the text. **Screen**: portrait
    or landscape; the app turns at once and opens that way next time. In landscape a list page
    holds 6 articles (the Worker is asked for 6 at a time), the menu and Settings take two columns,

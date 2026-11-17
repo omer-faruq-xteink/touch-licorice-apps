@@ -42,7 +42,8 @@ It is **off by default**, and while it is off nothing of it shows anywhere. See
   "n replies >" to read the replies to that comment, Back to come up, Top for the first level.
   They load one by one while you read (two pages ahead), so long threads start at once.
 - A tap on a page turns it: the left third back, elsewhere on (in comments, tap "n replies >" to
-  go down instead). Swipes and the side buttons turn pages too; three text sizes in Settings.
+  go down instead). Swipes and the side buttons turn pages too; Settings → **Text size**: the three system sizes, or any size from 16 to
+  40 px in the reader's .ttf font, with a sample.
 
 **Settings**, the same values as in the RSS app:
 

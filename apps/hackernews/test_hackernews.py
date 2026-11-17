@@ -269,10 +269,49 @@ g.tap(100, 70 + 40); typed(' https://w.example/ ')
 g.tap(100, 70 + 86 + 40); typed('tok')
 assert 'host=https://w.example/\ntoken=tok\n' in g.store['settings.txt']
 assert '***' in page_text()
+# Text size: the cell opens a page with the system sizes (Small / Medium / Large), any size in
+# pixels (Smaller / Larger, a .ttf font) and a sample
+L.execute('''
+  ttf_on, ttf_made = true, {}
+  ctx.fonts.size = function(self, px)
+    assert(self == ctx.fonts, 'method call expected for size')
+    if not ttf_on then return ctx.fonts.medium end
+    if not ttf_made[px] then
+      ttf_made[px] = setmetatable({ name = 'ttf' .. px, px = px, line_height = px + 6 }, { __index = { measure = function(_, s) return #s * 10 end } })
+    end
+    return ttf_made[px]
+  end
+  for k, f in pairs({ small = ctx.fonts.small, medium = ctx.fonts.medium, large = ctx.fonts.large }) do f.name = k end
+  fcanvas = setmetatable({}, { __index = function(_, k) return function(_, ...)
+    if k == 'text' then local x, y, s, o = ...; fdrawn[#fdrawn + 1] = { s = s, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end
+  end end })
+  function fdraw() fdrawn = {}; on_draw(ctx, fcanvas); return fdrawn end
+''')
+def fonts_of(part=''): return {str(r.f) for r in L.globals().fdraw().values() if part in str(r.s)}
 g.tap(100, 70 + 3 * 86 + 40)
-assert A().cfg.size == 'large'
-g.tap(100, 70 + 3 * 86 + 40); g.tap(100, 70 + 3 * 86 + 40)
-assert A().cfg.size == 'medium'
+assert screen() == 'textsize', screen()
+t = g.texts()
+for label in ('Text size', 'Small', 'Medium', 'Large', 'Smaller', 'Larger', 'Back'):
+    assert label in t, (label, t)
+assert any('sample' in x.lower() for x in t), t
+g.tap_label('Large')
+assert A().cfg.size == 'large' and 'size=large' in g.store['settings.txt']
+g.tap_label('Medium'); g.tap_label('Larger')                 # Medium is about 22 px: 24
+assert A().cfg.size == '24' and 'size=24' in g.store['settings.txt'], g.store['settings.txt']
+assert '24 px' in g.texts() and 'ttf32' in fonts_of('sample'), fonts_of('sample')
+g.tap_label('Smaller'); g.tap_label('Smaller')
+assert A().cfg.size == '20'
+for _ in range(20): g.tap_label('Larger')
+assert A().cfg.size == '40'
+for _ in range(20): g.tap_label('Smaller')
+assert A().cfg.size == '16'
+L.globals().ttf_on = False
+assert any('No .ttf font' in x for x in g.texts()), g.texts()
+L.globals().ttf_on = True
+g.tap_label('Medium')
+assert not any('No .ttf font' in x for x in g.texts()) and A().cfg.size == 'medium'
+g.tap_label('Back')                                           # Settings
+assert screen() == 'settings' and 'medium' in g.texts(), g.texts()
 g.tap_label('Back')
 g.tap(100, row(1))
 answer_all()
@@ -489,6 +528,19 @@ assert int(ctx.screen.width) == 480 and 'screen=portrait' in g.store['settings.t
 g.store['settings.txt'] = g.store['settings.txt'].replace('screen=portrait', 'screen=landscape')
 g.restart(); answer_all()
 assert int(ctx.screen.width) == 800 and lst().rows
+g.no_err()
+
+# a story at 24 px: the body in that size, the title 8 px bigger; a size out of range gives Medium
+g.store['settings.txt'] = re.sub(r'size=[^\n]*', 'size=24', g.store['settings.txt'])
+g.restart(); answer_all()
+g.tap(100, row(1)); answer_all()
+assert screen() == 'story'
+f = fonts_of()
+assert {'ttf24', 'ttf32'} <= f, f
+for bad in ('99', '8', 'huge'):
+    g.store['settings.txt'] = re.sub(r'size=[^\n]*', 'size=' + bad, g.store['settings.txt'])
+    g.restart(); answer_all()
+    assert A().cfg.size == 'medium', (bad, A().cfg.size)
 g.no_err()
 # opening and laying out articles asked for more time than a callback's 1000 ms
 assert int(L.globals().extends or 0) > 0, L.globals().extends

@@ -22,14 +22,24 @@ local kit = (function()
 local kit = {}
 kit.W, kit.H = 480, 800
 
-function kit.font(name) return ctx.fonts and ctx.fonts[name] end
+-- a font by name ('small' / 'medium' / 'large'), or a number: that many pixels (ctx.fonts:size,
+-- API 2.3: the reader's .ttf font, or the nearest system font when there is none)
+function kit.font(name)
+  local F = ctx.fonts
+  if not F then return nil end
+  if type(name) == 'number' then
+    local ok, f = pcall(function() return F:size(name) end)
+    return ok and f or F.medium
+  end
+  return F[name]
+end
 function kit.width(f, s)
   local ok, w = pcall(function() return f:measure(s) end)
   return (ok and type(w) == 'number') and w or #s * 11
 end
 function kit.line_h(name)
   local ok, h = pcall(function() return kit.font(name).line_height end)
-  return (ok and tonumber(h)) or (name == 'large' and 30 or name == 'small' and 20 or 24)
+  return (ok and tonumber(h)) or (type(name) == 'number' and name * 5 // 4) or (name == 'large' and 30 or name == 'small' and 20 or 24)
 end
 
 -- drop the last character (a whole UTF-8 sequence)
@@ -1299,6 +1309,14 @@ local UA = 'XteinkLicoriceHN/1.0 (https://github.com/omer-faruq/touch-licorice-a
 local TABS = { { 'For you', 'foryou', 'You' }, { 'Top', 'top' }, { 'New', 'new' }, { 'Best', 'best' }, { 'Ask', 'ask' }, { 'Show', 'show' },
                { 'Find', 'find' } }
 local SIZES = { small = 'medium', medium = 'large', large = 'small' }      -- the next one
+-- Text size: one of the three system sizes (the fastest), or the body's size in pixels (min..max,
+-- saved as e.g. "24"), drawn with ctx.fonts:size: the reader's .ttf font (API 2.17), or with no
+-- .ttf on the card the nearest system font. Smaller / Larger from a system size start at its px.
+local PX = { min = 16, max = 40, step = 2, small = 18, medium = 22, large = 28 }
+local function size_px(v)
+  local n = tonumber(type(v) == 'string' and v:match('^%d+$') or nil)
+  return n and n >= PX.min and n <= PX.max and n or nil
+end
 
 local cfg = { host = '', token = '', auth = '', size = 'medium', images = 'on', screen = 'portrait', aisend = 'both',
               lockevery = '60' }
@@ -1352,7 +1370,7 @@ end
 local function load_cfg()
   local t = kit.kv(kit.read('settings.txt'))
   for k in pairs(cfg) do if t[k] then cfg[k] = t[k] end end
-  if not SIZES[cfg.size] then cfg.size = 'medium' end
+  if not (SIZES[cfg.size] or size_px(cfg.size)) then cfg.size = 'medium' end
   if cfg.images ~= 'off' then cfg.images = 'on' end
   if cfg.screen ~= 'landscape' then cfg.screen = 'portrait' end
   A.normalize(cfg)                 -- aion: a boolean
@@ -1558,7 +1576,9 @@ end
 
 ------------------------------------------------------------------ documents (story, comments)
 
-local function body_font() return cfg.size end
+local function body_font() return size_px(cfg.size) or cfg.size end
+-- a heading (+4 px) and a story's title (+8 px) at a pixel size; 'large' at a system size
+local function big_font(plus) local n = size_px(cfg.size); return n and (n + plus) or 'large' end
 
 -- text with paragraphs (and the Worker's "# " headings, "> " quotes) as document lines; quotes
 -- are indented (an article's lose the marker, a comment's keep the ">" its writer typed)
@@ -1577,7 +1597,7 @@ local function add_text(out, text, cidx, article, images)
       if im then out[#out + 1] = { s = '', f = 'small', x = 0, h = im.h + 12, img = im } end
     elseif para:match('%S') then
       local font, x, s = f, 16, para
-      if para:sub(1, 2) == '# ' then font, s = 'large', para:sub(3)
+      if para:sub(1, 2) == '# ' then font, s = big_font(4), para:sub(3)
       elseif para:sub(1, 1) == '>' then x = 40; if article then s = para:gsub('^>%s*', '') end end
       for _k, l in ipairs(N.wrap(s, font, W - 16 - x)) do
         out[#out + 1] = { s = l, f = font, x = x, h = kit.line_h(font) + 2, cidx = cidx }
@@ -1724,7 +1744,7 @@ end
 local function build_story()
   pcall(function() ctx.budget:extend() end)   -- a long article takes more than a callback's 1000 ms
   local r, out = S.row, {}
-  add_lines(out, r.title, 'large', 16)
+  add_lines(out, r.title, big_font(8), 16)
   add_lines(out, meta(r), 'small', 16)
   if r.url then add_lines(out, N.domain(r.url) or r.url, 'small', 16) end
   out[#out + 1] = { s = '', f = 'small', x = 0, h = 62, likes = true }    -- More like this / Less like this
@@ -2329,6 +2349,77 @@ function AI.prov_rect(i)
   local cw = (W - 32 - (n - 1) * 16) // n
   return 16 + ((i - 1) % n) * (cw + 16), 70 + ((i - 1) // n) * 66, cw, 56
 end
+-- The Text size page: the three system sizes, any size in pixels (Smaller / Larger), and a
+-- sample at the chosen size under them
+local TSZ = {
+  title = 'A sample headline', meta = '128 pts · sample · 2 h ago',
+  body = 'Stories, articles and comments are set at this size. Tap the right of a page for the next one; a long press on a picture shows it on the whole screen.',
+}
+function TSZ.buttons()
+  local t, bw = {}, (W - 32 - 2 * 12) // 3
+  for i, name in ipairs({ 'small', 'medium', 'large' }) do
+    t[#t + 1] = { x = 16 + (i - 1) * (bw + 12), y = 88, w = bw, h = 52, label = name:sub(1, 1):upper() .. name:sub(2), size = name }
+  end
+  t[#t + 1] = { x = 16, y = 180, w = 120, h = 52, label = 'Smaller', step = -1 }
+  t[#t + 1] = { x = W - 136, y = 180, w = 120, h = 52, label = 'Larger', step = 1 }
+  return t
+end
+function TSZ.draw(gg)
+  pcall(function() ctx.budget:extend() end)   -- opening a .ttf at new sizes takes a while
+  local sm = kit.font('small')
+  gg:text(16, 16, 'Text size', { font = kit.font('large') })
+  gg:text(16, 64, 'System font (the fastest)', { font = sm })
+  gg:text(16, 156, "Any size, in the reader's .ttf font", { font = sm })
+  local px = size_px(cfg.size)
+  for _k, b in ipairs(TSZ.buttons()) do
+    kit.button(gg, b.x, b.y, b.w, b.h, b.label, { font = 'medium' })
+    if b.size == cfg.size then gg:rect(b.x + 3, b.y + 3, b.w - 6, b.h - 6) end
+  end
+  if px then gg:rect(152, 180, W - 304, 52) end
+  gg:text(W // 2, 206, px and (px .. ' px') or 'not used', { font = kit.font('medium'), align = 'center', valign = 'middle' })
+  local y = 244
+  if px then
+    local ok, real = pcall(function() return kit.font(px).px end)
+    if not (ok and real) then
+      for _k, l in ipairs({ 'No .ttf font: this is the system font, so only', 'three sizes look different. Put a .ttf file in', 'fonts/ on the card and pick it in Ink App settings.' }) do
+        gg:text(16, y, l, { font = sm }); y = y + 22
+      end
+    end
+  end
+  -- the sample, as a story shows it
+  local by = y + 8
+  local bh = BTN_Y - 16 - by
+  if bh < 60 then return end
+  gg:rect(16, by, W - 32, bh)
+  local lines = {}
+  local function add(s, f, gap)
+    for _k, l in ipairs(N.wrap(s, f, W - 64)) do lines[#lines + 1] = { s = l, f = f, h = kit.line_h(f) + (gap or 2) } end
+  end
+  add(TSZ.title, big_font(8), 4)
+  add(TSZ.meta, 'small', 4)
+  lines[#lines + 1] = { s = '', f = 'small', h = 10 }
+  add(TSZ.body, body_font())
+  local ly = by + 12
+  for _k, ln in ipairs(lines) do
+    if ly + ln.h > by + bh - 8 then break end
+    if ln.s ~= '' then gg:text(32, ly, ln.s, { font = kit.font(ln.f) }) end
+    ly = ly + ln.h
+  end
+end
+function TSZ.tap(x, y)
+  for _k, b in ipairs(TSZ.buttons()) do
+    if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then
+      if b.size then cfg.size = b.size
+      else
+        local n = size_px(cfg.size) or PX[cfg.size] or PX.medium
+        cfg.size = tostring(math.max(PX.min, math.min(PX.max, n + b.step * PX.step)))
+      end
+      save_cfg()
+      return
+    end
+  end
+end
+
 local function draw_settings(gg)
   gg:text(16, 16, 'Settings', { font = kit.font('large') })
   local list = settings_list()
@@ -2338,6 +2429,7 @@ local function draw_settings(gg)
     if s[1] == 'token' and v ~= '' then v = string.rep('*', math.min(#v, 12)) end
     if s[1] == 'auth' and v ~= '' then v = (v:match('^[^:]*') or '') .. ':***' end
     if s[1] == 'ai' then v = AI.on() and A.prov(cfg).name or (cfg.aion and 'not set up yet' or 'off') end
+    if s[1] == 'size' and size_px(v) then v = v .. ' px' end
     if s[1] == 'foryou' then v = #fy.topics .. (#fy.topics == 1 and ' topic' or ' topics') end
     gg:text(x, y + 8, fit((cols() > 1 and s[3]) or s[2], 'small', w), { font = kit.font('small') })
     gg:text(x, y + 36, v ~= '' and fit(v, 'medium', w) or '(empty)', { font = kit.font('medium') })
@@ -2547,6 +2639,7 @@ function on_draw(c, gg)
     elseif screen == 'aiprov' then AI.draw_prov(gg)
     elseif screen == 'aibtns' then AI.draw_btns(gg)
     elseif screen == 'fyset' then draw_fyset(gg)
+    elseif screen == 'textsize' then TSZ.draw(gg)
     else draw_settings(gg) end
     local line = busy_label() or status or ERR
     -- under the buttons: above them it overlapped the last list row
@@ -2569,7 +2662,7 @@ end
 local function back()
   if screen == 'chat' then screen = ai_from
   elseif screen == 'aimenu' then screen = #chat.msgs > 0 and 'chat' or ai_from
-  elseif screen == 'aiset' or screen == 'fyset' then screen = 'settings'
+  elseif screen == 'aiset' or screen == 'fyset' or screen == 'textsize' then screen = 'settings'
   elseif screen == 'aiprov' or screen == 'aibtns' then screen = 'aiset'
   elseif screen == 'thread' and #levels > 1 then
     drop_all(); levels[#levels] = nil; build_thread(level()); thread_pump()
@@ -2707,6 +2800,8 @@ local function tap(x, y, long)
     elseif y < DOC_BOTTOM then doc_page(x < W // 3 and -1 or 1) end        -- left third back, else on
   elseif screen == 'fyset' then
     tap_fyset(x, y)
+  elseif screen == 'textsize' then
+    TSZ.tap(x, y)
   elseif screen == 'thread' then
     if y >= DOC_BOTTOM then return end
     local lv = level()
@@ -2762,7 +2857,7 @@ local function tap(x, y, long)
       if x >= sx and x < sx + sw and y >= sy and y < sy + sh then
         if s[1] == 'ai' then AI.import(); screen = 'aiset'
         elseif s[1] == 'foryou' then load_foryou(); fy_page = 1; screen = 'fyset'
-        elseif s[1] == 'size' then cfg.size = SIZES[cfg.size]; save_cfg()
+        elseif s[1] == 'size' then screen = 'textsize'
         elseif s[1] == 'images' then cfg.images = cfg.images == 'on' and 'off' or 'on'; save_cfg()
         elseif s[1] == 'screen' then
           cfg.screen = cfg.screen == 'landscape' and 'portrait' or 'landscape'

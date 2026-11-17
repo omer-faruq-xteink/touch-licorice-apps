@@ -77,7 +77,8 @@ out of free credits or busy for a while: try again later.
   buttons and swipes work too.
 - The last page shows the article's link as a **QR code** (to open it on a phone), then
   **Archive** (archives it and returns to the list) and **Star**.
-- **Text size** in Settings: small / default / large, as in RSS.
+- **Text size** in Settings, as in RSS: the three system sizes (small / default / large) or any
+  size from 16 to 40 px in the reader's .ttf font, with a sample.
 - **Screen** in Settings: portrait or landscape. The app turns at once and
   opens that way next time; in landscape a list page holds 6 rows (the server is asked for 6 at a
   time), the menu and Settings take two columns, and an open article is laid out again at about the

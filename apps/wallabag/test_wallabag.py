@@ -363,7 +363,9 @@ assert int(g.ctx.screen.width) == 800 and not any('ERR' in v for v in texts()), 
 # the optional AI questions (tools/gamekit/ai.lua, aiui.lua)
 _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), 'tools', 'gamekit'))
 import ai_reader_test  # noqa: E402
+import textsize_reader_test  # noqa: E402
 ai_reader_test.run(globals(), 'Unread', 'wallabag')
+textsize_reader_test.run(globals(), 'Unread', 'wallabag')
 # opening and laying out articles asked for more time than a callback's 1000 ms
 assert int(L.globals().extends or 0) > 0, L.globals().extends
 print('wallabag tests passed')

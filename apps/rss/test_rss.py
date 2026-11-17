@@ -88,6 +88,14 @@ function step() local p = pending; pending = {}; for _, f in ipairs(p) do f() en
 function flush() for _ = 1, 50 do local p = pending; pending = {}; if #p == 0 then return end; for _, f in ipairs(p) do f() end end end
 fake_ms = 1000
 ctx.clock = M({ millis = function() return fake_ms end })
+-- ctx.fonts:size(px): a TTF of that size (named ttf<px>), or, with no TTF on the card, the system font
+ttf_on, ttf_made = true, {}
+function ctx.fonts:size(px)
+  assert(self == ctx.fonts, 'method call expected for size')
+  if not ttf_on then return ctx.fonts.medium end
+  if not ttf_made[px] then local f = font('ttf' .. px, px + 6); f.px = px; ttf_made[px] = f end
+  return ttf_made[px]
+end
 ''')
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
 g = L.globals()
@@ -305,7 +313,8 @@ assert not any('ERR' in x for x in t), t
 g.flush()                                   # let that request finish (an answer the host always gives)
 tap(50, 20)
 
-# Text size: Settings cycles default -> large -> small; articles and previews follow it
+# Text size: Settings opens a page with the three system sizes (Small, Default, Large) and any
+# size in pixels (Smaller / Larger, a .ttf font); articles and previews follow it
 def fonts_of(word):
     return {str(r.f) for r in draw().values() if word in str(r.s)}
 key('back')                                            # list -> menu
@@ -314,8 +323,15 @@ assert t.index('Tags') < t.index('Settings') and 'Add feed' not in t, t   # feed
 tap(100, 100 + 5 * 70 + 10)                            # Settings
 SIZE_ROW = 56 + 20 + 3 * 96 + 24 + 10            # beside Full text: x 300
 assert any(x.startswith('default') for x in texts()), texts()
-tap(300, SIZE_ROW)
-assert any(x.startswith('large') for x in texts()) and g.store['config.txt'].endswith('size=large\nimages=0\nscreen=portrait'), g.store['config.txt']
+tap(300, SIZE_ROW)                                     # opens the Text size page
+t = texts()
+for label in ('Text size', 'Small', 'Default', 'Large', 'Smaller', 'Larger'):
+    assert label in t, (label, t)
+assert any('sample' in x.lower() for x in t), t        # a sample at the chosen size
+tap_label('Large')
+assert g.store['config.txt'].endswith('size=large\nimages=0\nscreen=portrait'), g.store['config.txt']
+tap(100, 20)                                           # Back: Settings, showing the size
+assert any(x.startswith('large') for x in texts()), texts()
 tap(100, 20)                                           # back to the menu
 tap(100, 100 + 10); g.flush()                          # Unread
 tap(100, 56 + 26 + 3 * 58 + 5)                         # Article 3 again (cached): laid out with large text
@@ -327,22 +343,74 @@ assert fonts_of('Summary sentence.') == {'large'}, fonts_of('Summary sentence.')
 tap_label('Close')
 key('back')
 tap(100, 100 + 5 * 70 + 10)
-tap(300, SIZE_ROW)                                     # large -> small
+tap(300, SIZE_ROW); tap_label('Small')                 # large -> small
 assert g.store['config.txt'].endswith('size=small\nimages=0\nscreen=portrait')
-tap(100, 20)
+key('back'); tap(100, 20)                              # the Back key from the page goes to Settings too
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
 assert fonts_of('First paragraph') == {'small'} and fonts_of('Article 3') == {'medium'}, (fonts_of('First paragraph'), fonts_of('Article 3'))
 tap(50, 20)
 key('back')
 tap(100, 100 + 5 * 70 + 10)
-tap(300, SIZE_ROW)                                     # small -> default again
+tap(300, SIZE_ROW); tap_label('Default')               # small -> default again
 assert g.store['config.txt'].endswith('size=default\nimages=0\nscreen=portrait')
-tap(100, 20)
+tap(100, 20); tap(100, 20)
 tap(100, 100 + 10); g.flush()
 tap(100, 56 + 26 + 3 * 58 + 5)
 assert fonts_of('First paragraph') == {'medium'} and fonts_of('Article 3') == {'large'}
 tap(50, 20)
+
+# any size: Larger from Default goes to 24 px (Default is about 22); the body is that size, the
+# title 8 px bigger, headings 4 px bigger, the feed / date line 4 px smaller
+key('back')
+tap(100, 100 + 5 * 70 + 10)
+tap(300, SIZE_ROW); tap_label('Larger')
+assert g.store['config.txt'].endswith('size=24\nimages=0\nscreen=portrait'), g.store['config.txt']
+t = texts()
+assert '24 px' in t, t
+assert any(x.startswith('ttf') for x in fonts_of('ample')), fonts_of('ample')   # the sample is drawn in it
+tap_label('Larger'); tap_label('Smaller'); tap_label('Smaller')
+assert g.store['config.txt'].endswith('size=22\nimages=0\nscreen=portrait'), g.store['config.txt']
+for _ in range(20): tap_label('Larger')                 # stops at 40
+assert g.store['config.txt'].endswith('size=40\nimages=0\nscreen=portrait'), g.store['config.txt']
+for _ in range(30): tap_label('Smaller')                # stops at 16
+assert g.store['config.txt'].endswith('size=16\nimages=0\nscreen=portrait'), g.store['config.txt']
+for _ in range(4): tap_label('Larger')
+assert '24 px' in texts()
+tap(100, 20)                                           # Settings shows it
+assert '24 px' in texts(), texts()
+tap(100, 20)
+tap(100, 100 + 10); g.flush()
+tap(100, 56 + 26 + 3 * 58 + 5)
+assert fonts_of('First paragraph') == {'ttf24'}, fonts_of('First paragraph')
+assert fonts_of('Article 3') == {'ttf32'} and fonts_of('Heading here') == {'ttf28'}, (fonts_of('Article 3'), fonts_of('Heading here'))
+assert fonts_of('2026-10-24') == {'ttf20'}, fonts_of('2026-10-24')
+tap(50, 20)
+long_ev(100, row_y(2), 'up', 'long')                   # the preview too
+assert fonts_of('Summary sentence.') == {'ttf24'}, fonts_of('Summary sentence.')
+tap_label('Close')
+
+# the size is kept: on_load reads it back; something else in the file gives Default
+saved = g.store['config.txt']
+g.store['config.txt'] = saved.replace('size=24', 'size=26'); g.on_load(g.ctx)
+key('back'); key('back')                                # the sources' menu
+tap_label('Settings')
+assert '26 px' in texts(), texts()
+for bad in ('size=99', 'size=8', 'size=huge'):
+    g.store['config.txt'] = saved.replace('size=24', bad); g.on_load(g.ctx)
+    key('back'); key('back'); tap_label('Settings')
+    assert any(x.startswith('default') for x in texts()), (bad, texts())
+
+# with no .ttf font on the card a pixel size gets the system font: the page says so
+g.ttf_on = False
+tap(300, SIZE_ROW); tap_label('Larger')
+assert any('No .ttf font' in x for x in texts()), texts()
+tap_label('Default')
+assert not any('No .ttf font' in x for x in texts()), texts()
+g.ttf_on = True
+g.store['config.txt'] = saved.replace('size=24', 'size=default'); g.on_load(g.ctx)
+key('back'); key('back')
+tap(100, 100 + 10); tap(100, 100 + 10); g.flush()     # CommaFeed, Unread
 
 # Images: off by default; on, articles are asked with images=1 and their images load per page
 responses['/api/article/104'] = {'id': '104', 'title': 'Article 4', 'feed': 'Feed', 'date': '',

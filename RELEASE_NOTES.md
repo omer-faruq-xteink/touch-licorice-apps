@@ -8,6 +8,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 ## Changed
 
+- **RSS 1.5.0, Instapaper 1.4.0, wallabag 1.5.0, Readwise 1.4.0 and Hacker News 1.5.0: any text size.** Settings → **Text size** opens a page with the three system sizes (Small, Default, Large) and **Smaller** / **Larger** for any size from 16 to 40 px, drawn in the reader's .ttf font (the one chosen in Ink App settings → Font, or the reader's body font), with a sample at the chosen size. Titles, headings and the feed / date line follow the body's size. With no .ttf on the card the page says so, and the nearest system size is used.
 - **xkcd 1.1.0: a random comic on the sleep screen.** Settings → Sleep screen → **A random comic each time** shows a different comic every time the reader goes to sleep. The next one is fetched while locked, ready for the next time, so the screen is drawn only once. The latest comic, checked every 3, 6 or 12 hours, is still the default. A wide comic is now turned a quarter on the sleep screen, so it fills the screen instead of a strip across the middle.
 
 ## Files
@@ -15,6 +16,11 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 | file | content |
 |---|---|
 | `offlinemap.xtapp` | Offline Map 1.1.0 (new) |
+| `hackernews.xtapp` | Hacker News 1.5.0 |
+| `instapaper.xtapp` | Instapaper 1.4.0 |
+| `readwise.xtapp` | Readwise 1.4.0 |
+| `rss.xtapp` | RSS 1.5.0 |
+| `wallabag.xtapp` | wallabag 1.5.0 |
 | `xkcd.xtapp` | xkcd 1.1.0 |
 | all other packages | unchanged since v0.25.0 |
 

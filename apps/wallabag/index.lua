@@ -569,6 +569,7 @@ __mods['aiui'] = function()
 --
 --   cfg, save(), note(s), refresh(), submit(opts, label, timeout_ms, fn(resp, err)), keep_wifi(),
 --   wrap(out, text, font_name, width, indent) (the app's wrap_para), style() ({ head, body, meta }),
+--   font(name) (optional: the font of a wrapped line's name, when style() gives pixel sizes),
 --   bar(gg, labels), bar_hit(x, n), cell(i, y0, row_h, h), fit(s, font, w), short(s, n),
 --   draw_status(gg), busy(), status() (the status line's text), dims() (W, H, TOP),
 --   get_screen(), set_screen(s), article() ({ id, title, feed, date, url, text } of the article
@@ -976,7 +977,7 @@ function U.new(E)
       local ln = chat.lines[i]
       if not ln then break end
       if ln.rule then gg:line(12, y + 2, W - 12, y + 2)
-      elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = f and f[ln.f] }) end
+      elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = E.font and E.font(ln.f) or (f and f[ln.f]) }) end
       y = y + ln.h
     end
     if chat.pages > 1 and (E.status() or '') == '' and not E.busy() then
@@ -1427,15 +1428,38 @@ local function net_submit(opts, label, timeout, on_result)
 end
 local cfg = { host = '', client_id = '', client_secret = '', username = '', password = '', size = 'default', images = false, screen = 'portrait' }
 for k, v in pairs(A.DEFAULTS) do cfg[k] = v end   -- AI: aion, aiprov, aiurl, aikey, aimodel, ailang, aiextra
--- Text size for articles and the preview. The firmware has three fonts (ttf is off), so the
--- sizes shift which of them the body, the headings and the feed / date line use.
+-- Text size for articles and the preview: one of the three system sizes (the fastest; they shift
+-- which system font the body, the headings and the feed / date line use), or the body's size in
+-- pixels (PX.min..PX.max, saved as e.g. "24"), drawn with ctx.fonts:size: the .ttf font the reader
+-- uses (API 2.17), or with no .ttf on the card the nearest system font.
 local SIZES = {
   small = { title = 'medium', head = 'medium', body = 'small', meta = 'small' },
   default = { title = 'large', head = 'large', body = 'medium', meta = 'small' },
   large = { title = 'large', head = 'large', body = 'large', meta = 'medium', rule = true },
 }
-local SIZE_ORDER = { 'default', 'large', 'small' }
-local function st() return SIZES[cfg.size] or SIZES.default end
+local SIZE_ORDER = { 'small', 'default', 'large' }
+-- min..max in steps; Smaller / Larger from a system size start at its px
+local PX = { min = 16, max = 40, step = 2, small = 18, default = 22, large = 28 }
+local function size_px(v)
+  local n = tonumber(type(v) == 'string' and v:match('^%d+$') or nil)
+  return n and n >= PX.min and n <= PX.max and n or nil
+end
+local function st()
+  local n = size_px(cfg.size)
+  if n then return { title = n + 8, head = n + 4, body = n, meta = math.max(PX.min - 4, n - 4) } end
+  return SIZES[cfg.size] or SIZES.default
+end
+-- a line's font: 'small' / 'medium' / 'large' are the system fonts, a number that many pixels
+local function font_of(k)
+  local F = ctx.fonts
+  if not F then return nil end
+  if type(k) == 'number' then
+    local ok, f = pcall(function() return F:size(k) end)
+    if ok and f then return f end
+    return F.medium
+  end
+  return F[k]
+end
 local load_page_images, release_images, draw_image_line   -- defined in the images section
 local FULL = {}               -- a picture on the whole screen: view, open, close, is_open, draw (images section)
 local settings_list, setting_rect, sync_screen   -- defined with Settings / before on_input
@@ -1506,7 +1530,7 @@ local function load_cfg()
   local s = cache_read_raw('config.txt')
   for k, v in (s or ''):gmatch('([%w_]+)=([^\n]*)') do
     if k == 'images' then cfg.images = (v == '1')
-    elseif k == 'size' then cfg.size = SIZES[v] and v or 'default'
+    elseif k == 'size' then cfg.size = (SIZES[v] or size_px(v)) and v or 'default'
     elseif k == 'screen' then cfg.screen = v:match('^landscape') and 'landscape' or 'portrait'
     elseif cfg[k] ~= nil then cfg[k] = (v:gsub('%s+$', '')) end   -- a config.txt written on Windows ends lines in CR
   end
@@ -1736,8 +1760,9 @@ end
 
 ------------------------------------------------------------------ text layout
 
-local function measure(font, s)
-  local key = s
+-- fk names the font (wrap_para's font name or size): the same word is wider in a bigger font
+local function measure_fk(font, s, fk)
+  local key = tostring(fk or '') .. '' .. s
   local w = measure_cache[key]
   if w then return w end
   local ok, m = pcall(function() return font:measure(s) end)
@@ -1773,13 +1798,13 @@ local function wrap_address(s, width, max_lines)
 end
 
 local function wrap_para(out, para, fname, width, indent)
-  local F = ctx.fonts
-  local font = F and F[fname]
+  local font = font_of(fname)
   local okl, lh = pcall(function() return font.line_height end)
-  lh = (okl and tonumber(lh)) or (fname == 'large' and 30 or fname == 'small' and 20 or 24)
+  lh = (okl and tonumber(lh)) or (type(fname) == 'number' and fname * 5 // 4) or (fname == 'large' and 30 or fname == 'small' and 20 or 24)
   local function push(s) out[#out + 1] = { s = s, f = fname, h = lh, x = indent } end
   if not font then push(para); return end
   local line, lw = '', 0
+  local function measure(f, t) return measure_fk(f, t, fname) end
   local space_w = measure(font, ' ')
   for word in para:gmatch('%S+') do
     local ww = measure(font, word)
@@ -2636,7 +2661,7 @@ local function draw_preview(gg)
   gg:rect(b.x + 3, b.y + 3, b.w - 6, b.h - 6)
   local y = b.y + 16
   for _, ln in ipairs(preview.lines) do
-    if ln.s ~= '' then gg:text(b.x + 16 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
+    if ln.s ~= '' then gg:text(b.x + 16 + ln.x, y, ln.s, { font = font_of(ln.f) }) end
     y = y + ln.h
   end
   for _, btn in ipairs({ preview.prev, preview.open, preview.close, preview.next }) do
@@ -2715,11 +2740,71 @@ local function draw_article(gg)
     elseif ln.img then draw_image_line(gg, ln, y)
     elseif ln.source then pcall(draw_source_line, gg, ln, y)
     elseif ln.actions then draw_actions(gg, y)
-    elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = F and F[ln.f] }) end
+    elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = font_of(ln.f) }) end
     y = y + ln.h
   end
   if #art.lines == 0 and not busy() then gg:text(16, TOP + 30, short(art.title, wide(42)), { font = F and F.medium }) end
   draw_status(gg)
+end
+
+-- The Text size page: the three system sizes, any size in pixels (Smaller / Larger), and a
+-- sample at the chosen size under them
+local TSZ = {
+  title = 'A sample headline', meta = 'Sample feed  2026-11-17',
+  body = 'Articles and their previews are set at this size. The side keys turn the pages; a long press on a picture shows it on the whole screen.',
+}
+function TSZ.buttons()
+  local t, bw = {}, (W - 32 - 2 * 12) // 3
+  for i, name in ipairs(SIZE_ORDER) do
+    t[#t + 1] = { x = 16 + (i - 1) * (bw + 12), y = TOP + 72, w = bw, h = 52, label = name:sub(1, 1):upper() .. name:sub(2), size = name }
+  end
+  t[#t + 1] = { x = 16, y = TOP + 164, w = 120, h = 52, label = 'Smaller', step = -1 }
+  t[#t + 1] = { x = W - 136, y = TOP + 164, w = 120, h = 52, label = 'Larger', step = 1 }
+  return t
+end
+
+function TSZ.draw(gg)
+  pcall(function() ctx.budget:extend() end)   -- opening a .ttf at new sizes takes a while
+  local F = ctx.fonts
+  local sm, md = F and F.small, F and F.medium
+  bar(gg, { 'Back' })
+  gg:text(16, TOP + 6, 'Text size', { font = F and F.large })
+  gg:text(16, TOP + 48, 'System font (the fastest)', { font = sm })
+  gg:text(16, TOP + 140, 'Any size, in the reader\'s .ttf font', { font = sm })
+  local px = size_px(cfg.size)
+  for _, b in ipairs(TSZ.buttons()) do
+    gg:rect(b.x, b.y, b.w, b.h)
+    if b.size == cfg.size then gg:rect(b.x + 3, b.y + 3, b.w - 6, b.h - 6) end
+    gg:text(b.x + b.w // 2, b.y + b.h // 2, b.label, { font = md, align = 'center', valign = 'middle' })
+  end
+  local mid = px and (px .. ' px') or 'not used'
+  if px then gg:rect(152, TOP + 164, W - 304, 52) end
+  gg:text(W // 2, TOP + 190, mid, { font = md, align = 'center', valign = 'middle' })
+  local y = TOP + 228
+  if px then
+    local ok, real = pcall(function() return font_of(px).px end)
+    if not (ok and real) then
+      for _, l in ipairs({ 'No .ttf font: this is the system font, so only', 'three sizes look different. Put a .ttf file in', 'fonts/ on the card and pick it in Ink App settings.' }) do
+        gg:text(16, y, l, { font = sm }); y = y + 22
+      end
+    end
+  end
+  -- the sample, as an article shows it
+  local by = math.max(y, TOP + 228) + 8
+  local bh = H - 16 - by
+  if bh < 60 then return end
+  gg:rect(16, by, W - 32, bh)
+  local S, lines = st(), {}
+  wrap_para(lines, TSZ.title, S.title, W - 64, 0)
+  wrap_para(lines, TSZ.meta, S.meta, W - 64, 0)
+  lines[#lines + 1] = { s = '', f = 'small', h = 10, x = 0 }
+  wrap_para(lines, TSZ.body, S.body, W - 64, 0)
+  local ly = by + 12
+  for _, ln in ipairs(lines) do
+    if ly + ln.h > by + bh - 8 then break end
+    if ln.s ~= '' then gg:text(32 + ln.x, ly, ln.s, { font = font_of(ln.f) }) end
+    ly = ly + ln.h
+  end
 end
 
 local function draw_settings(gg)
@@ -2732,7 +2817,7 @@ local function draw_settings(gg)
     gg:rect(x, y + 22, w, 44)
     local v = cfg[s[1]]
     if s[1] == 'images' then v = cfg.images and 'on' or 'off' end
-    if s[1] == 'size' then v = cfg.size end
+    if s[1] == 'size' then v = size_px(cfg.size) and (cfg.size .. ' px') or cfg.size end
     if s[1] == 'screen' then v = cfg.screen end
     if s[1] == 'ai' then v = UI.value() end
     if s[1] == 'cache' then v = clear_armed and ('Tap again to delete ' .. #copies()) or (#copies() .. '   (tap to delete)') end
@@ -2758,12 +2843,13 @@ local function draw_impl(gg)
   elseif screen == 'feeds' then draw_feeds(gg)
   elseif screen == 'article' then if FULL.is_open() then FULL.draw(gg) else draw_article(gg) end
   elseif screen == 'settings' then draw_settings(gg)
+  elseif screen == 'textsize' then TSZ.draw(gg)
   elseif UI.handles(screen) then UI.draw(gg) end
 end
 
 UI = require('aiui').new({
   cfg = cfg, save = save_cfg, note = note, refresh = refresh, submit = net_submit, keep_wifi = keep_wifi,
-  wrap = wrap_para, style = st, bar = bar, bar_hit = bar_hit, cell = cell, fit = fit, short = short,
+  wrap = wrap_para, style = st, font = font_of, bar = bar, bar_hit = bar_hit, cell = cell, fit = fit, short = short,
   draw_status = draw_status, busy = busy, status = function() return status end,
   dims = function() return W, H, TOP end,
   get_screen = function() return screen end, set_screen = function(v) screen = v end,
@@ -2803,13 +2889,7 @@ local function edit_setting(i)
     apply_orientation()           -- the next callback sees the new size (sync_screen)
     return
   end
-  if s[1] == 'size' then
-    local nxt = 1
-    for k, name in ipairs(SIZE_ORDER) do if name == cfg.size then nxt = k % #SIZE_ORDER + 1 end end
-    cfg.size = SIZE_ORDER[nxt]
-    save_cfg()
-    return
-  end
+  if s[1] == 'size' then screen = 'textsize'; return end
   local ok, err = pcall(function()
     ctx.input:text({ title = s[2], text = cfg[s[1]], max_bytes = 256 }, function(c, v)
       if type(v) == 'string' then
@@ -2852,6 +2932,19 @@ local function tap(x, y)
         if m[2] == 'settings' then screen = 'settings'
         elseif m[2] == 'feeds' then fetch_feeds()
         else open_list(m[2], nil, m[1]); fetch_list() end
+        return
+      end
+    end
+  elseif screen == 'textsize' then
+    if y < 46 then screen = 'settings'; return end
+    for _, b in ipairs(TSZ.buttons()) do
+      if x >= b.x and x < b.x + b.w and y >= b.y and y < b.y + b.h then
+        if b.size then cfg.size = b.size
+        else
+          local n = size_px(cfg.size) or PX[cfg.size] or PX.default
+          cfg.size = tostring(math.max(PX.min, math.min(PX.max, n + b.step * PX.step)))
+        end
+        save_cfg()
         return
       end
     end
@@ -3106,6 +3199,7 @@ function on_input(c, ev)
         if screen == 'article' then article_back()
         elseif UI.handles(screen) then UI.back()
         elseif screen == 'settings' then screen = 'menu'; clear_armed = false; warm_up('signing in')
+        elseif screen == 'textsize' then screen = 'settings'
         elseif screen ~= 'menu' then screen = 'menu' end
       elseif k == 'right' or k == 'down' then
         if screen == 'article' then page_article(1) elseif screen == 'chat' then UI.page(1) elseif screen == 'list' then page_list(1) elseif screen == 'feeds' then page_feeds(1) end

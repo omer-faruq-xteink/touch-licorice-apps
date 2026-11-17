@@ -5,6 +5,7 @@
 --
 --   cfg, save(), note(s), refresh(), submit(opts, label, timeout_ms, fn(resp, err)), keep_wifi(),
 --   wrap(out, text, font_name, width, indent) (the app's wrap_para), style() ({ head, body, meta }),
+--   font(name) (optional: the font of a wrapped line's name, when style() gives pixel sizes),
 --   bar(gg, labels), bar_hit(x, n), cell(i, y0, row_h, h), fit(s, font, w), short(s, n),
 --   draw_status(gg), busy(), status() (the status line's text), dims() (W, H, TOP),
 --   get_screen(), set_screen(s), article() ({ id, title, feed, date, url, text } of the article
@@ -412,7 +413,7 @@ function U.new(E)
       local ln = chat.lines[i]
       if not ln then break end
       if ln.rule then gg:line(12, y + 2, W - 12, y + 2)
-      elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = f and f[ln.f] }) end
+      elseif ln.s ~= '' then gg:text(12 + ln.x, y, ln.s, { font = E.font and E.font(ln.f) or (f and f[ln.f]) }) end
       y = y + ln.h
     end
     if chat.pages > 1 and (E.status() or '') == '' and not E.busy() then
