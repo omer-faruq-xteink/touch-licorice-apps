@@ -54,10 +54,10 @@
     "app_id": "dict",
     "listing_id": "u_a5c7f6860ecb4e05ac313fcf7fe9a0a3",
     "project_id": "2f18566f-7cf9-46ee-80bc-bf455514b984",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.0.1",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-11-15"
+    "submitted": "2026-11-17"
   },
   "freecell": {
     "name": "FreeCell",

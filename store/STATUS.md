@@ -45,7 +45,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `chess` | Chess puzzles | `chess` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
 | `delve` | Delve | `delve` | 1.0.1 | published | 1.0.1 | 2026-11-14 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
-| `dict` | Dictionary | `dict` | 1.0.0 | published | 1.0.0 | 2026-11-15 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 | `freecell` | FreeCell | `freecell` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.2 | published | 1.0.2 | 2026-11-15 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `a255a696-b673-481a-b444-b5ed661e84bc` |
@@ -90,5 +89,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.2 | published | 1.0.2 | 2026-11-15 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.1.0 | published | 1.1.0 | 2026-11-15 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
+| `dict` | Dictionary | `dict` | 1.0.1 | in review | 1.0.0 | 2026-11-17 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
 
-57 published, 0 in review or draft, 57 in all.
+56 published, 1 in review or draft, 57 in all.
