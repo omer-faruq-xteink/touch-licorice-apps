@@ -702,23 +702,81 @@ local function draw_review(gg)
   end
 end
 
+-- The app's page on the site: the ready-made dictionary and the converter. Its QR code (version 4,
+-- level L), made once with segno: segno.make(PAGE, error='l', boost_error=False).matrix
+local PAGE = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/apps/dict/'
+local PAGE_QR = {
+  '111111100010101011111001001111111',
+  '100000101010010100100100001000001',
+  '101110100000101100001111001011101',
+  '101110101110110111010010101011101',
+  '101110100100010010111111001011101',
+  '100000101101111101101110101000001',
+  '111111101010101010101010101111111',
+  '000000000111001100001101000000000',
+  '111110111101011111010011110101010',
+  '100010011010100011110001111000111',
+  '000100100010001111000100000001010',
+  '000110000000100100000101101100100',
+  '000110111110111101010011110111000',
+  '111000001100010010011111011000011',
+  '111001100111100111101110110110010',
+  '111110001101001010110111010000100',
+  '101000100111011001000011110110010',
+  '101011010110100001111101011001011',
+  '010111111000010110101000000001010',
+  '111110010100101000001100110010100',
+  '100011101110111111001001100110010',
+  '110010000100001010111001001101011',
+  '100000111101101101101010011111010',
+  '101110011111000100011100010101100',
+  '101010111001010111010010111110001',
+  '000000001110110010111000100011001',
+  '111111101100011100000101101011010',
+  '100000100010101100001111100011101',
+  '101110101100100111101010111110000',
+  '101110101110000011111000110011000',
+  '101110101101100110001011111001110',
+  '100000101011000100011111001001100',
+  '111111101011100101010001100000010',
+}
+
+local function draw_qr(gg, x0, y0, s)
+  for r, row in ipairs(PAGE_QR) do                   -- one rectangle per run of dark modules
+    local c = 1
+    while c <= #row do
+      if row:sub(c, c) == '1' then
+        local e = c
+        while row:sub(e + 1, e + 1) == '1' do e = e + 1 end
+        gg:rect(x0 + (c - 1) * s, y0 + (r - 1) * s, (e - c + 1) * s, s, { fill = true })
+        c = e + 1
+      else c = c + 1 end
+    end
+  end
+end
+
 local function draw_nodata(gg)
   local F = ctx.fonts
+  local function lines(y, t)
+    for _, s in ipairs(t) do gg:text(12, y, s, { font = F and F.small }); y = y + 24 end
+    return y
+  end
   gg:text(12, 20, 'Dictionary', { font = F and F.large })
-  local lines = {
-    'No dictionary files yet.',
+  local y = lines(70, { 'No dictionary files yet.', '', 'Get one on a phone or computer:' })
+  local s = 6
+  draw_qr(gg, math.floor((W - #PAGE_QR * s) / 2), y + 6, s)
+  y = lines(y + #PAGE_QR * s + 20, {
+    '  ' .. PAGE:match('^https://([^/]+/)'),
+    '  ' .. PAGE:match('^https://[^/]+/(.*)$'),
     '',
-    'Put the reader in USB mode and copy a converted',
-    'dictionary (a ready-made zip from the release, or',
-    '  python stardict2shards.py <StarDict folder> out/ --prefix xx)',
-    'into the app\'s folder on the SD card:',
+    'There: a ready-made English one (WordNet),',
+    'or convert any StarDict dictionary.',
+    '',
+    'Put the reader in USB mode, unzip the download',
+    'and copy its files into:',
     '  ' .. ((ctx.files and type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or 'XTApps/dict/files'),
-    'then leave USB mode and open this app again.',
-    '',
-    'Tap to re-check.',
-  }
-  local y = 70
-  for _, s in ipairs(lines) do gg:text(12, y, s, { font = F and F.small }); y = y + 24 end
+    'then leave USB mode and tap to re-check.',
+  })
   if status ~= '' then gg:text(12, y + 10, status, { font = F and F.small }) end
 end
 

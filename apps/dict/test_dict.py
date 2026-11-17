@@ -27,7 +27,11 @@ L.globals().py_store = store
 L.execute(r'''
 drawn = {}
 local gmt = {}
-gmt.__index = function(_, k) return function(_, ...) if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end end end
+rects = {}
+gmt.__index = function(_, k) return function(_, ...)
+  if k == 'text' then local x, y, s, o = ...; drawn[#drawn + 1] = { s = s, x = x, y = y, f = (type(o) == 'table' and type(o.font) == 'table') and o.font.name or '?' } end
+  if k == 'rect' then local x, y, w, h, o = ...; if type(o) == 'table' and o.fill then rects[#rects + 1] = { x = x, y = y, w = w, h = h } end end
+end end
 gg = setmetatable({}, gmt)
 local function M(t)
   local out = {}
@@ -64,7 +68,7 @@ ctx = {
 ''')
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
 g = L.globals()
-draw = L.eval("function() drawn = {}; on_draw(ctx, gg); return drawn end")
+draw = L.eval("function() drawn = {}; rects = {}; on_draw(ctx, gg); return drawn end")
 texts = lambda: [str(v.s) for v in draw().values()]
 tap = L.eval("function(x, y) on_input(ctx, {type='pointer', phase='down', x=x, y=y}); on_input(ctx, {type='pointer', phase='up', gesture='tap', x=x, y=y}) end")
 key = L.eval("function(k) on_input(ctx, {type='key', key=k}) end")
@@ -255,5 +259,23 @@ assert 'verb terk etmek' in texts(), texts()
 store.pop('pkg:shards.tsv')
 L.execute(f"dofile([[{os.path.join(HERE, 'index.lua').replace(os.sep, '/')}]])")
 g.on_load(g.ctx)
-assert any('No dictionary files' in x for x in texts()), texts()
+nd = texts()
+assert any('No dictionary files' in x for x in nd), nd
+# it sends people to the app's page, where the ready-made dictionary and the converter are: the
+# address in lines that fit the screen, and a QR code of it (the same as segno makes)
+URL = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/apps/dict/'
+assert not any('python' in x for x in nd) and '  touch-licorice-apps/apps/dict/' in nd, nd
+assert all(len(x) <= 48 for x in nd), [x for x in nd if len(x) > 48]
+import segno  # noqa: E402
+want = [[int(bool(c)) for c in row] for row in segno.make(URL, error='l', boost_error=False, micro=False).matrix]
+rs = [(int(r.x), int(r.y), int(r.w), int(r.h)) for r in g.rects.values()]
+assert rs, 'a QR code is drawn'
+S = min(h for _, _, _, h in rs)
+x0, y0 = min(x for x, _, _, _ in rs), min(y for _, y, _, _ in rs)
+got = [[0] * len(want) for _ in want]
+for x, y, w, h in rs:
+    for c in range(w // S):
+        got[(y - y0) // S][(x - x0) // S + c] = 1
+assert got == want, 'the QR code is the page address'
+assert x0 + len(want) * S <= 480 and len(rs) < 400, (x0, len(rs))
 print('dict29 tests passed')

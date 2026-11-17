@@ -36,7 +36,7 @@ CATEGORIES = [
 # more than the package: (label, href, note); href is relative to the app's page
 EXTRAS = {
     'dict': [('WordNet, English to English', RELEASE + 'dict-wordnet-en.zip',
-              'Unzip it into XTApps/dict/files/ on the SD card.'),
+              'Unzip it into AppFiles/dict/ on the SD card (XTApps/dict/files/ for a copy installed by hand).'),
              ('StarDict converter', '../../tools/dictionary/', 'Any other StarDict dictionary.')],
     'wikipedia': [('Offline pack: vital articles (English)', RELEASE + 'wikipedia-en-vital.zip',
                    'Read without Wi-Fi; see the app\'s help for where it goes.')],

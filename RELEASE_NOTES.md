@@ -2,13 +2,16 @@
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26), Offline Map **26111201** (API 2.26).
 
-Nothing yet.
+## Changed
+
+- **Dictionary 1.0.1: the first screen points to the app's page.** With no dictionary yet, it shows a QR code and the address of the Dictionary page on the site, which has a ready-made English dictionary (WordNet) and the converter for any StarDict one, then where to copy the files. No Python needed.
 
 ## Files
 
 | file | content |
 |---|---|
-| all packages | unchanged since v0.26.0 |
+| `dict.xtapp` | Dictionary 1.0.1 |
+| all other packages | unchanged since v0.26.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
 
