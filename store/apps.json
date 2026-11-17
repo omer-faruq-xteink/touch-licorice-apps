@@ -564,9 +564,9 @@
     "app_id": "offlinemap",
     "listing_id": "",
     "project_id": "7f57203c-f82e-4665-88e8-549f97c8cca2",
-    "release_version": "1.0.0",
-    "status": "published",
+    "release_version": "1.1.0",
+    "status": "in review",
     "live_version": "1.0.0",
-    "submitted": "2026-11-15"
+    "submitted": "2026-11-16"
   }
 }
