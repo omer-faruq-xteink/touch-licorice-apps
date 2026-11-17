@@ -265,7 +265,7 @@ assert any('No dictionary files' in x for x in nd), nd
 # address in lines that fit the screen, and a QR code of it (the same as segno makes)
 URL = 'https://omer-faruq-xteink.github.io/touch-licorice-apps/apps/dict/'
 assert not any('python' in x for x in nd) and '  touch-licorice-apps/apps/dict/' in nd, nd
-assert all(len(x) <= 48 for x in nd), [x for x in nd if len(x) > 48]
+assert all(len(x) <= 40 for x in nd), [x for x in nd if len(x) > 40]   # the reader cuts at about 44
 import segno  # noqa: E402
 want = [[int(bool(c)) for c in row] for row in segno.make(URL, error='l', boost_error=False, micro=False).matrix]
 rs = [(int(r.x), int(r.y), int(r.w), int(r.h)) for r in g.rects.values()]
