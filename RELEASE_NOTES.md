@@ -1,3 +1,17 @@
+# v0.27.0
+
+Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26), Offline Map **26111201** (API 2.26).
+
+Nothing yet.
+
+## Files
+
+| file | content |
+|---|---|
+| all packages | unchanged since v0.26.0 |
+
+All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.
+
 # v0.26.0
 
 Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on build **26111201**. Instapaper, wallabag, RSS and Readwise need **26110201** or later (API 2.18), Piano Follow **26110501** (API 2.21), Weather, Calendar, Tasks, Hacker News and xkcd **26111201** (API 2.26), Offline Map **26111201** (API 2.26).
