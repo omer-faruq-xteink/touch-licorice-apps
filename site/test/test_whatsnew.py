@@ -158,5 +158,11 @@ check('<h3>Changed</h3>' in page and 'Intro line.' in page, 'sections and the in
 real_rels = S.releases(notes, upto='v0.24.0')
 check(real_rels[0][0] == 'v0.24.0' and len(real_rels) >= 20, f'the real notes up to v0.24.0: {len(real_rels)} releases')
 
+# every app in apps/ has a category, or the catalog leaves it off the site; only the probes are not listed
+listed_apps = {app for _, _, apps in S.CATEGORIES for app in apps}
+all_apps = {d for d in os.listdir(os.path.join(S.ROOT, 'apps')) if os.path.exists(os.path.join(S.ROOT, 'apps', d, 'manifest.json'))}
+unlisted = sorted(all_apps - listed_apps - {'probe', 'netprobe'})
+check(not unlisted, f'every app has a site category{" missing " + str(unlisted) if unlisted else ""}')
+
 print('\n' + ('all passed' if not fails else f'{len(fails)} FAILED'))
 sys.exit(1 if fails else 0)

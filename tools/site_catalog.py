@@ -23,7 +23,7 @@ FIRMWARE = {'2.18': '26110201', '2.21': '26110501', '2.26': '26111201'}
 
 CATEGORIES = [
     ('read', 'Reading', ['rss', 'instapaper', 'wallabag', 'readwise', 'hackernews', 'xkcd', 'wikipedia', 'bookworm']),
-    ('tools', 'Tools and lock screens', ['tasks', 'notebook', 'timekeeper', 'calendar', 'weather', 'tbr', 'notes', 'calculator',
+    ('tools', 'Tools and lock screens', ['tasks', 'notebook', 'timekeeper', 'calendar', 'weather', 'tbr', 'notes', 'calculator', 'offlinemap',
                                          'skytonight', 'litclock', 'wordclock']),
     ('learn', 'Learning', ['pianofollow', 'anki', 'dict', 'tarot']),
     ('stories', 'Stories', ['gamebook', 'textadv']),
@@ -40,6 +40,7 @@ EXTRAS = {
              ('StarDict converter', '../../tools/dictionary/', 'Any other StarDict dictionary.')],
     'wikipedia': [('Offline pack: vital articles (English)', RELEASE + 'wikipedia-en-vital.zip',
                    'Read without Wi-Fi; see the app\'s help for where it goes.')],
+    'offlinemap': [('Map pack maker', '../../tools/offlinemap/', 'A map pack of any area of the world for the reader.')],
     'pianofollow': [('Score converter', '../../tools/piano/', 'Your own MusicXML or ABC scores for the reader.')],
     'anki': [('Anki deck converter', '../../tools/anki/', 'Your .apkg decks and word lists as cards.')],
     'gamebook': [('Story pack and converters', '../../tools/gamebook/', 'More stories, and Twine, Ink or Project Aon stories.')],
