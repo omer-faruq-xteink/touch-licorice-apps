@@ -43,13 +43,6 @@
   <div id="list"></div>
   <p class="empty" id="empty" hidden>No app matches your search.</p>
 
-  <section class="community" id="community">
-    <div class="section-head"><h2>Community apps</h2><a class="contribute" href="developers/">How to contribute &rarr;</a></div>
-    <p class="community-note">Made by other developers and listed from their GitHub repos once a day. They are not checked
-      here: you download them from their authors and install them at your own risk.</p>
-    <div id="community-list"></div>
-  </section>
-
   <div class="section-head" id="how"><h2>How to install</h2></div>
   <ol class="how">
     <li><strong>Copy it to the reader</strong><p>Connect the reader in USB mode and press <b>Copy to reader</b> (Chrome or
@@ -62,6 +55,9 @@
     release</a>; <a href="whats-new/">What&rsquo;s new</a> lists what changed in each release. Many apps are also in <a href="https://xtapp-ai.xteink.cc/store">Xteink's
     app store</a>, where updates arrive by themselves. <a href="tools/">Tools</a> convert decks, dictionaries and stories
     for the apps.</p>
+  <p class="fine" id="community">Apps marked <span class="badge comm">Community</span> are made by other developers and listed
+    from their GitHub repos once a day. They are not checked here: you download them from their authors and install them
+    at your own risk.</p>
 </main>
 <script type="module">
   import { chrome, esc, bytesText } from './assets/site.js';
@@ -70,7 +66,9 @@
 
   // no-cache: the catalog keeps its name from release to release, so ask the server each time
   const catalog = await fetch('catalog.json', { cache: 'no-cache' }).then((r) => r.json());
-  const community = await fetch('community.json', { cache: 'no-cache' }).then((r) => r.json()).then((c) => c.apps).catch(() => []);
+  // community apps sit among ours in their category, marked; the Community pill shows only them
+  const community = await fetch('community.json', { cache: 'no-cache' }).then((r) => r.json())
+    .then((c) => c.apps.map((a) => ({ ...a, community: true }))).catch(() => []);
   const catName = Object.fromEntries(catalog.categories.map((c) => [c.id, c.name]));
   const list = document.getElementById('list');
   const q = document.getElementById('q');
@@ -91,7 +89,8 @@
     imgs[at].classList.add('on');
   }, 3500);
 
-  document.getElementById('pills').innerHTML = [{ id: '', name: 'All' }, ...catalog.categories]
+  document.getElementById('pills').innerHTML = [{ id: '', name: 'All' }, ...catalog.categories,
+    ...(community.length ? [{ id: 'community', name: 'Community' }] : [])]
     .map((c) => `<button type="button" class="pill" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
   const pills = [...document.querySelectorAll('.pill')];
   document.getElementById('devices').innerHTML = ['All devices', 'X4 Pro', 'X4 Classic']
@@ -115,36 +114,57 @@
   }
 
   // a community app: by its author, from its own repo; a download and its source, never a copy
+  const commNote = 'Made by another developer and listed from their GitHub repo. Not checked here: install it at your own risk.';
   function ctile(a) {
     // the first letter, under the icon, shows when there is none or it does not load
     const icon = `<span class="letter">${esc(a.name[0])}</span>` + (a.icon ?
       `<img src="${esc(a.icon)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '');
     const need = a.firmware ? ` <span class="tag" title="Needs firmware XT Licorice ${esc(a.firmware)} or later">FW ${esc(a.firmware)}+</span>` : '';
-    return `<article class="tile">
+    return `<article class="tile comm">
       <div class="appicon">${icon}</div>
-      <h3><a href="${esc(a.homepage)}" rel="noopener nofollow">${esc(a.name)}</a>${need}</h3>
+      <h3><a href="${esc(a.homepage)}" rel="noopener nofollow">${esc(a.name)}</a> <span class="comm-wrap"><button type="button" class="badge comm" aria-expanded="false">Community</button><span class="comm-pop" role="tooltip">${commNote}</span></span>${need}</h3>
       <p class="sum">${esc(a.summary)}</p>
       <div class="foot">
-        <span class="meta">by <b>${esc(a.owner)}</b> · ${esc(a.version)} · ${esc(a.devices.join(', '))}</span>
-        <a class="get" href="${esc(a.package)}" rel="noopener nofollow">Get</a>
+        <span class="meta">by <b>${esc(a.owner)}</b> · ${esc(a.version)}</span>
+        <a class="get" href="${esc(a.package)}" rel="noopener nofollow" title="From ${esc(a.owner)}'s GitHub repo">Get &#8599;</a>
       </div></article>`;
   }
 
-  const matches = (a, words) => (!cat || a.category === cat) && (!device || (a.devices || []).includes(device)) &&
+  // the Community badge: its note shows while the mouse is over it, and stays open after a click or a tap
+  const closePops = (except) => document.querySelectorAll('.comm-wrap.open').forEach((w) => {
+    if (w !== except) { w.classList.remove('open'); w.firstElementChild.setAttribute('aria-expanded', 'false'); }
+  });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.comm-wrap .badge');
+    closePops(b && b.parentElement);
+    if (!b) return;
+    e.preventDefault();
+    const open = b.parentElement.classList.toggle('open');
+    b.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePops(); });
+
+  const inCat = (a) => !cat || (cat === 'community' ? !!a.community : a.category === cat);
+  const matches = (a, words) => inCat(a) && (!device || (a.devices || []).includes(device)) &&
     words.every((w) => (a.name + ' ' + a.summary + ' ' + (catName[a.category] || '') + ' ' + (a.owner || '')).toLowerCase().includes(w));
 
   function render() {
     const words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
     const shown = catalog.apps.filter((a) => matches(a, words));
     const others = community.filter((a) => matches(a, words));
-    document.getElementById('community-list').innerHTML = others.length ? `<div class="tiles">${others.map(ctile).join('')}</div>` :
-      `<p class="empty">${community.length ? 'No community app matches.' : 'None yet. Made an app for the X4? <a href="developers/">Add it here</a>.'}</p>`;
     list.innerHTML = catalog.categories.map((c) => {
-      const l = shown.filter((a) => a.category === c.id);
-      return l.length ? `<div class="section-head"><h2>${esc(c.name)}</h2><span>${l.length} apps</span></div>` +
-        `<div class="tiles">${l.map(tile).join('')}</div>` : '';
-    }).join('');
-    document.getElementById('empty').hidden = shown.length > 0;
+      const l = shown.filter((a) => a.category === c.id), o = others.filter((a) => a.category === c.id);
+      const n = l.length + o.length;
+      return n ? `<div class="section-head"><h2>${esc(c.name)}</h2><span>${n} ${n === 1 ? 'app' : 'apps'}</span></div>` +
+        `<div class="tiles">${l.map(tile).join('')}${o.map(ctile).join('')}</div>` : '';
+    }).join('') + (() => {
+      // a community app with no category, or one the site does not have: in a section of its own at the end
+      const known = new Set(catalog.categories.map((c) => c.id));
+      const rest = others.filter((a) => !known.has(a.category));
+      return rest.length ? `<div class="section-head"><h2>Community apps</h2><span>${rest.length} ${rest.length === 1 ? 'app' : 'apps'}</span></div>` +
+        `<div class="tiles">${rest.map(ctile).join('')}</div>` : '';
+    })();
+    document.getElementById('empty').hidden = shown.length + others.length > 0;
     pills.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
     devs.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.dev === device)));
     reader.changed();          // the new tiles' copy buttons and status lines

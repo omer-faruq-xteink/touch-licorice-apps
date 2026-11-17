@@ -34,6 +34,11 @@ assert C.check_app({'app_id': 'x', 'name': 'X', 'version': '1.0', 'devices': ['K
 long = C.check_app({'app_id': 'x', 'name': 'N' * 90, 'version': '1.0', 'devices': ['X4 Pro'], 'package': 'x.xtapp',
                     'description': 'line one\n\nline two ' + 'd' * 400}, 'a/b', 'main')[0]
 assert len(long['name']) == 40 and len(long['summary']) == 200 and '\n' not in long['summary'], long
+# no category, or one the site does not have: none, and the home page lists it under Community apps at the end
+base = {'app_id': 'x', 'name': 'X', 'version': '1.0', 'devices': ['X4 Pro'], 'package': 'x.xtapp'}
+assert C.check_app(base, 'a/b', 'main')[0]['category'] is None
+assert C.check_app({**base, 'category': 'smart home'}, 'a/b', 'main')[0]['category'] is None
+assert C.check_app({**base, 'category': 'learn'}, 'a/b', 'main')[0]['category'] == 'learn'
 
 # the blocklist: an owner, or one repo
 with tempfile.TemporaryDirectory() as d:

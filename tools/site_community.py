@@ -88,7 +88,7 @@ def check_app(a, repo, branch):
     if not devices:
         return None, f'devices must name one of {", ".join(DEVICES)}'
     shots = [u for u in (url_in(repo, branch, s, raw=True) for s in (a.get('screenshots') or [])[:6]) if u]
-    cat = a.get('category') if a.get('category') in CATEGORIES else 'tools'
+    cat = a.get('category') if a.get('category') in CATEGORIES else None   # none: listed under Community apps at the end
     firmware = text(a.get('firmware'), 12)
     return {
         'app_id': app_id, 'name': name, 'version': version,
