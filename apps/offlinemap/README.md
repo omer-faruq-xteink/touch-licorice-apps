@@ -73,3 +73,7 @@ node site/test/test_offlinemap.mjs
 ```
 
 The pack format is described in `docs/superpowers/specs/2026-11-15-offline-map-design.md`.
+
+## Thanks
+
+- Idea to select a map pack by [@Dtrieb](https://github.com/Dtrieb).
