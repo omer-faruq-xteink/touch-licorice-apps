@@ -64,7 +64,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `nonogram` | Nonograms | `nonogram` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `9bf0893d-da29-41a1-9fb2-9c9be3fdd561` |
 | `notebook` | Notebook | `notebook` | 1.0.1 | published | 1.0.1 | 2026-11-06 | `bfdb56a1-5848-4583-8085-63262ad00636` |
 | `notes` | Notes | `notes` | 1.1.2 | published | 1.1.2 | 2026-11-15 | `10ee478f-e339-4bc9-a0d1-370a22228ec1` |
-| `offlinemap` | Offline Map | `offlinemap` | 1.1.0 | published | 1.1.0 | 2026-11-16 | `7f57203c-f82e-4665-88e8-549f97c8cca2` |
 | `pegsolitaire` | Peg Solitaire | `pegsolitaire` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `6870b261-a98d-4f66-af51-be27150a7c30` |
 | `pianofollow` | Piano Follow | `pianofollow` | 1.0.0 | published | 1.0.0 | 2026-11-12 | `c4df4a87-1974-41e8-a519-54004eba26a0` |
 | `portwren` | Port Wren | `portwren` | 1.0.0 | published | 1.0.0 | 2026-11-14 | `b4065093-1a41-46a9-a686-083806b27f9c` |
@@ -90,5 +89,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordladder` | Word Ladder | `wordladder` | 1.0.2 | published | 1.0.2 | 2026-11-15 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.1.0 | published | 1.1.0 | 2026-11-15 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
 | `dict` | Dictionary | `dict` | 1.0.1 | in review | 1.0.0 | 2026-11-17 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
+| `offlinemap` | Offline Map | `offlinemap` | 1.1.1 | in review | 1.1.0 | 2026-11-18 | `7f57203c-f82e-4665-88e8-549f97c8cca2` |
 
-56 published, 1 in review or draft, 57 in all.
+55 published, 2 in review or draft, 57 in all.

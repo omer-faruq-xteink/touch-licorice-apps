@@ -562,11 +562,11 @@
   "offlinemap": {
     "name": "Offline Map",
     "app_id": "offlinemap",
-    "listing_id": "",
+    "listing_id": "u_bd72b15b5cfc4dfaa808ab9e6958fb25",
     "project_id": "7f57203c-f82e-4665-88e8-549f97c8cca2",
-    "release_version": "1.1.0",
-    "status": "published",
+    "release_version": "1.1.1",
+    "status": "in review",
     "live_version": "1.1.0",
-    "submitted": "2026-11-16"
+    "submitted": "2026-11-18"
   }
 }
