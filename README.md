@@ -1,5 +1,19 @@
 # Xteink Licorice mini apps
 
+Games and tools for the **Xteink X4 Pro** e-reader. To install one, the link below is all you need.
+
+## How to install
+
+**[→ Pick and install apps on the app site](https://omer-faruq-xteink.github.io/touch-licorice-apps/)**
+
+Pick an app on the [app site](https://omer-faruq-xteink.github.io/touch-licorice-apps/) and press
+**Copy to reader** (Chrome or Edge on a computer, reader in USB mode), or download its `.xtapp` and
+copy it to the SD card. On the reader open **All Files**, tap the package, then **Install**. Many
+apps are also in [Xteink's app store](https://xtapp-ai.xteink.cc/store), where updates arrive by
+themselves. Step by step by hand: [Install by hand](#install-by-hand).
+
+## What is here
+
 Games and tools for the **Xteink X4 Pro** e-reader running its stock **XTOS Licorice** firmware,
 written in Lua for the firmware's built-in mini-app host: **InkApps**, as Xteink calls them. No custom firmware, no flashing: you
 copy a package to the SD card and install it from the reader's own file browser. Most of them are
@@ -82,7 +96,7 @@ swipes, one text size, no network). The other apps declare `"api": "2.0"` and ge
 the firmware's keyboard, HTTPS, JSON, file storage, three font sizes, a live lock screen. Both
 install the same way.
 
-## Install
+## Install by hand
 
 You need an X4 Pro on XTOS Licorice (Settings → About shows "XT Licorice …") and the `.xtapp`
 files from the [latest release](../../releases).
