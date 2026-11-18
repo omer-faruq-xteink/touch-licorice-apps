@@ -4,6 +4,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 ## Changed
 
+- **Offline Map 1.1.1: the first page says what it found.** With no map shown, it lists the files in its folder with their sizes, and for a pack that does not open, why (a copy cut short, a file that is not a map pack); a tap, or coming back to the app, looks again, so a pack copied while the app was open shows up. About shows the right version.
 - **Dictionary 1.0.1: the first screen points to the app's page.** With no dictionary yet, it shows a QR code and the address of the Dictionary page on the site, which has a ready-made English dictionary (WordNet) and the converter for any StarDict one, then where to copy the files. No Python needed.
 
 ## Files
@@ -11,6 +12,7 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 | file | content |
 |---|---|
 | `dict.xtapp` | Dictionary 1.0.1 |
+| `offlinemap.xtapp` | Offline Map 1.1.1 |
 | all other packages | unchanged since v0.26.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

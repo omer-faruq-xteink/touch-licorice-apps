@@ -6,15 +6,17 @@ P.__index = P
 
 local MAX = 65536
 
--- len bytes at off, in reads of at most 64 KB
+-- len bytes at off, in reads of at most 64 KB; nil and why when a read fails
 local function span(name, off, len)
   if len <= 0 then return '' end
   local parts = {}
   local done = 0
   while done < len do
     local n = math.min(MAX, len - done)
-    local ok, b = pcall(function() return ctx.files:read(name, off + done, n) end)
-    if not ok or type(b) ~= 'string' or #b == 0 then return nil end
+    local ok, b, e = pcall(function() return ctx.files:read(name, off + done, n) end)
+    if not ok then return nil, tostring(b) end
+    if type(b) ~= 'string' then return nil, tostring(e or 'no data') end
+    if #b == 0 then return nil, 'the file ends at ' .. (off + done) .. ' bytes' end
     parts[#parts + 1] = b
     done = done + #b
   end
@@ -27,17 +29,21 @@ local u32 = function(s, i) return string.unpack('<I4', s, i) end
 
 -- -> the pack, or nil and a reason
 function P.open(name)
-  local h = span(name, 0, 64)
-  if not h or #h < 64 or h:sub(1, 8) ~= 'XTMAP1\0\0' or u16(h, 9) ~= 1 then return nil, 'not a map pack' end
+  local h, he = span(name, 0, 64)
+  if not h then return nil, 'cannot read it: ' .. tostring(he) end
+  if #h < 64 then return nil, 'a damaged map pack: only ' .. #h .. ' bytes' end
+  if h:sub(1, 8) ~= 'XTMAP1\0\0' then return nil, 'not a map pack: it starts ' .. string.format('%q', h:sub(1, 8)) end
+  if u16(h, 9) ~= 1 then return nil, 'not a map pack: version ' .. u16(h, 9) end
   if h:byte(12) ~= 2 or u16(h, 13) ~= 256 then return nil, 'an unknown tile format' end
   local nlev = h:byte(11)
   local meta_off, meta_len, zoom_off = u32(h, 17), u32(h, 21), u32(h, 25)
   local names_off, names_len = u32(h, 29), u32(h, 33)
-  local mj = span(name, meta_off, meta_len)
+  local mj, me = span(name, meta_off, meta_len)
+  if not mj then return nil, 'a damaged map pack: its details (' .. meta_len .. ' bytes at ' .. meta_off .. '): ' .. tostring(me) end
   local okj, meta = pcall(function() return ctx.json:decode(mj) end)
-  if not okj or type(meta) ~= 'table' then return nil, 'a damaged map pack' end
-  local zt = span(name, zoom_off, 20 * nlev)
-  if not zt then return nil, 'a damaged map pack' end
+  if not okj or type(meta) ~= 'table' then return nil, 'a damaged map pack: its details do not read: ' .. tostring(meta) end
+  local zt, ze = span(name, zoom_off, 20 * nlev)
+  if not zt then return nil, 'a damaged map pack: its zoom table: ' .. tostring(ze) end
   local self = setmetatable({ name = name, meta = meta, levels = {}, zmin = 99, zmax = -1,
     near_off = u32(h, 37), near_len = u32(h, 41) }, P)   -- the nearest-name section (src/near.lua), 0 in old packs
   local deepest

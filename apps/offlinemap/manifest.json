@@ -1,7 +1,7 @@
 {
   "app_id": "offlinemap",
   "display_name": "Offline Map",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "omer-faruq",
   "description": "An offline map of any area of the world, made on the Tools page of the site: streets and paths with their names, search, bookmarks, GPX routes and coordinates, without a connection.",
   "entry": "index.lua",

@@ -147,7 +147,7 @@ check(n_ok == 10 and all(int(r.len) <= 65536 for r in L.globals().read_log.value
       f'a row of over 70 KB reads right in reads of at most 64 KB ({len(L.globals().read_log)} reads)')
 L.globals().files_store['bad.map'] = 'NOTAMAP!' + '\0' * 60
 bad, err = pack.open('bad.map')
-check(bad is None and str(err) == 'not a map pack', f'a wrong magic: {err}')
+check(bad is None and str(err).startswith('not a map pack'), f'a wrong magic: {err}')
 packs = L.table_from([pack.open('city.map'), pack.open('inner.map'), pack.open('overview.map')])
 inner_x, inner_y = 4 * X15 + 5, 4 * Y15 + 5
 pk = choose.pick(packs, 16, 2 * X15 + 3, 2 * Y15 + 2)
@@ -316,6 +316,31 @@ g.restart()
 t = ' '.join(g.texts())
 check(g.api.state().screen == 'start' and 'AppFiles/offlinemap/' in t and 'no live position' in t.lower(), f'no packs: the first page: {t[:160]}')
 check(str(L.globals().qr_last) == 'https://omer-faruq-xteink.github.io/touch-licorice-apps/tools/offlinemap/', 'with a QR code of the Tools page')
+# a pack that does not open shows on the first page with its reason, with every file in the folder:
+# a user who sees only the first page can tell what the app found (a cut copy, a wrong name)
+L.globals().files_store['Umkreis.map'] = FILES['city.map'][:100]
+L.globals().files_store['notes.txt'] = 'x'
+g.restart()
+t = g.texts()
+check(g.api.state().screen == 'start' and any(x.startswith('Umkreis.map') for x in t), f'the pack that does not open is listed: {t[-8:]}')
+why = ' '.join(t[t.index(next((x for x in t if x.startswith('Umkreis.map')), t[0])):])
+check('damaged' in why or 'cut' in why or 'read' in why, f'with its reason: {why[:160]}')
+check(any('notes.txt' in x for x in t) and any('/AppFiles/offlinemap' in x for x in t), f'every file in the folder, and the folder: {t[-8:]}')
+# a tap on the first page looks again (the user copied the pack while the app was open)
+L.globals().files_store['Umkreis.map'] = FILES['city.map']
+L.execute('layers_made = 0')
+g.tap(240, 400)
+check(g.api.state().screen == 'map' and len(g.api.packs()) == 1, f'a tap looks again: the map ({g.api.state().screen})')
+# so does coming back to the app (on_resume)
+L.globals().files_store['Umkreis.map'] = None
+L.globals().files_store['notes.txt'] = None
+L.execute('layers_made = 0')
+g.restart()
+check(g.api.state().screen == 'start', 'no pack: the first page again')
+L.globals().files_store['Umkreis.map'] = FILES['city.map']
+L.execute('on_resume(ctx)')
+check(g.api.state().screen == 'map', f'on_resume looks again: the map ({g.api.state().screen})')
+L.globals().files_store['Umkreis.map'] = None
 for n, b in saved_files.items():
     L.globals().files_store[n] = b
 L.execute('layers_made = 0')
@@ -434,7 +459,7 @@ g.tap_label('Menu'); g.tap_label('Screen: landscape')
 check(int(L.globals().ctx.screen.width) == 480, 'and back to portrait')
 g.tap_label('Menu'); g.tap_label('About')
 t = ' '.join(g.texts())
-check('OpenStreetMap' in t and '1.0.0' in t and str(L.globals().qr_last).endswith('/tools/offlinemap/'), f'About: attribution, version, QR: {t[:160]}')
+check('OpenStreetMap' in t and json.load(open(os.path.join(HERE, 'manifest.json')))['version'] in t and str(L.globals().qr_last).endswith('/tools/offlinemap/'), f'About: attribution, version, QR: {t[:160]}')
 L.eval('ev_key')('back')
 
 # ------------------------------------------------------------------ review fixes

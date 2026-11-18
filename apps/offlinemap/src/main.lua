@@ -18,6 +18,7 @@ local MSG_MS = 3000
 local W, H = 480, 800
 local screen = 'map'            -- map | start | search | menu | bookmarks | routes | packs | about | coords
 local packs, broken = {}, {}
+local found, found_err = {}, nil  -- the folder's files at the last look, or why it did not list (the first page shows them)
 local V = nil                   -- the view
 local can_in, can_out = false, false
 local msg, msg_until = nil, 0
@@ -32,7 +33,7 @@ local ROW_H = 64
 local overlay                   -- defined with the drawing (below)
 local route = nil               -- { name, points, len, thin = { [z] = points } }
 local list = nil                -- the list screen: { title, items = { {label, sub, fn, long} }, page, top = {..} }
-local VERSION = '1.0.0'
+local VERSION = '1.1.1'
 
 ------------------------------------------------------------------ helpers
 
@@ -93,8 +94,10 @@ end
 local function load_packs()
   packs, broken = {}, {}
   local given = read_pack_names()
-  local ok, list = pcall(function() return ctx.files:list() end)
-  if not ok or type(list) ~= 'table' then return end
+  found, found_err = {}, nil
+  local ok, list, le = pcall(function() return ctx.files:list() end)
+  if not ok or type(list) ~= 'table' then found_err = tostring(ok and (le or 'no list') or list); return end
+  found = list
   for _, f in ipairs(list) do
     local n = tostring(f.name or '')
     if n:lower():match('%.map$') then
@@ -594,11 +597,28 @@ local function draw_start(gg)
     'Make a map pack on the Tools page (scan the code), then copy it to AppFiles/offlinemap/ on the card. '
       .. 'GPX routes go in the same folder.',
   }
-  for _, para in ipairs(text) do
-    for _, l in ipairs(kit.wrap(para, 'small', W - 48)) do gg:text(24, y, l, { font = kit.font('small') }); y = y + 24 end
-    y = y + 10
+  local function para(s, x)
+    for _, l in ipairs(kit.wrap(s, 'small', W - 24 - x)) do
+      if y < H - 30 then gg:text(x, y, l, { font = kit.font('small') }) end
+      y = y + 24
+    end
   end
-  if qr then gg:image(qr, (W - (tonumber(qr.width) or 200)) // 2, y + 10) end
+  for _, p in ipairs(text) do para(p, 24); y = y + 10 end
+  if qr then gg:image(qr, (W - (tonumber(qr.width) or 200)) // 2, y + 10); y = y + 10 + (tonumber(qr.height) or 200) + 16 end
+  -- what the app found: a pack that does not open says why, so a user can tell what is wrong
+  local path = (type(ctx.files.path) == 'string' and ctx.files.path ~= '') and ctx.files.path or '/AppFiles/offlinemap'
+  para('In ' .. path .. ':', 24)
+  local why = {}
+  for _, b in ipairs(broken) do why[b.name] = b.err end
+  if found_err then para('the folder does not list: ' .. found_err, 36)
+  elseif #found == 0 then para('nothing yet.', 36) end
+  for _, f in ipairs(found) do
+    local n = tostring(f.name or '')
+    local sz = tonumber(f.size) or 0
+    para(n .. '  ' .. size_text(sz) .. (sz >= 1024 and (' (' .. sz .. ' bytes)') or ''), 36)
+    if why[n] then para('does not open: ' .. tostring(why[n]), 52) end
+  end
+  para('Tap to look again.', 24)
 end
 
 local function per_page() return (H - 70 - 70) // ROW_H end
@@ -750,11 +770,22 @@ function on_draw(c, gg)
   if not ok then pcall(function() gg:text(8, H - 24, 'ERR ' .. tostring(e):sub(1, 40)) end) end
 end
 
+-- the first page looks at the folder again: on a tap, and when the app comes back (a pack copied
+-- while it was open)
+local function look_again()
+  load_packs()
+  if #packs == 0 then return end
+  if qr then pcall(function() qr:release() end); qr = nil end
+  make_view(first_view())
+  screen = 'map'
+end
+
 local function inside(x, y, rx, ry, rw, rh) return x >= rx and x < rx + rw and y >= ry and y < ry + rh end
 
 local function pointer_up(ev)
   local x, y = tonumber(ev.x) or 0, tonumber(ev.y) or 0
   if kit.modal() then kit.tap_modal(x, y); return end
+  if screen == 'start' then look_again(); return end
   if screen == 'search' then tap_search(x, y); return end
   if screen == 'list' or screen == 'about' then tap_list(x, y); return end
   if screen ~= 'map' or not V then return end
@@ -839,6 +870,11 @@ function on_input(c, ev)
   if not ok then ERR = tostring(e) end
   kit.refresh()
   return handled
+end
+
+function on_resume()
+  local ok, e = pcall(function() if screen == 'start' then look_again() end end)
+  if not ok then ERR = tostring(e) end
 end
 
 function on_tick()
