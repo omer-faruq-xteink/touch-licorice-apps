@@ -254,10 +254,10 @@
     "app_id": "skytonight",
     "listing_id": "u_90031091d2a54d9689580ee8e0a4466e",
     "project_id": "f17ef4eb-59be-469b-9ad7-796b984cab58",
-    "release_version": "1.1.0",
-    "status": "published",
+    "release_version": "1.1.1",
+    "status": "in review",
     "live_version": "1.1.0",
-    "submitted": "2026-11-13"
+    "submitted": "2026-11-19"
   },
   "slidepuzzle": {
     "name": "Slide Puzzle",
@@ -414,10 +414,10 @@
     "app_id": "delve",
     "listing_id": "",
     "project_id": "f48f0c06-c0cf-4cec-a8c9-8c0523c558e6",
-    "release_version": "1.0.1",
-    "status": "published",
+    "release_version": "1.0.2",
+    "status": "in review",
     "live_version": "1.0.1",
-    "submitted": "2026-11-14"
+    "submitted": "2026-11-19"
   },
   "chessplay": {
     "name": "Chess",

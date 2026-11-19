@@ -44,7 +44,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `chessplay` | Chess | `chessplay` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `eb70de48-11b6-4061-baca-04d77e071955` |
 | `chess` | Chess puzzles | `chess` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `835f1944-5c56-492c-a83d-f0348e3844cd` |
 | `cryptogram` | Cryptogram | `cryptogram` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `9cf7c2da-b43d-4604-b2a8-20831b432999` |
-| `delve` | Delve | `delve` | 1.0.1 | published | 1.0.1 | 2026-11-14 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `freecell` | FreeCell | `freecell` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `17ff4ea4-603c-461c-87f2-ce8d6ea38524` |
 | `gamebook` | Gamebook | `gamebook` | 1.0.2 | published | 1.0.2 | 2026-11-15 | `89c08996-c25d-4eda-9977-a0b19f50e23d` |
 | `tsumego` | Go problems | `tsumego` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `a255a696-b673-481a-b444-b5ed661e84bc` |
@@ -71,7 +70,6 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `readwise` | Readwise | `readwise` | 1.4.0 | published | 1.4.0 | 2026-11-17 | `9f9f4778-901e-4a18-b863-033d9384a44c` |
 | `riverstead` | Riverstead | `riverstead` | 1.0.0 | published | 1.0.0 | 2026-11-14 | `298e583e-2292-44f7-837f-dc4a34d6440f` |
 | `rss` | RSS | `rss` | 1.5.0 | published | 1.5.0 | 2026-11-17 | `89ca4ab2-9fb9-4017-8d88-31973aa0cc7d` |
-| `skytonight` | Sky Tonight | `skytonight` | 1.1.0 | published | 1.1.0 | 2026-11-13 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `slidepuzzle` | Slide Puzzle | `slidepuzzle` | 1.3.2 | published | 1.3.2 | 2026-11-15 | `115c852b-a613-4070-adab-d4ec60954c63` |
 | `sokoban` | Sokoban | `sokoban` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `be00b928-97d8-49c6-b97c-7852606ef8d8` |
 | `sudoku` | Sudoku | `sudoku` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `9fdc3d51-738a-4331-a16f-e6509c7d2aeb` |
@@ -88,7 +86,9 @@ What is in the [Xteink store](https://xtapp-ai.xteink.cc/store?view=creator), wr
 | `wordhive` | Word Hive | `wordhive` | 1.0.1 | published | 1.0.1 | 2026-11-15 | `7e35f8f2-a168-4c3c-b22a-492b83ef84ac` |
 | `wordladder` | Word Ladder | `wordladder` | 1.0.2 | published | 1.0.2 | 2026-11-15 | `0975b389-101d-444e-9d66-ee8856c15112` |
 | `xkcd` | xkcd | `xkcd` | 1.1.0 | published | 1.1.0 | 2026-11-15 | `b45610aa-b27a-46f2-8fe1-a32035cc0f0b` |
+| `delve` | Delve | `delve` | 1.0.2 | in review | 1.0.1 | 2026-11-19 | `f48f0c06-c0cf-4cec-a8c9-8c0523c558e6` |
 | `dict` | Dictionary | `dict` | 1.0.1 | in review | 1.0.0 | 2026-11-17 | `2f18566f-7cf9-46ee-80bc-bf455514b984` |
+| `skytonight` | Ink Sky | `skytonight` | 1.1.1 | in review | 1.1.0 | 2026-11-19 | `f17ef4eb-59be-469b-9ad7-796b984cab58` |
 | `offlinemap` | Offline Map | `offlinemap` | 1.1.1 | in review | 1.1.0 | 2026-11-18 | `7f57203c-f82e-4665-88e8-549f97c8cca2` |
 
-55 published, 2 in review or draft, 57 in all.
+53 published, 4 in review or draft, 57 in all.
