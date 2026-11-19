@@ -1,4 +1,4 @@
-"""Checks of Sky Tonight's zoom data: names.txt carries the IAU abbreviations, bounds.txt the
+"""Checks of Ink Sky's zoom data: names.txt carries the IAU abbreviations, bounds.txt the
 constellation boundaries, objects.txt the deep-sky objects (each inside the constellation it names),
 cards.txt one card a constellation.
 
@@ -28,6 +28,12 @@ names = [l.split(' ', 4) for l in rows('names.txt')]
 abbrs = [n[3] for n in names if len(n) == 5]
 check(len(names) == 89 and len(abbrs) == 89, f'names.txt: 89 rows with an abbreviation ({len(abbrs)})')
 check(len(set(abbrs)) == 88 and abbrs.count('Ser') == 2, 'the 88 constellations (Serpens in two parts)')
+by_abbr = {n[3]: n[4].split('|') for n in names if len(n) == 5}
+check(by_abbr['Dor'] == ['Swordfish', 'Kılıçbalığı', 'Schwertfisch'], f'Dorado is the swordfish in every language: {by_abbr["Dor"]}')
+for f in ('cards.txt', 'cards_de.txt', 'cards_tr.txt'):
+    ind = [l.split('|') for l in rows(f) if l.startswith('Ind|')]
+    check(ind and ind[0][2] == 'Alpha Indi (The Persian)', f'{f}: the bright star of Indus is Alpha Indi, its old name kept: {ind}')
+check('Goldfisch' not in open(os.path.join(DATA, 'cards_de.txt'), encoding='utf-8').read(), 'cards_de.txt: Dorado is the Schwertfisch')
 
 # bounds.txt: "ABBR N ra dec ra dec ...": RA 0..360; N 1 for the polygon holding the north pole
 POLYS = []

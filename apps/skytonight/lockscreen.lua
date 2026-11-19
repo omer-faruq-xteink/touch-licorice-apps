@@ -1,6 +1,6 @@
 -- built by bundle.py from src/astro.lua, src/places.lua, src/sky.lua and src/lock.lua: edit those, not this file
 
--- Sky Tonight: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
+-- Ink Sky: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
 -- Time is s, whole seconds since J2000.0 (2000-01-01 12:00 UTC): an integer that fits the
 -- reader's 32-bit integers until 2068. The reader's floats are single precision (about 7 digits),
 -- so the slow motions (sun, moon, planets) use t = s in days, about 10^4 and good to a minute or
@@ -196,7 +196,7 @@ A.body_alt = body_alt
 
 if rawget(_G, '__TEST') then __TEST.A = A end
 
--- Sky Tonight: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
+-- Ink Sky: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
 -- positive). GUESS_TZ picks the first place for a time zone (standard offset in minutes) when no
 -- place is saved yet; Turkish and German systems start in İstanbul and Berlin.
 
@@ -243,7 +243,7 @@ local function find_place(name)
   return nil
 end
 
--- Sky Tonight: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
+-- Ink Sky: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
 -- astro.lua, places.lua and this file in front of each. The sky over the chosen place as a round
 -- chart (looking up: north at the top, east on the left, the horizon the rim): stars to
 -- magnitude 4.5, the constellation figures and names, the moon and the planets; under it the
@@ -1158,7 +1158,7 @@ end
 if rawget(_G, '__TEST') then
   __TEST.sky = { draw_sky = draw_sky, radec_to_screen = radec_to_screen, chart_to_radec = chart_to_radec, constellation_at = constellation_at,
                  civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
-                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end }
+                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end, draw_card = draw_card }
 end
 
 
@@ -1190,9 +1190,9 @@ function on_draw(c, g)
   if not g then return end
   local ok, e = xpcall(function()
     g:clear(0)
-    if load_err then draw_error(g, 'Sky Tonight lock screen error:', load_err, 80); return end
+    if load_err then draw_error(g, 'Ink Sky lock screen error:', load_err, 80); return end
     if not view then
-      g:text(W // 2, H // 2, 'Sky Tonight: ' .. word('no_clock'), { font = font_px(24), align = 'center' })
+      g:text(W // 2, H // 2, 'Ink Sky: ' .. word('no_clock'), { font = font_px(24), align = 'center' })
       return
     end
     draw_sky(g, view, H)
@@ -1200,6 +1200,6 @@ function on_draw(c, g)
   if not ok then
     dbg('LOCK DRAW ERROR ' .. tostring(e))
     g:clear(0)
-    draw_error(g, 'Sky Tonight lock screen error:', tostring(e), 80)
+    draw_error(g, 'Ink Sky lock screen error:', tostring(e), 80)
   else dbg('lock draw done') end
 end

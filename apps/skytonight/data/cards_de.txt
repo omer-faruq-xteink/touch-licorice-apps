@@ -30,7 +30,7 @@ Crt|Der Becher des Apollon, ein schwacher Kelch, der auf dem Rücken der Wassers
 Cru|Das Kreuz des Südens, das kleinste Sternbild, half Seeleuten, den Süden zu finden. Sein langer Balken zeigt zum Südpol.|Acrux, Mimosa, Gacrux|NGC4755
 Cyg|Der Schwan fliegt die Milchstraße entlang und heißt auch Kreuz des Nordens. Deneb an seinem Schwanz ist ein weit entfernter Riesenstern.|Deneb, Albireo, Sadr|M39 NGC7000
 Del|Der Delphin, der den Dichter Arion rettete: eine kleine, hübsche Sternenraute mit Schwanz, nahe Altair.|Rotanev, Sualocin|
-Dor|Der Goldfisch, eigentlich eine Goldmakrele, stammt von niederländischen Seefahrern. Er enthält den größten Teil der Großen Magellanschen Wolke.|Alpha Doradus|LMC
+Dor|Der Schwertfisch, eigentlich eine Goldmakrele, stammt von niederländischen Seefahrern. Er enthält den größten Teil der Großen Magellanschen Wolke.|Alpha Doradus|LMC
 Dra|Der Drache, der die goldenen Äpfel bewachte, windet sich zwischen den beiden Bären. Sein Stern Thuban war Polarstern, als die Pyramiden gebaut wurden.|Eltanin, Rastaban, Thuban|
 Equ|Das Füllen, das zweitkleinste Sternbild: ein paar schwache Sterne neben Pegasus.|Kitalpha|
 Eri|Der Fluss Eridanus windet sich von Orions Fuß weit in den Südhimmel, wo er am hellen Achernar endet.|Achernar, Cursa, Zaurak|
@@ -41,7 +41,7 @@ Her|Herkules, der Held Herakles, kniet kopfüber am Himmel. Vier Sterne bilden a
 Hor|Die Pendeluhr, eine der Erfindungen, die Lacaille am Himmel ehrte; eine schwache Sternenreihe nahe Achernar.|Alpha Horologii|
 Hya|Die Wasserschlange ist das größte Sternbild: Ihr Kopf liegt südlich des Krebses, ihr Schwanz jenseits der Waage. Der einsame, orange Alphard ist ihr Herz.|Alphard|M83
 Hyi|Die Kleine Männliche Wasserschlange, eine schwache Zickzacklinie zwischen den beiden Magellanschen Wolken nahe dem Südpol.|Beta Hydri, Alpha Hydri|
-Ind|Der Inder, eine Figur niederländischer Seefahrer der 1590er-Jahre: schwache Sterne südlich des Schützen.|The Persian|
+Ind|Der Inder, eine Figur niederländischer Seefahrer der 1590er-Jahre: schwache Sterne südlich des Schützen.|Alpha Indi (The Persian)|
 Lac|Die Eidechse, eine schwache Zickzacklinie, eingezwängt zwischen Schwan und Andromeda.|Alpha Lacertae|
 Leo|Der Nemeische Löwe, den Herakles erlegte. Ein spiegelverkehrtes Fragezeichen, die Sichel, bildet seinen Kopf, mit Regulus an ihrem Fuß.|Regulus, Denebola, Algieba|
 LMi|Der Kleine Löwe, ein paar schwache Sterne über dem Rücken des Löwen, in den 1680er-Jahren hinzugefügt.|Praecipua|

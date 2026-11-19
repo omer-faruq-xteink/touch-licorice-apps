@@ -1,6 +1,6 @@
 -- built by bundle.py from src/astro.lua, src/places.lua, src/sky.lua and src/app.lua: edit those, not this file
 
--- Sky Tonight: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
+-- Ink Sky: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
 -- Time is s, whole seconds since J2000.0 (2000-01-01 12:00 UTC): an integer that fits the
 -- reader's 32-bit integers until 2068. The reader's floats are single precision (about 7 digits),
 -- so the slow motions (sun, moon, planets) use t = s in days, about 10^4 and good to a minute or
@@ -196,7 +196,7 @@ A.body_alt = body_alt
 
 if rawget(_G, '__TEST') then __TEST.A = A end
 
--- Sky Tonight: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
+-- Ink Sky: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
 -- positive). GUESS_TZ picks the first place for a time zone (standard offset in minutes) when no
 -- place is saved yet; Turkish and German systems start in İstanbul and Berlin.
 
@@ -243,7 +243,7 @@ local function find_place(name)
   return nil
 end
 
--- Sky Tonight: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
+-- Ink Sky: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
 -- astro.lua, places.lua and this file in front of each. The sky over the chosen place as a round
 -- chart (looking up: north at the top, east on the left, the horizon the rim): stars to
 -- magnitude 4.5, the constellation figures and names, the moon and the planets; under it the
@@ -1158,12 +1158,12 @@ end
 if rawget(_G, '__TEST') then
   __TEST.sky = { draw_sky = draw_sky, radec_to_screen = radec_to_screen, chart_to_radec = chart_to_radec, constellation_at = constellation_at,
                  civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
-                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end }
+                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end, draw_card = draw_card }
 end
 
 
 -- The app: the sky for now (or tonight, by day), -1 h / +1 h to step through the night (the page
--- keys too), Now to go back, Place to pick a city or type coordinates and to make Sky Tonight the
+-- keys too), Now to go back, Place to pick a city or type coordinates and to make Ink Sky the
 -- lock screen. While open on the current time it redraws every ten minutes.
 
 local BTN_Y, BTN_H = H - 62, 50
@@ -1430,7 +1430,7 @@ function on_draw(c, g)
   extend()
   if load_err then
     g:clear(0)
-    draw_error(g, 'Sky Tonight could not start:', load_err)
+    draw_error(g, 'Ink Sky could not start:', load_err)
     g:text(10, H - 60, 'Please send a photo of this screen.')
     return
   end

@@ -1,4 +1,6 @@
-# Sky Tonight — XTOS Licorice mini app (API 2.9)
+# Ink Sky — XTOS Licorice mini app (API 2.9)
+
+Called Sky Tonight before 1.1.1; renamed so it does not share its name with another stargazing app.
 
 The night sky over your city, worked out on the device with no network: a round chart of the sky
 as you see it looking up (north at the top, east on the left, the horizon the rim) with the stars

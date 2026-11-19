@@ -1,4 +1,4 @@
--- Sky Tonight: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
+-- Ink Sky: the astronomy, shared by the app and the lock screen (bundle.py puts it first).
 -- Time is s, whole seconds since J2000.0 (2000-01-01 12:00 UTC): an integer that fits the
 -- reader's 32-bit integers until 2068. The reader's floats are single precision (about 7 digits),
 -- so the slow motions (sun, moon, planets) use t = s in days, about 10^4 and good to a minute or

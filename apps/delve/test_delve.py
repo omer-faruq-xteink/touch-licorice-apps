@@ -309,4 +309,20 @@ assert str(A().screen()) == 'end' and 'You won!' in g.texts() and int(A().stats(
 assert back('down') is True and back('up') is True and str(A().screen()) == 'title'
 assert back('down') is True and back('up') is False and str(A().screen()) == 'title'
 g.no_err()
+
+# a damaged save never keeps the game from starting: Continue drops it, and a new run starts
+BAD = ['seed=5\nmap=' + '1' * 285 + '\nbag=%%;;\nmons=x,,\nweapon=zz\nx=-9\ny=999\n',
+       'seed=5\nmap=short\n', 'seed=5\n\x01 garbage']
+for bad in BAD:
+    g.store['run.txt'] = bad
+    g.restart()
+    assert str(A().screen()) == 'title' and 'Continue' in g.texts(), g.texts()
+    runs = int(A().stats().runs)
+    g.tap_label('Continue')
+    assert str(A().screen()) == 'title' and 'The saved run could not be read.' in g.texts(), (bad[:20], g.texts())
+    g.tap_label('Close')
+    assert 'Continue' not in g.texts() and 'seed=' not in (g.store['run.txt'] or '') and int(A().stats().runs) == runs, (bad[:20], g.texts())
+    g.tap_label('New run')
+    assert str(A().screen()) == 'game', (bad[:20], A().screen())
+    g.no_err()
 print('delve tests passed')

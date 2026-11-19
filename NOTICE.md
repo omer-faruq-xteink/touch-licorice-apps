@@ -116,7 +116,7 @@ Sentences from public-domain novels on [Project Gutenberg](https://www.gutenberg
 who died before 1956, translations left out, so they are free in the US and in life+70 countries.
 Each quote names its book and author on screen.
 
-## Sky Tonight data — `apps/skytonight/data/`
+## Ink Sky data — `apps/skytonight/data/`
 
 Stars from the Yale Bright Star Catalogue, 5th edition (NASA HEASARC `heasarc_bsc5p`), public
 domain. Constellation figures, names and boundaries (the IAU boundaries) from [d3-celestial](https://github.com/ofrohn/d3-celestial),

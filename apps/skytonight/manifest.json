@@ -1,7 +1,7 @@
 {
   "app_id": "skytonight",
-  "display_name": "Sky Tonight",
-  "version": "1.1.0",
+  "display_name": "Ink Sky",
+  "version": "1.1.1",
   "author": "omer-faruq",
   "description": "The night sky over your city, worked out on the device: stars, constellations, the moon and the planets on a round chart, with the moon's phase, sunset, dark and sunrise. Step through the night an hour at a time. Tap the sky to zoom in and read about the constellation there and the galaxies, nebulae and clusters in it. Works as the lock screen.",
   "entry": "index.lua",

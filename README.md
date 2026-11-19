@@ -83,7 +83,7 @@ the [Worker setup](https://omer-faruq-xteink.github.io/touch-licorice-apps/tools
 | **Dictionary** | offline StarDict lookup with the firmware keyboard; WordNet (English) ready-made, any StarDict after a one-time conversion; Word of the Day lock screen; My words (every word looked up) and Review with spaced repetition |
 | **Literary Clock** | the time told by a sentence from a public-domain book, a new quote every minute; made for the lock screen |
 | **Word Clock** | the time in words on a grid of letters, in English, Türkçe or Deutsch; made for the lock screen |
-| **Sky Tonight** | the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; tap to zoom in, with a card on each constellation and the galaxies, nebulae and clusters in it; can be the lock screen |
+| **Ink Sky** | (was Sky Tonight) the night sky over your city, computed on the reader: stars, constellations, moon phase, planets, sunset and sunrise; tap to zoom in, with a card on each constellation and the galaxies, nebulae and clusters in it; can be the lock screen |
 | **Piano Follow** | sheet music in landscape that follows your playing on a Bluetooth MIDI keyboard: turns the pages, marks the bar, or waits for the right notes in Practice; a free catalog of 51 pieces and your own MusicXML / ABC scores; needs firmware with API 2.21 |
 | **Gamebook** | choose-your-own-adventure stories: seven built in, a pack of more, and Twine, Ink or Project Aon stories converted on the tools site |
 | **API Probe**, **Net Probe** | developer tools that exercise the Lua host and paint the results |
@@ -545,7 +545,7 @@ and four dots for the minutes between: "IT IS HALF PAST TEN", "SAAT ONU YİRMİ 
 "ES IST FÜNF VOR HALB ELF". The language follows the system's and has a button. Best as the lock
 screen. [More](apps/wordclock/README.md)
 
-### Sky Tonight
+### Ink Sky
 
 A round chart of the sky over your city as you see it looking up: stars to magnitude 4.5, the
 constellation figures and names, the moon in its phase, the planets. Under it the moon's phase and
@@ -554,7 +554,7 @@ day on tonight; **-1 h** / **+1 h** step through the night. 76 cities or typed c
 English, Türkçe, Deutsch. Everything is computed on the reader (no network) and checked against
 the 2026 eclipses, planet oppositions and NOAA's sunrise times. Tap the sky to zoom in: a card tells
 about the constellation there and the galaxies, nebulae and clusters in it. It can be the lock
-screen, redrawn every 15 minutes. [More](apps/skytonight/README.md)
+screen, redrawn every 15 minutes. Called Sky Tonight before 1.1.1. [More](apps/skytonight/README.md)
 
 ### Gamebook
 

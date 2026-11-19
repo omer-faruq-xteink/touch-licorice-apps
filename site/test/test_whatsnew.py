@@ -68,6 +68,14 @@ check('tasks' not in by_app, 'no bullet, no entry')
 check(all('weather.xtapp' not in b for _, b in by_app.get('weather', [])), 'the Files table is not a change')
 check('Turning a long article' in by_app['rss'][0][1], 'a bullet\'s wrapped lines are joined')
 
+# a renamed app keeps its older notes: Sky Tonight is now Ink Sky
+renamed = {'skytonight': 'Ink Sky'}
+check(S.names_in('Sky Tonight 1.1.0: tap the sky', renamed) == ['skytonight'] and S.names_in('Ink Sky 1.2.0', renamed) == ['skytonight'],
+      'an app is found by its former name too')
+check(S.link_names('**Sky Tonight 1.1.0: zoom**', renamed, {'skytonight'}) == '**[Sky Tonight](../apps/skytonight/) 1.1.0: zoom**',
+      'a former name links to the app, as written')
+check(S.app_version('v9.9.9', 'skytonight', '**Sky Tonight 1.1.0: zoom**', 'Ink Sky') == '1.1.0', 'the version after a former name')
+
 # a release not out yet is left out: only up to the given tag
 later = S.changes_by_app(NOTES, NAMES, upto='v0.2.0')
 check('weather' not in later and [t for t, _ in later['chessplay']] == ['v0.2.0'], f'up to v0.2.0: {sorted(later)}')

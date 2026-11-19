@@ -802,7 +802,7 @@ save = function()
   kit.write('run.txt', table.concat(f, '\n') .. '\n')
 end
 
-local function load_run()
+local function read_run()
   local kv = kit.kv(kit.read('run.txt'))
   if not tonumber(kv.seed) or not kv.map or #kv.map ~= COLS * ROWS then return false end
   local daily = tonumber(kv.daily)
@@ -832,11 +832,30 @@ local function load_run()
     G.map[i] = tonumber(kv.map:sub(i, i)) or ROCK
     G.seen[i] = kv.seen and kv.seen:sub(i, i) == '1' or nil
   end
+  -- a damaged save (a half-written file, a hand edit) is not a run: no depth, no life, a hero in rock
+  if G.depth < 1 or G.depth > LAST_DEPTH or G.max < 1 or G.hp < 1 or G.x < 0 or G.x >= COLS or G.y < 0
+     or G.y >= ROWS or G.map[G.y * COLS + G.x + 1] == ROCK or G.weapon.t < 1 or G.weapon.t > #WEAPONS
+     or (G.armour and (G.armour.t < 1 or G.armour.t > #ARMOURS)) then return false end
   msgs = { 'Welcome back. Depth ' .. G.depth .. '.' }
   recentre = true
   fov()
   map_dirty = true
   return true
+end
+
+-- Continue: the saved run, or, when it does not read, nothing: the save is dropped (so the title
+-- no longer offers it) and New run starts as ever
+local function load_run()
+  local keep = {}
+  for k, v in pairs(stats) do keep[k] = v end
+  local ok, res = pcall(read_run)
+  if ok and res then return true end
+  for k, v in pairs(keep) do stats[k] = v end
+  kit.write('run.txt', '')
+  msgs = {}
+  kit.show({ title = 'Continue', lines = { 'The saved run could not be read.' },
+             rows = { { { 'Close', kit.close } } }, cancel = kit.close })
+  return false
 end
 
 save_stats = function()
@@ -1088,6 +1107,7 @@ local function how_to()
     'Tap a distant monster (or hold one) to see what a fight costs. A small z: it has not noticed you yet.',
     'Your torch burns a turn at a time; when it runs low you see less, and in the dark you do not heal. Pick up torches.',
     'Potions and scrolls are unknown until you try them.',
+    "Today's dungeon is the same for everyone on the same date; it changes at midnight on the reader's clock.",
   }, rows = { { { 'Close', kit.close } } }, cancel = kit.close })
 end
 

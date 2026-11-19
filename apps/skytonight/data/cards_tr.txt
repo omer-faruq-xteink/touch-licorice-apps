@@ -41,7 +41,7 @@ Her|Baş aşağı diz çökmüş kahraman Herakles. Dört yıldızdan oluşan bi
 Hor|Sarkaçlı saat, Lacaille'ın gökyüzüne taşıdığı buluşlardan biri; Achernar yakınında sönük bir yıldız dizisi.|Alpha Horologii|
 Hya|Suyılanı, en büyük takımyıldız: başı Yengeç'in güneyinde, kuyruğu Terazi'nin ötesindedir. Kalbi, yapayalnız duran turuncu Alphard'dır.|Alphard|M83
 Hyi|Küçük suyılanı: güney kutbu yakınında, iki Macellan Bulutu arasında uzanan sönük bir zikzak.|Beta Hydri, Alpha Hydri|
-Ind|Hintli: 1590'ların Hollandalı denizcilerinden kalma bir figür; Yay'ın güneyinde sönük yıldızlar.|The Persian|
+Ind|Hintli: 1590'ların Hollandalı denizcilerinden kalma bir figür; Yay'ın güneyinde sönük yıldızlar.|Alpha Indi (The Persian)|
 Lac|Kertenkele: Kuğu ile Andromeda arasına sıkışmış sönük bir zikzak.|Alpha Lacertae|
 Leo|Herakles'in öldürdüğü Nemea aslanı. Orak denen ters bir soru işareti başını çizer, dibinde Regulus durur.|Regulus, Denebola, Algieba|
 LMi|Küçük aslan: Aslan'ın sırtının üstünde birkaç sönük yıldız; 1680'lerde eklendi.|Praecipua|

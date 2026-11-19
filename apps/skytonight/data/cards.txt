@@ -41,7 +41,7 @@ Her|The hero Heracles, kneeling upside down. A keystone of four stars marks his 
 Hor|The pendulum clock, one of Lacaille's inventions honoured in the sky; a faint line of stars near Achernar.|Alpha Horologii|
 Hya|The water snake, the largest constellation, its head south of Cancer and its tail beyond Libra. Lonely orange Alphard is its heart.|Alphard|M83
 Hyi|The little water snake, a faint zigzag between the two Magellanic Clouds near the south pole.|Beta Hydri, Alpha Hydri|
-Ind|The Indian, a figure from Dutch navigators of the 1590s, faint stars south of Sagittarius.|The Persian|
+Ind|The Indian, a figure from Dutch navigators of the 1590s, faint stars south of Sagittarius.|Alpha Indi (The Persian)|
 Lac|The lizard, a faint zigzag squeezed between Cygnus and Andromeda.|Alpha Lacertae|
 Leo|The Nemean lion killed by Heracles. A backwards question mark, the Sickle, forms its head, with Regulus at its base.|Regulus, Denebola, Algieba|
 LMi|The little lion, a few faint stars above Leo's back, added in the 1680s.|Praecipua|

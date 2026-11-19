@@ -1,4 +1,4 @@
--- Sky Tonight: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
+-- Ink Sky: shared by the app (index.lua) and the lock screen (lockscreen.lua); bundle.py puts
 -- astro.lua, places.lua and this file in front of each. The sky over the chosen place as a round
 -- chart (looking up: north at the top, east on the left, the horizon the rim): stars to
 -- magnitude 4.5, the constellation figures and names, the moon and the planets; under it the
@@ -913,5 +913,5 @@ end
 if rawget(_G, '__TEST') then
   __TEST.sky = { draw_sky = draw_sky, radec_to_screen = radec_to_screen, chart_to_radec = chart_to_radec, constellation_at = constellation_at,
                  civil = civil, next_phase = next_phase, default_view = default_view, trace = trace, night_times = night_times, project = project,
-                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end }
+                 load_place = load_place, WORDS = WORDS, set_lang = function(l) LANG = l end, draw_card = draw_card }
 end

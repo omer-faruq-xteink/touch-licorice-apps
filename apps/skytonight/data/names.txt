@@ -30,7 +30,7 @@
 193.50 -62.00 2 Cru Cross|Haç|Kreuz des Südens
 307.50 50.00 1 Cyg Swan|Kuğu|Schwan
 309.00 6.00 3 Del Dolphin|Yunus|Delphin
-76.50 -64.00 3 Dor Goldfish|Kılıçbalığı|Goldfisch
+76.50 -64.00 3 Dor Swordfish|Kılıçbalığı|Schwertfisch
 268.50 64.00 2 Dra Dragon|Ejderha|Drache
 320.25 11.50 3 Equ Colt|Tay|Füllen
 52.50 -18.00 1 Eri Eridanus|Irmak|Eridanus

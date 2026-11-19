@@ -1,4 +1,5 @@
--- Delve's pictures: 16x16 pixel art, '#' ink and '.' paper, drawn at 2x (32 px tiles). Each one
+-- Delve's pictures: 16x16 pixel art, '#' ink and '.' paper, drawn at 3x on the map (48 px tiles;
+-- 2x in the bag, 4x and 6x on the title and end screens). Each one
 -- becomes a list of ink runs ({ x, y, length }) once, and a tile is then one rect a run. Walls
 -- are drawn in main.lua as bricks (8 rects), cheaper than a picture.
 

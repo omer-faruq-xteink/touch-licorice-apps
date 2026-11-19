@@ -6,6 +6,8 @@ Updates for the **Xteink X4 Pro** mini apps (stock XTOS Licorice). Tested on bui
 
 - **Offline Map 1.1.1: the first page says what it found.** With no map shown, it lists the files in its folder with their sizes, and for a pack that does not open, why (a copy cut short, a file that is not a map pack); a tap, or coming back to the app, looks again, so a pack copied while the app was open shows up. About shows the right version.
 - **Dictionary 1.0.1: the first screen points to the app's page.** With no dictionary yet, it shows a QR code and the address of the Dictionary page on the site, which has a ready-made English dictionary (WordNet) and the converter for any StarDict one, then where to copy the files. No Python needed.
+- **Ink Sky 1.1.1: Sky Tonight has a new name.** It was called Sky Tonight, the name of another stargazing app; it is now Ink Sky, an update over the old one as ever, with your place and settings kept. The swordfish (Dorado) is Schwertfisch in German, and the bright star of the Indian (Indus) is Alpha Indi, its old name The Persian in brackets. Suggested by the Xteink team.
+- **Delve 1.0.2: a damaged save no longer opens a broken run.** A run.txt that does not read (cut short, edited by hand) is dropped on Continue, with a note, instead of opening a depth 0 game with no life; New run starts as ever. How to play says that today's dungeon follows the reader's own date, so it changes at midnight local time. Suggested by the Xteink team.
 
 ## Thanks
 
@@ -15,8 +17,10 @@ Idea to select a map pack by [@Dtrieb](https://github.com/Dtrieb).
 
 | file | content |
 |---|---|
+| `delve.xtapp` | Delve 1.0.2 |
 | `dict.xtapp` | Dictionary 1.0.1 |
 | `offlinemap.xtapp` | Offline Map 1.1.1 |
+| `skytonight.xtapp` | Ink Sky 1.1.1 (was Sky Tonight) |
 | all other packages | unchanged since v0.26.0 |
 
 All packages are included so one release has everything. `SHA256SUMS.txt` has the checksums.

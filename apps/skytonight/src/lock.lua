@@ -26,9 +26,9 @@ function on_draw(c, g)
   if not g then return end
   local ok, e = xpcall(function()
     g:clear(0)
-    if load_err then draw_error(g, 'Sky Tonight lock screen error:', load_err, 80); return end
+    if load_err then draw_error(g, 'Ink Sky lock screen error:', load_err, 80); return end
     if not view then
-      g:text(W // 2, H // 2, 'Sky Tonight: ' .. word('no_clock'), { font = font_px(24), align = 'center' })
+      g:text(W // 2, H // 2, 'Ink Sky: ' .. word('no_clock'), { font = font_px(24), align = 'center' })
       return
     end
     draw_sky(g, view, H)
@@ -36,6 +36,6 @@ function on_draw(c, g)
   if not ok then
     dbg('LOCK DRAW ERROR ' .. tostring(e))
     g:clear(0)
-    draw_error(g, 'Sky Tonight lock screen error:', tostring(e), 80)
+    draw_error(g, 'Ink Sky lock screen error:', tostring(e), 80)
   else dbg('lock draw done') end
 end

@@ -1,4 +1,4 @@
-"""Offline test of Sky Tonight (Lua 5.4 through lupa) against known sky events: full and new
+"""Offline test of Ink Sky (Lua 5.4 through lupa) against known sky events: full and new
 moons (two of them eclipses, so exact), planet oppositions and Venus's greatest elongation,
 Polaris's altitude, sunrise and sunset against NOAA's solar calculator, and the precision the
 reader's single floats leave.
@@ -336,6 +336,8 @@ check(SK.constellation_at(359.5, 60) == 'Cas' and SK.constellation_at(0.5, 60) =
       'RA 0/360 is no seam')
 check(SK.constellation_at(200, -89) == 'Oct' and SK.constellation_at(10, 89.9) == 'UMi' and SK.constellation_at(200, 82) == 'Cam',
       'the poles and the ring around the north pole')
+check(SK.constellation_at(229.64, 2.08) == 'Ser' and SK.constellation_at(275.33, -2.90) == 'Ser',
+      'Serpens: both parts (Caput, Cauda) are read, the second does not replace the first')
 check(SK.chart_to_radec(240 + 209, 322, v1) is None, 'a point outside the horizon is not in the sky')
 vz = ISTV(s23, 2.5, 200, 250)
 rt = round_trip(88.79, 7.41, vz)
@@ -402,6 +404,29 @@ check(len(cm) <= 1024 and inside(cm) == 0 and 'M8' in tx and 'Archer' in tx, f'S
 check(not any(str(t).startswith('M22 M22') for t in tx), 'an object named by its number is not named twice')
 last = [str(t) for t in tx][-1]
 check(last.endswith('.'), f'the card ends with a whole object, not half of one: {last!r}')
+
+# every card's story and brightest stars fit whole under the zoomed chart, in each language (the
+# objects after them go whole or not at all); the margin is the room left, as the reader's fonts
+# may be wider than these
+CARD_ABS = [l.split('|')[0] for l in DATA['cards.txt'].splitlines() if '|' in l]
+for loc, label in (('en', 'Brightest: '), ('tr', 'En parlak: '), ('de', 'Hellste: ')):
+    LC = host('index.lua', ist(2026, 10, 29, 23), 180, loc)
+    frame(LC)                                          # the names are read with the first chart
+    dc = LC.eval('function(ab) gg:clear(0); __TEST.sky.draw_card(gg, ab, 500 + 10, 738 - 6, function() return true end) end')
+    cut, room = [], (999, '')
+    for ab in CARD_ABS:
+        dc(ab)
+        cmds = [[c[k] for k in range(1, len(c) + 1)] for c in LC.globals().cmds.values()]
+        tx = [str(c[3]) for c in cmds if c[0] == 'text']
+        stars = line_of('cards.txt' if loc == 'en' else f'cards_{loc}.txt', ab + '|')[0][2]
+        whole = any(t.startswith(label) for t in tx) if stars else True
+        if not whole:
+            cut.append(ab)
+        # the room under the story and its stars (the objects after them are fitted whole)
+        ys = [c[2] for c in cmds if c[0] == 'text' and (str(c[3]).startswith(label) or not stars)]
+        if ys:
+            room = min(room, (732 - max(ys) - 20, ab))
+    check(not cut, f'{loc}: every card whole ({len(CARD_ABS)} cards){" cut: " + str(cut) if cut else ""}, least room left {room[0]} px ({room[1]})')
 if OUT:
     render(cm, os.path.join(OUT, 'zoom_sagittarius.png'))
 L = host('index.lua', ist(2026, 10, 29, 23), 180, 'en')
@@ -595,7 +620,7 @@ check('şimdi' in texts(frame(Lk))[2], 'the lock screen follows the picked langu
 
 # an error at start is shown in full instead of closing the app ("App-Fehler, beendet" on a German
 # reader, 2026-11-04): here the clock has no time zone, so working out tonight fails
-for entry, title in (('index.lua', 'Sky Tonight could not start:'), ('lockscreen.lua', 'Sky Tonight lock screen error:')):
+for entry, title in (('index.lua', 'Ink Sky could not start:'), ('lockscreen.lua', 'Ink Sky lock screen error:')):
     L = host(entry, ist(2026, 10, 29, 14), 'nil', 'de')
     tx = texts(frame(L))
     check(tx and tx[0] == title and any('offset_minutes' in t or 'nil' in t for t in tx[1:]),

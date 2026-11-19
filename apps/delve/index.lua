@@ -22,14 +22,24 @@ local kit = (function()
 local kit = {}
 kit.W, kit.H = 480, 800
 
-function kit.font(name) return ctx.fonts and ctx.fonts[name] end
+-- a font by name ('small' / 'medium' / 'large'), or a number: that many pixels (ctx.fonts:size,
+-- API 2.3: the reader's .ttf font, or the nearest system font when there is none)
+function kit.font(name)
+  local F = ctx.fonts
+  if not F then return nil end
+  if type(name) == 'number' then
+    local ok, f = pcall(function() return F:size(name) end)
+    return ok and f or F.medium
+  end
+  return F[name]
+end
 function kit.width(f, s)
   local ok, w = pcall(function() return f:measure(s) end)
   return (ok and type(w) == 'number') and w or #s * 11
 end
 function kit.line_h(name)
   local ok, h = pcall(function() return kit.font(name).line_height end)
-  return (ok and tonumber(h)) or (name == 'large' and 30 or name == 'small' and 20 or 24)
+  return (ok and tonumber(h)) or (type(name) == 'number' and name * 5 // 4) or (name == 'large' and 30 or name == 'small' and 20 or 24)
 end
 
 -- drop the last character (a whole UTF-8 sequence)
@@ -172,7 +182,8 @@ local function require(n)
 end
 
 __mods['sprites'] = function()
--- Delve's pictures: 16x16 pixel art, '#' ink and '.' paper, drawn at 2x (32 px tiles). Each one
+-- Delve's pictures: 16x16 pixel art, '#' ink and '.' paper, drawn at 3x on the map (48 px tiles;
+-- 2x in the bag, 4x and 6x on the title and end screens). Each one
 -- becomes a list of ink runs ({ x, y, length }) once, and a tile is then one rect a run. Walls
 -- are drawn in main.lua as bricks (8 rects), cheaper than a picture.
 
@@ -1383,7 +1394,7 @@ save = function()
   kit.write('run.txt', table.concat(f, '\n') .. '\n')
 end
 
-local function load_run()
+local function read_run()
   local kv = kit.kv(kit.read('run.txt'))
   if not tonumber(kv.seed) or not kv.map or #kv.map ~= COLS * ROWS then return false end
   local daily = tonumber(kv.daily)
@@ -1413,11 +1424,30 @@ local function load_run()
     G.map[i] = tonumber(kv.map:sub(i, i)) or ROCK
     G.seen[i] = kv.seen and kv.seen:sub(i, i) == '1' or nil
   end
+  -- a damaged save (a half-written file, a hand edit) is not a run: no depth, no life, a hero in rock
+  if G.depth < 1 or G.depth > LAST_DEPTH or G.max < 1 or G.hp < 1 or G.x < 0 or G.x >= COLS or G.y < 0
+     or G.y >= ROWS or G.map[G.y * COLS + G.x + 1] == ROCK or G.weapon.t < 1 or G.weapon.t > #WEAPONS
+     or (G.armour and (G.armour.t < 1 or G.armour.t > #ARMOURS)) then return false end
   msgs = { 'Welcome back. Depth ' .. G.depth .. '.' }
   recentre = true
   fov()
   map_dirty = true
   return true
+end
+
+-- Continue: the saved run, or, when it does not read, nothing: the save is dropped (so the title
+-- no longer offers it) and New run starts as ever
+local function load_run()
+  local keep = {}
+  for k, v in pairs(stats) do keep[k] = v end
+  local ok, res = pcall(read_run)
+  if ok and res then return true end
+  for k, v in pairs(keep) do stats[k] = v end
+  kit.write('run.txt', '')
+  msgs = {}
+  kit.show({ title = 'Continue', lines = { 'The saved run could not be read.' },
+             rows = { { { 'Close', kit.close } } }, cancel = kit.close })
+  return false
 end
 
 save_stats = function()
@@ -1669,6 +1699,7 @@ local function how_to()
     'Tap a distant monster (or hold one) to see what a fight costs. A small z: it has not noticed you yet.',
     'Your torch burns a turn at a time; when it runs low you see less, and in the dark you do not heal. Pick up torches.',
     'Potions and scrolls are unknown until you try them.',
+    "Today's dungeon is the same for everyone on the same date; it changes at midnight on the reader's clock.",
   }, rows = { { { 'Close', kit.close } } }, cancel = kit.close })
 end
 

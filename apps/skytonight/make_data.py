@@ -1,4 +1,4 @@
-"""Write Sky Tonight's data files from the star catalogue and the constellation figures.
+"""Write Ink Sky's data files from the star catalogue and the constellation figures.
 
   python -I apps/skytonight/make_data.py BSC5.tdat.gz LINES.json CONSTELLATIONS.json BOUNDS.json
 
@@ -30,6 +30,9 @@ NAMED = {'Sirius': (6.752, -16.72), 'Canopus': (6.399, -52.70), 'Arcturus': (14.
          'Mirfak': (3.405, 49.86), 'Algol': (3.136, 40.96), 'Dubhe': (11.062, 61.75), 'Alkaid': (13.792, 49.31),
          'Denebola': (11.818, 14.57), 'Hamal': (2.120, 23.46), 'Alphard': (9.460, -8.66), 'Rasalhague': (17.582, 12.56),
          'Alpheratz': (0.140, 29.09), 'Mira': (2.322, -2.98)}
+# names corrected over d3-celestial's (en, tr, de; None keeps its own): Dorado is the swordfish,
+# as on its card and in Turkish; Schwertfisch is its German name
+NAME_FIX = {'Dor': ('Swordfish', None, 'Schwertfisch')}
 
 
 def plain(name):
@@ -98,6 +101,7 @@ def main():
             p = feat['properties']
             lon, lat = feat['geometry']['coordinates']
             names = [plain(p['en']), plain(p.get('tr') or p['en']), plain(p.get('de') or p['en'])]
+            names = [fix or n for fix, n in zip(NAME_FIX.get(feat['id'], (None,) * 3), names)]
             f.write(f"{lon % 360:.2f} {lat:.2f} {p.get('rank', '3')} {feat['id']} {'|'.join(names)}\n")
     bd = bounds(bounds_json)
     with open(os.path.join(DATA, 'bounds.txt'), 'w', encoding='utf-8', newline='\n') as f:

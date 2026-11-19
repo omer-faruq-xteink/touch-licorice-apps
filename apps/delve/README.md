@@ -2,7 +2,8 @@
 
 A small roguelike: go down ten depths of rooms, corridors and monsters and take the Amulet from
 the dragon on the last one. Every run is a new dungeon; **Today's dungeon** is the same for
-everyone on a day. Death ends the run.
+everyone on a day: the reader's own date, so it changes at midnight local time and players in other
+time zones may be a day ahead or behind. Death ends the run.
 
 ## Playing
 

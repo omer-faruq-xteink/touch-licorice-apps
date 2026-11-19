@@ -1,5 +1,5 @@
 -- The app: the sky for now (or tonight, by day), -1 h / +1 h to step through the night (the page
--- keys too), Now to go back, Place to pick a city or type coordinates and to make Sky Tonight the
+-- keys too), Now to go back, Place to pick a city or type coordinates and to make Ink Sky the
 -- lock screen. While open on the current time it redraws every ten minutes.
 
 local BTN_Y, BTN_H = H - 62, 50
@@ -266,7 +266,7 @@ function on_draw(c, g)
   extend()
   if load_err then
     g:clear(0)
-    draw_error(g, 'Sky Tonight could not start:', load_err)
+    draw_error(g, 'Ink Sky could not start:', load_err)
     g:text(10, H - 60, 'Please send a photo of this screen.')
     return
   end

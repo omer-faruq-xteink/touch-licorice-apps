@@ -160,13 +160,26 @@ def display_names():
     return out
 
 
+# names an app had before: older release notes still name it so (Sky Tonight became Ink Sky in
+# v0.27.0, as the store asked)
+FORMER = {'skytonight': ('Sky Tonight',)}
+
+
+def all_names(names):
+    """(app, name) for each app's name and its former ones, longer names first"""
+    pairs = [(app, n) for app, name in names.items() for n in (name, *FORMER.get(app, ()))]
+    return sorted(pairs, key=lambda kv: -len(kv[1]))
+
+
 def names_in(text, names):
-    """the apps whose display names appear in text, longer names first ("Chess puzzles" is not "Chess")"""
+    """the apps whose display names (or former ones) appear in text, longer names first ("Chess
+    puzzles" is not "Chess")"""
     hits = []
-    for app, name in sorted(names.items(), key=lambda kv: -len(kv[1])):
+    for app, name in all_names(names):
         rx = re.compile(r'(?<!\w)' + re.escape(name) + r'(?!\w)')
         if rx.search(text):
-            hits.append(app)
+            if app not in hits:
+                hits.append(app)
             text = rx.sub(lambda m: '\0' * len(m.group(0)), text)
     return hits
 
@@ -285,7 +298,7 @@ def link_names(bullet, names, pages):
     if not m:
         return bullet
     lead, keep = m.group(1), []
-    for app, name in sorted(names.items(), key=lambda kv: -len(kv[1])):
+    for app, name in all_names(names):
         rx = re.compile(r'(?<![\w\0])' + re.escape(name) + r'(?![\w\0])')
         if not rx.search(lead):
             continue
@@ -359,8 +372,11 @@ def app_version(tag, app, bullet, name):
             _versions[key] = None
     if _versions[key]:
         return _versions[key]
-    m = re.search(r'(?<!\w)' + re.escape(name) + r' (\d+(?:\.\d+)+)', bullet)
-    return m.group(1) if m else tag
+    for n in (name, *FORMER.get(app, ())):
+        m = re.search(r'(?<!\w)' + re.escape(n) + r' (\d+(?:\.\d+)+)', bullet)
+        if m:
+            return m.group(1)
+    return tag
 
 
 def whats_new_html(entries, label=lambda tag, bullet: tag):

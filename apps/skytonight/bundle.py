@@ -1,4 +1,4 @@
-"""Bundle Sky Tonight: index.lua = src/astro.lua + src/places.lua + src/sky.lua + src/app.lua,
+"""Bundle Ink Sky: index.lua = src/astro.lua + src/places.lua + src/sky.lua + src/app.lua,
 lockscreen.lua = the same with src/lock.lua (each entry loads on its own).
 
   python -I apps/skytonight/bundle.py

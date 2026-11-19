@@ -1,4 +1,4 @@
--- Sky Tonight: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
+-- Ink Sky: the places to pick from, A to Z: name, latitude, longitude (degrees, east and north
 -- positive). GUESS_TZ picks the first place for a time zone (standard offset in minutes) when no
 -- place is saved yet; Turkish and German systems start in İstanbul and Berlin.
 
